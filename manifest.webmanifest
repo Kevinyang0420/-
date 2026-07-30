@@ -1,0 +1,32 @@
+{
+  "name": "杨御风：火星远征",
+  "short_name": "火星远征",
+  "description": "太空战士杨御风从地球出发，穿越陨石、击败长角兽军团与大便兽，在月球上击败魔鬼兽、大蜘蛛兽、大螃蟹兽、骷髅头蜘蛛兽，最终决战巨化光头强。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#070a1f",
+  "theme_color": "#070a1f",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

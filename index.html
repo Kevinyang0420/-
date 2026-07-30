@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>杨御风：火星远征</title>
+  <meta name="theme-color" content="#070a1f">
+  <meta name="description" content="杨御风：火星远征 — 太空战士杨御风从地球出发，穿越陨石、击败怪物、决战光头的横版动作游戏。">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="火星远征">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: #070a1f;
+      font-family: 'Microsoft YaHei', 'PingFang SC', 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+    /* 等比自适应：小屏幕缩小铺满窗口（保持 16:9 不变形不裁切），大屏幕最大 1440x810 */
+    #wrap {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(1440px, 100vw, 177.7778vh);
+      height: min(810px, 56.25vw, 100vh);
+      box-shadow: 0 0 40px rgba(0,0,0,0.6);
+      border-radius: 8px; overflow: hidden;
+      background: #000;
+    }
+    /* canvas 内部分辨率固定 1440x810，显示大小由 CSS 控制 */
+    canvas { display: block; width: 100%; height: 100%; }
+    #hint {
+      position: absolute; bottom: -28px; left: 0; right: 0;
+      text-align: center; color: #8a8fa3; font-size: 13px;
+    }
+    /* ===== 触屏虚拟按键（仅触屏设备显示，手机/平板可玩）===== */
+    #wrap { touch-action: none; }
+    #touch {
+      position: absolute; inset: 0; z-index: 5;
+      display: none;                      /* 默认隐藏，触屏设备才显示 */
+      pointer-events: none;              /* 容器透明穿透，按钮单独开启点击 */
+      flex-direction: row; justify-content: space-between; align-items: flex-end;
+      padding: 16px;
+    }
+    @media (hover: none) and (pointer: coarse) {
+      #touch { display: flex; }
+    }
+    .tbtn {
+      pointer-events: auto;
+      width: 66px; height: 66px; border: none; border-radius: 50%;
+      background: rgba(255,255,255,0.16); color: #fff;
+      font-size: 26px; line-height: 1; font-family: inherit;
+      display: flex; align-items: center; justify-content: center;
+      backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+      user-select: none; -webkit-user-select: none;
+      touch-action: none; box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+      transition: background 0.08s, transform 0.08s;
+    }
+    .tbtn span { font-size: 12px; margin-left: 2px; }
+    .tbtn.on, .tbtn:active { background: rgba(255,255,255,0.42); transform: scale(0.94); }
+    .tbtn.small { width: 50px; height: 50px; font-size: 22px; }
+    .tbtn.summon { background: rgba(120,200,255,0.30); width: 78px; height: 78px; font-size: 30px; }
+    .tbtn.summon.on, .tbtn.summon:active { background: rgba(120,200,255,0.62); }
+    /* 必杀技按钮网格（5 种：子弹/火球/导弹/原子弹/氢弹）*/
+    .skillgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: center; }
+    .tbtn.sk { width: 54px; height: 54px; font-size: 24px; }
+    .tbtn.sk-bullet  { background: rgba(255,120,120,0.34); }              /* 子弹：红 */
+    .tbtn.sk-bullet.on, .tbtn.sk-bullet:active { background: rgba(255,120,120,0.66); }
+    .tbtn.sk-fire    { background: rgba(255,190,90,0.34); }              /* 火球：橙 */
+    .tbtn.sk-fire.on, .tbtn.sk-fire:active { background: rgba(255,190,90,0.66); }
+    .tbtn.sk-missile { background: rgba(120,170,255,0.34); }             /* 导弹：蓝 */
+    .tbtn.sk-missile.on, .tbtn.sk-missile:active { background: rgba(120,170,255,0.66); }
+    .tbtn.sk-atom    { background: rgba(190,130,255,0.38); }             /* 原子弹：紫 */
+    .tbtn.sk-atom.on, .tbtn.sk-atom:active { background: rgba(190,130,255,0.70); }
+    .tbtn.sk-hydro   { background: rgba(110,230,140,0.42); }             /* 氢弹：绿（最强）*/
+    .tbtn.sk-hydro.on, .tbtn.sk-hydro:active { background: rgba(110,230,140,0.74); }
+    /* 右侧额外跳跃键：用 KeyW（与 ArrowUp 同映射 jump，但独立状态，两指互不干扰） */
+    .tbtn.jump { background: rgba(110,230,140,0.32); width: 74px; height: 74px; font-size: 28px; }
+    .tbtn.jump.on, .tbtn.jump:active { background: rgba(110,230,140,0.66); }
+    .tbtn.summon { background: rgba(120,200,255,0.30); width: 64px; height: 64px; font-size: 26px; }
+    .tbtn.summon.on, .tbtn.summon:active { background: rgba(120,200,255,0.62); }
+    .pad-dpad { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .pad-actions { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .pad-actions .row, .pad-dpad .row { display: flex; gap: 14px; }
+    .tbtn.pause { position: absolute; top: 14px; right: 14px; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game" width="1440" height="810"></canvas>
+    <!-- 触屏虚拟按键：手机/平板玩家用；桌面键盘自动隐藏。复用 Input.pressKey/releaseKey -->
+    <div id="touch">
+      <button class="tbtn small pause" data-code="KeyP" aria-label="暂停">⏸</button>
+      <div class="pad-dpad">
+        <button class="tbtn" data-code="ArrowUp" aria-label="跳">▲</button>
+        <div class="row">
+          <button class="tbtn" data-code="ArrowLeft" aria-label="左移">◀</button>
+          <button class="tbtn" data-code="ArrowRight" aria-label="右移">▶</button>
+        </div>
+      </div>
+      <div class="pad-actions">
+        <button class="tbtn summon" data-code="KeyB" aria-label="召唤队友">👥<span>召唤</span></button>
+        <div class="skillgrid">
+          <button class="tbtn sk sk-bullet"  data-code="KeyH" data-auto aria-label="子弹">🔫</button>
+          <button class="tbtn sk sk-fire"    data-code="KeyJ" aria-label="火球">🔥</button>
+          <button class="tbtn sk sk-missile" data-code="KeyK" aria-label="导弹">🚀</button>
+          <button class="tbtn sk sk-atom"    data-code="KeyL" aria-label="原子弹">💣</button>
+          <button class="tbtn sk sk-hydro"   data-code="KeyU" aria-label="氢弹">☢</button>
+        </div>
+        <button class="tbtn jump" data-code="KeyW" aria-label="跳">⏫<span>跳</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 普通脚本，按依赖顺序加载；全部代码绘制与合成音效，无外部资源 -->
+  <script src="js/util.js"></script>
+  <script src="js/input.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/entities.js"></script>
+  <script src="js/levels.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/game.js"></script>
+  <script>
+    // 启动：绑定 Canvas、开启主循环
+    (function () {
+      var canvas = document.getElementById('game');
+      window.game.init(canvas);
+      // 首次按键交互后恢复音频上下文（浏览器策略）
+      var resumeOnce = function () { if (window.Sfx) Sfx.resume(); };
+      window.addEventListener('keydown', resumeOnce, { once: false });
+      window.addEventListener('pointerdown', resumeOnce, { once: false });
+
+      // 触屏虚拟按键：pointer 事件映射到 Input.pressKey/releaseKey（与键盘共用同一状态）
+      var touchLayer = document.getElementById('touch');
+      if (touchLayer) {
+        var tb = touchLayer.querySelectorAll('.tbtn');
+        for (var i = 0; i < tb.length; i++) {
+          (function (btn) {
+            var code = btn.getAttribute('data-code');
+            var auto = btn.hasAttribute('data-auto');   // 攻击键：按住自动连发（匹配子弹冷却）
+            var iv = null;
+            var press = function (e) {
+              if (e) { e.preventDefault(); e.stopPropagation(); }
+              Input.pressKey(code);
+              btn.classList.add('on');
+              if (auto) {
+                iv = setInterval(function () { Input.releaseKey(code); Input.pressKey(code); }, 150);
+              }
+            };
+            var release = function (e) {
+              if (e) e.preventDefault();
+              if (iv) { clearInterval(iv); iv = null; }
+              Input.releaseKey(code);
+              btn.classList.remove('on');
+            };
+            btn.addEventListener('pointerdown', press);
+            btn.addEventListener('pointerup', release);
+            btn.addEventListener('pointercancel', release);
+            btn.addEventListener('pointerleave', release);
+          })(tb[i]);
+        }
+      }
+      // 菜单/结算界面：点屏幕任意处即开始（手机无回车键）
+      canvas.addEventListener('pointerdown', function () {
+        if (window.game && (window.game.state === 'menu' || window.game.state === 'gameover' || window.game.state === 'win')) {
+          Input.pressKey('Enter');
+        }
+      });
+
+      // PWA：注册 service worker 启用离线缓存（添加到主屏幕后断网也能玩）
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker
+            .register('sw.js', { updateViaCache: 'none' })
+            .then(function (reg) {
+              if (reg.update) reg.update(); // 强制检查并应用新版本
+            })
+            .catch(function (err) {
+              console.warn('SW 注册失败：', err);
+            });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
