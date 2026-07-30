@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>糖果拼拼乐 - 消消乐闯关版</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{height:100%}
+body{font-family:"Comic Sans MS","YouYuan","幼圆","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#ffe3f1 0%,#fff6d8 45%,#dff3ff 100%);overflow:hidden;touch-action:none;display:flex;flex-direction:column;align-items:center}
+.float-emoji{position:fixed;font-size:34px;opacity:.3;animation:floaty 8s ease-in-out infinite;pointer-events:none;z-index:0}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-24px) rotate(8deg)}}
+#app{position:relative;z-index:1;width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;padding:8px 8px 4px}
+#hud{width:100%;display:flex;align-items:center;gap:8px;padding:4px 2px}
+#levelBadge{background:linear-gradient(135deg,#ff9ac4,#ff6fa5);color:#fff;font-weight:bold;font-size:18px;padding:6px 14px;border-radius:999px;box-shadow:0 3px 0 #e05585;white-space:nowrap}
+#goalWrap{flex:1;height:28px;background:#ffffffaa;border-radius:999px;position:relative;overflow:hidden;border:2px solid #ffd3e6}
+#goalBar{height:100%;width:0%;background:linear-gradient(90deg,#7ee08a,#3ecf5c);border-radius:999px;transition:width .35s}
+#goalText{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;color:#7a4a63}
+.iconBtn{width:40px;height:40px;border:none;border-radius:14px;background:#fff;box-shadow:0 3px 0 #f3c2d8;font-size:20px;cursor:pointer;flex:none}
+.iconBtn:active{transform:translateY(2px);box-shadow:none}
+#scoreLine{width:100%;display:flex;justify-content:space-between;padding:2px 8px;color:#a86087;font-weight:bold;font-size:15px}
+canvas{display:block;border-radius:18px}
+#btnSwap{margin:6px auto 2px;border:none;background:linear-gradient(135deg,#ffd54f,#ffb300);color:#7a4a00;font-size:17px;font-weight:bold;padding:9px 26px;border-radius:999px;box-shadow:0 4px 0 #d99700;cursor:pointer;font-family:inherit}
+#btnSwap:active{transform:translateY(2px);box-shadow:none}
+#btnSwap.off{opacity:.45}
+#btnSwap.shake{animation:shake .5s ease-in-out infinite}
+@keyframes shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg) scale(1.06)}75%{transform:rotate(4deg) scale(1.06)}}
+.praise{position:fixed;left:50%;top:38%;transform:translate(-50%,0);font-size:32px;font-weight:bold;color:#ff5f9e;text-shadow:0 2px 0 #fff,0 4px 10px #ff9ac466;pointer-events:none;z-index:50;animation:praiseUp 1.1s ease-out forwards;white-space:nowrap}
+@keyframes praiseUp{0%{opacity:0;transform:translate(-50%,20px) scale(.6)}20%{opacity:1;transform:translate(-50%,0) scale(1.15)}45%{transform:translate(-50%,-6px) scale(1)}100%{opacity:0;transform:translate(-50%,-70px) scale(1)}}
+.overlay{position:fixed;inset:0;background:#5a2c4699;backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:100;overflow:hidden}
+.card{background:linear-gradient(160deg,#fff,#fff0f7);border-radius:26px;padding:24px 28px;text-align:center;max-width:88vw;width:370px;box-shadow:0 12px 40px #0004;animation:pop .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+.card h1{color:#ff5f9e;font-size:28px;margin-bottom:6px}
+.card .big{font-size:50px;line-height:1.2}
+.card p{color:#9a6a85;font-size:16px;margin:6px 0}
+.btn{display:inline-block;margin-top:12px;border:none;background:linear-gradient(135deg,#ff9ac4,#ff5f9e);color:#fff;font-size:20px;font-weight:bold;padding:12px 34px;border-radius:999px;box-shadow:0 5px 0 #d14b82;cursor:pointer;font-family:inherit}
+.btn:active{transform:translateY(3px);box-shadow:none}
+.btn.green{background:linear-gradient(135deg,#7ee08a,#3ecf5c);box-shadow:0 5px 0 #2ba244}
+.link{display:block;margin:12px auto 0;color:#b58aa2;font-size:14px;background:none;border:none;text-decoration:underline;cursor:pointer;font-family:inherit}
+.stars{font-size:38px;letter-spacing:6px;margin:4px 0}
+#stickerGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:12px;max-height:44vh;overflow-y:auto;touch-action:pan-y}
+.stk{background:#fff;border-radius:12px;padding:6px 2px;font-size:24px;box-shadow:0 2px 6px #0001}
+.stk small{display:block;font-size:9px;color:#b58aa2}
+.stk.lock{filter:grayscale(1);opacity:.4}
+.rewardStk{display:inline-block;background:#fff;border-radius:18px;padding:10px 22px;margin-top:4px;font-size:44px;box-shadow:0 4px 14px #ff9ac455;animation:pop .5s .2s cubic-bezier(.34,1.56,.64,1) backwards}
+.rewardStk small{display:block;font-size:14px;color:#a86087;font-weight:bold}
+.confetti{position:absolute;top:-40px;font-size:22px;animation:fall linear forwards;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(380deg)}}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="float-emoji" style="left:4%;top:10%">🍭</div>
+<div class="float-emoji" style="right:6%;top:16%;animation-delay:-3s">🌈</div>
+<div class="float-emoji" style="left:8%;bottom:14%;animation-delay:-5s">🧸</div>
+<div class="float-emoji" style="right:5%;bottom:8%;animation-delay:-2s">🦄</div>
+
+<div id="app">
+  <div id="hud">
+    <div id="levelBadge">第 1 关</div>
+    <div id="goalWrap"><div id="goalBar"></div><span id="goalText">0 / 3 行</span></div>
+    <button class="iconBtn" id="btnBook" title="贴纸图鉴">📖</button>
+    <button class="iconBtn" id="btnSound" title="声音">🔊</button>
+  </div>
+  <div id="scoreLine"><span id="scoreEl">分数 0</span><span id="stkCount">🏅 贴纸 0/36</span></div>
+  <canvas id="cv"></canvas>
+  <button id="btnSwap">🎁 换一换 ×2</button>
+</div>
+
+<div id="ovStart" class="overlay">
+  <div class="card">
+    <div class="big">🍬🧩</div>
+    <h1>糖果拼拼乐</h1>
+    <p>棋盘上有一堆一堆的糖果<br>把<b>相同颜色</b>的糖果块拖到它们旁边<br>同色凑够 <b>4 颗</b>就会"啵"地消掉！<br><span style="font-size:13px;color:#a06b85">关卡越往后越有挑战：颜色变多、<br>糖果更散，还会出现要动脑敲碎的 🧊 冰块</span></p>
+    <p id="startInfo" style="color:#ff5f9e;font-weight:bold"></p>
+    <button class="btn" id="btnStart">开始游戏 🎮</button>
+    <button class="link" id="btnRestartAll">从第 1 关重新开始</button>
+  </div>
+</div>
+
+<div id="ovWin" class="overlay hidden">
+  <div class="card">
+    <div class="big">🎉</div>
+    <h1 id="winTitle">过关啦！</h1>
+    <div class="stars" id="winStars">⭐⭐⭐</div>
+    <p>获得新贴纸奖励：</p>
+    <div class="rewardStk" id="winSticker">🦄<small>独角兽</small></div>
+    <br><button class="btn green" id="btnNext">下一关 ➡️</button>
+  </div>
+</div>
+
+<div id="ovDead" class="overlay hidden">
+  <div class="card">
+    <div class="big">😅</div>
+    <h1>没地方放啦</h1>
+    <p>没关系！重新铺一盘糖果再来<br>已经消掉的糖果<b>还算数</b>哦</p>
+    <button class="btn" id="btnClearBoard">清空棋盘继续 🧹</button>
+  </div>
+</div>
+
+<div id="ovBook" class="overlay hidden">
+  <div class="card">
+    <h1>📖 贴纸图鉴</h1>
+    <p id="bookInfo"></p>
+    <div id="stickerGrid"></div>
+    <button class="btn" id="btnCloseBook">关 闭</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const cv=$("cv"),ctx=cv.getContext("2d");
+const COLS=8,ROWS=8,PAD=10;
+const COLORS=[
+ {b:"#ff3b5c",d:"#c81e40",l:"#ffb3c1"},
+ {b:"#ffd400",d:"#cfa600",l:"#fff099"},
+ {b:"#33cc55",d:"#1f9a3c",l:"#b6f2c0"},
+ {b:"#2f80ff",d:"#1b5cd0",l:"#b3d1ff"},
+ {b:"#a64dff",d:"#7a2ed6",l:"#ddb8ff"}
+];
+const MATCH_N=4;
+const ICE=9; // 冰块：占格子，不能放块，也不参与同色消；在旁边消除才会碎
+// 难度曲线：前面简单建立信心，后面颜色多、糖堆散、冰块出现，需要动脑规划
+function diffFor(lv){
+ return {
+  colors: lv<=2?3:(lv<=5?4:5),                        // 颜色数量 3→4→5
+  bias:   lv<=2?0.85:(lv<=5?0.7:(lv<=8?0.55:0.4)),    // 发牌照顾度递减
+  blob3:  lv<=2?0.9:(lv<=5?0.5:0.25),                 // "3颗差1颗"大团的比例递减
+  blobs:  Math.min(4+lv,9),                           // 糖堆数量
+  singles:lv<=3?0:Math.min(lv-2,6),                   // 零散单颗糖（要自己凑团）
+  ice:    lv<4?0:Math.min(1+Math.floor((lv-4)/2),5),  // 冰块数：第4关1个，之后递增
+  swaps:  lv<=3?3:2                                   // 前期多给一次换一换
+ };
+}
+const S_EASY=[
+ [[0,0]],
+ [[0,0],[0,1]],
+ [[0,0],[1,0]]
+];
+const S_MED=[
+ [[0,0],[0,1],[0,2]],
+ [[0,0],[1,0],[2,0]],
+ [[0,0],[1,0],[1,1]],
+ [[0,1],[1,0],[1,1]],
+ [[0,0],[0,1],[1,0]],
+ [[0,0],[0,1],[1,1]]
+];
+const S_HARD=[
+ [[0,0],[1,0],[1,1]],
+ [[0,1],[1,1],[1,0]],
+ [[0,0],[0,1],[1,1]],
+ [[0,1],[0,0],[1,0]]
+];
+const STICKERS=[["🦄","独角兽"],["🐱","小猫咪"],["🐶","小狗狗"],["🐼","熊猫宝"],["🦊","小狐狸"],["🐰","小兔子"],["🐸","小青蛙"],["🐥","小鸭鸭"],["🦁","小狮子"],["🐯","小老虎"],["🐨","考拉"],["🐷","小猪猪"],["🦖","小恐龙"],["🐙","小章鱼"],["🐬","小海豚"],["🦋","花蝴蝶"],["🐝","小蜜蜂"],["🐞","小瓢虫"],["🌈","彩虹"],["⭐","小星星"],["🍦","冰淇淋"],["🍩","甜甜圈"],["🧁","小蛋糕"],["🍭","棒棒糖"],["🍉","大西瓜"],["🍓","甜草莓"],["🚀","小火箭"],["🎈","红气球"],["🎠","旋转木马"],["🏰","大城堡"],["🧸","泰迪熊"],["👑","小皇冠"],["💎","大钻石"],["🛸","小飞碟"],["🌟","超级星"],["🏆","冠军杯"]];
+const PRAISES=["太棒啦! 🌟","真厉害! 👍","好棒哦! 🎉","消掉啦! ✨","完美! 💖"];
+
+let C=40,W=0,H=0,dpr=1,gx=PAD,gy=PAD,trayTop=0,trayH=0;
+let grid=Array.from({length:ROWS},()=>Array(COLS).fill(0));
+let tray=[null,null,null];
+let level=1,goal=3,linesDone=0,score=0,swapsLeft=2,usedSwap=false,usedReset=false,playing=false;
+let particles=[],anims=[],drag=null;
+let muted=localStorage.getItem("cpp_muted")==="1";
+let maxPassed=parseInt(localStorage.getItem("cpp_max")||"0",10)||0;
+
+let AC=null;
+function ac(){if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();return AC}
+function tone(f,d,type,g,when){
+ if(muted)return;
+ try{
+  const a=ac(),o=a.createOscillator(),v=a.createGain();
+  type=type||"sine";g=g||0.14;when=when||0;
+  o.type=type;o.frequency.value=f;
+  v.gain.setValueAtTime(g,a.currentTime+when);
+  v.gain.exponentialRampToValueAtTime(0.001,a.currentTime+when+d);
+  o.connect(v);v.connect(a.destination);
+  o.start(a.currentTime+when);o.stop(a.currentTime+when+d);
+ }catch(e){}
+}
+const sfx={
+ pick:()=>tone(620,0.07,"triangle",0.1),
+ place:()=>{tone(380,0.09,"square",0.07);tone(540,0.1,"triangle",0.1,0.03)},
+ bad:()=>tone(170,0.14,"sawtooth",0.05),
+ clear:n=>{for(let i=0;i<3+n;i++)tone(520+i*130,0.13,"triangle",0.12,i*0.05)},
+ win:()=>{[523,659,784,1047].forEach((f,i)=>tone(f,0.28,"triangle",0.15,i*0.13))},
+ swap:()=>{tone(700,0.1,"sine",0.1);tone(900,0.12,"sine",0.1,0.08)},
+ dead:()=>{tone(300,0.3,"sine",0.09);tone(220,0.4,"sine",0.09,0.15)}
+};
+function vib(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+
+function fit(){
+ dpr=window.devicePixelRatio||1;
+ const availW=Math.min(window.innerWidth-12,500);
+ C=Math.floor((availW-PAD*2)/COLS);
+ const availH=window.innerHeight-160;
+ const maxC=Math.floor(availH/(ROWS+3.1));
+ if(maxC>10)C=Math.min(C,maxC);
+ if(C<24)C=24;
+ W=PAD*2+C*COLS;
+ trayTop=PAD+ROWS*C+14;
+ trayH=Math.ceil(C*0.55*5)+16;
+ H=trayTop+trayH+PAD;
+ cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+ cv.style.width=W+"px";cv.style.height=H+"px";
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function rr(x,y,w,h,r){
+ ctx.beginPath();
+ ctx.moveTo(x+r,y);
+ ctx.arcTo(x+w,y,x+w,y+h,r);
+ ctx.arcTo(x+w,y+h,x,y+h,r);
+ ctx.arcTo(x,y+h,x,y,r);
+ ctx.arcTo(x,y,x+w,y,r);
+ ctx.closePath();
+}
+function seedAt(r,c){return ((r*7+c*13)%10)/10}
+function drawIce(x,y,s){
+ ctx.save();
+ const g=ctx.createLinearGradient(0,y,0,y+s);
+ g.addColorStop(0,"#eef9ff");g.addColorStop(0.5,"#c8ecff");g.addColorStop(1,"#8fd0f2");
+ rr(x+1.5,y+1.5,s-3,s-3,s*0.2);
+ ctx.fillStyle=g;ctx.fill();
+ ctx.strokeStyle="rgba(90,175,225,0.95)";ctx.lineWidth=2;ctx.stroke();
+ // 冰裂纹
+ ctx.strokeStyle="rgba(255,255,255,0.8)";ctx.lineWidth=1.4;ctx.lineCap="round";
+ ctx.beginPath();
+ ctx.moveTo(x+s*0.25,y+s*0.3);ctx.lineTo(x+s*0.48,y+s*0.52);ctx.lineTo(x+s*0.38,y+s*0.75);
+ ctx.moveTo(x+s*0.48,y+s*0.52);ctx.lineTo(x+s*0.72,y+s*0.4);
+ ctx.stroke();
+ ctx.font=Math.round(s*0.42)+"px serif";ctx.textAlign="center";ctx.textBaseline="middle";
+ ctx.fillText("❄️",x+s*0.5,y+s*0.5);
+ ctx.restore();
+}
+function drawCandy(x,y,s,ci,seed,alpha){
+ const col=COLORS[ci];
+ ctx.save();
+ ctx.globalAlpha=alpha==null?1:alpha;
+ const g=ctx.createLinearGradient(0,y,0,y+s);
+ g.addColorStop(0,col.l);g.addColorStop(0.35,col.b);g.addColorStop(1,col.d);
+ rr(x+1,y+1,s-2,s-2,s*0.26);
+ ctx.fillStyle=g;ctx.fill();
+ ctx.fillStyle="rgba(255,255,255,0.5)";
+ ctx.beginPath();
+ ctx.ellipse(x+s*0.38,y+s*0.24,s*0.24,s*0.11,-0.3,0,Math.PI*2);
+ ctx.fill();
+ if(seed<0.45&&s>=18){
+  const t=performance.now()/1000;
+  const blink=((t+seed*10)%3.7)<0.13;
+  ctx.fillStyle="#5b3148";ctx.strokeStyle="#5b3148";
+  ctx.lineWidth=Math.max(1.4,s*0.05);ctx.lineCap="round";
+  const ey=y+s*0.52,ex1=x+s*0.32,ex2=x+s*0.68,er=s*0.065;
+  if(blink){
+   ctx.beginPath();ctx.moveTo(ex1-er,ey);ctx.lineTo(ex1+er,ey);
+   ctx.moveTo(ex2-er,ey);ctx.lineTo(ex2+er,ey);ctx.stroke();
+  }else{
+   ctx.beginPath();ctx.arc(ex1,ey,er,0,Math.PI*2);ctx.arc(ex2,ey,er,0,Math.PI*2);ctx.fill();
+  }
+  ctx.beginPath();ctx.arc(x+s*0.5,y+s*0.6,s*0.15,0.25*Math.PI,0.75*Math.PI);ctx.stroke();
+  ctx.fillStyle="rgba(255,120,150,0.4)";
+  ctx.beginPath();ctx.arc(x+s*0.2,y+s*0.66,s*0.07,0,Math.PI*2);ctx.arc(x+s*0.8,y+s*0.66,s*0.07,0,Math.PI*2);ctx.fill();
+ }
+ ctx.restore();
+}
+function spawnBurst(px,py,ci){
+ const col=COLORS[ci]?COLORS[ci].b:"#ffd54f";
+ for(let i=0;i<7;i++){
+  const a=Math.random()*Math.PI*2,sp=1.5+Math.random()*3;
+  particles.push({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,g:0.12,life:1,color:i%3===0?"#fff176":col,r:2+Math.random()*3.5,star:Math.random()<0.35});
+ }
+}
+function drawStar(x,y,r,color){
+ ctx.fillStyle=color;ctx.beginPath();
+ for(let i=0;i<10;i++){
+  const rad=i%2===0?r:r*0.45,a=Math.PI/5*i-Math.PI/2;
+  const px=x+Math.cos(a)*rad,py=y+Math.sin(a)*rad;
+  if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+ }
+ ctx.closePath();ctx.fill();
+}
+function dropTarget(){
+ if(!drag)return null;
+ const p=tray[drag.idx];if(!p)return null;
+ const lift=drag.touch?C*1.6:C*0.6;
+ const tlx=drag.x-p.w*C/2,tly=drag.y-lift-p.h*C/2;
+ const c=Math.round((tlx-gx)/C),r=Math.round((tly-gy)/C);
+ if(r<0||c<0||r+p.h>ROWS||c+p.w>COLS)return null;
+ return canPlace(p,r,c)?{r:r,c:c}:null;
+}
+function previewClears(p,r0,c0){
+ const tmp=new Map();
+ p.cells.forEach(rc=>tmp.set((r0+rc[0])+","+(c0+rc[1]),p.ci+1));
+ const val=(r,c)=>{const t=tmp.get(r+","+c);return t!=null?t:grid[r][c]};
+ const seen=new Set(),out=[];
+ tmp.forEach((v,key)=>{
+  if(seen.has(key))return;
+  const a=key.split(","),ci=v;
+  const stack=[[+a[0],+a[1]]];seen.add(key);
+  const cells=[];
+  while(stack.length){
+   const cur=stack.pop();cells.push(cur);
+   const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+   for(const d of dirs){
+    const nr=cur[0]+d[0],nc=cur[1]+d[1],k=nr+","+nc;
+    if(nr<0||nc<0||nr>=ROWS||nc>=COLS||seen.has(k))continue;
+    if(val(nr,nc)===ci){seen.add(k);stack.push([nr,nc])}
+   }
+  }
+  if(cells.length>=MATCH_N)out.push.apply(out,cells);
+ });
+ // 将被震碎的冰块也一起高亮
+ if(out.length){
+  const cs=new Set(out.map(rc=>rc[0]+","+rc[1]));
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+   if(grid[r][c]!==ICE)continue;
+   if([[1,0],[-1,0],[0,1],[0,-1]].some(d=>cs.has((r+d[0])+","+(c+d[1]))))out.push([r,c]);
+  }
+ }
+ return out;
+}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ rr(0,0,W,trayTop-6,18);ctx.fillStyle="rgba(255,255,255,0.45)";ctx.fill();
+ rr(0,trayTop-2,W,H-trayTop+2,18);ctx.fillStyle="rgba(255,255,255,0.35)";ctx.fill();
+ const target=dropTarget();
+ let pv=null;
+ if(target&&drag)pv=previewClears(tray[drag.idx],target.r,target.c);
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+  const x=gx+c*C,y=gy+r*C;
+  rr(x+2,y+2,C-4,C-4,C*0.2);
+  ctx.fillStyle="rgba(255,255,255,0.75)";ctx.fill();
+  ctx.strokeStyle="rgba(255,190,220,0.6)";ctx.lineWidth=1;ctx.stroke();
+ }
+ if(pv&&pv.length){
+  const pulse=0.4+0.25*Math.sin(performance.now()/160);
+  ctx.fillStyle="rgba(255,241,118,"+pulse.toFixed(2)+")";
+  pv.forEach(rc=>{rr(gx+rc[1]*C,gy+rc[0]*C,C,C,C*0.24);ctx.fill()});
+ }
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+  const v=grid[r][c];
+  if(v===ICE)drawIce(gx+c*C,gy+r*C,C);
+  else if(v)drawCandy(gx+c*C,gy+r*C,C,v-1,seedAt(r,c));
+ }
+ if(target&&drag){
+  const p=tray[drag.idx];
+  p.cells.forEach(rc=>{
+   drawCandy(gx+(target.c+rc[1])*C,gy+(target.r+rc[0])*C,C,p.ci,1,0.4);
+  });
+ }
+ const now=performance.now();
+ anims=anims.filter(a=>{
+  const t=(now-a.t0)/260;
+  if(t>=1)return false;
+  const s=C*(1+t*0.4),off=(s-C)/2;
+  ctx.save();ctx.globalAlpha=1-t;
+  rr(gx+a.c*C-off+2,gy+a.r*C-off+2,s-4,s-4,s*0.25);
+  ctx.fillStyle="#ffffff";ctx.fill();
+  ctx.restore();
+  return true;
+ });
+ const slotW=W/3;
+ for(let i=0;i<3;i++){
+  const p=tray[i];
+  if(!p||(drag&&drag.idx===i))continue;
+  const ts=C*0.5;
+  const ox=slotW*i+(slotW-p.w*ts)/2;
+  const oy=trayTop+(trayH-p.h*ts)/2;
+  p.cells.forEach(rc=>{
+   drawCandy(ox+rc[1]*ts,oy+rc[0]*ts,ts,p.ci,p.seed*0.4);
+  });
+ }
+ if(drag&&tray[drag.idx]){
+  const p=tray[drag.idx];
+  const lift=drag.touch?C*1.6:C*0.6;
+  const tlx=drag.x-p.w*C/2,tly=drag.y-lift-p.h*C/2;
+  ctx.save();
+  ctx.shadowColor="rgba(180,80,130,0.35)";ctx.shadowBlur=14;ctx.shadowOffsetY=6;
+  p.cells.forEach(rc=>{
+   drawCandy(tlx+rc[1]*C,tly+rc[0]*C,C,p.ci,p.seed*0.4,0.96);
+  });
+  ctx.restore();
+ }
+ particles=particles.filter(pt=>{
+  pt.x+=pt.vx;pt.y+=pt.vy;pt.vy+=pt.g;pt.life-=0.025;
+  if(pt.life<=0)return false;
+  ctx.save();ctx.globalAlpha=Math.max(0,pt.life);
+  if(pt.star)drawStar(pt.x,pt.y,pt.r*1.6,pt.color);
+  else{ctx.fillStyle=pt.color;ctx.beginPath();ctx.arc(pt.x,pt.y,pt.r,0,Math.PI*2);ctx.fill()}
+  ctx.restore();
+  return true;
+ });
+ requestAnimationFrame(draw);
+}
+function shapeDims(cells){
+ let w=0,h=0;
+ cells.forEach(rc=>{if(rc[1]+1>w)w=rc[1]+1;if(rc[0]+1>h)h=rc[0]+1});
+ return [w,h];
+}
+function poolForLevel(lv){
+ let pool=S_EASY.concat(S_EASY,S_MED);
+ if(lv>=3)pool=pool.concat(S_MED);
+ if(lv>=6)pool=pool.concat(S_HARD);
+ return pool;
+}
+function boardColors(){
+ const s=new Set();
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const v=grid[r][c];if(v&&v!==ICE)s.add(v-1)}
+ return Array.from(s);
+}
+function makePiece(){
+ const cfg=diffFor(level);
+ const pool=poolForLevel(level);
+ const cells=pool[Math.floor(Math.random()*pool.length)];
+ const d=shapeDims(cells);
+ const bc=boardColors();
+ const ci=(bc.length&&Math.random()<cfg.bias)?bc[Math.floor(Math.random()*bc.length)]:Math.floor(Math.random()*cfg.colors);
+ return {cells:cells,w:d[0],h:d[1],ci:ci,seed:Math.random()};
+}
+function canPlace(p,r0,c0){
+ for(const rc of p.cells){
+  const r=r0+rc[0],c=c0+rc[1];
+  if(r<0||c<0||r>=ROWS||c>=COLS||grid[r][c])return false;
+ }
+ return true;
+}
+function anyFitPiece(p){
+ for(let r=0;r<=ROWS-p.h;r++)for(let c=0;c<=COLS-p.w;c++)if(canPlace(p,r,c))return true;
+ return false;
+}
+function anyTrayFits(){return tray.some(p=>p&&anyFitPiece(p))}
+function refillTray(){
+ for(let t=0;t<30;t++){
+  tray=[makePiece(),makePiece(),makePiece()];
+  if(anyTrayFits())break;
+ }
+}
+function praise(txt){
+ const d=document.createElement("div");
+ d.className="praise";d.textContent=txt;
+ document.body.appendChild(d);
+ setTimeout(()=>d.remove(),1150);
+}
+function findGroups(){
+ const seen=Array.from({length:ROWS},()=>Array(COLS).fill(false));
+ const groups=[];
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+  if(!grid[r][c]||grid[r][c]===ICE||seen[r][c])continue;
+  const ci=grid[r][c],stack=[[r,c]],cells=[];
+  seen[r][c]=true;
+  while(stack.length){
+   const cur=stack.pop();cells.push(cur);
+   const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+   for(const d of dirs){
+    const nr=cur[0]+d[0],nc=cur[1]+d[1];
+    if(nr>=0&&nc>=0&&nr<ROWS&&nc<COLS&&!seen[nr][nc]&&grid[nr][nc]===ci){seen[nr][nc]=true;stack.push([nr,nc])}
+   }
+  }
+  if(cells.length>=MATCH_N)groups.push({ci:ci,cells:cells});
+ }
+ return groups;
+}
+function checkClears(){
+ const groups=findGroups();
+ if(!groups.length)return 0;
+ const now=performance.now();
+ let total=0;
+ const clearedSet=new Set();
+ groups.forEach(g=>{
+  g.cells.forEach(rc=>{
+   grid[rc[0]][rc[1]]=0;
+   clearedSet.add(rc[0]+","+rc[1]);
+   anims.push({r:rc[0],c:rc[1],t0:now});
+   spawnBurst(gx+rc[1]*C+C/2,gy+rc[0]*C+C/2,g.ci-1);
+  });
+  total+=g.cells.length;
+ });
+ // 冰块判定：紧挨着本次消除的冰块会被震碎
+ let iceBroken=0;
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+  if(grid[r][c]!==ICE)continue;
+  const near=[[1,0],[-1,0],[0,1],[0,-1]].some(d=>clearedSet.has((r+d[0])+","+(c+d[1])));
+  if(near){
+   grid[r][c]=0;iceBroken++;
+   anims.push({r:r,c:c,t0:now});
+   spawnBurst(gx+c*C+C/2,gy+r*C+C/2,3);
+  }
+ }
+ linesDone+=total+iceBroken;
+ score+=total*20+iceBroken*50+(groups.length>1?80:0)+(total>=6?(total-5)*15:0);
+ sfx.clear(groups.length+Math.floor(total/4));vib(groups.length>1?[30,40,30]:25);
+ praise(iceBroken?"❄️ 冰块碎啦！+"+iceBroken*50+"分":total>=8?"哇！超级大消除!! 🤩":groups.length>1?"双消！好厉害 🎊":PRAISES[Math.floor(Math.random()*PRAISES.length)]);
+ return total+iceBroken;
+}
+function placePiece(idx,r,c){
+ const p=tray[idx];
+ p.cells.forEach(rc=>{grid[r+rc[0]][c+rc[1]]=p.ci+1});
+ tray[idx]=null;
+ score+=p.cells.length;
+ sfx.place();vib(12);
+ const cleared=checkClears();
+ if(tray.every(x=>!x))refillTray();
+ updateHUD();
+ if(linesDone>=goal){
+  playing=false;
+  setTimeout(completeLevel,cleared?600:250);
+  return;
+ }
+ checkStuck();
+}
+function checkStuck(){
+ if(anyTrayFits())return;
+ if(swapsLeft>0){
+  btnSwap.classList.add("shake");
+  praise("放不下啦？点 换一换 🎁");
+ }else{
+  playing=false;sfx.dead();
+  showOv(ovDead);
+ }
+}
+const levelBadge=$("levelBadge"),goalBar=$("goalBar"),goalText=$("goalText"),scoreEl=$("scoreEl"),stkCount=$("stkCount");
+const btnSwap=$("btnSwap"),btnSound=$("btnSound"),btnBook=$("btnBook");
+const ovStart=$("ovStart"),ovWin=$("ovWin"),ovDead=$("ovDead"),ovBook=$("ovBook");
+function showOv(o){o.classList.remove("hidden")}
+function hideOv(o){o.classList.add("hidden")}
+function updateHUD(){
+ levelBadge.textContent="第 "+level+" 关";
+ const pct=Math.min(100,Math.round(linesDone/goal*100));
+ goalBar.style.width=pct+"%";
+ goalText.textContent=linesDone+" / "+goal+" 颗";
+ scoreEl.textContent="分数 "+score;
+ stkCount.textContent="🏅 贴纸 "+Math.min(maxPassed,STICKERS.length)+"/"+STICKERS.length;
+}
+function updateSwapLabel(){
+ btnSwap.textContent="🎁 换一换 ×"+swapsLeft;
+ btnSwap.classList.toggle("off",swapsLeft<=0);
+}
+function prefillGrid(lv){
+ const cfg=diffFor(lv);
+ const randCi=()=>1+Math.floor(Math.random()*cfg.colors);
+ grid=Array.from({length:ROWS},()=>Array(COLS).fill(0));
+ // 1) 同色糖果堆：前期多为"3颗差1颗"的大团（一拼就消），后期多为2颗小团（要多想一步）
+ const nBlobs=cfg.blobs;
+ for(let i=0,tries=0;i<nBlobs&&tries<120;tries++){
+  const ci=randCi();
+  const size=Math.random()<cfg.blob3?3:2;
+  const r0=Math.floor(Math.random()*ROWS),c0=Math.floor(Math.random()*COLS);
+  if(grid[r0][c0])continue;
+  const cells=[[r0,c0]];
+  grid[r0][c0]=ci;
+  for(let s=1;s<size;s++){
+   const base=cells[Math.floor(Math.random()*cells.length)];
+   const dirs=[[1,0],[-1,0],[0,1],[0,-1]].sort(()=>Math.random()-0.5);
+   for(const d of dirs){
+    const nr=base[0]+d[0],nc=base[1]+d[1];
+    if(nr>=0&&nc>=0&&nr<ROWS&&nc<COLS&&!grid[nr][nc]){grid[nr][nc]=ci;cells.push([nr,nc]);break}
+   }
+  }
+  i++;
+ }
+ // 2) 零散单颗糖（第4关起）：孤零零的糖要自己动脑凑成一团
+ for(let i=0,tries=0;i<cfg.singles&&tries<80;tries++){
+  const r=Math.floor(Math.random()*ROWS),c=Math.floor(Math.random()*COLS);
+  if(grid[r][c])continue;
+  const ci=randCi();
+  const nearSame=[[1,0],[-1,0],[0,1],[0,-1]].some(d=>{
+   const nr=r+d[0],nc=c+d[1];
+   return nr>=0&&nc>=0&&nr<ROWS&&nc<COLS&&grid[nr][nc]===ci;
+  });
+  if(nearSame)continue;
+  grid[r][c]=ci;i++;
+ }
+ // 3) 保险：相邻同色团可能连成≥4颗，逐个拆掉直到开局不会自动消
+ for(let guard=0;guard<30;guard++){
+  const groups=findGroups();
+  if(!groups.length)break;
+  groups.forEach(g=>{const rc=g.cells[0];grid[rc[0]][rc[1]]=0});
+ }
+ // 4) 冰块（第4关起）：障碍物，要在它旁边完成一次消除才会碎
+ for(let i=0,tries=0;i<cfg.ice&&tries<80;tries++){
+  const r=Math.floor(Math.random()*ROWS),c=Math.floor(Math.random()*COLS);
+  if(grid[r][c])continue;
+  grid[r][c]=ICE;i++;
+ }
+}
+function startLevel(lv){
+ const cfg=diffFor(lv);
+ level=lv;goal=Math.min(10+lv*3,55);
+ linesDone=0;swapsLeft=cfg.swaps;usedSwap=false;usedReset=false;
+ prefillGrid(lv);
+ refillTray();particles=[];anims=[];drag=null;
+ playing=true;
+ btnSwap.classList.remove("shake");
+ updateHUD();updateSwapLabel();
+ if(lv===4)setTimeout(()=>praise("🧊 新挑战：在冰块旁边消除，就能敲碎它!"),700);
+ else if(lv===3)setTimeout(()=>praise("🌈 新颜色加入啦，看仔细哦!"),700);
+ else if(lv===6)setTimeout(()=>praise("💪 高手模式：糖果更散，动动脑筋!"),700);
+}
+function confetti(overlay){
+ const ems=["🎉","🎊","⭐","💖","🍬","🍭","🌈"];
+ for(let i=0;i<26;i++){
+  const s=document.createElement("span");
+  s.className="confetti";
+  s.textContent=ems[Math.floor(Math.random()*ems.length)];
+  s.style.left=Math.random()*96+"%";
+  s.style.animationDuration=(1.6+Math.random()*1.6)+"s";
+  s.style.animationDelay=(Math.random()*0.7)+"s";
+  overlay.appendChild(s);
+  setTimeout(()=>s.remove(),3600);
+ }
+}
+function completeLevel(){
+ sfx.win();vib([40,60,40,60,80]);
+ const stars=usedReset?1:(usedSwap?2:3);
+ $("winStars").textContent="⭐".repeat(stars)+"☆".repeat(3-stars);
+ $("winTitle").textContent="第 "+level+" 关 过关啦！";
+ const stk=STICKERS[(level-1)%STICKERS.length];
+ $("winSticker").innerHTML=stk[0]+"<small>"+stk[1]+"</small>";
+ if(level>maxPassed){maxPassed=level;localStorage.setItem("cpp_max",String(maxPassed))}
+ updateHUD();
+ showOv(ovWin);confetti(ovWin);
+}
+function renderBook(){
+ const g=$("stickerGrid");g.innerHTML="";
+ STICKERS.forEach((s,i)=>{
+  const d=document.createElement("div");
+  const got=i<maxPassed;
+  d.className="stk"+(got?"":" lock");
+  d.innerHTML=(got?s[0]:"❓")+"<small>"+(got?s[1]:"???")+"</small>";
+  g.appendChild(d);
+ });
+ $("bookInfo").textContent="每过一关得一张，已收集 "+Math.min(maxPassed,STICKERS.length)+" / "+STICKERS.length;
+}
+function evtPos(e){
+ const r=cv.getBoundingClientRect();
+ return {x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height};
+}
+cv.addEventListener("pointerdown",e=>{
+ if(!playing)return;
+ const p=evtPos(e);
+ if(p.y>=trayTop-4){
+  const i=Math.floor(p.x/(W/3));
+  if(i>=0&&i<3&&tray[i]){
+   drag={idx:i,x:p.x,y:p.y,touch:e.pointerType==="touch"};
+   sfx.pick();
+   try{cv.setPointerCapture(e.pointerId)}catch(err){}
+  }
+ }
+ e.preventDefault();
+},{passive:false});
+cv.addEventListener("pointermove",e=>{
+ if(!drag)return;
+ const p=evtPos(e);drag.x=p.x;drag.y=p.y;
+ e.preventDefault();
+},{passive:false});
+cv.addEventListener("pointerup",e=>{
+ if(!drag)return;
+ const t=dropTarget();
+ const idx=drag.idx;
+ drag=null;
+ if(t)placePiece(idx,t.r,t.c);
+ else sfx.bad();
+});
+cv.addEventListener("pointercancel",()=>{drag=null});
+btnSwap.addEventListener("click",()=>{
+ if(!playing||swapsLeft<=0)return;
+ swapsLeft--;usedSwap=true;
+ sfx.swap();refillTray();
+ btnSwap.classList.remove("shake");
+ updateSwapLabel();checkStuck();
+});
+btnSound.addEventListener("click",()=>{
+ muted=!muted;
+ localStorage.setItem("cpp_muted",muted?"1":"0");
+ btnSound.textContent=muted?"🔇":"🔊";
+});
+btnBook.addEventListener("click",()=>{renderBook();showOv(ovBook)});
+$("btnCloseBook").addEventListener("click",()=>hideOv(ovBook));
+$("btnStart").addEventListener("click",()=>{
+ hideOv(ovStart);
+ startLevel(maxPassed+1);
+});
+$("btnRestartAll").addEventListener("click",()=>{
+ maxPassed=0;localStorage.setItem("cpp_max","0");score=0;
+ hideOv(ovStart);startLevel(1);
+});
+$("btnNext").addEventListener("click",()=>{
+ hideOv(ovWin);startLevel(level+1);
+});
+$("btnClearBoard").addEventListener("click",()=>{
+ usedReset=true;
+ prefillGrid(level);
+ refillTray();hideOv(ovDead);
+ playing=true;updateHUD();
+});
+btnSound.textContent=muted?"🔇":"🔊";
+$("startInfo").textContent=maxPassed>0?("上次玩到第 "+maxPassed+" 关，继续挑战第 "+(maxPassed+1)+" 关！"):"每关消够目标糖果数就过关，还能收集贴纸哦！";
+fit();
+window.addEventListener("resize",fit);
+updateHUD();updateSwapLabel();
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
