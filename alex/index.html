@@ -366,12 +366,23 @@ Alex speaks 标准现代白话. 禁用 惟/该等/系/载明/所载/据以. Engl
    Use the SAME pattern id string you would have used to fault him, so the two sides
    line up (e.g. he defers properly → good: ["d7-conclusion-without-evidence"]).
 
+'phrase' is 2-5 words lifted from your 'better' sentence, used to pull up real
+   native speakers saying it (YouGlish). Two constraints, and the second is the one
+   that actually bites:
+     · it must be the teaching point, not filler
+     · 🚨 it must be something people SAY OUT LOUD. Written-report formulas return
+       zero results — "we are unable to assess" has none. Spoken equivalents do:
+       "walk me through", "as far as I know", "subject to", "in line with",
+       "hold off on", "come back to you on". If the teaching point only exists in
+       writing, set phrase to null rather than sending him to an empty page.
+
 OUTPUT — exactly one JSON object, no markdown fence, no other text:
 {"said":"...","break":false,"move":"none|recast|in_scene_reaction|character_reaction|elicitation|direct",
  "in_character":"the character's reply in English, 1-3 sentences",
  "alex_zh":"Alex 的中文，说清为什么，≤3 句；不破戏时为 null",
  "better":"他本该说的完整英文整句；不破戏时为 null",
  "dimension":["D7"],"severity":"high","pattern":"d7-conclusion-without-evidence",
+ "phrase":"2-5 words people actually say aloud；只在书面语里出现就给 null",
  "good":["pattern id he used well this turn，没有就给空数组"]}
 `;
 
@@ -540,7 +551,8 @@ function record(d){
     e.sev = d.severity || e.sev;
     e.state = 'practising';                   // 又错了 → 退回在练
     if (d.better){                            // 留最近 3 句范例
-      e.ex = [{said:d.said, better:d.better, alex:d.alex_zh, on:TODAY()}]
+      e.ex = [{said:d.said, better:d.better, alex:d.alex_zh,
+               phrase:d.phrase || null, on:TODAY()}]
              .concat(e.ex.filter(x => x.better !== d.better)).slice(0, 3);
     }
   }
@@ -798,6 +810,24 @@ function sayQueue(items){
 const esc = s => String(s ?? '').replace(/[&<>"]/g,
   c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
+/* 🎬 视频示范 —— Kevin 最初点名的三件之一。
+   YouGlish 用真人视频里那句话的原声，比 TTS 有用得多。
+   🚨 只对**口语里真会出现**的短语有结果：书面报告的固定说法（we are unable to
+      assess…）返回 0 条，点进去是空页。所以 phrase 由判官挑，挑不出就给 null，
+      这里拿不到就不显示这个键。 */
+function youglish(phrase){
+  if (!phrase) return null;
+  const a = document.createElement('a');
+  a.className = 'play';
+  a.target = '_blank'; a.rel = 'noopener';
+  a.href = 'https://youglish.com/pronounce/' +
+           encodeURIComponent(String(phrase).trim()) + '/english';
+  a.textContent = '🎬 看真人怎么说 “' + phrase + '”';
+  a.style.marginLeft = '8px';
+  a.style.textDecoration = 'none';
+  return a;
+}
+
 /* speak 参数：给这条气泡挂一个可点的播放键。
    iOS 上自动播放经常被静音开关/未解锁挡掉，**手势触发的播放永远能响**，
    所以每条都留一个按钮兜底。 */
@@ -960,6 +990,8 @@ async function render(d){
       b.onclick = () => { b.classList.add('on');
         say(d.better,'en').then(()=>b.classList.remove('on')); };
       box.appendChild(b);
+      const yg = youglish(d.phrase);
+      if (yg) box.appendChild(yg);
       el.appendChild(box);
       el.scrollIntoView({behavior:'smooth', block:'end'});
     }
@@ -1119,7 +1151,10 @@ function showBook(){
       b.className = 'play'; b.textContent = '🔊 听一遍';
       b.onclick = () => { unlockTTS(); b.classList.add('on');
         say(x.better,'en').then(()=>b.classList.remove('on')); };
-      box.appendChild(b); d.appendChild(box);
+      box.appendChild(b);
+      const yg = youglish(x.phrase);
+      if (yg) box.appendChild(yg);
+      d.appendChild(box);
     }
     feed.appendChild(d);
   }
