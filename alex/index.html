@@ -50,6 +50,10 @@ button{font-family:inherit}
   border-radius:16px;padding:4px 12px;font-size:12.5px}
 .play.on{border-color:var(--accent);color:var(--accent)}
 .note{font-size:12px;color:var(--muted);font-style:italic;margin:5px 0}
+#hdr{display:flex;align-items:center;justify-content:space-between;
+  font-size:13px;color:var(--muted);margin:2px 0 12px}
+#hdr button{background:none;border:1px solid var(--line);color:var(--accent);
+  border-radius:20px;padding:5px 14px;font-size:12.5px}
 #bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);
   border-top:1px solid var(--line);padding:14px 14px calc(14px + env(safe-area-inset-bottom));
   text-align:center}
@@ -110,6 +114,7 @@ button{font-family:inherit}
   <div id="err"></div>
   <div class="ctl">
     <button id="dens">陪练模式</button>
+    <button id="book">错题本</button>
     <button id="type">打字</button>
     <button id="diag">自检</button>
     <button id="end">结束</button>
@@ -285,12 +290,20 @@ Alex speaks 标准现代白话. 禁用 惟/该等/系/载明/所载/据以. Engl
    content and intent; change only what needs changing.
    'alex_zh' then explains WHY in ≤3 sentences. Do not repeat the English there.
 
+🚨 ALSO REPORT WHAT HE GOT RIGHT — this is how the 错题本 knows he has learnt something.
+   'good' lists pattern ids he handled WELL this turn, unprompted. Only list a pattern
+   when he actually deployed it — not when he merely avoided the error by saying
+   nothing. An empty list is the normal case; do not pad it.
+   Use the SAME pattern id string you would have used to fault him, so the two sides
+   line up (e.g. he defers properly → good: ["d7-conclusion-without-evidence"]).
+
 OUTPUT — exactly one JSON object, no markdown fence, no other text:
 {"said":"...","break":false,"move":"none|recast|in_scene_reaction|character_reaction|elicitation|direct",
  "in_character":"the character's reply in English, 1-3 sentences",
  "alex_zh":"Alex 的中文，说清为什么，≤3 句；不破戏时为 null",
  "better":"他本该说的完整英文整句；不破戏时为 null",
- "dimension":["D7"],"severity":"high","pattern":"d7-conclusion-without-evidence"}
+ "dimension":["D7"],"severity":"high","pattern":"d7-conclusion-without-evidence",
+ "good":["pattern id he used well this turn，没有就给空数组"]}
 `;
 
 /* ───────── 闸门：纯算术，跟桌面版 alex_gate.py 同一套 ───────── */
@@ -355,6 +368,74 @@ const b64 = blob => new Promise(r => {
 let S = {scn:null, density:3, nSince:99, hist:[], turns:0, breaks:0, key:null};
 
 function loadKey(){ return localStorage.getItem(LS.key) || ''; }
+
+/* ═════════ 错题本 + 打卡（存 localStorage，换手机就没了，这是自用件） ═════════
+
+   掌握状态机，跟桌面版 state_reducer.py 同一套判定，只是信号来源不同：
+     练中 → practising   连续答对够了 → graduated（毕业后不再出现在待练清单里）
+
+   🚨 毕业门槛必须**跨天**。同一次对话里连对两次说明不了什么 ——
+      他可能只是在照抄刚才那句 better。要求 ≥2 次正确使用**且分布在 ≥2 天**，
+      这样才排除得掉当场模仿。这条跟桌面版「cross-session」是同一个意思。      */
+const TODAY = () => new Date().toISOString().slice(0, 10);
+const GRAD_HITS = 2, GRAD_DAYS = 2;
+
+let ST = {book:{}, days:[], turns:0};
+function loadST(){
+  try { ST = JSON.parse(localStorage.getItem(LS.st)) || ST; } catch(_){}
+  ST.book = ST.book || {}; ST.days = ST.days || []; ST.turns = ST.turns || 0;
+}
+function saveST(){
+  try { localStorage.setItem(LS.st, JSON.stringify(ST)); } catch(_){}
+}
+function checkIn(){
+  const d = TODAY();
+  if (!ST.days.includes(d)){ ST.days.push(d); ST.days.sort(); saveST(); }
+}
+/* 连续打卡天数：从今天（或昨天）往回数，断一天就停 */
+function streak(){
+  if (!ST.days.length) return 0;
+  const day = s => Math.floor(new Date(s + 'T00:00:00Z').getTime() / 86400000);
+  const t = day(TODAY()), last = day(ST.days[ST.days.length - 1]);
+  if (t - last > 1) return 0;                 // 昨天也没练，链断了
+  let n = 1;
+  for (let i = ST.days.length - 1; i > 0; i--){
+    if (day(ST.days[i]) - day(ST.days[i-1]) === 1) n++; else break;
+  }
+  return n;
+}
+/* 一轮对话落进错题本。d 是判官返回的那个对象。 */
+function record(d){
+  checkIn();
+  ST.turns++;
+  if (d.break && d.pattern){
+    const e = ST.book[d.pattern] ||= {pat:d.pattern, n:0, hits:0, hitDays:[],
+                                      state:'practising', ex:[], first:TODAY()};
+    e.n++; e.last = TODAY();
+    e.dim = (d.dimension||[]).join('/') || e.dim;
+    e.sev = d.severity || e.sev;
+    e.state = 'practising';                   // 又错了 → 退回在练
+    if (d.better){                            // 留最近 3 句范例
+      e.ex = [{said:d.said, better:d.better, alex:d.alex_zh, on:TODAY()}]
+             .concat(e.ex.filter(x => x.better !== d.better)).slice(0, 3);
+    }
+  }
+  for (const p of (d.good || [])){
+    const e = ST.book[p];
+    if (!e || e.state === 'graduated') continue;   // 没错过的不记，毕业的不再累计
+    e.hits++;
+    if (!e.hitDays.includes(TODAY())) e.hitDays.push(TODAY());
+    if (e.hits >= GRAD_HITS && e.hitDays.length >= GRAD_DAYS){
+      e.state = 'graduated'; e.grad = TODAY();
+    }
+  }
+  saveST();
+}
+/* 待练清单：没毕业的，错得多的排前面 */
+function drilling(){
+  return Object.values(ST.book).filter(e => e.state !== 'graduated')
+               .sort((a,b) => b.n - a.n);
+}
 
 /* ───────── 网络探测：手机到底能连谁 ─────────
    不问 Kevin「你手机能不能连 Google」——页面自己测。
@@ -437,8 +518,11 @@ async function askDeepSeek(said){
   return d;
 }
 
-function buildPrompt(){
+/* 🚨 只此一处 —— 两条后端（Gemini 听音频 / DeepSeek 收文字）共用。
+   之前是两份复制粘贴的，改一处漏一处。tail 是各自多出来的那一句。 */
+function buildPrompt(tail){
   const scn = S.scn, g = gate(S);
+  const drill = drilling().slice(0, 6);
   return [
     RULES, '\n---\nSCENARIO',
     '  你演的角色 : ' + scn.ai,
@@ -446,25 +530,22 @@ function buildPrompt(){
     '  情境       : ' + scn.sit,
     '  目标表达   :\n' + scn.tgt.map(t=>'    - '+t).join('\n'),
     '  常见陷阱   :\n' + scn.traps.map(t=>'    - '+t).join('\n'),
+    // 错题本回灌：不回灌它就只是个日志，不是教学闭环
+    (drill.length ? '\nHIS OPEN 错题本 (already corrected before — if he gets one of\n'
+      + 'these RIGHT unprompted, put its id in "good"; if he repeats it, that is\n'
+      + 'a repeat offence, weigh it heavier):\n'
+      + drill.map(e=>`    - ${e.pat}  (错过 ${e.n} 次, ${e.sev||'?'})`).join('\n')
+      : ''),
     '\n' + g.txt,
     '\nRECENT TURNS\n' + (S.hist.slice(-4).join('\n') || '(第一轮)'),
+    tail || '',
   ].join('\n');
 }
 
 /* ───────── Gemini ───────── */
 async function askGemini(part){
-  const scn = S.scn, g = gate(S);
-  const prompt = [
-    RULES, '\n---\nSCENARIO',
-    '  你演的角色 : ' + scn.ai,
-    '  他是       : ' + scn.you + '，任务：' + scn.task,
-    '  情境       : ' + scn.sit,
-    '  目标表达   :\n' + scn.tgt.map(t=>'    - '+t).join('\n'),
-    '  常见陷阱   :\n' + scn.traps.map(t=>'    - '+t).join('\n'),
-    '\n' + g.txt,
-    '\nRECENT TURNS\n' + (S.hist.slice(-4).join('\n') || '(第一轮)'),
-    '\nThe attached audio is what he just said. Transcribe it into "said", then decide.',
-  ].join('\n');
+  const prompt = buildPrompt(
+    '\nThe attached audio is what he just said. Transcribe it into "said", then decide.');
 
   const r = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
@@ -568,9 +649,16 @@ function bubble(cls, who, txt, extra, speak){
 }
 
 function showList(){
-  $('#list').innerHTML = SCENARIOS.map((s,i)=>
-    `<div class="card" data-i="${i}"><b>${s.lvl}</b>${s.sit}
-     <div class="t">你是 ${s.you}</div></div>`).join('');
+  $('#list').hidden = false;
+  $('#feed').innerHTML = '';
+  const n = drilling().length, s = streak();
+  $('#list').innerHTML =
+    `<div id="hdr">🔥 连续 ${s} 天 · 累计 ${ST.turns} 轮
+       <button id="bookbtn">错题本 ${n ? n : ''}</button></div>` +
+    SCENARIOS.map((s,i)=>
+    `<div class="card" data-i="${i}"><b>${s.lvl}</b>${esc(s.sit)}
+     <div class="t">你是 ${esc(s.you)}</div></div>`).join('');
+  $('#bookbtn').onclick = showBook;
   document.querySelectorAll('.card').forEach(c =>
     c.onclick = () => start(SCENARIOS[+c.dataset.i]));
 }
@@ -698,6 +786,7 @@ async function render(d){
   if (d.in_character) bubble('char','对方', d.in_character, null,
                              [d.in_character, 'en']);
 
+  record(d);                      // 落错题本 + 今天算打卡
   S.turns++;
   S.nSince = d.break ? 0 : S.nSince + 1;
   S.hist.push('LEARNER: ' + d.said);
@@ -816,7 +905,56 @@ $('#end').onclick = () => {
   $('#bar').hidden = true; S.scn = null;
   $('#brief').hidden = true; $('#list').hidden = false;
   $('#sub').textContent = '再选一个场景';
+  showList();                         // 回首页时刷新打卡/错题数
 };
+
+/* ───────── 错题本 ─────────
+   每条给的不是「你错了什么」，而是**当时应该怎么说的那句原话**，带播放键。
+   知道自己错在哪没用，能照念的整句才有用 —— 跟 better 是同一个道理。 */
+function showBook(){
+  const open = drilling(), grad = Object.values(ST.book)
+        .filter(e => e.state === 'graduated');
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = `连续打卡 ${streak()} 天 · 累计 ${ST.turns} 轮`;
+  const feed = $('#feed');
+  feed.innerHTML = '';
+
+  if (!open.length && !grad.length){
+    feed.innerHTML = '<div class="note">还没有错题。练几轮，Alex 打断你的地方会自动记到这里。</div>';
+  }
+  for (const e of open){
+    const d = document.createElement('div');
+    d.className = 'turn alex';
+    d.innerHTML = `<div class="who">${esc(e.pat)}</div>` +
+      `<div class="tags">错过 ${e.n} 次 · ${esc(e.dim||'')} ${esc(e.sev||'')}` +
+      ` · 正确使用 ${e.hits}/${GRAD_HITS} 次，跨 ${e.hitDays.length}/${GRAD_DAYS} 天</div>`;
+    for (const x of e.ex){
+      const box = document.createElement('div');
+      box.className = 'better';
+      box.innerHTML = `<div class="lb">该这么说 · ${esc(x.on)}</div>` +
+                      `<div class="en">${esc(x.better)}</div>` +
+                      (x.alex ? `<div class="tags">${esc(x.alex)}</div>` : '');
+      const b = document.createElement('button');
+      b.className = 'play'; b.textContent = '🔊 听一遍';
+      b.onclick = () => { unlockTTS(); b.classList.add('on');
+        say(x.better,'en').then(()=>b.classList.remove('on')); };
+      box.appendChild(b); d.appendChild(box);
+    }
+    feed.appendChild(d);
+  }
+  if (grad.length){
+    const d = document.createElement('div');
+    d.className = 'note';
+    d.textContent = '已掌握（不再提示）：' + grad.map(e=>e.pat).join('、');
+    feed.appendChild(d);
+  }
+  const back = document.createElement('button');
+  back.className = 'play'; back.style.marginTop = '18px';
+  back.textContent = '← 回场景列表';
+  back.onclick = () => { feed.innerHTML = ''; showList(); };
+  feed.appendChild(back);
+}
+$('#book').onclick = showBook;
 $('#reset').onclick = () => {
   localStorage.removeItem(LS.key);
   location.reload();
@@ -843,6 +981,7 @@ window.addEventListener('resize', syncPad);
 syncPad();
 
 /* ───────── 起步 ───────── */
+loadST();
 S.key = loadKey();
 S.backend = localStorage.getItem(LS.be) || null;
 
