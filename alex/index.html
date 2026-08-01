@@ -455,6 +455,7 @@ OUTPUT — exactly one JSON object, no markdown fence, no other text:
  "better":"他本该说的完整英文整句；不破戏时为 null",
  "dimension":["D7"],"severity":"high","pattern":"d7-conclusion-without-evidence",
  "phrase":"2-5 words people actually say aloud；只在书面语里出现就给 null",
+ "level":"error|polish|fine —— 密度 1 的 PERMIT 下必填，其余情况可省",
  "good":["pattern id he used well this turn，没有就给空数组"]}
 `;
 
@@ -597,13 +598,19 @@ function gate(st){
          这就是他说「只有第一轮给了指导，之后就没了」的机制层原因之一。
      只有确实没问题的句子才不打断。 */
   if (T === 1) return {can:true, txt:
-    'PERMIT: density 1 (每句都纠 / 精修). You MAY break on this turn and on every '+
-    'consecutive turn — the "never two in a row" rule is OFF at this density.\n'+
-    '  may break on high   : true\n  may break on medium : true\n'+
-    '  may break on low    : true\n'+
-    '🚨 But do NOT invent faults. If the utterance is genuinely fine, say so briefly '+
-    'in alex_zh (一句话点出他这次做对了什么，比如「这次 attribution 用对了」) and set '+
-    'break=false. 编造问题比不纠还糟 —— he will stop trusting the corrections.'};
+    'PERMIT: density 1 (每句都纠). Comment on EVERY turn, including consecutive ones '+
+    '— the "never two in a row" rule is OFF here. But grade honestly with "level", '+
+    'and let level decide "break":\n'+
+    '  level="error"  → 真的说错了 / 不专业。break=true，必须给可照念的整句。\n'+
+    '  level="polish" → 说得对，只是还能更精。break=false。alex_zh 先确认他对在哪，'+
+    '再把更好的版本放进 better。**不要说成他错了。**\n'+
+    '  level="fine"   → 就是好的，没有值得说的改进。break=false，better=null，'+
+    'alex_zh 一句话点出他做对了什么。\n'+
+    '🚨 实测抓到过的失败形态：先夸再硬纠 —— alex_zh 开头写「你刚才的表达非常专业」，'+
+    '却仍然 break=true，然后编一个「这里可以进一步强化」出来。\n'+
+    '   如果你发现自己是以肯定开头的，那 level 就是 polish 或 fine，不是 error，'+
+    'break 必须是 false。把对的说成错的，比不纠还糟 —— 之后他会连真的纠错也不信。\n'+
+    '🚨 "fine" 是常见结果，不是失败。别为了显得有用就把 polish 报成 error。'};
   const hi = N >= T - 1, med = N >= T + 1;
   const can = N === 0 ? false : (hi || med);
   return {can, txt:
@@ -1235,10 +1242,27 @@ async function render(d){
     $('#err').textContent = '没听清，再说一次（离麦克风近一点）'; return;
   }
   bubble('you','你', d.said);
-  // 密度 1 时「没问题」也会给一句肯定的话（break=false 但 alex_zh 有内容），
-  // 原来只在 d.break 时渲染，那一档就等于白设了
+  /* 🚨 「错了」和「对，但能更好」必须一眼分得开。
+     实测模型会先夸再硬纠，如果两种长一个样，他会以为自己每句都错，
+     练几轮就不信这些纠错了。所以按 level 打不同的标，polish 也给整句范例。 */
   if (!d.break && d.alex_zh){
-    bubble('alex','Alex', d.alex_zh, '这句没问题');
+    const lv = d.level === 'fine' ? '✅ 这句没问题'
+             : d.level === 'polish' ? '💡 说得对，还能更精' : '✅ 这句没问题';
+    const el = bubble('alex','Alex', d.alex_zh, lv);
+    if (d.level === 'polish' && d.better){
+      const box = document.createElement('div');
+      box.className = 'better';
+      box.innerHTML = '<div class="lb">更精的说法</div>' +
+                      `<div class="en">${esc(d.better)}</div>`;
+      const b = document.createElement('button');
+      b.className = 'play'; b.textContent = '🔊 听一遍';
+      b.onclick = () => { unlockTTS(); b.classList.add('on');
+        say(d.better,'en').then(()=>b.classList.remove('on')); };
+      box.appendChild(b);
+      const yg = youglish(d.phrase);
+      if (yg) box.appendChild(yg);
+      el.appendChild(box);
+    }
   }
   if (d.break && d.alex_zh){
     S.breaks++;
