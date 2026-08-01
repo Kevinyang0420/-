@@ -4,6 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<!-- 加到主屏后的样子。
+     🚨 apple-touch-icon **必须是真的 PNG 文件**：iOS 不认 SVG，data: URI 也不可靠，
+        所以图标单独上传到仓库同目录（由 make_icon.py 生成，见 english_coach/icons/）。
+     🚨 图标不能有透明像素 —— iOS 会把透明处填黑；也别自己画圆角，系统会切 squircle。 -->
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Alex">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#b4552d">
+<link rel="manifest" href="manifest.webmanifest">
 <title>Alex 英语陪练</title>
 <style>
 :root{--bg:#faf9f7;--fg:#1c1a17;--muted:#6b6560;--line:#e0dbd4;--card:#fff;
