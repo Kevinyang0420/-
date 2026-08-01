@@ -15,7 +15,10 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:var(--bg);color:var(--fg);font-size:16px;line-height:1.65;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
-.wrap{max-width:640px;margin:0 auto;padding:16px 14px 190px}
+/* 底部留白由 JS 按底栏实际高度算（底栏会因打字框/自检面板变高，
+   写死数值必然挡住内容 —— Kevin 反馈刷不上去就是这个） */
+.wrap{max-width:640px;margin:0 auto;padding:16px 14px;
+  padding-bottom:var(--barpad,200px)}
 h1{font-size:18px;margin:4px 0 2px}
 .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
 button{font-family:inherit}
@@ -358,7 +361,8 @@ async function detectBackend(){
     S.backend = null;
     box.innerHTML = '❌ 两家都连不上。检查一下手机网络。';
   }
-  localStorage.setItem(LS.be, S.backend || '');
+  // 只在探出结果时才写 —— 写空字符串会让下次开机误判成「没设过」
+  if (S.backend) localStorage.setItem(LS.be, S.backend);
   return S.backend;
 }
 
@@ -470,17 +474,29 @@ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices;
 function pickVoice(lang){
   return VOICES.find(v=>v.lang.replace('_','-').toLowerCase().startsWith(lang)) || null;
 }
+/* 🚨 iOS 上 speechSynthesis 的 onend 经常不触发。原来 await say(...) 等它，
+   Promise 永远不 resolve → send() 的 finally 不执行 → 按钮永久禁用，
+   Kevin 说完第一句就再也按不动了。
+   现在：say 不再阻塞回合（fire-and-forget），并且自带超时兜底。 */
 function say(text, lang){
+  if (!text) return Promise.resolve();
+  const u = new SpeechSynthesisUtterance(text);
+  const v = pickVoice(lang);
+  if (v) u.voice = v;
+  u.lang = lang === 'zh' ? 'zh-CN' : 'en-GB';
+  u.rate = lang === 'zh' ? 1.05 : 0.95;
   return new Promise(res => {
-    if (!text) return res();
-    const u = new SpeechSynthesisUtterance(text);
-    const v = pickVoice(lang);
-    if (v) u.voice = v;
-    u.lang = lang === 'zh' ? 'zh-CN' : 'en-GB';
-    u.rate = lang === 'zh' ? 1.05 : 0.95;
-    u.onend = res; u.onerror = res;
-    speechSynthesis.speak(u);
+    let done = false;
+    const fin = () => { if (!done){ done = true; res(); } };
+    u.onend = fin; u.onerror = fin;
+    // 按字数估个上限，到点无论如何放行（中文约 5 字/秒，英文约 15 字符/秒）
+    setTimeout(fin, Math.min(30000, 2000 + text.length * (lang === 'zh' ? 200 : 70)));
+    try { speechSynthesis.speak(u); } catch(_){ fin(); }
   });
+}
+/* 依次播完，但**不让任何人等它** */
+function sayQueue(items){
+  (async () => { for (const [t, l] of items) await say(t, l); })();
 }
 
 /* ───────── UI ───────── */
@@ -513,13 +529,16 @@ function start(scn){
 }
 
 /* ───────── 录音 ───────── */
-let rec = null, chunks = [], busy = false;
+let rec = null, stream = null, chunks = [], busy = false;
+/* 🚨 iOS 上 MediaRecorder stop 之后不能复用（第二次 start 无声/不触发）。
+   流可以留着，录音器每轮新建。 */
 async function getRec(){
-  if (rec) return rec;
-  const stream = await navigator.mediaDevices.getUserMedia(
-    {audio:{echoCancellation:true, noiseSuppression:true}});
+  if (!stream || !stream.active){
+    stream = await navigator.mediaDevices.getUserMedia(
+      {audio:{echoCancellation:true, noiseSuppression:true}});
+  }
   let mime = '';
-  for (const m of ['audio/webm','audio/mp4','audio/ogg']) {
+  for (const m of ['audio/mp4','audio/webm','audio/ogg']) {
     if (MediaRecorder.isTypeSupported?.(m)) { mime = m; break; }
   }
   rec = mime ? new MediaRecorder(stream,{mimeType:mime}) : new MediaRecorder(stream);
@@ -611,14 +630,20 @@ async function render(d){
   S.hist.push('LEARNER: ' + d.said);
   if (d.in_character) S.hist.push('CHARACTER: ' + d.in_character);
 
-  if (d.break && d.alex_zh) await say(d.alex_zh, 'zh');
-  await say(d.in_character, 'en');
+  // 不 await —— 出声是旁路，不能挡住下一句
+  sayQueue([[d.break ? d.alex_zh : null, 'zh'], [d.in_character, 'en']]
+           .filter(x => x[0]));
 }
 
-$('#mic').addEventListener('pointerdown', down);
+/* 🚨 按下时按钮会放大(transform:scale)，手指很容易落到按钮外面 →
+   pointerleave 触发 → 录音提前中断。用 pointer capture 把这段手势
+   锁在按钮上，就不会再有 leave。 */
+$('#mic').addEventListener('pointerdown', e => {
+  try { e.currentTarget.setPointerCapture(e.pointerId); } catch(_){}
+  down(e);
+});
 $('#mic').addEventListener('pointerup', up);
 $('#mic').addEventListener('pointercancel', up);
-$('#mic').addEventListener('pointerleave', up);
 
 /* ───────── 自检：把「Load failed」拆成能行动的结论 ─────────
    iOS 上 file:// 和 edge://external-file 这类特殊协议会禁掉跨域请求，
@@ -725,21 +750,43 @@ $('#reset').onclick = () => {
 $('#save').onclick = () => {
   const k = $('#key').value.trim();
   if (!k) return;
-  localStorage.setItem(LS.key, k);
-  S.key = k; $('#setup').hidden = true; showList();
+  localStorage.setItem(LS.key, k);          // 立刻落盘，不等探测
+  S.key = k;
+  if (!S.backend) S.backend = 'gemini';     // 探测没回来也先进得去
+  $('#setup').hidden = true;
+  showList();
+  syncPad();
 };
+
+/* 底栏多高，正文就留多少白 —— 加了打字框/自检面板后底栏会变高 */
+function syncPad(){
+  const bar = $('#bar');
+  const h = bar.hidden ? 24 : bar.getBoundingClientRect().height + 24;
+  document.documentElement.style.setProperty('--barpad', h + 'px');
+}
+new ResizeObserver(syncPad).observe($('#bar'));
+window.addEventListener('resize', syncPad);
+syncPad();
 
 /* ───────── 起步 ───────── */
 S.key = loadKey();
 S.backend = localStorage.getItem(LS.be) || null;
-if (S.key && S.backend){
+
+/* 🚨 只要有 key 就直接进，**不拿 backend 当门槛**。
+   原来是 `if (S.key && S.backend)`，但 detectBackend 是异步的：
+   Kevin 手快，key 存下时探测还没回来，backend 被写成空字符串，
+   下次打开又弹设置页 —— 他反馈「每次都要输 key」就是这个竞态。
+   现在：有 key 就用，backend 缺了就在后台补探，探完自动切。 */
+if (S.key){
+  if (!S.backend) S.backend = 'gemini';        // 先按最常见的走
   showList();
-  $('#sub').textContent = (S.backend === 'gemini'
+  $('#sub').textContent = S.backend === 'gemini'
     ? '按住说英语（Gemini 直接听录音）'
-    : '按住说英语（DeepSeek + 手机自带识别）');
+    : '按住说英语（DeepSeek + 手机自带识别）';
+  if (!localStorage.getItem(LS.be)) detectBackend().catch(()=>{});
 } else {
   $('#setup').hidden = false;
-  detectBackend();
+  detectBackend().catch(()=>{});
 }
 </script>
 </body>
