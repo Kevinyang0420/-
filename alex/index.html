@@ -672,11 +672,29 @@ function loadKeys(){
 function saveKeys(o){
   try { localStorage.setItem(LS.key, JSON.stringify(o)); } catch(_){}
 }
-/* 这一趟活该用哪家。need==='audio' 时只有 Gemini 能干。 */
+/* 这一趟活该用哪家。need==='audio' 时只有 Gemini 能干。
+   🚨 文字活**优先 Gemini，不是 DeepSeek** —— 我一开始搞反了。
+      实测出一组听力题：Gemini 约 15s；DeepSeek v4-pro 137s、v4-flash 63s
+      （两个都是推理模型，思考 token 占了七八成）。差 4~9 倍，等太久没法练。
+      所以 DeepSeek 的位置是**额度兜底**：Gemini 六个模型全撞光时接上，
+      正好解决 Kevin 抱怨的「Gemini 总没额度」，而平时不牺牲速度。 */
 function pick(need){
   if (need === 'audio') return S.keys.gemini ? 'gemini' : null;
-  if (S.keys.deepseek) return 'deepseek';       // 文字活优先 DeepSeek，它稳
-  return S.keys.gemini ? 'gemini' : null;
+  if (S.keys.gemini) return 'gemini';
+  return S.keys.deepseek ? 'deepseek' : null;
+}
+/* 文字活统一走这里：Gemini 优先，**只有在额度真的全撞光时**才落到 DeepSeek。
+   其它错误（key 不对、网络）不触发兜底 —— 换一家也一样会错，白等一分钟。 */
+async function textCall(prompt, temp){
+  if (S.keys.gemini){
+    try { return await gemini([{text:prompt}], temp); }
+    catch(e){
+      if (!S.keys.deepseek || !/额度/.test(e.message)) throw e;
+      // 落到 DeepSeek。慢，但总比「今天练不了」强
+    }
+  }
+  if (!S.keys.deepseek) throw new Error('还没有可用的 key');
+  return await deepseek(prompt, temp);
 }
 
 /* ═════════ 错题本 + 打卡（存 localStorage，换手机就没了，这是自用件） ═════════
@@ -812,9 +830,10 @@ async function deepseek(prompt, temp){
        model:'deepseek-v4-pro',
        messages:[{role:'system', content:'严格输出一个 JSON 对象，不要解释、不要围栏。'},
                  {role:'user', content: prompt}],
-       // 🚨 v4-pro 是推理模型，思考 token 也算在 max_tokens 里
-       //    （给 1200 时实测被推理吃光，返回半截 JSON 而 finish_reason 还是 stop）
-       temperature:temp, max_tokens:6000,
+       /* 🚨 v4-pro / v4-flash 都是推理模型，**思考 token 也算在 max_tokens 里**。
+          实测出一组听力题：推理独占 5970~7999，给 6000 直接 finish_reason=length、
+          正文停在半句。给 16000 才完整出得来。 */
+       temperature:temp, max_tokens:16000,
        response_format:{type:'json_object'}})});
   if (!r.ok){
     const t = await r.text().catch(()=> '');
@@ -889,8 +908,7 @@ async function askListen(scn, n){
       'test the same thing twice. Reply with the JSON only.';
     let parsed = null;
     try {
-      parsed = firstJson(pick('text') === 'deepseek' ? await deepseek(p, 0.8)
-                                                      : await gemini([{text:p}], 0.8));
+      parsed = firstJson(await textCall(p, 0.8));
     } catch(e){
       if (/额度|key/.test(e.message)) throw e;   // 这两种再试也没用，直接往上报
     }
@@ -950,8 +968,7 @@ async function screen(items, want){
   for (let round = 0; round < 1; round++){
     let picks = [];
     try {
-      const txt = pick('text') === 'deepseek' ? await deepseek(q, 0.6)
-                                              : await gemini([{text:q}], 0.6);
+      const txt = await textCall(q, 0.6);
       picks = (firstJson(txt) || {}).picks || [];
     } catch(_){ break; }
     if (picks.length !== items.length) continue;
@@ -1306,10 +1323,9 @@ $('#typein').addEventListener('keydown', e => { if (e.key === 'Enter') typedTurn
 
 /* 纯文本走哪家：Gemini 也能只吃文字，不一定要音频 */
 async function askDeepSeekOrGeminiText(said){
-  if (pick('text') === 'deepseek') return askDeepSeek(said);
-  const txt = await gemini([{text: buildPrompt() +
+  const txt = await textCall(buildPrompt() +
     '\n\nHE JUST SAID (already transcribed)\n' + said +
-    '\n\n把这句原样放进 "said" 字段。'}], 0.3);
+    '\n\n把这句原样放进 "said" 字段。', 0.3);
   const d = firstJson(txt);
   if (!d) throw new Error('返回里没有完整的决策 JSON：' + txt.slice(0, 100));
   if (!d.said) d.said = said;
@@ -1412,8 +1428,12 @@ function listenHome(){
 async function beginListen(scn){
   unlockTTS();                       // 借这次点击解锁，否则整块都是哑的
   const f = $('#feed');
-  f.innerHTML = '<div class="note"><span class="dots">Alex 在写题</span>（约十几秒，' +
-                '写好后这一组翻页就不用网络了）</div>';
+  // 别报一个自己做不到的时间：Gemini 约 15 秒，落到 DeepSeek 要一分多钟（它是推理模型）
+  f.innerHTML = '<div class="note"><span class="dots">Alex 在写题</span>（' +
+    (pick('text') === 'deepseek'
+       ? 'DeepSeek 出题慢，要一分多钟，别关页面'
+       : '约十几秒') +
+    '，写好后这一组翻页就不用网络了）</div>';
   try {
     LSN.items = await askListen(scn, 5);
     LSN.i = 0; LSN.right = 0; LSN.scn = scn;
