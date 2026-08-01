@@ -25,7 +25,7 @@ body{font-family:"Comic Sans MS","YouYuan","幼圆","Microsoft YaHei",sans-serif
 .target{display:flex;align-items:center;gap:3px;background:#fff;border-radius:8px;padding:2px 8px;box-shadow:0 2px 4px #0001}
 .target .em{font-size:15px}
 .target .wd{font-size:14px;font-weight:bold;letter-spacing:1px}
-.target .wd .gap{color:#ccc;border-bottom:2px solid #ccc;padding:0 2px}
+.target .wd .gap{display:inline-block;width:14px;height:18px;background:#f0f0f0;border-radius:4px;border-bottom:3px solid #bbb;margin:0 1px}
 .target.done{opacity:.3}
 #scoreLine{width:100%;display:flex;justify-content:space-between;padding:2px 8px;color:#7a5a9a;font-weight:bold;font-size:15px}
 canvas{display:block;border-radius:18px}
@@ -203,11 +203,9 @@ zones=zones.filter(function(zn){return zn.id!==z.id});
 wordsDone++;score+=z.cells.length*20+30;
 sfx.clear(z.cells.length);vib([30,40,30]);
 showWordCard(z.word);addLearnedWord(z.word);
-setTimeout(function(){
 if(zones.length<lvCfg(level).concurrent&&wordsDone<goal)spawnNewWord();
 refreshTray();updateHUD();updateTargets();
 if(wordsDone>=goal){playing=false;setTimeout(completeLevel,900)}else checkStuck()
-},400)
 }
 function showWordCard(wo){
 var d=document.createElement("div");d.className="wordCardFloater";
@@ -235,10 +233,10 @@ ctx.font=Math.round(s*0.42)+"px serif";ctx.textAlign="center";ctx.textBaseline="
 function drawCandy(x,y,s,letter,col,filled,alpha,showHint){
 ctx.save();ctx.globalAlpha=alpha==null?1:alpha;
 if(!filled){
-ctx.setLineDash([4,3]);ctx.strokeStyle=col;ctx.lineWidth=2.5;rr(x+2,y+2,s-4,s-4,s*0.24);ctx.stroke();ctx.setLineDash([]);
-ctx.globalAlpha=(alpha==null?1:alpha)*0.12;ctx.fillStyle=col;rr(x+2,y+2,s-4,s-4,s*0.24);ctx.fill();
+ctx.setLineDash([5,4]);ctx.strokeStyle=col;ctx.lineWidth=3.5;rr(x+2,y+2,s-4,s-4,s*0.24);ctx.stroke();ctx.setLineDash([]);
+ctx.globalAlpha=(alpha==null?1:alpha)*0.22;ctx.fillStyle=col;rr(x+2,y+2,s-4,s-4,s*0.24);ctx.fill();
 ctx.globalAlpha=alpha==null?1:alpha;
-if(showHint){ctx.globalAlpha=(alpha==null?1:alpha)*0.4;ctx.fillStyle=col;ctx.font="bold "+Math.round(s*0.5)+"px 'Comic Sans MS',sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(letter,x+s*0.5,y+s*0.5);ctx.globalAlpha=alpha==null?1:alpha}
+if(showHint){ctx.globalAlpha=(alpha==null?1:alpha)*0.55;ctx.fillStyle=col;ctx.font="bold "+Math.round(s*0.52)+"px 'Comic Sans MS',sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(letter,x+s*0.5,y+s*0.5);ctx.globalAlpha=alpha==null?1:alpha}
 }else{
 var colD=shade(col,-30),colL=shade(col,45);var g=ctx.createLinearGradient(0,y,0,y+s);g.addColorStop(0,colL);g.addColorStop(0.35,col);g.addColorStop(1,colD);
 rr(x+1,y+1,s-2,s-2,s*0.26);ctx.fillStyle=g;ctx.fill();
@@ -280,10 +278,10 @@ cell.f=true;tray[idx]=null;hintStep=0;
 var z=zones.find(function(zn){return zn.id===cell.z});
 if(z){var zc=z.cells.find(function(cc){return cc.r===r&&cc.c===c});if(zc)zc.f=true;
 sfx.place();vib(12);score+=5;
-if(checkZone(z)){clearZone(z)}else{refillTray();updateHUD();updateTargets();checkStuck()}
-}else{refillTray()}
+if(checkZone(z)){clearZone(z)}else{refreshTray();updateHUD();updateTargets();checkStuck()}
+}else{refreshTray()}
 }
-function checkStuck(){if(anyTrayUseful())return;playing=false;sfx.dead();$("btnHint").classList.remove("shake");showOv($("ovDead"))}
+function checkStuck(){if(anyTrayUseful())return;refreshTray();if(anyTrayUseful())return;playing=false;sfx.dead();$("btnHint").classList.remove("shake");showOv($("ovDead"))}
 function useHint(){
 if(!playing||hintsLeft<=0)return;hintsLeft--;usedHint=true;hintStep++;
 var gaps=getGaps();if(!gaps.length){updateHintLabel();return}
@@ -303,7 +301,7 @@ scoreEl.textContent="分数 "+score;wordCount.textContent="📚 单词 "+learned
 function updateTargets(){
 var el=$("targets");el.innerHTML="";
 zones.forEach(function(z){var d=document.createElement("div");d.className="target"+(checkZone(z)?" done":"");
-var w=z.word.w,html="";for(var i=0;i<w.length;i++){var cell=z.cells[i];html+=cell.f?w[i]:'<span class="gap">_</span>'}
+var w=z.word.w,html="";for(var i=0;i<w.length;i++){var cell=z.cells[i];html+=cell.f?w[i]:'<span class="gap">&nbsp;</span>'}
 d.innerHTML='<span class="em">'+z.word.e+'</span><span class="wd">'+html+'</span>';el.appendChild(d)})
 }
 function showOv(o){o.classList.remove("hidden")}function hideOv(o){o.classList.add("hidden")}
