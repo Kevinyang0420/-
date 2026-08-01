@@ -137,8 +137,70 @@ button{font-family:inherit}
 
 <script>
 const $ = s => document.querySelector(s);
-const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state'};
-const MODEL = 'gemini-flash-latest';
+const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_model'};
+
+/* 🚨 Gemini 免费额度是 **每天 × 每个模型** 分开算的
+   （错误里写得很清楚：GenerateRequestsPerDayPerProjectPerModel-FreeTier）。
+   而 gemini-flash-latest 的日限只有 **20 次** —— 一轮对话 1 次，练二十句就撞墙。
+   2026-08-01 实测：flash-latest / 3.6-flash / 2.0-flash 全 429 时，
+   3.5-flash / 3-flash-preview / 3.1-flash-lite / 3.5-flash-lite 仍然通。
+   所以换个模型就是一个全新的桶 → 撞到 429 就顺着这条链往下走，
+   绝不该让他看到「额度用完了明天再来」。
+   排序：质量优先，lite 垫底；3-flash-preview 实测 9s 偏慢，放 lite 之前但靠后。 */
+const MODELS = ['gemini-3.5-flash', 'gemini-flash-latest', 'gemini-3.6-flash',
+                'gemini-3-flash-preview', 'gemini-3.1-flash-lite',
+                'gemini-3.5-flash-lite'];
+/* 记住今天走通的那个，别每轮都从头把用尽的模型再撞一遍（那纯是白等）。
+   跨天要清掉 —— 额度是按天重置的。 */
+let MI = 0;
+function loadModel(){
+  try {
+    const s = JSON.parse(localStorage.getItem(LS.mdl) || '{}');
+    if (s.day === TODAY() && typeof s.i === 'number' && s.i < MODELS.length) MI = s.i;
+  } catch(_){}
+}
+function saveModel(){
+  try { localStorage.setItem(LS.mdl, JSON.stringify({day:TODAY(), i:MI})); } catch(_){}
+}
+
+/* 所有 Gemini 调用都走这里：撞 429/配额就换下一个模型重试。
+   parts 是 contents[0].parts。 */
+async function gemini(parts, temp){
+  let lastErr = null;
+  for (let n = 0; n < MODELS.length; n++){
+    const m = MODELS[(MI + n) % MODELS.length];
+    let r;
+    try {
+      r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,
+        {method:'POST',
+         headers:{'Content-Type':'application/json','x-goog-api-key':S.key},
+         body: JSON.stringify({contents:[{role:'user', parts}],
+           // 这些模型即使不开 thinking 也会把预算烧在内部推理上：
+           // 给太少会 finishReason=MAX_TOKENS 且 content 全空。
+           generationConfig:{temperature:temp, maxOutputTokens:8192,
+                             responseMimeType:'application/json'}})});
+    } catch(e){ lastErr = e; continue; }        // 网络层错误，换一个再试
+
+    if (r.ok){
+      MI = (MI + n) % MODELS.length; saveModel();
+      const j = await r.json();
+      return (j.candidates?.[0]?.content?.parts || []).map(p=>p.text||'').join('');
+    }
+    const t = await r.text().catch(()=> '');
+    if (r.status === 429 || /quota|RESOURCE_EXHAUSTED/i.test(t)){
+      lastErr = new Error('quota'); continue;   // 这个模型今天用完了，换下一个
+    }
+    if (r.status === 401 || r.status === 403 ||
+        (r.status === 400 && /API key|api_key/i.test(t)))
+      throw new Error('key 不对或已失效，回首页点「换 key」重设');
+    if (r.status === 400){ lastErr = new Error('400'); continue; }  // 可能是这个模型不收音频
+    throw new Error('HTTP ' + r.status + ' — ' + (t.slice(0,90) || '没有更多信息'));
+  }
+  throw new Error(lastErr && lastErr.message === 'quota'
+    ? '今天这个 key 的免费额度全部用完了（' + MODELS.length + ' 个模型都试过）。明天会自动重置。'
+    : '所有模型都调不通：' + (lastErr ? lastErr.message : '未知'));
+}
 
 /* ───────── 场景卡（取自 Kevin 真实的普华 FDD 报告） ───────── */
 const SCENARIOS = [
@@ -591,7 +653,7 @@ async function probe(url){
 async function detectBackend(){
   const box = $('#probe');
   const [g, d] = await Promise.all([
-    probe('https://generativelanguage.googleapis.com/v1beta/models/'+MODEL+':generateContent'),
+    probe('https://generativelanguage.googleapis.com/v1beta/models/'+MODELS[0]+':generateContent'),
     probe('https://api.deepseek.com/chat/completions'),
   ]);
   if (g){
@@ -628,25 +690,33 @@ function listenOnce(){
 }
 
 /* ───────── DeepSeek（文本判官） ───────── */
-async function askDeepSeek(said){
+/* DeepSeek 也收口到一处，跟 gemini() 对称 */
+async function deepseek(prompt, temp){
   const r = await fetch('https://api.deepseek.com/chat/completions',
     {method:'POST', headers:{'Content-Type':'application/json',
                              'Authorization':'Bearer ' + S.key},
      body: JSON.stringify({
        model:'deepseek-v4-pro',
        messages:[{role:'system', content:'严格输出一个 JSON 对象，不要解释、不要围栏。'},
-                 {role:'user', content: buildPrompt() +
-                   '\n\nHE JUST SAID (already transcribed)\n' + said +
-                   '\n\n把这句原样放进 "said" 字段。'}],
-       temperature:0.3, max_tokens:3000,
+                 {role:'user', content: prompt}],
+       // 🚨 v4-pro 是推理模型，思考 token 也算在 max_tokens 里
+       //    （给 1200 时实测被推理吃光，返回半截 JSON 而 finish_reason 还是 stop）
+       temperature:temp, max_tokens:6000,
        response_format:{type:'json_object'}})});
   if (!r.ok){
-    const t = await r.text();
+    const t = await r.text().catch(()=> '');
     if (r.status === 401) throw new Error('DeepSeek key 不对，点「换 key」重设');
+    if (r.status === 429) throw new Error('DeepSeek 限流了，等一会再试');
     throw new Error('HTTP ' + r.status + ' ' + t.slice(0,120));
   }
   const j = await r.json();
-  const txt = j.choices?.[0]?.message?.content || '';
+  return j.choices?.[0]?.message?.content || '';
+}
+
+async function askDeepSeek(said){
+  const txt = await deepseek(buildPrompt() +
+    '\n\nHE JUST SAID (already transcribed)\n' + said +
+    '\n\n把这句原样放进 "said" 字段。', 0.3);
   const m = txt.match(/\{[\s\S]*\}/);
   if (!m) throw new Error('返回里没有决策 JSON');
   const d = JSON.parse(m[0]);
@@ -683,29 +753,10 @@ async function askGemini(part){
   const prompt = buildPrompt(
     '\nThe attached audio is what he just said. Transcribe it into "said", then decide.');
 
-  const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-    {method:'POST', headers:{'Content-Type':'application/json','x-goog-api-key':S.key},
-     body: JSON.stringify({
-       contents:[{role:'user', parts:[
-         {text: prompt},
-         {inline_data:{mime_type: part.mime, data: await b64(part.blob)}}
-       ]}],
-       // 🚨 这个模型即使不开 thinkingConfig 也会把输出预算烧在内部推理上：
-       //    实测给 50 token 时 finishReason=MAX_TOKENS、content 全空。
-       //    决策 JSON 含中文 alex_zh，更吃 token，所以给足余量。
-       generationConfig:{temperature:0.3, maxOutputTokens:8192,
-                         responseMimeType:'application/json'}
-     })});
-  if (!r.ok) {
-    const t = await r.text();
-    if (r.status === 429) throw new Error('Gemini 免费额度用完了，等一会再试');
-    if (r.status === 400 && /API key/i.test(t)) throw new Error('key 不对，点「换 key」重设');
-    throw new Error('HTTP ' + r.status + ' ' + t.slice(0,120));
-  }
-  const j = await r.json();
-  const parts = j.candidates?.[0]?.content?.parts || [];
-  const txt = parts.map(p=>p.text||'').join('');
+  const txt = await gemini([
+    {text: prompt},
+    {inline_data:{mime_type: part.mime, data: await b64(part.blob)}}
+  ], 0.3);
   const m = txt.match(/\{[\s\S]*\}/);
   if (!m) throw new Error('返回里没有决策 JSON：' + txt.slice(0,100));
   return JSON.parse(m[0]);
@@ -719,34 +770,8 @@ async function askListen(scn, n){
     '\n  他的身份 : ' + scn.you +
     '\n---\nWrite ' + n + ' items. Vary what each one tests — do not test the ' +
     'same thing twice. Reply with the JSON only.';
-  const body = S.backend === 'deepseek'
-    ? ['https://api.deepseek.com/chat/completions',
-       {method:'POST', headers:{'Content-Type':'application/json',
-                                'Authorization':'Bearer ' + S.key},
-        body: JSON.stringify({model:'deepseek-v4-pro',
-          messages:[{role:'system',content:'严格输出一个 JSON 对象。'},
-                    {role:'user',content:p}],
-          temperature:0.8, max_tokens:6000,
-          response_format:{type:'json_object'}})}]
-    : [`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-       {method:'POST', headers:{'Content-Type':'application/json','x-goog-api-key':S.key},
-        body: JSON.stringify({contents:[{role:'user',parts:[{text:p}]}],
-          generationConfig:{temperature:0.8, maxOutputTokens:8192,
-                            responseMimeType:'application/json'}})}];
-  const r = await fetch(body[0], body[1]);
-  if (!r.ok){
-    // 「HTTP 400」等于没说 —— 报清楚是哪一环、下一步点哪
-    const t = await r.text().catch(()=> '');
-    if (r.status === 429) throw new Error('免费额度用完了，等几分钟再试');
-    if (r.status === 401 || r.status === 403 ||
-        (r.status === 400 && /API key|api_key/i.test(t)))
-      throw new Error('key 不对或已失效，回首页点「换 key」重设');
-    throw new Error('HTTP ' + r.status + ' — ' + (t.slice(0,90) || '没有更多信息'));
-  }
-  const j = await r.json();
-  const txt = S.backend === 'deepseek'
-    ? (j.choices?.[0]?.message?.content || '')
-    : (j.candidates?.[0]?.content?.parts || []).map(x=>x.text||'').join('');
+  const txt = S.backend === 'deepseek' ? await deepseek(p, 0.8)
+                                       : await gemini([{text:p}], 0.8);
   const m = txt.match(/\{[\s\S]*\}/);
   if (!m) throw new Error('返回里没有题目 JSON');
   const items = (JSON.parse(m[0]).items || []).filter(
@@ -1088,18 +1113,9 @@ $('#typein').addEventListener('keydown', e => { if (e.key === 'Enter') typedTurn
 /* 纯文本走哪家：Gemini 也能只吃文字，不一定要音频 */
 async function askDeepSeekOrGeminiText(said){
   if (S.backend === 'deepseek') return askDeepSeek(said);
-  const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-    {method:'POST', headers:{'Content-Type':'application/json','x-goog-api-key':S.key},
-     body: JSON.stringify({
-       contents:[{role:'user', parts:[{text: buildPrompt() +
-         '\n\nHE JUST SAID (already transcribed)\n' + said +
-         '\n\n把这句原样放进 "said" 字段。'}]}],
-       generationConfig:{temperature:0.3, maxOutputTokens:8192,
-                         responseMimeType:'application/json'}})});
-  if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (await r.text()).slice(0,120));
-  const j = await r.json();
-  const txt = (j.candidates?.[0]?.content?.parts || []).map(p=>p.text||'').join('');
+  const txt = await gemini([{text: buildPrompt() +
+    '\n\nHE JUST SAID (already transcribed)\n' + said +
+    '\n\n把这句原样放进 "said" 字段。'}], 0.3);
   const m = txt.match(/\{[\s\S]*\}/);
   if (!m) throw new Error('返回里没有决策 JSON');
   const d = JSON.parse(m[0]);
@@ -1356,6 +1372,7 @@ syncPad();
 
 /* ───────── 起步 ───────── */
 loadST();
+loadModel();                    // 恢复今天走通的那个模型，别重撞已用尽的
 S.key = loadKey();
 S.backend = localStorage.getItem(LS.be) || null;
 
