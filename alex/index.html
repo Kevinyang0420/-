@@ -723,8 +723,13 @@ async function askListen(scn, n){
                             responseMimeType:'application/json'}})}];
   const r = await fetch(body[0], body[1]);
   if (!r.ok){
-    if (r.status === 429) throw new Error('免费额度用完了，等一会再试');
-    throw new Error('HTTP ' + r.status);
+    // 「HTTP 400」等于没说 —— 报清楚是哪一环、下一步点哪
+    const t = await r.text().catch(()=> '');
+    if (r.status === 429) throw new Error('免费额度用完了，等几分钟再试');
+    if (r.status === 401 || r.status === 403 ||
+        (r.status === 400 && /API key|api_key/i.test(t)))
+      throw new Error('key 不对或已失效，回首页点「换 key」重设');
+    throw new Error('HTTP ' + r.status + ' — ' + (t.slice(0,90) || '没有更多信息'));
   }
   const j = await r.json();
   const txt = S.backend === 'deepseek'
