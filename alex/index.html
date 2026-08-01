@@ -19,14 +19,53 @@ body{margin:0;background:var(--bg);color:var(--fg);font-size:16px;line-height:1.
    写死数值必然挡住内容 —— Kevin 反馈刷不上去就是这个） */
 .wrap{max-width:640px;margin:0 auto;padding:16px 14px;
   padding-bottom:var(--barpad,200px)}
-h1{font-size:18px;margin:4px 0 2px}
-.sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+h1{font-size:19px;margin:2px 0 2px;letter-spacing:-.2px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:14px}
 button{font-family:inherit}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
-  padding:13px 15px;margin:9px 0;cursor:pointer}
-.card:active{border-color:var(--accent)}
-.card b{color:var(--accent);margin-right:6px}
-.card .t{font-size:13px;color:var(--muted);margin-top:3px}
+
+/* ═══ 首页 ═══
+   原来是 18 张卡直接铺开、每张把整段情境当正文 —— 一堵墙，Kevin 说「看上去还是很丑」。
+   改动三处：①统计条不折行 ②分类做成横向 tab，一次只看一组 ③卡片建立层级：
+   标题=对手方是谁（短），情境降为两行截断的副文，难度用点不用星堆在句首。 */
+.stats{display:flex;align-items:center;gap:8px;margin:0 0 14px;
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:10px 12px}
+.stats .n{font-size:19px;font-weight:800;line-height:1.1;letter-spacing:-.5px}
+.stats .l{font-size:10.5px;color:var(--muted);letter-spacing:.3px}
+.stats .col{min-width:52px}
+.stats .sp{flex:1}
+.stats button{background:var(--bg);border:1px solid var(--line);color:var(--fg);
+  border-radius:10px;padding:7px 10px;font-size:12.5px;font-weight:600;
+  white-space:nowrap}
+.stats button:active{border-color:var(--accent);color:var(--accent)}
+.stats .dot{display:inline-block;min-width:16px;height:16px;line-height:16px;
+  background:var(--accent);color:#fff;border-radius:8px;font-size:10.5px;
+  margin-left:4px;padding:0 4px;font-weight:700}
+
+.tabs{display:flex;gap:6px;margin:0 0 12px;overflow-x:auto;
+  scrollbar-width:none;-ms-overflow-style:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;background:none;border:1px solid var(--line);
+  color:var(--muted);border-radius:20px;padding:7px 15px;font-size:13.5px;
+  font-weight:600;white-space:nowrap}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:13px 15px;margin:8px 0;cursor:pointer;
+  transition:transform .06s,border-color .12s}
+.card:active{border-color:var(--accent);transform:scale(.985)}
+.card .hd{display:flex;align-items:center;gap:8px}
+.card .role{font-size:15.5px;font-weight:700;line-height:1.35;flex:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .sit{font-size:13px;color:var(--muted);line-height:1.55;margin-top:5px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden}
+.card .t{font-size:12px;color:var(--muted);margin-top:6px}
+/* 难度用点，不用一串星号挤在句首 */
+.lvl{flex:0 0 auto;display:flex;gap:3px}
+.lvl i{width:6px;height:6px;border-radius:50%;background:var(--line);display:block}
+.lvl i.f{background:var(--accent)}
+.done{flex:0 0 auto;font-size:11px;color:var(--ok);font-weight:700}
 #brief{background:var(--soft);border-radius:12px;padding:13px 15px;margin-bottom:12px;font-size:14px}
 #brief .k{color:var(--muted);font-size:12px;margin-top:6px}
 .turn{margin:12px 0}
@@ -55,10 +94,6 @@ button{font-family:inherit}
   padding:6px 2px;font-weight:600}
 .grp{font-size:12px;letter-spacing:.5px;color:var(--muted);font-weight:700;
   margin:20px 0 4px;padding-bottom:5px;border-bottom:1px solid var(--line)}
-#hdr{display:flex;align-items:center;justify-content:space-between;
-  font-size:13px;color:var(--muted);margin:2px 0 12px}
-#hdr button{background:none;border:1px solid var(--line);color:var(--accent);
-  border-radius:20px;padding:5px 14px;font-size:12.5px;margin-left:6px}
 #bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);
   border-top:1px solid var(--line);padding:14px 14px calc(14px + env(safe-area-inset-bottom));
   text-align:center}
@@ -213,49 +248,49 @@ async function gemini(parts, temp){
 
 /* ───────── 场景卡（取自 Kevin 真实的普华 FDD 报告） ───────── */
 const SCENARIOS = [
- {id:'dd_odd_payable', lvl:'★☆☆',
+ {id:'dd_odd_payable', t:'问清一笔陌生应付款', lvl:'★☆☆',
   sit:'试算表里有一笔 Rmb367k 应付给一家装修设计公司。你不知道这是什么。',
   ai:'Target 财务经理。知道这笔账，但要看你怎么问。',
   you:'FDD advisor', task:'问清性质、是否还有类似的、要不要调整',
   tgt:['We noted a payable of Rmb367k due to…','Could you walk me through…','We understand that…'],
   traps:['is this a related party? —— 这种问法在英语里是封闭式质问，开放式的 Could you walk me through… 才是这个场合的常用说法','问「还有没有同类」时说成 Are there others like this?，偏口语；书面/正式场合用 Are there any similar balances?','用 problem/issue 这种万能词描述它']},
- {id:'dd_missing_financials', lvl:'★☆☆',
+ {id:'dd_missing_financials', t:'说明资料缺口和影响', lvl:'★☆☆',
   sit:'Hekang 集团的 FY18 和 9M19 财报始终没拿到，你无法对它的表现发表任何意见。今天要跟买方项目负责人说明。',
   ai:'买方 deal lead。只关心这会不会影响估值，不接受含糊。',
   you:'FDD advisor', task:'说清缺什么、因此不能说什么、对交易的影响',
   tgt:['We did not receive the FY18 and 9M19 financials of…, therefore we cannot comment on its performance.','Due to limitation of information, we are unable to verify…'],
   traps:['含糊带过（we have limited information on…）','说成是自己的失误','we don\'t have it 太随意；正式说法是 We have not been provided with… / We did not receive…，语域差一档']},
- {id:'dd_sgna_decline', lvl:'★★☆',
+ {id:'dd_sgna_decline', t:'追问费用下降的原因', lvl:'★★☆',
   sit:'9M19 的 SG&A 年化后比 FY18 下降。你问原因，CFO 答：规模效应 + 人效提升。听起来完全合理——但你还没验过任何一项。',
   ai:'Target CFO。对这个解释很有信心因为他真信。被追问会觉得你听不懂业务，语速快，会用业务术语绕你。',
   you:'FDD advisor', task:'追问到能判断这个解释站不站得住，但不能让他觉得你在怀疑他编数字',
   tgt:['Management explained that the decrease came from…','Could you help me understand how…','Based on our understanding of… and discussion with management'],
   traps:['直接说 I don\'t believe that / that doesn\'t make sense','management is right / that\'s clear 是把转述说成了自己的判断；转述别人的话英语里用 Management represented that… / Management attributes… to…','why 连发，像审讯']},
- {id:'dd_litigation_detail', lvl:'★★☆',
+ {id:'dd_litigation_detail', t:'第三次催同一份明细', lvl:'★★☆',
   sit:'三宗诉讼的损失已计提在 G&A，但管理层一直没给你明细。你已经要过两次了。',
   ai:'Target CFO。不是不给，是「在整理」「法务还没回」。第三次被问会有点烦。',
   you:'FDD advisor', task:'第三次要资料，要到，且把「要过但没给」在报告里归位',
   tgt:['The management explained that… but have not provided us with detail information.','Yet as of the date of this report, we have not been provided with the requested information.'],
   traps:['说 you didn\'t give me —— 指责，英文里很硬','说 we didn\'t get it —— 把责任揽到自己身上，报告里读起来像你没干活','不敢第三次要']},
- {id:'dd_spares_policy', lvl:'★★☆',
+ {id:'dd_spares_policy', t:'跟财务总监辩会计政策', lvl:'★★☆',
   sit:'管理层说 recip spares 在用于替换现有部件时才转入 PPE。政策本身可讨论，但会影响多个期间的折旧和利润。',
   ai:'Target 财务总监。技术扎实，会跟你辩会计准则。',
   you:'FDD advisor', task:'弄清政策、评估影响，把分歧讲成口径差异而不是「你做错了」',
   tgt:['Management represented that "recip spares" will be transferred into PPE when…','As such, the D&A expenses may be understated.'],
   traps:['that\'s not correct 在英语里是很硬的否定；同样意思常说 our reading of the standard is different / we would look at it differently','把管理层的政策描述写成 We note（L0 说成 L3）','只说政策，不说对数字的影响']},
- {id:'dd_delivery_timing', lvl:'★★★',
+ {id:'dd_delivery_timing', t:'顶着压力说给不出数', lvl:'★★★',
   sit:'你怀疑车辆收入的确认时点有问题，但管理层根本没保存交付时点的任何记录。影响量化不出来。买方在等你的数。',
   ai:'买方 deal lead。要一个数，会说 just give me your best estimate，有 deadline 压力。',
   you:'FDD advisor', task:'说清为什么给不出这个数、以及你打算在报告里怎么写',
   tgt:['We were not able to quantify the impact as management did not keep any information on the timing of delivery.','We are unable to assess… pending…','We have not been provided with details of the recognition basis.'],
   traps:['🚨 roughly 5 to 8 million 这种给区间的说法，和 We are unable to quantify… pending… 是两种完全不同的语气，别混用','用 hedge 代替 defer（the impact may be around…）—— 判断根本做不出来，不是做出来了但不确定','说 we couldn\'t find it，把管理层没记录说成你没找到']},
- {id:'dd_entertainment', lvl:'★★★',
+ {id:'dd_entertainment', t:'问敏感费用不带指控', lvl:'★★★',
   sit:'Gaopan 的招待费占收入比例明显高于同业。在中国语境下这话题极其敏感——可能只是业务需要，也可能不是。你必须问。',
   ai:'Target CFO。这问题一出来他立刻警觉，会反问你「你想说什么」。',
   you:'FDD advisor', task:'问清构成和审批流程，全程不暗示任何不当行为',
   tgt:['We note that in FY18 and FY19, … entertainment expenses accounted for…','Could you help me understand how these are approved and recorded?'],
   traps:['🚨 用词分量：bribery / improper / unusual 在英语里都带指控色彩，中性的问法是 how these are approved and recorded','why is it so high —— 预设了「不该这么高」','问得太软：maybe you could sort of tell me a bit about… 这种堆叠限定词在英语里显得没底气，Could you help me understand… 才是常用的中性问法']},
- {id:'dd_forecast_challenge', lvl:'★★★',
+ {id:'dd_forecast_challenge', t:'挑战一个激进的预测', lvl:'★★★',
   sit:'Jinchen 的 FY20F 间接人工和其他经营费用，居然低于 FY19F——在收入还要增长的前提下。这个预测很激进。',
   ai:'Target CFO。预测是他做的，他会为它辩护。',
   you:'FDD advisor', task:'挑战这个假设、拿到支撑依据，但不说「你的预测是错的」',
@@ -265,37 +300,37 @@ const SCENARIOS = [
  /* ═══ 审计（HK，HKSA 口径） ═══
     跟 DD 的语言差别在：DD 是给买方做判断，审计是**跟客户争一个必须落地的结论**，
     对方有真实的抗拒动机（covenant、KPI、面子），所以压力型对话更多。 */
- {id:'aud_pbc_overdue', lvl:'★☆☆',
+ {id:'aud_pbc_overdue', t:'催资料并要一个日期', lvl:'★☆☆',
   sit:'审计资料清单发出去三周，还有 11 项没回。field work 下周一开始。客户财务经理每次都说「在弄了」。',
   ai:'客户财务经理。人不坏，是真的忙、资料也真的乱；被逼急了会开始跟你比谁更委屈。',
   you:'审计经理', task:'拿到一个具体的日期承诺，同时说清楚拿不到的后果，别把关系搞僵',
   tgt:['We have not yet received 11 of the items on our request list.','Could we agree a date for these? Our fieldwork starts on Monday.','Without these we would not be able to complete our testing on…'],
   traps:['you keep saying that —— 翻旧账，对方立刻进入防守','说得太软（whenever you have time）—— 等于没要','只说自己的 deadline，不说对他有什么影响']},
- {id:'aud_adjustment_pushback', lvl:'★★☆',
+ {id:'aud_adjustment_pushback', t:'守住一笔重分类调整', lvl:'★★☆',
   sit:'你要提一笔重分类调整，把一笔长期借款调进流动负债。客户 CFO 明确不想调——这会让流动比率跌破银行 covenant。',
   ai:'客户 CFO。他知道你是对的，但他要面对银行。会试着说服你「这是实质重于形式」。',
   you:'审计经理', task:'守住结论，但把话说成准则要求而不是你个人的判断',
   tgt:['Under HKAS 1, the loan should be classified as current because the covenant was breached at year end.','This is not a matter of judgement in our view.','We understand the implication for the ratio; the classification is nonetheless required.'],
   traps:['🚨 I think / in my opinion 是主观语气；同一句用 Under HKAS 1 … must be … 是客观语气，两者分量差很远','对方一施压就改口说 we can look at it again（没打算改却这么说，后面更难收）','只说 the standard requires it 略生硬；英语里常配一句 We do appreciate the implication for… 来软化，但不改变结论']},
- {id:'aud_confirmation_diff', lvl:'★★☆',
+ {id:'aud_confirmation_diff', t:'追一笔函证差异', lvl:'★★☆',
   sit:'银行函证回函比账面少 HK$1.2M。客户说是「年底在途的一笔款」，但拿不出水单。',
   ai:'客户会计主管。他相信自己的说法，也确实可能是对的；他觉得你在小题大做。',
   you:'审计现场负责人', task:'问出这笔差异到底是什么、要到能验证它的东西，别先下结论',
   tgt:['The confirmation shows a balance of…, which is HK$1.2M lower than the ledger.','Could you show me the supporting documents for the reconciling item?','Until we see the bank advice we are unable to clear this difference.'],
   traps:['🚨 用 discrepancy / you did not record it 这种带指控味的说法','管理层口头解释就当解决（把 L0 当成 L3）','说 it is just a timing difference —— 那是你还没验证的假设']},
- {id:'aud_going_concern', lvl:'★★★',
+ {id:'aud_going_concern', t:'开口谈持续经营', lvl:'★★★',
   sit:'客户流动负债超过流动资产 HK$8M，母公司口头说会支持。你需要一份书面的支持函，而这个话题一提，对方就会紧张。',
   ai:'客户董事总经理。听到 going concern 会觉得你在唱衰他的公司，语气会变硬。',
   you:'审计经理', task:'说清你需要什么、为什么需要，把它讲成程序而不是对公司的判断',
   tgt:['The financial statements are prepared on a going concern basis, and we need to document the basis for that.','We would need a letter of financial support from the parent, together with evidence of its ability to provide it.','This is a standard procedure where net current liabilities exist; it does not itself imply a concern about the business.'],
   traps:['🚨 让对方听成「我认为你要倒了」—— 措辞没把程序和判断分开','口头 vs 书面在英语里有固定说法：they said they would support us 太口语，正式场合说 a letter of financial support / written confirmation','为了不得罪人把话说得太模糊，最后要不到那封信']},
- {id:'aud_component_auditor', lvl:'★★☆',
+ {id:'aud_component_auditor', t:'跨所推进度电话会', lvl:'★★☆',
   sit:'马来西亚子公司的 component auditor 比 group 的时间表落后两周，回的 group reporting package 里三个必填项是空的。电话会议上你要推进度。',
   ai:'马来西亚事务所的经理。英语流利但口音重，会用「我们这边流程不一样」解释延迟。',
   you:'group audit 经理', task:'确认哪几项缺、什么时候给、以及他那边到底卡在哪',
   tgt:['Three sections of the reporting package have been left blank — sections 4, 7 and 9.','Can you confirm when we can expect the completed package?','Is the delay on your side or are you waiting on the local management?'],
   traps:['🚨 没听懂却说 yes yes 过去了 —— 越洋电话里最贵的错','用 you are late 开场，对方之后什么都不会主动告诉你','when can you send it 只问时间；问原因的地道说法是 is the delay on your side, or are you waiting on…']},
- {id:'aud_partner_briefing', lvl:'★★★',
+ {id:'aud_partner_briefing', t:'五分钟向合伙人汇报', lvl:'★★★',
   sit:'合伙人在两个会议之间给你 5 分钟。你要汇报一个收入确认时点的问题，涉及金额 HK$4.3M，你还没完全查清。',
   ai:'审计合伙人。时间极紧，只想听结论和你要他做什么决定；会打断、会追问金额和风险。',
   you:'审计经理', task:'先给结论再给依据，说清哪部分还没定，明确你要他决定什么',
@@ -304,25 +339,25 @@ const SCENARIOS = [
 
  /* ═══ 通用职场 ═══
     不涉专业术语，压力全在人际分寸上；语域（register）失当在这里最容易发生。 */
- {id:'wk_bad_news', lvl:'★☆☆',
+ {id:'wk_bad_news', t:'告诉老板要延期', lvl:'★☆☆',
   sit:'你负责的那份分析要延期三天。老板下周三要拿它去见客户。你现在必须告诉他。',
   ai:'你的老板。不喜欢意外，但只要你有方案就不会发火；会追问「那客户会议怎么办」。',
   you:'团队负责人', task:'尽早说、说清原因、带着方案来，别让他替你想办法',
   tgt:['I want to flag early that the analysis will slip by three days.','The reason is…, and here is what I propose.','For Wednesday I can give you the headline numbers, with the full deck by Friday.'],
   traps:['🚨 铺垫太久才说出事实 —— 老板全程在猜有多糟','把原因说成别人的错','只报告问题不带方案']},
- {id:'wk_push_back_deadline', lvl:'★★☆',
+ {id:'wk_push_back_deadline', t:'拒绝不合理的时间表', lvl:'★★☆',
   sit:'另一个部门的总监请你三天内出一份要两周工作量的东西，而且说得很客气、很难拒绝。',
   ai:'兄弟部门总监。位阶比你高一级，态度友好但很坚持，会说 just a rough version 来压范围。',
   you:'团队负责人', task:'拒绝这个时间表但保住关系，给出你真能做到的替代方案',
   tgt:['Three days is not realistic for the full scope, but here is what I can do.','If we narrow it to the top three entities, I could get you something by Thursday.','I would rather give you something reliable than something fast.'],
   traps:['🚨 说 I will try —— 既没拒绝也没答应，最后两边都难看','直接说 no 不给替代方案','答应下来指望后面再谈 —— 到时候就只剩你一个人扛']},
- {id:'wk_cross_team_ask', lvl:'★★☆',
+ {id:'wk_cross_team_ask', t:'跨部门要一次资源', lvl:'★★☆',
   sit:'你需要数据团队跑一个抽取。他们没有义务帮你，也没排你的优先级，而你只有这一次开口的机会。',
   ai:'数据团队负责人。手上一堆活，会先问「这是谁批的」和「多久要」。',
   you:'跨部门发起人', task:'把请求说得小而具体，讲清为什么值得插队，给对方留退路',
   tgt:['I need one extraction — three fields, one table, FY24 only.','It feeds the board pack, which is why I am asking for it this week.','If this week is not possible, when would be?'],
   traps:['🚨 请求说得太大太模糊，对方只能回「排期吧」','用紧急压人（this is urgent）而不说为什么','不给对方任何拒绝的余地，下次就没人接你电话了']},
- {id:'wk_intro_credentials', lvl:'★☆☆',
+ {id:'wk_intro_credentials', t:'三十秒自我介绍', lvl:'★☆☆',
   sit:'新项目 kickoff，客户方六个人在线。轮到你自我介绍，大约 30 秒。',
   ai:'客户方 CFO。会在你介绍完之后立刻问一句具体的，看你是不是真懂。',
   you:'项目负责人', task:'30 秒说清你是谁、做过什么相关的、这个项目上你负责哪块',
@@ -1216,29 +1251,65 @@ function bubble(cls, who, txt, extra, speak){
   return d;
 }
 
+/* 分类按 id 前缀推导 —— 卡片只有一处真源，不另维护一张分类表 */
+const GRP = [['dd_','尽调'], ['aud_','审计'], ['wk_','职场']];
+let TAB = 0;
+
+/* 难度：★☆☆ 这种字符串转成实心点的个数 */
+function lvlDots(lv){
+  const n = (String(lv).match(/★/g) || []).length || 1;
+  return '<span class="lvl">' +
+    [1,2,3].map(i => `<i class="${i <= n ? 'f' : ''}"></i>`).join('') + '</span>';
+}
+/* 这一场练过几次 —— 从对话历史里数，让首页有「进度感」 */
+function practised(id){
+  return loadSess().filter(x => x.scn === id && x.turns && x.turns.length).length;
+}
+
 function showList(){
   $('#list').hidden = false;
   $('#feed').innerHTML = '';
-  const n = drilling().length, s = streak();
-  // 分组按 id 前缀 —— 卡片只有一处真源，不另维护一张分类表
-  const GRP = [['dd_','尽调 Due Diligence'], ['aud_','审计'], ['wk_','通用职场']];
-  const cards = SCENARIOS.map((sc,i)=>[sc, i]);
+  const n = drilling().length;
   $('#list').innerHTML =
-    `<div id="hdr">🔥 连续 ${s} 天 · 累计 ${ST.turns} 轮
-       <span><button id="lsnbtn">🎧 听力</button>
+    `<div class="stats">
+       <div class="col"><div class="n">${streak()}</div><div class="l">连续天数</div></div>
+       <div class="col"><div class="n">${ST.turns}</div><div class="l">累计轮数</div></div>
+       <div class="sp"></div>
+       <button id="lsnbtn">🎧 听力</button>
        <button id="histbtn">历史</button>
-       <button id="bookbtn">错题本 ${n ? n : ''}</button></span></div>` +
-    GRP.map(([pre, name]) => {
-      const g = cards.filter(([sc]) => sc.id.startsWith(pre));
-      return g.length ? `<div class="grp">${name} · ${g.length} 个</div>` +
-        g.map(([sc,i]) =>
-          `<div class="card" data-i="${i}"><b>${sc.lvl}</b>${esc(sc.sit)}
-           <div class="t">你是 ${esc(sc.you)}</div></div>`).join('') : '';
-    }).join('');
+       <button id="bookbtn">错题本${n ? `<span class="dot">${n}</span>` : ''}</button>
+     </div>
+     <div class="tabs">` +
+    GRP.map(([pre,name],i) =>
+      `<button data-tab="${i}" class="${i===TAB?'on':''}">${name} ${
+        SCENARIOS.filter(s=>s.id.startsWith(pre)).length}</button>`).join('') +
+    `</div><div id="cards"></div>`;
   $('#bookbtn').onclick = () => go(showBook, '错题本');
   $('#lsnbtn').onclick  = () => go(listenHome, '听力');
   $('#histbtn').onclick = () => go(showHistory, '历史');
-  document.querySelectorAll('.card').forEach(c =>
+  document.querySelectorAll('.tabs button').forEach(b =>
+    b.onclick = () => { TAB = +b.dataset.tab; showList(); });
+  paintCards();
+}
+
+function paintCards(){
+  const pre = GRP[TAB][0];
+  $('#cards').innerHTML = SCENARIOS
+    .map((sc,i) => [sc,i])
+    .filter(([sc]) => sc.id.startsWith(pre))
+    .map(([sc,i]) => {
+      const done = practised(sc.id);
+      return `<div class="card" data-i="${i}">
+        <div class="hd">
+          <span class="role">${esc(sc.t || sc.ai.split(/[。，,.]/)[0])}</span>
+          ${done ? `<span class="done">练过 ${done}</span>` : ''}
+          ${lvlDots(sc.lvl)}
+        </div>
+        <div class="sit">${esc(sc.sit)}</div>
+        <div class="t">你是 ${esc(sc.you)}</div>
+      </div>`;
+    }).join('');
+  document.querySelectorAll('#cards .card').forEach(c =>
     c.onclick = () => start(SCENARIOS[+c.dataset.i]));
 }
 
