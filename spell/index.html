@@ -159,7 +159,7 @@ particles.push({x:px,y:py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,g:0.12,life:1,co
 function getGaps(){var out=[];zones.forEach(function(z){z.cells.forEach(function(c){if(!c.f)out.push({l:c.l,col:z.word.col,z:z.id,r:c.r,cc:c.c})})});return out}
 function makeTrayLetter(){var g=getGaps();if(!g.length)return null;var p=g[Math.floor(Math.random()*g.length)];return{letter:p.l,col:p.col}}
 function refillTray(){for(var i=0;i<3;i++)if(!tray[i])tray[i]=makeTrayLetter()}
-function refreshTray(){var gaps=getGaps();tray=tray.map(function(t){if(t&&gaps.some(function(g){return g.l===t.letter}))return t;if(!gaps.length)return t;var g=gaps[Math.floor(Math.random()*gaps.length)];return{letter:g.l,col:g.col}});for(var i=0;i<3;i++)if(!tray[i])tray[i]=makeTrayLetter()}
+function refreshTray(){var gaps=getGaps();if(!gaps.length){tray=[null,null,null];return}var seen={};var uniq=[];gaps.forEach(function(g){if(!seen[g.l]){seen[g.l]=1;uniq.push(g)}});shuffle(uniq);var nt=[];for(var i=0;i<Math.min(3,uniq.length);i++){nt.push({letter:uniq[i].l,col:uniq[i].col})}for(var i=nt.length;i<3;i++){var g=gaps[Math.floor(Math.random()*gaps.length)];nt.push({letter:g.l,col:g.col})}tray=nt}
 function anyTrayUseful(){var gaps=getGaps();return tray.some(function(t){return t&&gaps.some(function(g){return g.l===t.letter})})}
 function tryPlaceWord(wo){
 var w=wo.w,len=w.length;
@@ -307,7 +307,7 @@ d.innerHTML='<span class="em">'+z.word.e+'</span><span class="wd">'+html+'</span
 function showOv(o){o.classList.remove("hidden")}function hideOv(o){o.classList.add("hidden")}
 function startLevel(lv){
 var cfg=lvCfg(lv);level=lv;goal=cfg.target;wordsDone=0;hintsLeft=cfg.hints;usedHint=false;hintStep=0;
-prefillBoard(lv);refillTray();particles=[];anims=[];drag=null;playing=true;
+prefillBoard(lv);refreshTray();particles=[];anims=[];drag=null;playing=true;
 $("btnHint").classList.remove("shake");updateHUD();updateHintLabel();updateTargets();
 if(lv===5)setTimeout(function(){praise("🧊 新挑战：在冰块旁边拼词可以敲碎它!")},700)
 }
