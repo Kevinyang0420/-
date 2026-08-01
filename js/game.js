@@ -6,6 +6,7 @@ var G_MOVE = 4.8, G_ACCEL = 1.2, G_FRICTION = 0.9, G_MAX_FALL = 24;
 
 // 普通怪兽被武器命中时的 [得分, 尘土颜色]（命中即消灭）
 var SHOOTABLE = {
+  spiderling: [50, '#cbb3c8'],
   poopbeast: [100, '#7a4a22'],
   snotbeast: [150, '#a8c84a'],
   sockbeast: [150, '#7a8aaa'],
@@ -397,7 +398,7 @@ Game.prototype.updatePlaying = function (dt) {
     if (e.type === 'poopbeast') return e.alive || e.deadT < 0.4;
     if (e.type === 'snotbeast' || e.type === 'sockbeast') return e.alive || e.deadT < 0.4;
     if (e.type === 'hornbeast' || e.type === 'rollbeast' || e.type === 'snotworm') return e.alive || e.deadT < 0.4;
-    if (e.type === 'spiderboss' || e.type === 'timedevourer' || e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'gianttimedevourer') return e.alive || e.fallT < 2.6;
+    if (e.type === 'spiderboss' || e.type === 'timedevourer' || e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'spiderling' || e.type === 'gianttimedevourer') return e.alive || e.fallT < 2.6;
     if (e.type === 'bullet' || e.type === 'fireball' || e.type === 'missile') return e.alive;
     if (e.type === 'devilfire') return e.alive;
     if (e.type === 'atombomb' || e.type === 'hydrogenbomb' || e.type === 'explosion') return e.alive;
@@ -609,7 +610,9 @@ Game.prototype._updateEntity = function (e, dt, f, s) {
   } else if (e.type === 'spiderboss') {
     this._updateSpider(e, dt, f, s);
   } else if (e.type === 'midspider') {
-    this._updateSpider(e, dt, f, s);
+    this._updateMidspider(e, dt, f, s);
+  } else if (e.type === 'spiderling') {
+    this._updateSpiderling(e, dt, f, s);
   } else if (e.type === 'timedevourer') {
     this._updateTimeDevourer(e, dt, f, s);
   } else if (e.type === 'gianttimedevourer') {
@@ -777,10 +780,116 @@ Game.prototype._updateSpider = function (e, dt, f, s) {
       if (Math.abs(pcx - ecx) < 950) e.windupT = 0.55;
       e.pounceT = 5.2;
     }
+    // 大蜘蛛兽专属：在玩家脚下布一张减速网（吐网陷阱），限制走位
+    if (e.type === 'spiderboss') {
+      e.snareT -= dt;
+      if (e.snareT <= 0) {
+        if (Math.abs(pcx - ecx) < 1100) {
+          this.entities.push(Entities.slime(p.x + p.w / 2 - 45, s.groundY - 14, 4));
+          Sfx.webSpit();
+          e.snareT = 6.5;
+        } else { e.snareT = 0.5; }
+      }
+    }
   }
 };
 
-// 魔鬼兽：悬浮逼近玩家；吐火焰弹；周期性俯冲砸地
+// 终极蜘蛛怪（骷髅头）：独立 AI —— 三连蛛丝、扑击落地震波、召唤幼蛛
+Game.prototype._updateMidspider = function (e, dt, f, s) {
+  if (!e.alive) { e.fallT += dt; return; }
+  if (e.hurtT > 0) e.hurtT = Math.max(0, e.hurtT - dt);
+  var p = this.player;
+  var pcx = p.x + p.w / 2;
+  var ecx = e.x + e.w / 2;
+  if (e.pouncing) {
+    e.vy += s.gravity * f;
+    if (e.vy > 20) e.vy = 20;
+    e.x += e.vx * f;
+    e.y += e.vy * f;
+    if (e.x < 20) { e.x = 20; e.vx = Math.abs(e.vx) * 0.5; }
+    if (e.x + e.w > s.width - 20) { e.x = s.width - 20 - e.w; e.vx = -Math.abs(e.vx) * 0.5; }
+    if (e.vy > 0 && e.y + e.h >= s.groundY) {
+      e.y = s.groundY - e.h;
+      e.vy = 0; e.vx = 0;
+      e.pouncing = false;
+      this.shake = Math.max(this.shake, 12);
+      this._dust(ecx, s.groundY, 16, '#cbb3c8');
+      Sfx.shockCast();
+      // 落地震波：贴地两道冲击波（区别于大蜘蛛兽的普通扑击）
+      this.entities.push(Entities.timeshock(ecx, s.groundY, -1));
+      this.entities.push(Entities.timeshock(ecx, s.groundY, 1));
+    }
+  } else if (e.windupT > 0) {
+    e.windupT -= dt;
+    if (e.windupT <= 0) {
+      e.pouncing = true;
+      e.vy = -13.5;
+      e.vx = Util.clamp((pcx - ecx) * 0.016, -6, 6);
+    }
+  } else {
+    e.dir = pcx < ecx ? -1 : 1;
+    e.x += e.dir * 1.05 * f;
+    if (e.x < e.x1) e.x = e.x1;
+    if (e.x > e.x2) e.x = e.x2;
+    if (e.x < 20) e.x = 20;
+    if (e.x + e.w > s.width - 20) e.x = s.width - 20 - e.w;
+    e.anim += dt * 6;
+    // 单发蛛丝
+    e.spitT -= dt;
+    if (e.spitT <= 0) {
+      if (Math.abs(pcx - ecx) < 1100) {
+        this.entities.push(Entities.webball(ecx - 13 + e.dir * 30, e.y + 40, e.dir));
+        Sfx.webSpit();
+        e.spitT = 2.6;
+      } else { e.spitT = 0.5; }
+    }
+    // 三连蛛丝（扇形齐射）
+    e.volleyT -= dt;
+    if (e.volleyT <= 0) {
+      if (Math.abs(pcx - ecx) < 1100) {
+        for (var vi = -1; vi <= 1; vi++) {
+          var wb = Entities.webball(ecx - 13 + e.dir * 30, e.y + 40, e.dir);
+          wb.vx = e.dir * (2.8 + vi * 0.9);
+          wb.vy = -5.5 + vi * 1.6;
+          this.entities.push(wb);
+        }
+        Sfx.webSpit();
+        e.volleyT = 4.2;
+      } else { e.volleyT = 0.5; }
+    }
+    // 扑击（落地震波）
+    e.pounceT -= dt;
+    if (e.pounceT <= 0) {
+      if (Math.abs(pcx - ecx) < 950) e.windupT = 0.55;
+      e.pounceT = 5.6;
+    }
+    // 召唤幼蛛
+    e.summonT -= dt;
+    if (e.summonT <= 0) {
+      for (var si = 0; si < 2; si++) {
+        var sx = Util.clamp(ecx + (si === 0 ? -1 : 1) * 70, 40, s.width - 80);
+        this.entities.push(Entities.spiderling(sx, s.groundY, e.dir));
+      }
+      Sfx.webSpit();
+      this._dust(ecx, e.y + 60, 8, '#cbb3c8');
+      e.summonT = 9.0;
+    }
+  }
+};
+
+// 幼蛛：贴地朝玩家爬；可踩扁/打掉，碰到扣 1 心
+Game.prototype._updateSpiderling = function (e, dt, f, s) {
+  if (!e.alive) { e.deadT += dt; return; }
+  if (e.hurtT > 0) e.hurtT = Math.max(0, e.hurtT - dt);
+  var p = this.player;
+  e.dir = (p.x + p.w / 2) < (e.x + e.w / 2) ? -1 : 1;
+  e.x += e.dir * e.speed * f;
+  if (e.x < 20) e.x = 20;
+  if (e.x + e.w > s.width - 20) e.x = s.width - 20 - e.w;
+  e.anim += dt * 6;
+};
+
+// 魔鬼兽：悬浮逼近；吐火焰弹、俯冲砸地，外加三向火环与火墙（水平扇射）
 Game.prototype._updateDevil = function (e, dt, f, s) {
   if (!e.alive) { e.fallT += dt; return; }
   if (e.hurtT > 0) e.hurtT = Math.max(0, e.hurtT - dt);
@@ -838,48 +947,100 @@ Game.prototype._updateDevil = function (e, dt, f, s) {
     if (Math.abs(pcx - ecx) < 950) e.windupT = 0.5;
     e.diveT = 4.5;
   }
+  // 三向火环（左、右、朝玩家各一发）
+  e.ringT -= dt;
+  if (e.ringT <= 0) {
+    if (Math.abs(pcx - ecx) < 1100) {
+      this.entities.push(Entities.devilfire(ecx - 13, e.y + 60, -1));
+      this.entities.push(Entities.devilfire(ecx - 13, e.y + 60, 1));
+      this.entities.push(Entities.devilfire(ecx - 13 + e.dir * 30, e.y + 60, e.dir));
+      Sfx.webSpit();
+      e.ringT = 5.5;
+    } else { e.ringT = 0.5; }
+  }
+  // 火墙（朝玩家方向、不同高度三连，形成一道火墙）
+  e.wallT -= dt;
+  if (e.wallT <= 0) {
+    if (Math.abs(pcx - ecx) < 1100) {
+      for (var wi = 0; wi < 3; wi++) {
+        this.entities.push(Entities.devilfire(ecx - 13 + e.dir * 30, e.y + 30 + wi * 30, e.dir));
+      }
+      Sfx.webSpit();
+      e.wallT = 7.0;
+    } else { e.wallT = 0.5; }
+  }
 };
 
-// 大螃蟹兽：横向爬行逼近；举巨钳砸地震出震荡波（跳起可躲）；往外扔泡泡
+// 大螃蟹兽：横向爬行逼近；巨钳砸地震波、泡泡扇、钳击横扫、缩壳地面冲撞
 Game.prototype._updateCrab = function (e, dt, f, s) {
   if (!e.alive) { e.fallT += dt; return; }
   if (e.hurtT > 0) e.hurtT = Math.max(0, e.hurtT - dt);
   var p = this.player;
   var pcx = p.x + p.w / 2;
   var ecx = e.x + e.w / 2;
-  e.anim += dt * 5;
-  if (e.windupT > 0) {
-    e.windupT -= dt;
-    if (e.windupT <= 0) {
-      // 巨钳砸地：贴地两道震荡波
-      this.entities.push(Entities.timeshock(ecx, s.groundY, -1));
-      this.entities.push(Entities.timeshock(ecx, s.groundY, 1));
-      Sfx.shockCast();
-      this.shake = Math.max(this.shake, 8);
-      e.smashT = 3.2;
-    }
+
+  // 缩壳冲撞：预警后高速横冲，玩家需跳起或让开
+  if (e.charging > 0) {
+    e.charging -= dt;
+    e.x += e.chargeDir * 9.0 * f;
+    if (e.x < 20) { e.x = 20; e.charging = 0; }
+    if (e.x + e.w > s.width - 20) { e.x = s.width - 20 - e.w; e.charging = 0; }
+    this._dust(e.x + (e.chargeDir > 0 ? e.w : 0), e.y + e.h - 16, 1, '#d98');
     return;
   }
+  if (e.chargeWindup > 0) {
+    e.chargeWindup -= dt;
+    if (e.chargeWindup <= 0) { e.charging = 0.6; e.chargeDir = e.dir; }
+    return;
+  }
+
+  e.anim += dt * 5;
   e.dir = pcx < ecx ? -1 : 1;
   e.x += e.dir * 0.85 * f;
   if (e.x < e.x1) e.x = e.x1;
   if (e.x > e.x2) e.x = e.x2;
   if (e.x < 20) e.x = 20;
   if (e.x + e.w > s.width - 20) e.x = s.width - 20 - e.w;
-  // 巨钳砸地（预警后发动）
+
+  // 巨钳砸地（贴地两道震荡波，朝两侧扩散，立刻发动）
   e.smashT -= dt;
   if (e.smashT <= 0) {
-    if (Math.abs(pcx - ecx) < 1000) e.windupT = 0.55;
-    else e.smashT = 0.6;
+    if (Math.abs(pcx - ecx) < 1000) {
+      this.entities.push(Entities.timeshock(ecx, s.groundY, -1));
+      this.entities.push(Entities.timeshock(ecx, s.groundY, 1));
+      Sfx.shockCast();
+      this.shake = Math.max(this.shake, 8);
+      e.smashT = 3.2;
+    } else { e.smashT = 0.6; }
   }
-  // 扔泡泡
+  // 泡泡扇（三连，向上扇形）
   e.bubbleT -= dt;
   if (e.bubbleT <= 0) {
     if (Math.abs(pcx - ecx) < 1100) {
-      this.entities.push(Entities.webball(ecx + e.dir * 40, e.y + 30, e.dir));
+      for (var bi = -1; bi <= 1; bi++) {
+        var bub = Entities.webball(ecx + e.dir * 40, e.y + 30, e.dir);
+        bub.vx = e.dir * (2.4 + bi * 0.8);
+        bub.vy = -7.5 + bi * 1.4;
+        this.entities.push(bub);
+      }
       Sfx.webSpit();
-      e.bubbleT = 2.2;
+      e.bubbleT = 3.0;
     } else { e.bubbleT = 0.5; }
+  }
+  // 钳击横扫（单道快速冲击波，朝玩家方向）
+  e.sweepT -= dt;
+  if (e.sweepT <= 0) {
+    if (Math.abs(pcx - ecx) < 1100) {
+      this.entities.push(Entities.timeshock(ecx, s.groundY, e.dir));
+      Sfx.shockCast();
+      e.sweepT = 4.5;
+    } else { e.sweepT = 0.6; }
+  }
+  // 缩壳冲撞（攒冷却后预警）
+  e.chargeT -= dt;
+  if (e.chargeT <= 0) {
+    if (Math.abs(pcx - ecx) < 700) e.chargeWindup = 0.5;
+    else e.chargeT = 0.6;
   }
 };
 
@@ -1130,7 +1291,7 @@ Game.prototype._bossDie = function (e) {
   this.bossClearName = e.type === 'spiderboss' ? '大蜘蛛兽'
     : e.type === 'devilbeast' ? '魔鬼兽'
     : e.type === 'crabbeast' ? '大螃蟹兽'
-    : e.type === 'midspider' ? '中级蜘蛛兽'
+    : e.type === 'midspider' ? '终极蜘蛛怪'
     : '光头强';
   Sfx.bossDie();
 };
@@ -1384,6 +1545,12 @@ Game.prototype._collisions = function (s) {
       if (this._isStomp(e)) {
         this._doStomp(e, 150, '#7a8aaa');
       } else if (Util.aabb(px, py, pw, ph, e.x + 6, e.y + 6, e.w - 12, e.h - 9)) {
+        this.hitPlayer();
+      }
+    } else if (e.type === 'spiderling' && e.alive) {
+      if (this._isStomp(e)) {
+        this._doStomp(e, 50, '#cbb3c8');
+      } else if (Util.aabb(px, py, pw, ph, e.x + 4, e.y + 4, e.w - 8, e.h - 6)) {
         this.hitPlayer();
       }
     } else if (e.type === 'snotball' && e.alive) {
@@ -1676,6 +1843,7 @@ Game.prototype._drawScene = function (ctx) {
     else if (e2.type === 'timeshock' && e2.alive) Render.timeshock(ctx, e2, this.camera);
     else if (e2.type === 'spiderboss') Render.spiderboss(ctx, e2, this.camera, this.time);
     else if (e2.type === 'midspider') Render.midspider(ctx, e2, this.camera, this.time);
+    else if (e2.type === 'spiderling') Render.spiderling(ctx, e2, this.camera, this.time);
     else if (e2.type === 'timedevourer') Render.timedevourer(ctx, e2, this.camera, this.time);
     else if (e2.type === 'gianttimedevourer') {
       // 巨化光头强：用缩放包裹原 timedevourer 画法，脚底为缩放中心

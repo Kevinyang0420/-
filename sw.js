@@ -1,7 +1,7 @@
 // Service Worker — 杨御风：火星远征
 // 页面 HTML 采用「网络优先」(每次拉取最新，离线才用缓存)，
 // 静态资源(js/图片)采用「缓存优先」(快速启动 + 离线可玩)。
-const CACHE = 'mars-warrior-v4';
+const CACHE = 'mars-warrior-v5';
 
 const ASSETS = [
   './',

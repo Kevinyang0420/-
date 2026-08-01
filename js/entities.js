@@ -147,8 +147,17 @@ var Entities = {
       type: 'spiderboss', x: x - 110, y: groundY - 150, vx: 0, vy: 0, w: 220, h: 150,
       hp: 60, maxHp: 60, dir: 1,
       x1: x - 430, x2: x + 430,               // 活动范围（只守自己的地盘）
-      anim: 0, spitT: 2.2, pounceT: 5.0, windupT: 0, pouncing: false,
+      anim: 0, spitT: 2.2, pounceT: 5.0, windupT: 0, pouncing: false, snareT: 6.0,
       hurtT: 0, fallT: 0, alive: true
+    };
+  },
+
+  // 幼蛛：终极蜘蛛怪召唤的小型蜘蛛，贴地朝玩家爬；可踩扁/打掉，碰到扣 1 心
+  spiderling: function (x, groundY, dir) {
+    return {
+      type: 'spiderling', x: x, y: groundY - 30, vx: 0, vy: 0, w: 46, h: 30,
+      dir: dir || 1, speed: 2.1, anim: Util.rand(0, 6.28),
+      alive: true, deadT: 0
     };
   },
 
@@ -286,7 +295,7 @@ var Entities = {
   // ===== 航天版新增 Boss =====
 
   // 魔鬼兽（第 4 幕 Boss）：红色飞行小恶魔，头顶双角、身后尖尾、一对小蝙蝠翅、大嘴獠牙。
-  // 会悬浮逼近玩家、吐火焰弹，并周期性俯冲砸地。
+  // 悬浮逼近、吐火焰弹、俯冲砸地，还能放三向火环与火墙（水平扇射）。
   devilbeast: function (x, groundY) {
     return {
       type: 'devilbeast', x: x - 65, y: groundY - 210, vx: 0, vy: 0, w: 130, h: 130,
@@ -294,31 +303,33 @@ var Entities = {
       x1: x - 420, x2: x + 420,
       baseY: groundY - 210,              // 悬浮基准高度（脚底离地约 80px）
       anim: 0, fireT: 1.8, diveT: 4.5, windupT: 0, diving: false,
+      ringT: 5.5, wallT: 7.0,
       hurtT: 0, fallT: 0, alive: true
     };
   },
 
   // 大螃蟹兽（第 6 幕 Boss）：红色大螃蟹，八条短腿，两只大钳，其中一只特别巨大。
-  // 会横向爬行逼近玩家、举起巨钳砸地震出震荡波（跳起可躲）、并往外扔泡泡。
+  // 横向爬行逼近；举巨钳砸地震波（跳起躲）、泡泡扇、钳击横扫、缩壳地面冲撞。
   crabbeast: function (x, groundY) {
     return {
       type: 'crabbeast', x: x - 100, y: groundY - 120, vx: 0, vy: 0, w: 200, h: 120,
       hp: 80, maxHp: 80, dir: -1,
       x1: x - 400, x2: x + 400,
-      anim: 0, smashT: 3.0, bubbleT: 2.0, windupT: 0,
+      anim: 0, smashT: 3.0, bubbleT: 2.6, sweepT: 5.0, windupT: 0,
+      chargeT: 8.0, charging: 0, chargeDir: 1, chargeWindup: 0,
       hurtT: 0, fallT: 0, alive: true
     };
   },
 
-  // 中级蜘蛛兽（骷髅头蜘蛛兽，第 7 幕 Boss）：比大蜘蛛兽更大，头胸部是一颗骷髅头。
-  // 行为与大蜘蛛兽一致（复用 _updateSpider）：爬行逼近、吐骷髅弹、蓄力后扑击。
+  // 终极蜘蛛怪（骷髅头蜘蛛兽，第 7 幕 Boss）：比大蜘蛛兽更大，头胸部是一颗骷髅头。
+  // 招式与大蜘蛛兽完全不同（独立 _updateMidspider）：三连蛛丝、扑击落地震波、召唤幼蛛。
   midspider: function (x, groundY) {
     return {
       type: 'midspider', x: x - 110, y: groundY - 170, vx: 0, vy: 0, w: 220, h: 170,
       hp: 90, maxHp: 90, dir: 1,
       x1: x - 440, x2: x + 440,
-      anim: 0, spitT: 2.2, pounceT: 4.8, windupT: 0, pouncing: false,
-      hurtT: 0, fallT: 0, alive: true
+      anim: 0, spitT: 2.4, volleyT: 3.6, pounceT: 4.6, windupT: 0, pouncing: false,
+      summonT: 7.0, hurtT: 0, fallT: 0, alive: true
     };
   },
 

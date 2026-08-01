@@ -1274,6 +1274,44 @@ var Render = {
     }
   },
 
+  // ===== 幼蛛（小蜘蛛；贴地爬、可踩扁）=====
+  spiderling: function (ctx, e, cam, t) {
+    var x = e.x - cam.x, y = e.y;
+    var cx = x + e.w / 2;
+    var dir = e.dir || 1;
+    ctx.save();
+    if (!e.alive) {
+      var fall = Math.min(1, e.deadT / 0.6);
+      ctx.translate(cx, y + e.h);
+      ctx.rotate(dir * fall * 0.5);
+      ctx.globalAlpha = Math.max(0.3, 1 - e.deadT);
+      ctx.translate(-cx, -(y + e.h));
+    }
+    var dead = !e.alive;
+    // 六条腿
+    ctx.strokeStyle = '#5a5a4a'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    for (var side = -1; side <= 1; side += 2) {
+      for (var li = 0; li < 3; li++) {
+        var hipX = cx + side * (24 + li * 12);
+        var hipY = y + 46 + li * 5;
+        var sw = dead ? 0 : Math.sin(e.anim + li * 1.4 + (side > 0 ? Math.PI : 0)) * 6;
+        var kneeX = hipX + side * 18;
+        var kneeY = hipY - 18 + sw * 0.4;
+        var footX = hipX + side * 30;
+        var footY = y + e.h - 4 - Math.max(0, sw) * 0.5;
+        ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(kneeX, kneeY); ctx.lineTo(footX, footY); ctx.stroke();
+      }
+    }
+    var g = ctx.createRadialGradient(cx - 18, y + 52, 8, cx, y + 64, 42);
+    g.addColorStop(0, '#6a6a5e'); g.addColorStop(1, '#3a3a30');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(cx, y + 64, 40, 30, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#7dff5a';
+    ctx.beginPath(); ctx.arc(cx - 10, y + 60, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 10, y + 60, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  },
+
   // ===== 光头强（最终 Boss：橙黄毛线帽 + 绿色背带工装 + 大鼻子 + 络腮胡茬的伐木工反派，原创画法）=====
   timedevourer: function (ctx, e, cam, t) {
     var x = e.x - cam.x, y = e.y;
