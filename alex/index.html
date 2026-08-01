@@ -483,6 +483,42 @@ use. Not a textbook sentence. Not a narration. Someone actually talking.
        Before you emit an item, read the three options with the audio covered:
        if one of them looks like the answer, rewrite the other two.
 
+   (c) 🚨🚨 THE EPISTEMIC TELL — the worst one, and the hardest to see. In a DD/audit
+       setting the correct answer is nearly always the CAUTIOUS one: "not yet
+       verified", "only management's claim", "not an apples-to-apples comparison".
+       If the distractors are flat assertions ("confirmed in the September payroll",
+       "spend was 25 million") while the answer is the hedged one, he learns a rule —
+       pick the option with 尚未/但/并非 in it — and never listens again.
+       Measured: length was fixed and blind-guess accuracy was still 70% because of
+       exactly this.
+       → 🚨 ALL THREE OPTIONS MUST HAVE THE SAME EPISTEMIC SHAPE. If the answer is
+         hedged, the other two are hedged too, about different facts. If the answer
+         is a flat statement, so are the others. The choice must turn on WHICH fact,
+         never on HOW CONFIDENT the option sounds.
+       → Prefer questions with one determinate answer ("按 CFO 的说法，哪一项还没拿到
+         核对表？") over questions inviting the wisest-sounding pick ("CFO 想表达什么？"
+         / "CFO 的态度是？"). Those two phrasings are the reliable symptom — if your
+         question reads like that, rewrite it to ask for a specific fact.
+
+   🚨 AT LEAST HALF THE ITEMS MUST BE **DETAIL** ITEMS. This is the structural fix,
+   and it matters more than any of the rules above. He is a domain expert: given a
+   plausible-sounding question about a CFO conversation he can often reason his way
+   to the answer without hearing a word. Measured — blind-guess accuracy stayed at
+   60-70% even after the length and position tells were removed.
+   A detail item is one where the three options are IDENTICAL except for one
+   concrete thing that exists only in the audio:
+     · a figure          42 / 46 / 44 million
+     · a period          FY18 / 9M19 / Q4
+     · a name or party   Sarah / EY / the parent
+     · a direction       up 6% / down 6% / flat
+     · a modal           will / would / might
+   Every alternative must be a value the speaker COULD plausibly have said, so no
+   amount of business sense narrows it down. Put competing figures in the audio
+   itself — a self-correction ("down 4%, no, sorry, actually 6%") is ideal, because
+   the whole item then turns on catching the correction.
+   Write the other items as comprehension items, but these detail items are what
+   makes it a listening test rather than a reasoning test.
+
    Every distractor must be information that WAS in the audio — just not the answer
    to the question asked. Test the things his ear actually drops:
      · who said it / how strongly it was said (management claims vs verified)
@@ -768,8 +804,9 @@ async function askListen(scn, n){
     '\n---\nCONTEXT for these items (the speaker is this person, talking to him):\n' +
     '  说话的人 : ' + scn.ai + '\n  情境     : ' + scn.sit +
     '\n  他的身份 : ' + scn.you +
-    '\n---\nWrite ' + n + ' items. Vary what each one tests — do not test the ' +
-    'same thing twice. Reply with the JSON only.';
+    // 多出 5 道是给盲筛扔的余量。实测 8 道只活 3 道，余量给少了筛完就不够一组
+    '\n---\nWrite ' + (n + 5) + ' items. Vary what each one tests — do not test ' +
+    'the same thing twice. Reply with the JSON only.';
   const txt = S.backend === 'deepseek' ? await deepseek(p, 0.8)
                                        : await gemini([{text:p}], 0.8);
   const m = txt.match(/\{[\s\S]*\}/);
@@ -778,7 +815,67 @@ async function askListen(scn, n){
     it => it && it.say && it.q && Array.isArray(it.opt) && it.opt.length >= 2
           && typeof it.ans === 'number' && it.ans >= 0 && it.ans < it.opt.length);
   if (!items.length) throw new Error('这次没出出题来，再试一次');
-  return items;
+  return await screen(items.map(shuffleOpts), n);
+}
+
+/* 🚨 位置偏置 —— 实测最大的泄题源，而且很蠢：
+      模型几乎每道题都把正确项放第一个（一组 8 题的 ans 全是 0），
+      盲猜只要一律选 A 就 88% 命中。他练两轮就会发现这件事。
+   这种事不该指望 prompt 去纠（我之前还把它误读成「语义泄题」，绕了一大圈），
+   **打乱是纯算术，归代码**。Fisher-Yates，顺带把 ans 跟着搬。 */
+function shuffleOpts(it){
+  const idx = it.opt.map((_, i) => i);
+  for (let i = idx.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [idx[i], idx[j]] = [idx[j], idx[i]];
+  }
+  return Object.assign({}, it, {
+    opt: idx.map(i => it.opt[i]),
+    ans: idx.indexOf(it.ans),
+  });
+}
+
+/* ═══ 盲筛 ═══
+   🚨 光在 prompt 里嘱咐「别让选项泄题」是没用的 —— 写陷阱的和避陷阱的是同一个模型。
+      实测：长度提示按嘱咐修好了（严格最长占比 10%→0%），盲猜命中率却从 70% 升到 80%，
+      因为它改用了另一种泄法：正确项永远是那个「更谨慎、更有见地」的说法
+      （尚未核实 / 只是管理层口径 / 只是科目重分类）。在尽调语境里这条几乎恒成立，
+      他会学成「挑带保留的那项」，照样不用听。
+   所以这里不再靠嘱咐，改成**结构性筛除**：把原文藏掉、只把问题和选项喂回去让它盲猜，
+   猜中的说明不听也能答，直接扔。一次调用筛一整组，成本一个来回。
+   筛不动就原样放行 —— 宁可题偏易，也不能因为筛选失败就没题练。 */
+async function screen(items, want){
+  const q = '下面每道题你都**没有听到录音**。只根据问题和选项猜最可能的答案，' +
+    '必须每题都猜一个，不许说信息不足。\n\n' +
+    items.map((it,i) => (i+1) + '. ' + it.q + '\n' +
+      it.opt.map((o,k)=> '   ' + k + '. ' + o).join('\n')).join('\n\n') +
+    '\n\n只输出 {"picks":[每题的序号]}';
+  /* 🚨 筛两遍，任一遍被猜中就扔。
+     单遍不够：猜测本身有随机性，实测单遍只把命中率从 70% 压到 60%，
+     而这 10 个点里有多少是噪声都说不清。两遍取并集，扔得更狠也更稳。 */
+  const guessed = new Set();
+  let passes = 0;
+  for (let round = 0; round < 2; round++){
+    let picks = [];
+    try {
+      const txt = S.backend === 'deepseek' ? await deepseek(q, 0.6)
+                                           : await gemini([{text:q}], 0.6);
+      const m = txt.match(/\{[\s\S]*\}/);
+      picks = m ? (JSON.parse(m[0]).picks || []) : [];
+    } catch(_){ break; }
+    if (picks.length !== items.length) continue;
+    passes++;
+    items.forEach((it,i) => { if (picks[i] === it.ans) guessed.add(i); });
+  }
+  if (!passes) return items.slice(0, want);      // 筛不动就别挡着他练
+
+  const survived = items.filter((it,i) => !guessed.has(i));
+  // 存活太少就补回几道（顺序不变），保证一组至少有得练
+  const out = survived.length >= Math.min(3, want) ? survived
+            : survived.concat(items.filter(it => !survived.includes(it)));
+  // 🚨 不许默默截断 —— 扔了多少要让他知道，否则一组只有 3 题看起来像出错了
+  LSN.dropped = items.length - out.slice(0, want).length;
+  return out.slice(0, want);
 }
 
 /* ───────── 出声 ───────── */
@@ -1192,7 +1289,7 @@ $('#book').onclick = showBook;
    Kevin：「路上说话不方便…连听都听不懂就更别提开口」。
    两条硬约束贯穿这块：**不用麦克风**（答题全靠点），**先听后看**（答完才给原文）。
    一次要一整组题，之后翻页不再请求网络 —— 地铁里断网也能把这组做完。 */
-const LSN = {items:[], i:0, right:0, scn:null};
+const LSN = {items:[], i:0, right:0, scn:null, dropped:0};
 
 function listenHome(){
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
@@ -1244,7 +1341,9 @@ function listenItem(){
 
   const hd = document.createElement('div');
   hd.className = 'grp';
-  hd.textContent = `第 ${LSN.i+1} / ${LSN.items.length} 题 · 答对 ${LSN.right}`;
+  hd.textContent = `第 ${LSN.i+1} / ${LSN.items.length} 题 · 答对 ${LSN.right}`
+    + (LSN.i === 0 && LSN.dropped
+       ? `（另有 ${LSN.dropped} 题不用听也能猜出来，已剔除）` : '');
   f.appendChild(hd);
 
   // 播放区：原文这时候一个字都不给
