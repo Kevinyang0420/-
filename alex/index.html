@@ -218,19 +218,19 @@ const SCENARIOS = [
   ai:'Target 财务经理。知道这笔账，但要看你怎么问。',
   you:'FDD advisor', task:'问清性质、是否还有类似的、要不要调整',
   tgt:['We noted a payable of Rmb367k due to…','Could you walk me through…','We understand that…'],
-  traps:['预设结论去问（is this a related party?）把对方推到防御位','只问这一笔，不问还有没有同类','用 problem/issue 这种万能词描述它']},
+  traps:['is this a related party? —— 这种问法在英语里是封闭式质问，开放式的 Could you walk me through… 才是这个场合的常用说法','问「还有没有同类」时说成 Are there others like this?，偏口语；书面/正式场合用 Are there any similar balances?','用 problem/issue 这种万能词描述它']},
  {id:'dd_missing_financials', lvl:'★☆☆',
   sit:'Hekang 集团的 FY18 和 9M19 财报始终没拿到，你无法对它的表现发表任何意见。今天要跟买方项目负责人说明。',
   ai:'买方 deal lead。只关心这会不会影响估值，不接受含糊。',
   you:'FDD advisor', task:'说清缺什么、因此不能说什么、对交易的影响',
   tgt:['We did not receive the FY18 and 9M19 financials of…, therefore we cannot comment on its performance.','Due to limitation of information, we are unable to verify…'],
-  traps:['含糊带过（we have limited information on…）','说成是自己的失误','只说没拿到，不说因此不能得出什么结论']},
+  traps:['含糊带过（we have limited information on…）','说成是自己的失误','we don\'t have it 太随意；正式说法是 We have not been provided with… / We did not receive…，语域差一档']},
  {id:'dd_sgna_decline', lvl:'★★☆',
   sit:'9M19 的 SG&A 年化后比 FY18 下降。你问原因，CFO 答：规模效应 + 人效提升。听起来完全合理——但你还没验过任何一项。',
   ai:'Target CFO。对这个解释很有信心因为他真信。被追问会觉得你听不懂业务，语速快，会用业务术语绕你。',
   you:'FDD advisor', task:'追问到能判断这个解释站不站得住，但不能让他觉得你在怀疑他编数字',
   tgt:['Management explained that the decrease came from…','Could you help me understand how…','Based on our understanding of… and discussion with management'],
-  traps:['直接说 I don\'t believe that / that doesn\'t make sense','把管理层的解释当结论写（L0 说成 L3）','why 连发，像审讯']},
+  traps:['直接说 I don\'t believe that / that doesn\'t make sense','management is right / that\'s clear 是把转述说成了自己的判断；转述别人的话英语里用 Management represented that… / Management attributes… to…','why 连发，像审讯']},
  {id:'dd_litigation_detail', lvl:'★★☆',
   sit:'三宗诉讼的损失已计提在 G&A，但管理层一直没给你明细。你已经要过两次了。',
   ai:'Target CFO。不是不给，是「在整理」「法务还没回」。第三次被问会有点烦。',
@@ -242,25 +242,25 @@ const SCENARIOS = [
   ai:'Target 财务总监。技术扎实，会跟你辩会计准则。',
   you:'FDD advisor', task:'弄清政策、评估影响，把分歧讲成口径差异而不是「你做错了」',
   tgt:['Management represented that "recip spares" will be transferred into PPE when…','As such, the D&A expenses may be understated.'],
-  traps:['that\'s not correct under IFRS —— 即使你对，这么说也会谈崩','把管理层的政策描述写成 We note（L0 说成 L3）','只说政策，不说对数字的影响']},
+  traps:['that\'s not correct 在英语里是很硬的否定；同样意思常说 our reading of the standard is different / we would look at it differently','把管理层的政策描述写成 We note（L0 说成 L3）','只说政策，不说对数字的影响']},
  {id:'dd_delivery_timing', lvl:'★★★',
   sit:'你怀疑车辆收入的确认时点有问题，但管理层根本没保存交付时点的任何记录。影响量化不出来。买方在等你的数。',
   ai:'买方 deal lead。要一个数，会说 just give me your best estimate，有 deadline 压力。',
   you:'FDD advisor', task:'说清为什么给不出这个数、以及你打算在报告里怎么写',
   tgt:['We were not able to quantify the impact as management did not keep any information on the timing of delivery.','We are unable to assess… pending…','We have not been provided with details of the recognition basis.'],
-  traps:['🚨 顶着压力给一个 roughly 5 to 8 million —— 无证据的量化结论，最贵的错','用 hedge 代替 defer（the impact may be around…）—— 判断根本做不出来，不是做出来了但不确定','说 we couldn\'t find it，把管理层没记录说成你没找到']},
+  traps:['🚨 roughly 5 to 8 million 这种给区间的说法，和 We are unable to quantify… pending… 是两种完全不同的语气，别混用','用 hedge 代替 defer（the impact may be around…）—— 判断根本做不出来，不是做出来了但不确定','说 we couldn\'t find it，把管理层没记录说成你没找到']},
  {id:'dd_entertainment', lvl:'★★★',
   sit:'Gaopan 的招待费占收入比例明显高于同业。在中国语境下这话题极其敏感——可能只是业务需要，也可能不是。你必须问。',
   ai:'Target CFO。这问题一出来他立刻警觉，会反问你「你想说什么」。',
   you:'FDD advisor', task:'问清构成和审批流程，全程不暗示任何不当行为',
   tgt:['We note that in FY18 and FY19, … entertainment expenses accounted for…','Could you help me understand how these are approved and recorded?'],
-  traps:['🚨 任何暗示动机的说法（bribery / improper / unusual 都危险）','why is it so high —— 预设了「不该这么高」','因为敏感就不问，或问得太软让对方能敷衍过去']},
+  traps:['🚨 用词分量：bribery / improper / unusual 在英语里都带指控色彩，中性的问法是 how these are approved and recorded','why is it so high —— 预设了「不该这么高」','问得太软：maybe you could sort of tell me a bit about… 这种堆叠限定词在英语里显得没底气，Could you help me understand… 才是常用的中性问法']},
  {id:'dd_forecast_challenge', lvl:'★★★',
   sit:'Jinchen 的 FY20F 间接人工和其他经营费用，居然低于 FY19F——在收入还要增长的前提下。这个预测很激进。',
   ai:'Target CFO。预测是他做的，他会为它辩护。',
   you:'FDD advisor', task:'挑战这个假设、拿到支撑依据，但不说「你的预测是错的」',
   tgt:['We have noticed that forecast … in FY20F is lower than FY19F.','appears to be optimistic based on recent financial performance','We would expect…'],
-  traps:['your forecast is too aggressive —— 下断言，且对人不对事','this is impossible —— 关死了对话','appears optimistic 用错对象：乐观的是预测/假设，不是费用本身']},
+  traps:['your forecast is too aggressive —— 下断言，且对人不对事','this is impossible 是绝对化表述；英语里同样的意思常说 that seems optimistic / we would expect… ，留出讨论空间','appears optimistic 用错对象：乐观的是预测/假设，不是费用本身']},
 
  /* ═══ 审计（HK，HKSA 口径） ═══
     跟 DD 的语言差别在：DD 是给买方做判断，审计是**跟客户争一个必须落地的结论**，
@@ -276,7 +276,7 @@ const SCENARIOS = [
   ai:'客户 CFO。他知道你是对的，但他要面对银行。会试着说服你「这是实质重于形式」。',
   you:'审计经理', task:'守住结论，但把话说成准则要求而不是你个人的判断',
   tgt:['Under HKAS 1, the loan should be classified as current because the covenant was breached at year end.','This is not a matter of judgement in our view.','We understand the implication for the ratio; the classification is nonetheless required.'],
-  traps:['🚨 说成 I think / in my opinion —— 一旦变成你的意见就可以被谈判','对方一施压就改口说 we can look at it again（没打算改却这么说，后面更难收）','只搬准则号不承认对方的处境，谈判会僵死']},
+  traps:['🚨 I think / in my opinion 是主观语气；同一句用 Under HKAS 1 … must be … 是客观语气，两者分量差很远','对方一施压就改口说 we can look at it again（没打算改却这么说，后面更难收）','只说 the standard requires it 略生硬；英语里常配一句 We do appreciate the implication for… 来软化，但不改变结论']},
  {id:'aud_confirmation_diff', lvl:'★★☆',
   sit:'银行函证回函比账面少 HK$1.2M。客户说是「年底在途的一笔款」，但拿不出水单。',
   ai:'客户会计主管。他相信自己的说法，也确实可能是对的；他觉得你在小题大做。',
@@ -288,19 +288,19 @@ const SCENARIOS = [
   ai:'客户董事总经理。听到 going concern 会觉得你在唱衰他的公司，语气会变硬。',
   you:'审计经理', task:'说清你需要什么、为什么需要，把它讲成程序而不是对公司的判断',
   tgt:['The financial statements are prepared on a going concern basis, and we need to document the basis for that.','We would need a letter of financial support from the parent, together with evidence of its ability to provide it.','This is a standard procedure where net current liabilities exist; it does not itself imply a concern about the business.'],
-  traps:['🚨 让对方听成「我认为你要倒了」—— 措辞没把程序和判断分开','拿到口头承诺就算数（口头支持不是审计证据）','为了不得罪人把话说得太模糊，最后要不到那封信']},
+  traps:['🚨 让对方听成「我认为你要倒了」—— 措辞没把程序和判断分开','口头 vs 书面在英语里有固定说法：they said they would support us 太口语，正式场合说 a letter of financial support / written confirmation','为了不得罪人把话说得太模糊，最后要不到那封信']},
  {id:'aud_component_auditor', lvl:'★★☆',
   sit:'马来西亚子公司的 component auditor 比 group 的时间表落后两周，回的 group reporting package 里三个必填项是空的。电话会议上你要推进度。',
   ai:'马来西亚事务所的经理。英语流利但口音重，会用「我们这边流程不一样」解释延迟。',
   you:'group audit 经理', task:'确认哪几项缺、什么时候给、以及他那边到底卡在哪',
   tgt:['Three sections of the reporting package have been left blank — sections 4, 7 and 9.','Can you confirm when we can expect the completed package?','Is the delay on your side or are you waiting on the local management?'],
-  traps:['🚨 没听懂却说 yes yes 过去了 —— 越洋电话里最贵的错','用 you are late 开场，对方之后什么都不会主动告诉你','只问什么时候给，不问卡在哪 —— 下次还会一样']},
+  traps:['🚨 没听懂却说 yes yes 过去了 —— 越洋电话里最贵的错','用 you are late 开场，对方之后什么都不会主动告诉你','when can you send it 只问时间；问原因的地道说法是 is the delay on your side, or are you waiting on…']},
  {id:'aud_partner_briefing', lvl:'★★★',
   sit:'合伙人在两个会议之间给你 5 分钟。你要汇报一个收入确认时点的问题，涉及金额 HK$4.3M，你还没完全查清。',
   ai:'审计合伙人。时间极紧，只想听结论和你要他做什么决定；会打断、会追问金额和风险。',
   you:'审计经理', task:'先给结论再给依据，说清哪部分还没定，明确你要他决定什么',
   tgt:['We have identified a potential cut-off issue on revenue of HK$4.3M.','The position is not final — we are still waiting on the delivery notes.','I need your steer on whether we raise this with the audit committee now or after we have the documents.'],
-  traps:['🚨 从头讲起、讲了三分钟还没说到结论 —— 对合伙人最致命','把没查清的部分说得像已经查清（推断当事实）','没说要他做什么决定，汇报完两个人都不知道下一步']},
+  traps:['🚨 英语里汇报的语序是结论先行：We have identified… 开头，而不是 So we started… and then… and then… 这种按时间铺陈的中式叙事顺序','把没查清的部分说得像已经查清（推断当事实）','没说要他做什么决定，汇报完两个人都不知道下一步']},
 
  /* ═══ 通用职场 ═══
     不涉专业术语，压力全在人际分寸上；语域（register）失当在这里最容易发生。 */
@@ -643,13 +643,18 @@ function critique(d){
   const q = (d.quote || '').trim(), n = (d.native || '').trim();
   let issue = (d.issue || '').trim();
   if (!ISSUES.includes(issue)) issue = '';        // 不在表里就不显示，别编一个
-  const extra = cleanZh(d.alex_zh);
-  if (!q) return extra;
+  /* 🚨 三个槽齐了就**不再追加自由文本**。
+     实测：拼装的部分一直是干净的，漏出去的专业建议**全在后面追加的 alex_zh 里**
+     （「在 FDD 里，我们只陈述管理层的解释」「最后交付不了会很被动」）。
+     再往词表里加词是打地鼠 —— 词表永远补不完。
+     quote + issue + native 已经说清了「哪句话、什么毛病、该怎么说」，
+     再加 better 给整句，信息是完整的；自由文本纯属风险，直接不显示。
+     只有槽没填上时才退回它（并且照样过滤）。 */
+  if (!q) return cleanZh(d.alex_zh);
   let out = `你说的是 “${q}”`;
   if (issue) out += ` —— ${issue}`;
   out += '。';
   if (n) out += `母语者会说 “${n}”。`;
-  if (extra) out += extra;
   return out;
 }
 
