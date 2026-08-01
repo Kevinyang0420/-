@@ -55,7 +55,7 @@ button{font-family:inherit}
 #hdr{display:flex;align-items:center;justify-content:space-between;
   font-size:13px;color:var(--muted);margin:2px 0 12px}
 #hdr button{background:none;border:1px solid var(--line);color:var(--accent);
-  border-radius:20px;padding:5px 14px;font-size:12.5px}
+  border-radius:20px;padding:5px 14px;font-size:12.5px;margin-left:6px}
 #bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);
   border-top:1px solid var(--line);padding:14px 14px calc(14px + env(safe-area-inset-bottom));
   text-align:center}
@@ -375,6 +375,61 @@ OUTPUT — exactly one JSON object, no markdown fence, no other text:
  "good":["pattern id he used well this turn，没有就给空数组"]}
 `;
 
+/* ───────── 听力模块的出题规则 ─────────
+   Kevin 提这块的原话：「路上说话不方便…连听都听不懂就更别提开口」。
+   所以两条硬约束：**全程不用麦克风**（答题用点的），**先听后看**（听完才给原文）。
+
+   🚨 题目必须「不听懂就答不出」。最容易写坏的是那种看选项就能猜的题
+   （三个选项里两个明显荒谬）—— 那测的是常识不是听力。
+   干扰项必须是**原文里真的出现过的信息，只是答非所问**。 */
+const LISTEN_RULES = `
+Write listening-comprehension items for a Chinese finance professional (HK/China,
+does due diligence and audit). His English reading is strong; his LISTENING is the
+weak link — he loses the thread on fast connected speech, numbers, and hedged
+attribution.
+
+Each item is ONE person speaking, 2-4 sentences, exactly as it would sound in a real
+meeting — natural, slightly messy, with the fillers and self-corrections real people
+use. Not a textbook sentence. Not a narration. Someone actually talking.
+
+🚨 THE QUESTION MUST BE UNANSWERABLE WITHOUT HAVING HEARD IT.
+   Two ways this goes wrong. Both are disqualifying:
+
+   (a) Silly distractors. Two options are obviously absurd, so he picks the sensible
+       one without listening.
+
+   (b) 🚨 THE LENGTH TELL — the one that actually shows up in testing. The correct
+       option ends up being the longest and most specific of the three (it carries
+       the number, the name, the caveat), and the distractors are short and vague.
+       He learns to pick the detailed one and stops listening entirely.
+       → All three options must be the SAME shape: similar length (within a few
+         characters), each carrying a comparable amount of concrete detail — the
+         same kind of number, name, or condition. If your correct option contains
+         "每月节省 8 万" then the distractors need their own specific figures too.
+       → Do not let the correct one be the only one that sounds carefully worded.
+       Before you emit an item, read the three options with the audio covered:
+       if one of them looks like the answer, rewrite the other two.
+
+   Every distractor must be information that WAS in the audio — just not the answer
+   to the question asked. Test the things his ear actually drops:
+     · who said it / how strongly it was said (management claims vs verified)
+     · numbers, periods, directions (up or down, FY18 or 9M19, gross or net)
+     · what was NOT committed to (hedges, conditions, "subject to")
+     · the turn the speaker takes at the end (agreeing? deferring? refusing?)
+
+'key' names, in Chinese, the ONE thing in the audio that decides the answer —
+quote the English fragment inside it so he can go back and hear it.
+'zh' is the whole utterance in 标准现代白话. 禁 惟/该等/系/载明/所载/据以.
+
+OUTPUT — exactly one JSON object, no fence, no other text:
+{"items":[{"say":"the spoken English, 2-4 sentences",
+ "q":"中文问题",
+ "opt":["选项A","选项B","选项C"],
+ "ans":0,
+ "key":"中文：决定答案的那一处，把英文原片段引出来",
+ "zh":"整段中文意思"}]}
+`;
+
 /* ───────── 闸门：纯算术，跟桌面版 alex_gate.py 同一套 ───────── */
 function gate(st){
   const T = st.density, N = st.nSince;
@@ -644,6 +699,46 @@ async function askGemini(part){
   return JSON.parse(m[0]);
 }
 
+/* ───────── 听力：一次要一整组题，路上就不用再等网络了 ───────── */
+async function askListen(scn, n){
+  const p = LISTEN_RULES +
+    '\n---\nCONTEXT for these items (the speaker is this person, talking to him):\n' +
+    '  说话的人 : ' + scn.ai + '\n  情境     : ' + scn.sit +
+    '\n  他的身份 : ' + scn.you +
+    '\n---\nWrite ' + n + ' items. Vary what each one tests — do not test the ' +
+    'same thing twice. Reply with the JSON only.';
+  const body = S.backend === 'deepseek'
+    ? ['https://api.deepseek.com/chat/completions',
+       {method:'POST', headers:{'Content-Type':'application/json',
+                                'Authorization':'Bearer ' + S.key},
+        body: JSON.stringify({model:'deepseek-v4-pro',
+          messages:[{role:'system',content:'严格输出一个 JSON 对象。'},
+                    {role:'user',content:p}],
+          temperature:0.8, max_tokens:6000,
+          response_format:{type:'json_object'}})}]
+    : [`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
+       {method:'POST', headers:{'Content-Type':'application/json','x-goog-api-key':S.key},
+        body: JSON.stringify({contents:[{role:'user',parts:[{text:p}]}],
+          generationConfig:{temperature:0.8, maxOutputTokens:8192,
+                            responseMimeType:'application/json'}})}];
+  const r = await fetch(body[0], body[1]);
+  if (!r.ok){
+    if (r.status === 429) throw new Error('免费额度用完了，等一会再试');
+    throw new Error('HTTP ' + r.status);
+  }
+  const j = await r.json();
+  const txt = S.backend === 'deepseek'
+    ? (j.choices?.[0]?.message?.content || '')
+    : (j.candidates?.[0]?.content?.parts || []).map(x=>x.text||'').join('');
+  const m = txt.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error('返回里没有题目 JSON');
+  const items = (JSON.parse(m[0]).items || []).filter(
+    it => it && it.say && it.q && Array.isArray(it.opt) && it.opt.length >= 2
+          && typeof it.ans === 'number' && it.ans >= 0 && it.ans < it.opt.length);
+  if (!items.length) throw new Error('这次没出出题来，再试一次');
+  return items;
+}
+
 /* ───────── 出声 ───────── */
 let VOICES = [], ttsUnlocked = false;
 function loadVoices(){ VOICES = speechSynthesis.getVoices() || []; }
@@ -670,19 +765,22 @@ function pickVoice(lang){
    Promise 永远不 resolve → send() 的 finally 不执行 → 按钮永久禁用，
    Kevin 说完第一句就再也按不动了。
    现在：say 不再阻塞回合（fire-and-forget），并且自带超时兜底。 */
-function say(text, lang){
+function say(text, lang, rate){
   if (!text) return Promise.resolve();
+  speechSynthesis.cancel();          // 上一句没念完就换 —— 直接顶掉，别排队
   const u = new SpeechSynthesisUtterance(text);
   const v = pickVoice(lang);
   if (v) u.voice = v;
   u.lang = lang === 'zh' ? 'zh-CN' : 'en-GB';
-  u.rate = lang === 'zh' ? 1.05 : 0.95;
+  u.rate = rate || (lang === 'zh' ? 1.05 : 0.95);
   return new Promise(res => {
     let done = false;
     const fin = () => { if (!done){ done = true; res(); } };
     u.onend = fin; u.onerror = fin;
-    // 按字数估个上限，到点无论如何放行（中文约 5 字/秒，英文约 15 字符/秒）
-    setTimeout(fin, Math.min(30000, 2000 + text.length * (lang === 'zh' ? 200 : 70)));
+    // 按字数估个上限，到点无论如何放行。
+    // 🚨 这个上限现在同时决定「下一句什么时候把这句顶掉」（say 开头会 cancel），
+    //    估短了会把话拦腰切断，所以留足余量：英文实测约 70-83ms/字符，给 95。
+    setTimeout(fin, Math.min(45000, 2500 + text.length * (lang === 'zh' ? 240 : 95)));
     try { speechSynthesis.speak(u); } catch(_){ fin(); }
   });
 }
@@ -726,7 +824,8 @@ function showList(){
   const cards = SCENARIOS.map((sc,i)=>[sc, i]);
   $('#list').innerHTML =
     `<div id="hdr">🔥 连续 ${s} 天 · 累计 ${ST.turns} 轮
-       <button id="bookbtn">错题本 ${n ? n : ''}</button></div>` +
+       <span><button id="lsnbtn">🎧 听力</button>
+       <button id="bookbtn">错题本 ${n ? n : ''}</button></span></div>` +
     GRP.map(([pre, name]) => {
       const g = cards.filter(([sc]) => sc.id.startsWith(pre));
       return g.length ? `<div class="grp">${name} · ${g.length} 个</div>` +
@@ -735,6 +834,7 @@ function showList(){
            <div class="t">你是 ${esc(sc.you)}</div></div>`).join('') : '';
     }).join('');
   $('#bookbtn').onclick = showBook;
+  $('#lsnbtn').onclick = listenHome;
   document.querySelectorAll('.card').forEach(c =>
     c.onclick = () => start(SCENARIOS[+c.dataset.i]));
 }
@@ -1031,6 +1131,164 @@ function showBook(){
   feed.appendChild(back);
 }
 $('#book').onclick = showBook;
+
+/* ═════════ 听力 ═════════
+   Kevin：「路上说话不方便…连听都听不懂就更别提开口」。
+   两条硬约束贯穿这块：**不用麦克风**（答题全靠点），**先听后看**（答完才给原文）。
+   一次要一整组题，之后翻页不再请求网络 —— 地铁里断网也能把这组做完。 */
+const LSN = {items:[], i:0, right:0, scn:null};
+
+function listenHome(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = '听力 · 不用说话，用点的';
+  const f = $('#feed'); f.innerHTML = '';
+  const box = document.createElement('div');
+  box.innerHTML = '<div class="note">选一个场景，Alex 会用那个角色的口吻说几段话，' +
+    '你听完答题。先听，答完才给原文。</div>';
+  f.appendChild(box);
+  SCENARIOS.forEach((sc, i) => {
+    const c = document.createElement('div');
+    c.className = 'card';
+    c.innerHTML = `<b>${sc.lvl}</b>${esc(sc.ai)}<div class="t">${esc(sc.sit)}</div>`;
+    c.onclick = () => beginListen(sc);
+    f.appendChild(c);
+  });
+  const back = document.createElement('button');
+  back.className = 'play'; back.style.marginTop = '18px';
+  back.textContent = '← 回首页';
+  back.onclick = () => { f.innerHTML = ''; showList(); $('#sub').textContent = '再选一个场景'; };
+  f.appendChild(back);
+}
+
+async function beginListen(scn){
+  unlockTTS();                       // 借这次点击解锁，否则整块都是哑的
+  const f = $('#feed');
+  f.innerHTML = '<div class="note"><span class="dots">Alex 在写题</span>（约十几秒，' +
+                '写好后这一组翻页就不用网络了）</div>';
+  try {
+    LSN.items = await askListen(scn, 5);
+    LSN.i = 0; LSN.right = 0; LSN.scn = scn;
+    listenItem();
+  } catch(e){
+    f.innerHTML = '';
+    const d = document.createElement('div');
+    d.className = 'note'; d.textContent = '出题失败：' + e.message;
+    f.appendChild(d);
+    const again = document.createElement('button');
+    again.className = 'play'; again.textContent = '再试一次';
+    again.onclick = () => beginListen(scn);
+    f.appendChild(again);
+  }
+}
+
+function listenItem(){
+  const it = LSN.items[LSN.i];
+  if (!it) return listenDone();
+  const f = $('#feed'); f.innerHTML = '';
+
+  const hd = document.createElement('div');
+  hd.className = 'grp';
+  hd.textContent = `第 ${LSN.i+1} / ${LSN.items.length} 题 · 答对 ${LSN.right}`;
+  f.appendChild(hd);
+
+  // 播放区：原文这时候一个字都不给
+  const pl = document.createElement('div');
+  pl.className = 'better';
+  pl.innerHTML = '<div class="lb">先听</div>';
+  const mk = (label, rate) => {
+    const b = document.createElement('button');
+    b.className = 'play'; b.style.marginRight = '8px'; b.textContent = label;
+    b.onclick = () => { b.classList.add('on');
+      say(it.say, 'en', rate).then(()=>b.classList.remove('on')); };
+    return b;
+  };
+  pl.appendChild(mk('🔊 播放', 0.95));
+  pl.appendChild(mk('🐢 慢速', 0.65));
+  f.appendChild(pl);
+  say(it.say, 'en', 0.95);           // 进来先自动播一遍
+
+  const q = document.createElement('div');
+  q.className = 'turn alex';
+  q.innerHTML = `<div class="who">Alex 问</div><div class="bub">${esc(it.q)}</div>`;
+  f.appendChild(q);
+
+  it.opt.forEach((o, k) => {
+    const c = document.createElement('div');
+    c.className = 'card';
+    c.textContent = 'ABCDE'[k] + '. ' + o;
+    c.onclick = () => answerListen(k);
+    f.appendChild(c);
+  });
+  f.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function answerListen(k){
+  const it = LSN.items[LSN.i], right = k === it.ans;
+  if (right) LSN.right++;
+  // 记进错题本：听力是另一根轴，用 listen- 前缀，不跟表达的 pattern 混
+  if (!right){
+    checkIn();
+    const pat = 'listen-' + (LSN.scn ? LSN.scn.id : 'misc');
+    const e = ST.book[pat] ||= {pat, n:0, hits:0, hitDays:[], state:'practising',
+                               ex:[], first:TODAY()};
+    e.n++; e.last = TODAY(); e.dim = '听力'; e.sev = 'medium';
+    e.ex = [{said:it.q, better:it.say, alex:it.key, on:TODAY()}]
+           .concat(e.ex).slice(0, 3);
+    saveST();
+  }
+  const f = $('#feed'); f.innerHTML = '';
+
+  const hd = document.createElement('div');
+  hd.className = 'turn alex';
+  hd.innerHTML = `<div class="who">${right ? '✅ 对了' : '❌ 不对'}</div>` +
+    `<div class="bub">${esc(it.q)}<br>正确答案：${esc(it.opt[it.ans])}` +
+    (right ? '' : `<br>你选的：${esc(it.opt[k])}`) + '</div>' +
+    (it.key ? `<div class="tags">${esc(it.key)}</div>` : '');
+  f.appendChild(hd);
+
+  // 现在才给原文 —— 对着字再听一遍，是这块最有用的一步
+  const box = document.createElement('div');
+  box.className = 'better';
+  box.innerHTML = `<div class="lb">原文</div><div class="en">${esc(it.say)}</div>` +
+                  (it.zh ? `<div class="tags">${esc(it.zh)}</div>` : '');
+  const b1 = document.createElement('button');
+  b1.className = 'play'; b1.style.marginRight = '8px';
+  b1.textContent = '🔊 对着字再听';
+  b1.onclick = () => { b1.classList.add('on');
+    say(it.say,'en',0.95).then(()=>b1.classList.remove('on')); };
+  const b2 = document.createElement('button');
+  b2.className = 'play'; b2.textContent = '🐢 慢速';
+  b2.onclick = () => { b2.classList.add('on');
+    say(it.say,'en',0.65).then(()=>b2.classList.remove('on')); };
+  box.appendChild(b1); box.appendChild(b2);
+  f.appendChild(box);
+
+  const next = document.createElement('button');
+  next.className = 'play'; next.style.marginTop = '16px';
+  next.textContent = LSN.i + 1 < LSN.items.length ? '下一题 →' : '看结果 →';
+  next.onclick = () => { LSN.i++; listenItem(); };
+  f.appendChild(next);
+}
+
+function listenDone(){
+  const f = $('#feed'); f.innerHTML = '';
+  ST.turns += LSN.items.length; checkIn(); saveST();
+  const d = document.createElement('div');
+  d.className = 'turn alex';
+  d.innerHTML = '<div class="who">这一组做完了</div>' +
+    `<div class="bub">${LSN.items.length} 题答对 ${LSN.right} 题。` +
+    (LSN.right === LSN.items.length ? '全对，换个更难的场景试试。'
+     : '错的那几题已经进错题本，原文和关键点都留着了。') + '</div>';
+  f.appendChild(d);
+  const again = document.createElement('button');
+  again.className = 'play'; again.style.marginRight = '8px';
+  again.textContent = '再来一组';
+  again.onclick = () => beginListen(LSN.scn);
+  const back = document.createElement('button');
+  back.className = 'play'; back.textContent = '换场景';
+  back.onclick = listenHome;
+  f.appendChild(again); f.appendChild(back);
+}
 $('#reset').onclick = () => {
   localStorage.removeItem(LS.key);
   location.reload();
