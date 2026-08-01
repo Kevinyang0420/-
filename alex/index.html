@@ -39,6 +39,16 @@ button{font-family:inherit}
   border-radius:4px;padding:10px 13px}
 .alex .who{color:var(--alex);font-weight:700}
 .tags{font-size:11px;color:var(--muted);margin-top:4px}
+/* 「该这么说」—— 完整可念的整句，视觉上要最抢眼 */
+.better{background:var(--card);border:2px solid var(--accent);border-radius:10px;
+  padding:11px 13px;margin-top:9px}
+.better .lb{font-size:11px;letter-spacing:.4px;color:var(--accent);
+  font-weight:700;margin-bottom:5px}
+.better .en{font-size:15.5px;line-height:1.6}
+.play{display:inline-flex;align-items:center;gap:4px;margin-top:8px;
+  border:1px solid var(--line);background:var(--bg);color:var(--muted);
+  border-radius:16px;padding:4px 12px;font-size:12.5px}
+.play.on{border-color:var(--accent);color:var(--accent)}
 .note{font-size:12px;color:var(--muted);font-style:italic;margin:5px 0}
 #bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);
   border-top:1px solid var(--line);padding:14px 14px calc(14px + env(safe-area-inset-bottom));
@@ -259,10 +269,27 @@ SEVERITY    high   = would damage him in the room (accusation of motive; a
 
 Alex speaks 标准现代白话. 禁用 惟/该等/系/载明/所载/据以. English is never translated.
 
+🚨 WHENEVER YOU BREAK, YOU MUST HAND HIM A COMPLETE SENTENCE HE CAN READ ALOUD.
+   Naming the problem is only half the job. "你应该用 DEFER 而不是下结论" leaves him
+   knowing he was wrong and still not knowing what to say. Put the finished line in
+   "better": the WHOLE utterance, rewritten, in English, ready to say word-for-word
+   in this exact situation — not a fragment, not a template with blanks, not a
+   grammar rule.
+     ✅ better: "We understand from management that the Q4 uplift relates to three
+                annual licences signed in November. We have not yet obtained the
+                delivery evidence, so we are unable to quantify any overstatement
+                at this stage."
+     ❌ better: "use 'We are unable to assess...' instead"      ← 这是方向不是范例
+     ❌ better: "改成推迟判断的说法"                              ← 同上
+   Length: match what he was trying to say — usually 1-3 sentences. Keep his own
+   content and intent; change only what needs changing.
+   'alex_zh' then explains WHY in ≤3 sentences. Do not repeat the English there.
+
 OUTPUT — exactly one JSON object, no markdown fence, no other text:
 {"said":"...","break":false,"move":"none|recast|in_scene_reaction|character_reaction|elicitation|direct",
  "in_character":"the character's reply in English, 1-3 sentences",
- "alex_zh":"Alex 的中文，≤3 句；不破戏时为 null",
+ "alex_zh":"Alex 的中文，说清为什么，≤3 句；不破戏时为 null",
+ "better":"他本该说的完整英文整句；不破戏时为 null",
  "dimension":["D7"],"severity":"high","pattern":"d7-conclusion-without-evidence"}
 `;
 
@@ -468,9 +495,24 @@ async function askGemini(part){
 }
 
 /* ───────── 出声 ───────── */
-let VOICES = [];
+let VOICES = [], ttsUnlocked = false;
 function loadVoices(){ VOICES = speechSynthesis.getVoices() || []; }
 loadVoices(); speechSynthesis.onvoiceschanged = loadVoices;
+
+/* 🚨 iOS 上 speechSynthesis 必须在**用户手势里真的 speak 过一次**才解锁；
+   只调 resume() 不够 —— 之后所有 speak 会静默失败，页面看着正常但没声音
+   （Kevin 反馈「陪练模式听不到声音」）。
+   注意：手机侧边的静音开关拨到静音时，语音合成也不出声，那个只能他自己拨回来。 */
+function unlockTTS(){
+  if (ttsUnlocked) return;
+  try {
+    speechSynthesis.resume();
+    const u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;                 // 无声，纯粹用来解锁
+    speechSynthesis.speak(u);
+    ttsUnlocked = true;
+  } catch(_) {}
+}
 function pickVoice(lang){
   return VOICES.find(v=>v.lang.replace('_','-').toLowerCase().startsWith(lang)) || null;
 }
@@ -500,13 +542,29 @@ function sayQueue(items){
 }
 
 /* ───────── UI ───────── */
-function bubble(cls, who, txt, extra){
+const esc = s => String(s ?? '').replace(/[&<>"]/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* speak 参数：给这条气泡挂一个可点的播放键。
+   iOS 上自动播放经常被静音开关/未解锁挡掉，**手势触发的播放永远能响**，
+   所以每条都留一个按钮兜底。 */
+function bubble(cls, who, txt, extra, speak){
   const d = document.createElement('div');
   d.className = 'turn ' + cls;
-  d.innerHTML = `<div class="who">${who}</div><div class="bub">${txt}</div>` +
+  d.innerHTML = `<div class="who">${esc(who)}</div>` +
+                `<div class="bub">${esc(txt)}</div>` +
                 (extra ? `<div class="tags">${extra}</div>` : '');
+  if (speak){
+    const b = document.createElement('button');
+    b.className = 'play';
+    b.textContent = '🔊 听一遍';
+    b.onclick = () => { b.classList.add('on'); say(speak[0], speak[1])
+      .then(()=>b.classList.remove('on')); };
+    d.appendChild(b);
+  }
   $('#feed').appendChild(d);
   d.scrollIntoView({behavior:'smooth', block:'end'});
+  return d;
 }
 
 function showList(){
@@ -550,8 +608,7 @@ async function down(e){
   e.preventDefault();
   if (busy || !S.scn) return;
   $('#err').textContent = '';
-  // iOS 要求语音合成必须由用户手势解锁一次，借这次按下解锁
-  try { speechSynthesis.resume(); } catch(_) {}
+  unlockTTS();                       // 借这次按下解锁语音合成（iOS 必须）
   $('#mic').classList.add('rec');
   $('#hint').textContent = '在听…松开发送';
   if (S.backend === 'deepseek'){
@@ -620,18 +677,35 @@ async function render(d){
   bubble('you','你', d.said);
   if (d.break && d.alex_zh){
     S.breaks++;
-    bubble('alex','Alex', d.alex_zh,
+    const el = bubble('alex','Alex', d.alex_zh,
            `${d.move} · ${(d.dimension||[]).join('/')} · ${d.severity||''}`);
+    // 「该这么说」—— 完整整句，带播放键，这是他最要的东西
+    if (d.better){
+      const box = document.createElement('div');
+      box.className = 'better';
+      box.innerHTML = `<div class="lb">该这么说</div>` +
+                      `<div class="en">${esc(d.better)}</div>`;
+      const b = document.createElement('button');
+      b.className = 'play';
+      b.textContent = '🔊 听一遍';
+      b.onclick = () => { b.classList.add('on');
+        say(d.better,'en').then(()=>b.classList.remove('on')); };
+      box.appendChild(b);
+      el.appendChild(box);
+      el.scrollIntoView({behavior:'smooth', block:'end'});
+    }
   }
-  if (d.in_character) bubble('char','对方', d.in_character);
+  if (d.in_character) bubble('char','对方', d.in_character, null,
+                             [d.in_character, 'en']);
 
   S.turns++;
   S.nSince = d.break ? 0 : S.nSince + 1;
   S.hist.push('LEARNER: ' + d.said);
   if (d.in_character) S.hist.push('CHARACTER: ' + d.in_character);
 
-  // 不 await —— 出声是旁路，不能挡住下一句
-  sayQueue([[d.break ? d.alex_zh : null, 'zh'], [d.in_character, 'en']]
+  // 不 await —— 出声是旁路，不能挡住下一句。
+  // 破戏时优先念「该这么说」那句英文（那才是要模仿的），中文解释看字就行。
+  sayQueue([[d.break ? d.better : null, 'en'], [d.in_character, 'en']]
            .filter(x => x[0]));
 }
 
