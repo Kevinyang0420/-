@@ -101,7 +101,7 @@ button{font-family:inherit}
         rel="noopener">platform.deepseek.com</a>
       </div>
     </div>
-    <input id="key" type="password" placeholder="粘贴 API key" autocomplete="off">
+    <input id="key" type="password" placeholder="粘贴 API key（两家都可以，可以先后各加一把）" autocomplete="off">
     <button id="save">保存并开始</button>
   </div>
 
@@ -120,7 +120,7 @@ button{font-family:inherit}
     <button id="type">打字</button>
     <button id="diag">自检</button>
     <button id="end">结束</button>
-    <button id="reset">换 key</button>
+    <button id="reset">key</button>
   </div>
   <div id="typebox" hidden style="margin-top:10px;display:flex;gap:6px">
     <input id="typein" placeholder="打字说这一句（英文）" style="flex:1;padding:10px;
@@ -174,7 +174,8 @@ async function gemini(parts, temp){
       r = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,
         {method:'POST',
-         headers:{'Content-Type':'application/json','x-goog-api-key':S.key},
+         headers:{'Content-Type':'application/json',
+                   'x-goog-api-key': S.keys.gemini || S.key},
          body: JSON.stringify({contents:[{role:'user', parts}],
            /* 🚨 这些模型即使不开 thinking 也会把预算烧在内部推理上，
               而**思考 token 和输出 token 共用 maxOutputTokens**。
@@ -636,7 +637,47 @@ const b64 = blob => new Promise(r => {
 /* ───────── 状态 ───────── */
 let S = {scn:null, density:3, nSince:99, hist:[], turns:0, breaks:0, key:null};
 
-function loadKey(){ return localStorage.getItem(LS.key) || ''; }
+/* ═══ 两把 key 可以同时存着 ═══
+   Kevin 2026-08-01：「Gemini 总是会没有额度、不稳定，能不能换一个」。
+   实情：**听力根本不需要音频**，DeepSeek 完全能扛，而且是国内 API 不看梯子、
+   没有每天 20 次那种日限。只有「按住说话」那条路必须要能听音频的模型（Gemini）。
+   所以不再二选一 —— 两把都存着，各干各的：
+     按住说话 → 必须 Gemini（DeepSeek 收不了音频）
+     听力 / 打字 → 优先 DeepSeek，没有再退回 Gemini
+   key 按前缀自动认，不用他选：AIza… = Gemini，sk-… = DeepSeek。
+
+   🚨 为什么不用他的火山 Agent Plan：他套餐概览页写着「文本生成模型及向量化模型
+      不可用于 API 调用，在**非 AI 工具**中使用 Base URL 和 API Key 有可能被识别为
+      滥用/违规，会导致订阅停用或账号封禁」。网页调它的文本模型正好踩这条，
+      而且 key 还得放进浏览器。不能拿他的账号冒这个险。 */
+function keyKind(k){
+  const s = String(k || '').trim();
+  if (/^AIza/.test(s)) return 'gemini';
+  if (/^sk-/.test(s)) return 'deepseek';
+  return null;                      // 认不出来的交给探测
+}
+function loadKeys(){
+  let o = {};
+  try { o = JSON.parse(localStorage.getItem(LS.key) || '{}'); } catch(_){}
+  if (typeof o === 'string' || !o || typeof o !== 'object') o = {};
+  // 兼容旧版：以前只存一个裸字符串
+  const legacy = localStorage.getItem(LS.key);
+  if (legacy && legacy[0] !== '{'){
+    const k = keyKind(legacy) || localStorage.getItem(LS.be) || 'gemini';
+    o = {[k]: legacy};
+    localStorage.setItem(LS.key, JSON.stringify(o));
+  }
+  return o;
+}
+function saveKeys(o){
+  try { localStorage.setItem(LS.key, JSON.stringify(o)); } catch(_){}
+}
+/* 这一趟活该用哪家。need==='audio' 时只有 Gemini 能干。 */
+function pick(need){
+  if (need === 'audio') return S.keys.gemini ? 'gemini' : null;
+  if (S.keys.deepseek) return 'deepseek';       // 文字活优先 DeepSeek，它稳
+  return S.keys.gemini ? 'gemini' : null;
+}
 
 /* ═════════ 错题本 + 打卡（存 localStorage，换手机就没了，这是自用件） ═════════
 
@@ -766,7 +807,7 @@ function listenOnce(){
 async function deepseek(prompt, temp){
   const r = await fetch('https://api.deepseek.com/chat/completions',
     {method:'POST', headers:{'Content-Type':'application/json',
-                             'Authorization':'Bearer ' + S.key},
+                             'Authorization':'Bearer ' + (S.keys.deepseek || S.key)},
      body: JSON.stringify({
        model:'deepseek-v4-pro',
        messages:[{role:'system', content:'严格输出一个 JSON 对象，不要解释、不要围栏。'},
@@ -848,8 +889,8 @@ async function askListen(scn, n){
       'test the same thing twice. Reply with the JSON only.';
     let parsed = null;
     try {
-      parsed = firstJson(S.backend === 'deepseek' ? await deepseek(p, 0.8)
-                                                  : await gemini([{text:p}], 0.8));
+      parsed = firstJson(pick('text') === 'deepseek' ? await deepseek(p, 0.8)
+                                                      : await gemini([{text:p}], 0.8));
     } catch(e){
       if (/额度|key/.test(e.message)) throw e;   // 这两种再试也没用，直接往上报
     }
@@ -909,8 +950,8 @@ async function screen(items, want){
   for (let round = 0; round < 1; round++){
     let picks = [];
     try {
-      const txt = S.backend === 'deepseek' ? await deepseek(q, 0.6)
-                                           : await gemini([{text:q}], 0.6);
+      const txt = pick('text') === 'deepseek' ? await deepseek(q, 0.6)
+                                              : await gemini([{text:q}], 0.6);
       picks = (firstJson(txt) || {}).picks || [];
     } catch(_){ break; }
     if (picks.length !== items.length) continue;
@@ -1078,6 +1119,12 @@ async function getRec(){
 async function down(e){
   e.preventDefault();
   if (busy || !S.scn) return;
+  // 🚨 DeepSeek 收不了音频。只有 DeepSeek key 时别让他按了没反应，直接说清楚
+  if (!pick('audio')){
+    $('#err').innerHTML = '「按住说话」需要一把 Gemini key（DeepSeek 收不了录音）。'
+      + '点下面的<b>「key」</b>加一把，或者先用<b>「打字」</b>和<b>「🎧 听力」</b>。';
+    return;
+  }
   $('#err').textContent = '';
   unlockTTS();                       // 借这次按下解锁语音合成（iOS 必须）
   $('#mic').classList.add('rec');
@@ -1259,7 +1306,7 @@ $('#typein').addEventListener('keydown', e => { if (e.key === 'Enter') typedTurn
 
 /* 纯文本走哪家：Gemini 也能只吃文字，不一定要音频 */
 async function askDeepSeekOrGeminiText(said){
-  if (S.backend === 'deepseek') return askDeepSeek(said);
+  if (pick('text') === 'deepseek') return askDeepSeek(said);
   const txt = await gemini([{text: buildPrompt() +
     '\n\nHE JUST SAID (already transcribed)\n' + said +
     '\n\n把这句原样放进 "said" 字段。'}], 0.3);
@@ -1495,15 +1542,21 @@ function listenDone(){
 }
 $('#reset').onclick = () => {
   localStorage.removeItem(LS.key);
+  localStorage.removeItem(LS.be);
   location.reload();
 };
 $('#save').onclick = () => {
   const k = $('#key').value.trim();
   if (!k) return;
-  localStorage.setItem(LS.key, k);          // 立刻落盘，不等探测
+  // 按前缀自动认是哪家；认不出就按当前 backend 归档（保持旧行为）
+  const kind = keyKind(k) || S.backend || 'gemini';
+  S.keys[kind] = k;
+  saveKeys(S.keys);
   S.key = k;
-  if (!S.backend) S.backend = 'gemini';     // 探测没回来也先进得去
+  S.backend = kind;
+  localStorage.setItem(LS.be, kind);
   $('#setup').hidden = true;
+  $('#key').value = '';
   showList();
   syncPad();
 };
@@ -1521,8 +1574,10 @@ syncPad();
 /* ───────── 起步 ───────── */
 loadST();
 loadModel();                    // 恢复今天走通的那个模型，别重撞已用尽的
-S.key = loadKey();
-S.backend = localStorage.getItem(LS.be) || null;
+S.keys = loadKeys();
+S.key = S.keys.gemini || S.keys.deepseek || '';
+S.backend = localStorage.getItem(LS.be) ||
+            (S.keys.gemini ? 'gemini' : S.keys.deepseek ? 'deepseek' : null);
 
 /* 🚨 只要有 key 就直接进，**不拿 backend 当门槛**。
    原来是 `if (S.key && S.backend)`，但 detectBackend 是异步的：
@@ -1532,9 +1587,10 @@ S.backend = localStorage.getItem(LS.be) || null;
 if (S.key){
   if (!S.backend) S.backend = 'gemini';        // 先按最常见的走
   showList();
-  $('#sub').textContent = S.backend === 'gemini'
-    ? '按住说英语（Gemini 直接听录音）'
-    : '按住说英语（DeepSeek + 手机自带识别）';
+  $('#sub').textContent =
+    (S.keys.gemini && S.keys.deepseek) ? '说话走 Gemini，听力和打字走 DeepSeek'
+    : S.keys.gemini ? '按住说英语（Gemini 直接听录音）'
+    : '听力和打字可用；「按住说话」需要再加一把 Gemini key';
   if (!localStorage.getItem(LS.be)) detectBackend().catch(()=>{});
 } else {
   $('#setup').hidden = false;
