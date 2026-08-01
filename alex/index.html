@@ -176,9 +176,13 @@ async function gemini(parts, temp){
         {method:'POST',
          headers:{'Content-Type':'application/json','x-goog-api-key':S.key},
          body: JSON.stringify({contents:[{role:'user', parts}],
-           // 这些模型即使不开 thinking 也会把预算烧在内部推理上：
-           // 给太少会 finishReason=MAX_TOKENS 且 content 全空。
-           generationConfig:{temperature:temp, maxOutputTokens:8192,
+           /* 🚨 这些模型即使不开 thinking 也会把预算烧在内部推理上，
+              而**思考 token 和输出 token 共用 maxOutputTokens**。
+              实测一次听力出题：思考 5626 + 输出 2497 = 9472 > 8192 → 正文停在数组中间，
+              而 finishReason 还报 STOP（不是 MAX_TOKENS），所以光看 finishReason 判断不出来
+              —— 这就是 Kevin 那次「出题失败」的另一半原因。
+              这六个模型的 outputTokenLimit 都是 65536，原来的 8192 是我自己卡的，白卡。 */
+           generationConfig:{temperature:temp, maxOutputTokens:32768,
                              responseMimeType:'application/json'}})});
     } catch(e){ lastErr = e; continue; }        // 网络层错误，换一个再试
 
@@ -539,6 +543,38 @@ OUTPUT — exactly one JSON object, no fence, no other text:
  "zh":"整段中文意思"}]}
 `;
 
+/* ═══ 从模型返回里抠出 JSON ═══
+   🚨 绝不能用 /\{[\s\S]*\}/ —— 那是**贪婪到最后一个 `}`**。
+   实测这些模型经常在正文后面拖一串垃圾（Kevin 2026-08-01 踩到，表现是「出题失败」）：
+     ..."}]}\n给你。"}]} 后面还跟了个 markdown 围栏
+     ..."}\n]}\n"}]}\n。"}\n]}\n]}\n]}...
+   贪婪匹配把垃圾一起切进来 → JSON.parse 抛 "Unexpected non-whitespace character"。
+   gemini-3.5-flash 不犯，3-flash-preview / 3.1-flash-lite 每次都犯，
+   所以降级链一走到它们，听力就必然出不了题。
+   正解：按**括号深度**扫出第一个完整对象，并且要认字符串和转义
+   （字符串里的 `{` `}` 不算数，否则遇到含花括号的正文照样错）。 */
+function firstJson(text){
+  const s = String(text || '');
+  const start = s.indexOf('{');
+  if (start < 0) return null;
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < s.length; i++){
+    const c = s[i];
+    if (esc){ esc = false; continue; }
+    if (c === '\\'){ esc = true; continue; }
+    if (c === '"'){ inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (c === '{') depth++;
+    else if (c === '}'){
+      depth--;
+      if (depth === 0){
+        try { return JSON.parse(s.slice(start, i + 1)); } catch(_){ return null; }
+      }
+    }
+  }
+  return null;   // 花括号没闭合 = 真被截断了
+}
+
 /* ───────── 闸门：纯算术，跟桌面版 alex_gate.py 同一套 ───────── */
 function gate(st){
   const T = st.density, N = st.nSince;
@@ -753,9 +789,8 @@ async function askDeepSeek(said){
   const txt = await deepseek(buildPrompt() +
     '\n\nHE JUST SAID (already transcribed)\n' + said +
     '\n\n把这句原样放进 "said" 字段。', 0.3);
-  const m = txt.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error('返回里没有决策 JSON');
-  const d = JSON.parse(m[0]);
+  const d = firstJson(txt);
+  if (!d) throw new Error('返回里没有完整的决策 JSON：' + txt.slice(0, 100));
   if (!d.said) d.said = said;
   return d;
 }
@@ -793,29 +828,38 @@ async function askGemini(part){
     {text: prompt},
     {inline_data:{mime_type: part.mime, data: await b64(part.blob)}}
   ], 0.3);
-  const m = txt.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error('返回里没有决策 JSON：' + txt.slice(0,100));
-  return JSON.parse(m[0]);
+  const d = firstJson(txt);
+  if (!d) throw new Error('返回里没有完整的决策 JSON：' + txt.slice(0, 100));
+  return d;
 }
 
 /* ───────── 听力：一次要一整组题，路上就不用再等网络了 ───────── */
 async function askListen(scn, n){
-  const p = LISTEN_RULES +
-    '\n---\nCONTEXT for these items (the speaker is this person, talking to him):\n' +
-    '  说话的人 : ' + scn.ai + '\n  情境     : ' + scn.sit +
-    '\n  他的身份 : ' + scn.you +
-    // 多出 5 道是给盲筛扔的余量。实测 8 道只活 3 道，余量给少了筛完就不够一组
-    '\n---\nWrite ' + (n + 5) + ' items. Vary what each one tests — do not test ' +
-    'the same thing twice. Reply with the JSON only.';
-  const txt = S.backend === 'deepseek' ? await deepseek(p, 0.8)
-                                       : await gemini([{text:p}], 0.8);
-  const m = txt.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error('返回里没有题目 JSON');
-  const items = (JSON.parse(m[0]).items || []).filter(
-    it => it && it.say && it.q && Array.isArray(it.opt) && it.opt.length >= 2
-          && typeof it.ans === 'number' && it.ans >= 0 && it.ans < it.opt.length);
-  if (!items.length) throw new Error('这次没出出题来，再试一次');
-  return await screen(items.map(shuffleOpts), n);
+  /* 一次要越多题越容易被截断（题目里中英文都有，很吃 token）。
+     所以：先按 n+5 要（给盲筛留余量），出不来就退到 n+2、再退到 n，
+     递减重试而不是直接报错 —— 少几道也比「出题失败」强。 */
+  const ok = [];
+  for (const extra of [5, 2, 0]){
+    const p = LISTEN_RULES +
+      '\n---\nCONTEXT for these items (the speaker is this person, talking to him):\n' +
+      '  说话的人 : ' + scn.ai + '\n  情境     : ' + scn.sit +
+      '\n  他的身份 : ' + scn.you +
+      '\n---\nWrite ' + (n + extra) + ' items. Vary what each one tests — do not ' +
+      'test the same thing twice. Reply with the JSON only.';
+    let parsed = null;
+    try {
+      parsed = firstJson(S.backend === 'deepseek' ? await deepseek(p, 0.8)
+                                                  : await gemini([{text:p}], 0.8));
+    } catch(e){
+      if (/额度|key/.test(e.message)) throw e;   // 这两种再试也没用，直接往上报
+    }
+    const items = ((parsed && parsed.items) || []).filter(
+      it => it && it.say && it.q && Array.isArray(it.opt) && it.opt.length >= 2
+            && typeof it.ans === 'number' && it.ans >= 0 && it.ans < it.opt.length);
+    if (items.length){ ok.push(...items); break; }
+  }
+  if (!ok.length) throw new Error('这次没出出题来（模型返回被截断了），再点一次');
+  return await screen(ok.map(shuffleOpts), n);
 }
 
 /* 🚨 位置偏置 —— 实测最大的泄题源，而且很蠢：
@@ -867,8 +911,7 @@ async function screen(items, want){
     try {
       const txt = S.backend === 'deepseek' ? await deepseek(q, 0.6)
                                            : await gemini([{text:q}], 0.6);
-      const m = txt.match(/\{[\s\S]*\}/);
-      picks = m ? (JSON.parse(m[0]).picks || []) : [];
+      picks = (firstJson(txt) || {}).picks || [];
     } catch(_){ break; }
     if (picks.length !== items.length) continue;
     passes++;
@@ -1220,9 +1263,8 @@ async function askDeepSeekOrGeminiText(said){
   const txt = await gemini([{text: buildPrompt() +
     '\n\nHE JUST SAID (already transcribed)\n' + said +
     '\n\n把这句原样放进 "said" 字段。'}], 0.3);
-  const m = txt.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error('返回里没有决策 JSON');
-  const d = JSON.parse(m[0]);
+  const d = firstJson(txt);
+  if (!d) throw new Error('返回里没有完整的决策 JSON：' + txt.slice(0, 100));
   if (!d.said) d.said = said;
   return d;
 }
