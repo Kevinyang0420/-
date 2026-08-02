@@ -62,6 +62,10 @@ canvas{display:block;border-radius:18px}
 .wcard.lock{filter:grayscale(1);opacity:.4}
 .confetti{position:absolute;top:-40px;font-size:22px;animation:fall linear forwards;pointer-events:none}
 @keyframes fall{to{transform:translateY(110vh) rotate(380deg)}}
+.bookTabs{display:flex;gap:0;margin:6px 0 8px;border-radius:999px;overflow:hidden;border:2px solid #e0c8f0}
+.bookTab{flex:1;border:none;background:#f5edff;color:#8a6a9a;font-size:15px;font-weight:bold;padding:8px 0;cursor:pointer;font-family:inherit;transition:all .2s}
+.bookTab.active{background:linear-gradient(135deg,#b88ae0,#9c6fd0);color:#fff}
+.reviewWord{font-size:48px;font-weight:bold;color:#7c3aed;letter-spacing:6px;margin:8px 0}
 .hidden{display:none!important}
 </style>
 </head>
@@ -80,7 +84,8 @@ canvas{display:block;border-radius:18px}
 <div id="ovStart" class="overlay"><div class="card"><div class="big">🍬🔤</div><h1>糖果拼词</h1><p>把字母糖果拖到空位上<br>拼出一个完整的英文单词<br>就能"砰"地消掉得分！<br><span style="font-size:13px;color:#a08ab8">关卡越往后单词越长，还有 🧊 冰块障碍</span></p><p id="startInfo" style="color:#7c3aed;font-weight:bold"></p><button class="btn" id="btnStart">开始游戏 🎮</button><button class="link" id="btnRestartAll">从第 1 关重新开始</button></div></div>
 <div id="ovWin" class="overlay hidden"><div class="card"><div class="big">🎉</div><h1 id="winTitle">过关啦！</h1><div class="stars" id="winStars">⭐⭐⭐</div><p id="winWords"></p><button class="btn green" id="btnNext">下一关 ➡️</button></div></div>
 <div id="ovDead" class="overlay hidden"><div class="card"><div class="big">😅</div><h1>没有能用的字母了</h1><p>没关系！洗一下牌再来<br>已经拼对的词<b>还算数</b>哦</p><button class="btn" id="btnShuffle">洗牌继续 🔄</button></div></div>
-<div id="ovBook" class="overlay hidden"><div class="card"><h1>📚 单词本</h1><p id="bookInfo"></p><div id="wordGrid"></div><button class="btn" id="btnCloseBook">关 闭</button></div></div>
+<div id="ovBook" class="overlay hidden"><div class="card"><h1>📚 单词本</h1><div class="bookTabs"><button class="bookTab active" id="tabLearned">已学单词</button><button class="bookTab" id="tabWrong">❌ 错题本</button></div><p id="bookInfo"></p><div id="wordGrid"></div><button class="btn green hidden" id="btnReview">🔊 开始复习</button><button class="btn" id="btnCloseBook">关 闭</button></div></div>
+<div id="ovReview" class="overlay hidden"><div class="card"><div class="big" id="reviewEmoji" style="font-size:72px">❓</div><h1 id="reviewTitle" class="reviewWord">???</h1><p id="reviewCn"></p><button class="btn" id="btnReviewSpeak">🔊 听发音</button><button class="btn green" id="btnReviewReveal">👁️ 显示拼写</button><button class="btn hidden" id="btnReviewNext">下一个 ➡️</button><p id="reviewProgress" style="font-size:14px;color:#a88ac0;margin-top:8px"></p><button class="link" id="btnCloseReview">退出复习</button></div></div>
 <script>
 "use strict";
 var $=function(id){return document.getElementById(id)};
@@ -137,6 +142,7 @@ var particles=[],anims=[],drag=null,zoneIdSeq=0,hintStep=0;
 var muted=localStorage.getItem("cs_muted")==="1";
 var maxPassed=parseInt(localStorage.getItem("cs_max")||"0",10)||0;
 var learnedWords=JSON.parse(localStorage.getItem("cs_words")||"[]");
+var wrongWords=JSON.parse(localStorage.getItem("cs_wrong")||"[]");
 var AC=null;
 function ac(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();return AC}
 function tone(f,d,type,g,when){if(muted)return;try{var a=ac(),o=a.createOscillator(),v=a.createGain();type=type||"sine";g=g||0.14;when=when||0;o.type=type;o.frequency.value=f;v.gain.setValueAtTime(g,a.currentTime+when);v.gain.exponentialRampToValueAtTime(0.001,a.currentTime+when+d);o.connect(v);v.connect(a.destination);o.start(a.currentTime+when);o.stop(a.currentTime+when+d)}catch(e){}}
@@ -216,6 +222,7 @@ document.body.appendChild(d);speak(wo.w);
 setTimeout(function(){d.remove()},2500)
 }
 function addLearnedWord(wo){if(!learnedWords.some(function(w){return w.w===wo.w})){learnedWords.push(wo);localStorage.setItem("cs_words",JSON.stringify(learnedWords))}}
+function addWrongWord(wo){if(!wrongWords.some(function(w){return w.w===wo.w})){wrongWords.push(wo);localStorage.setItem("cs_wrong",JSON.stringify(wrongWords))}}
 function fit(){
 dpr=window.devicePixelRatio||1;var availW=Math.min(window.innerWidth-12,500);
 C=Math.floor((availW-PAD*2)/COLS);var availH=window.innerHeight-210;var maxC=Math.floor(availH/(ROWS+3.2));
@@ -283,14 +290,14 @@ sfx.place();vib(12);score+=5;
 if(checkZone(z)){clearZone(z)}else{refreshTray();updateHUD();updateTargets();checkStuck()}
 }else{refreshTray()}
 }
-function checkStuck(){if(anyTrayUseful())return;refreshTray();if(anyTrayUseful())return;playing=false;sfx.dead();$("btnHint").classList.remove("shake");showOv($("ovDead"))}
+function checkStuck(){if(anyTrayUseful())return;refreshTray();if(anyTrayUseful())return;playing=false;sfx.dead();zones.forEach(function(z){addWrongWord(z.word)});$("btnHint").classList.remove("shake");showOv($("ovDead"))}
 function useHint(){
 if(!playing||hintsLeft<=0)return;hintsLeft--;usedHint=true;hintStep++;
 var gaps=getGaps();if(!gaps.length){updateHintLabel();return}
 var g=gaps[0];var z=zones.find(function(zn){return zn.id===g.z});
-if(hintStep===1){if(z)praise(z.word.e+" = ?")}
-else if(hintStep===2){var cell=grid[g.r][g.cc];if(cell){cell.hintLetter=true;setTimeout(function(){if(cell)cell.hintLetter=false},3000)}praise("看这里 👆")}
-else{gaps.forEach(function(gg){var cell=grid[gg.r][gg.cc];if(cell)cell.hintLetter=true});setTimeout(function(){gaps.forEach(function(gg){var cell=grid[gg.r][gg.cc];if(cell)cell.hintLetter=false})},4000);praise("全部揭晓! ✨")}
+if(hintStep===1){if(z){praise(z.word.e+" = ?");speak(z.word.w);addWrongWord(z.word)}}
+else if(hintStep===2){var cell=grid[g.r][g.cc];if(cell){cell.hintLetter=true;setTimeout(function(){if(cell)cell.hintLetter=false},3000)}if(z)speak(z.word.w);praise("看这里 👆")}
+else{gaps.forEach(function(gg){var cell=grid[gg.r][gg.cc];if(cell)cell.hintLetter=true});setTimeout(function(){gaps.forEach(function(gg){var cell=grid[gg.r][gg.cc];if(cell)cell.hintLetter=false})},4000);if(z)speak(z.word.w);praise("全部揭晓! ✨")}
 sfx.swap();updateHintLabel()
 }
 function updateHintLabel(){$("btnHint").textContent="💡 提示 ×"+hintsLeft;$("btnHint").classList.toggle("off",hintsLeft<=0)}
@@ -298,7 +305,7 @@ var levelBadge=$("levelBadge"),goalBar=$("goalBar"),goalText=$("goalText"),score
 function updateHUD(){
 levelBadge.textContent="第 "+level+" 关";var pct=Math.min(100,Math.round(wordsDone/goal*100));
 goalBar.style.width=pct+"%";goalText.textContent=wordsDone+" / "+goal+" 词";
-scoreEl.textContent="分数 "+score;wordCount.textContent="📚 单词 "+learnedWords.length
+scoreEl.textContent="分数 "+score;wordCount.textContent="📚 "+learnedWords.length+(wrongWords.length?" ❌ "+wrongWords.length:"")
 }
 function updateTargets(){
 var el=$("targets");el.innerHTML="";
@@ -323,12 +330,19 @@ var learned=learnedWords.slice(-wordsDone);$("winWords").textContent="本关学�
 if(level>maxPassed){maxPassed=level;localStorage.setItem("cs_max",String(maxPassed))}
 updateHUD();showOv($("ovWin"));confetti($("ovWin"))
 }
+var bookMode='learned';
 function renderBook(){
-var g=$("wordGrid");g.innerHTML="";
-learnedWords.forEach(function(w){var d=document.createElement("div");d.className="wcard";d.innerHTML=w.e+'<small>'+w.w+'</small><small>'+w.c+'</small>';d.onclick=function(){speak(w.w)};g.appendChild(d)});
-if(!learnedWords.length){g.innerHTML='<p style="grid-column:1/-1;color:#a88ac0;font-size:14px">还没有学到单词，继续努力！</p>'}
-$("bookInfo").textContent="已收集 "+learnedWords.length+" 个单词，点击卡片可听发音"
+var g=$("wordGrid");g.innerHTML="";var list=bookMode==='wrong'?wrongWords:learnedWords;
+list.forEach(function(w){var d=document.createElement("div");d.className="wcard";d.innerHTML=w.e+'<small>'+w.w+'</small><small>'+w.c+'</small>';d.onclick=function(){speak(w.w)};g.appendChild(d)});
+if(!list.length){g.innerHTML='<p style="grid-column:1/-1;color:#a88ac0;font-size:14px">'+(bookMode==='wrong'?'还没有错题，太棒了！':'还没有学到单词，继续努力！')+'</p>'}
+$("bookInfo").textContent=bookMode==='wrong'?('共 '+wrongWords.length+' 个错题，点击卡片可听发音'):'已收集 '+learnedWords.length+' 个单词，点击卡片可听发音';
+$("btnReview").classList.toggle("hidden",bookMode!=='wrong'||!wrongWords.length)
 }
+var reviewList=[],reviewIdx=0;
+function startReview(){reviewList=wrongWords.slice();reviewIdx=0;if(!reviewList.length)return;hideOv($("ovBook"));showOv($("ovReview"));showReviewCard()}
+function showReviewCard(){var w=reviewList[reviewIdx];$("reviewEmoji").textContent=w.e;$("reviewTitle").textContent="???";$("reviewCn").textContent=w.c;$("btnReviewReveal").classList.remove("hidden");$("btnReviewNext").classList.add("hidden");$("reviewProgress").textContent="第 "+(reviewIdx+1)+" / "+reviewList.length+" 个";speak(w.w)}
+function reviewReveal(){var w=reviewList[reviewIdx];$("reviewTitle").textContent=w.w;$("btnReviewReveal").classList.add("hidden");$("btnReviewNext").classList.remove("hidden");speak(w.w)}
+function reviewNext(){reviewIdx++;if(reviewIdx>=reviewList.length){$("reviewTitle").textContent="复习完成!";$("reviewEmoji").textContent="🎉";$("reviewCn").textContent="本组错题已全部复习完";$("btnReviewReveal").classList.add("hidden");$("btnReviewNext").classList.add("hidden");return}showReviewCard()}
 function evtPos(e){var r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}}
 cv.addEventListener("pointerdown",function(e){if(!playing)return;var p=evtPos(e);if(p.y>=trayTop-4){var i=Math.floor(p.x/(W/3));if(i>=0&&i<3&&tray[i]){drag={idx:i,x:p.x,y:p.y,touch:e.pointerType==="touch"};sfx.pick();try{cv.setPointerCapture(e.pointerId)}catch(err){}}}e.preventDefault()},{passive:false});
 cv.addEventListener("pointermove",function(e){if(!drag)return;var p=evtPos(e);drag.x=p.x;drag.y=p.y;e.preventDefault()},{passive:false});
@@ -338,8 +352,15 @@ $("btnHint").addEventListener("click",useHint);
 $("btnSound").addEventListener("click",function(){muted=!muted;localStorage.setItem("cs_muted",muted?"1":"0");$("btnSound").textContent=muted?"🔇":"🔊"});
 $("btnBook").addEventListener("click",function(){renderBook();showOv($("ovBook"))});
 $("btnCloseBook").addEventListener("click",function(){hideOv($("ovBook"))});
+$("tabLearned").addEventListener("click",function(){bookMode='learned';$("tabLearned").classList.add("active");$("tabWrong").classList.remove("active");renderBook()});
+$("tabWrong").addEventListener("click",function(){bookMode='wrong';$("tabWrong").classList.add("active");$("tabLearned").classList.remove("active");renderBook()});
+$("btnReview").addEventListener("click",startReview);
+$("btnReviewSpeak").addEventListener("click",function(){if(reviewList.length)speak(reviewList[reviewIdx].w)});
+$("btnReviewReveal").addEventListener("click",reviewReveal);
+$("btnReviewNext").addEventListener("click",reviewNext);
+$("btnCloseReview").addEventListener("click",function(){hideOv($("ovReview"))});
 $("btnStart").addEventListener("click",function(){hideOv($("ovStart"));startLevel(maxPassed+1)});
-$("btnRestartAll").addEventListener("click",function(){maxPassed=0;localStorage.setItem("cs_max","0");score=0;learnedWords=[];localStorage.setItem("cs_words","[]");hideOv($("ovStart"));startLevel(1)});
+$("btnRestartAll").addEventListener("click",function(){maxPassed=0;localStorage.setItem("cs_max","0");score=0;learnedWords=[];localStorage.setItem("cs_words","[]");wrongWords=[];localStorage.setItem("cs_wrong","[]");hideOv($("ovStart"));startLevel(1)});
 $("btnNext").addEventListener("click",function(){hideOv($("ovWin"));startLevel(level+1)});
 $("btnShuffle").addEventListener("click",function(){refreshTray();hideOv($("ovDead"));playing=true;updateHUD();if(!anyTrayUseful()){spawnNewWord();refreshTray()}});
 $("btnSound").textContent=muted?"🔇":"🔊";
