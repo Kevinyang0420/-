@@ -2504,6 +2504,1390 @@
     "避免使用 'important'，用 'material impact'，这是财务尽调的标准语域",
     "注意句子逻辑，先陈述事实，再给出后果，最后提出请求，避免中式铺垫过长"
    ]
+  },
+  {
+   "id": "aud_challenging_wacc_rate",
+   "t": "质疑商誉折现率",
+   "lvl": "★★★",
+   "sit": "FY25审计中，客户商誉减值测试采用的WACC为7%，明显低于行业平均水平。你需要挑战这一假设，并要求对方重新计算。",
+   "ai": "你是财务经理。你认为7%是根据过往经验和内部预测得出的，且不希望为了审计调整而重新运行复杂的折现模型，因为太耗时了。",
+   "you": "审计经理",
+   "task": "说服对方WACC过低，要求其进行调整或提供支持证据。",
+   "tgt": [
+    "The WACC rate applied in the impairment model appears to be significantly below the market average for this industry.",
+    "Could you provide a detailed breakdown of the inputs used, as we are concerned that 7% does not fully reflect the current risk profile?",
+    "We need to see a revised sensitivity analysis based on a more market-aligned discount rate to ensure the valuation is reasonable."
+   ],
+   "traps": [
+    "Avoid 'I think you are wrong' (too confrontational); use 'appears to be' or 'we are concerned' for a professional tone.",
+    "Avoid 'Your rate is too low' (simple); use 'does not fully reflect the risk profile' to sound more expert.",
+    "Avoid 'You need to redo it'; use 'We need to see a revised analysis' to focus on the documentation."
+   ]
+  },
+  {
+   "id": "aud_rejecting_fob_logic",
+   "t": "纠正销售截止测试",
+   "lvl": "★★★",
+   "sit": "FY25年末的大额销售在1月才发货，却被记入12月。客户坚持按FOB Shipping Point合同条款应确认收入，你需指出这违背了实质重于形式原则。",
+   "ai": "你是财务总监。你认为合同条款是法律依据，不想因为会计准则的微妙差异而调减FY25的收入，因为这会影响年终奖KPI。",
+   "you": "审计负责人",
+   "task": "用HKFRS 15标准反驳客户，坚持要求进行跨期调整。",
+   "tgt": [
+    "While I understand the contractual terms specify FOB Shipping Point, the transfer of control has not effectively occurred by year-end.",
+    "Under HKFRS 15, we must consider when the customer actually obtains control of the goods, not just the legal shipping terms.",
+    "To ensure the revenue is recognized in the correct period, we propose a cut-off adjustment to reverse this transaction."
+   ],
+   "traps": [
+    "Avoid 'You are wrong about the contract'; use 'While I understand...' to acknowledge their position before correcting them.",
+    "Avoid 'It is not right' (vague); use 'has not effectively occurred' for more precision.",
+    "Avoid 'I want to change the revenue'; use 'we propose a cut-off adjustment' to sound like an auditor."
+   ]
+  },
+  {
+   "id": "aud_material_weakness_disclosure",
+   "t": "披露内控重大缺陷",
+   "lvl": "★★★",
+   "sit": "你在管理建议书中披露公司库存管理存在重大缺陷，财务经理对此感到不安，认为这会影响公司在银行和投资人面前的形象。",
+   "ai": "你是财务经理。你承认库存管理确实有改进空间，但极力反对使用‘Material Weakness’这个词，希望能改为‘Improvement Opportunity’。",
+   "you": "审计经理",
+   "task": "坚定立场，解释重大缺陷披露的必要性，同时安抚对方。",
+   "tgt": [
+    "We have identified a recurring pattern of control failures that, in aggregate, constitutes a material weakness in inventory management.",
+    "It is our professional responsibility to report this accurately; however, we are happy to document your management response alongside our findings.",
+    "The objective is to provide a roadmap for strengthening these internal controls, rather than highlighting a failure."
+   ],
+   "traps": [
+    "Avoid 'You have a bad system' (too personal); use 'recurring pattern of control failures' to depersonalize the issue.",
+    "Avoid 'I have to do this' (weak); use 'It is our professional responsibility' to show independence.",
+    "Avoid 'don't worry' (condescending); use 'we are happy to document your management response' to show collaboration."
+   ]
+  },
+  {
+   "id": "aud_reconciling_intercompany_diff",
+   "t": "协商关联方往来差异",
+   "lvl": "★★★",
+   "sit": "集团内部交易抵消时有HK$5M差异。对方坚持是汇率折算导致的，但你发现是双方入账时点存在滞后。",
+   "ai": "你是子公司会计。你非常忙碌，不希望为了这几百万的小差异去重新查对账目，只想用汇率差异这种理由快速过关。",
+   "you": "审计经理",
+   "task": "拆解对方借口，要求其核对具体交易记录。",
+   "tgt": [
+    "The variance of HK$5M appears to stem from timing differences in recording intercompany invoices rather than exchange rate fluctuations.",
+    "Could you please provide the reconciliation schedule showing the transactions in transit at month-end?",
+    "We need to ensure that all internal balances are properly matched before we can finalize the consolidation for FY25."
+   ],
+   "traps": [
+    "Avoid 'That is a lie' or 'Your reason is wrong'; use 'appears to stem from...' to give them a face-saving way to pivot.",
+    "Avoid 'give me the papers'; use 'provide the reconciliation schedule' for professional clarity.",
+    "Avoid 'before we finish'; use 'before we can finalize the consolidation' for correct domain terminology."
+   ]
+  },
+  {
+   "id": "dd_handling_unsupported_revenue",
+   "t": "挑战突击确认收入的依据",
+   "lvl": "★★★",
+   "sit": "你在复核 Q1 26 数据时，发现 3 月末收入出现异常峰值。财务总监坚称这是正常的季节性销售，但无法提供配套的物流签收单。",
+   "ai": "你是公司的 CFO，你很忙且非常确信团队没问题，认为咨询顾问太吹毛求疵了，但你愿意配合解释以结束这个话题。",
+   "you": "FDD advisor",
+   "task": "在不冒犯对方的前提下，委婉指出缺乏支持性证据，要求补充凭证。",
+   "tgt": [
+    "I'm struggling to reconcile this spike in Q1 26 with the lack of shipping documentation.",
+    "Could you help me understand what specific supporting evidence we have to validate these year-end revenue figures?",
+    "It would be very helpful if we could obtain the signed delivery receipts to substantiate these transactions."
+   ],
+   "traps": [
+    "避免使用 'You are lying' 或 'This is fake' 这种指控性表达。",
+    "避免使用 'Give me the papers' 这种祈使句，过于唐突，建议用 'Could you help me understand'。",
+    "避免把 'evidence' 写成复数 'evidences'（不可数名词）。"
+   ]
+  },
+  {
+   "id": "dd_challenging_cost_budget",
+   "t": "质疑不切实际的成本预算",
+   "lvl": "★★★",
+   "sit": "管理层在 FY26 预测中大幅削减了人工成本，但同时却计划大规模扩张业务。你需要向财务总监指出这一逻辑矛盾。",
+   "ai": "你是财务总监，你认为这些成本节约是通过数字化转型实现的，你很自信，认为顾问不理解公司的战略。",
+   "you": "FDD advisor",
+   "task": "礼貌但坚定地质疑预算假设的合理性，要求对方解释增长逻辑。",
+   "tgt": [
+    "I’ve noticed that the projected headcount expenses for FY26 don't seem to scale with the revenue growth targets.",
+    "Could you walk me through the underlying assumptions that justify such a reduction in labor costs?",
+    "I’m finding it difficult to see the link between the expansion plan and this specific cost forecast."
+   ],
+   "traps": [
+    "避免说 'You are wrong'，改用 'I'm finding it difficult to see' 表示客观上的疑惑。",
+    "不要使用中式思维的 'What is the logic behind this'，建议用更地道的 'walk me through the assumptions'。",
+    "注意 'headcount expenses' 比 'people money' 更专业。"
+   ]
+  },
+  {
+   "id": "dd_sensitive_related_party",
+   "t": "询问敏感关联交易实质",
+   "lvl": "★★★",
+   "sit": "FY25 的咨询费中有大额支付给了公司老板的亲戚。对方表示是正常业务，你需要进一步核实合同背景。",
+   "ai": "你是负责财务处理的经理，你只是执行层，觉得这很正常且不想惹麻烦，但你会配合提供说明。",
+   "you": "FDD advisor",
+   "task": "在保持专业客观的前提下，问出这些支出的实质，而非直接质疑利益输送。",
+   "tgt": [
+    "I’m trying to better understand the nature of these advisory services to ensure we categorize them correctly.",
+    "Could you provide some context on the specific deliverables associated with these payments?",
+    "It would be beneficial for our report to clarify the commercial rationale behind choosing this specific vendor."
+   ],
+   "traps": [
+    "避免使用 'Why did you pay his relative'，这听起来像是在审讯。",
+    "使用 'commercial rationale' 代替 'why did you do it'，语域更正式。",
+    "避免使用 'categorize them' 带来的语法错误，应明确其作为动词用法。"
+   ]
+  },
+  {
+   "id": "dd_negotiating_system_access",
+   "t": "协商核心数据访问权限",
+   "lvl": "★★★",
+   "sit": "你需要访问 IT 系统日志来核对业务真实性，但对方以保密政策为由拒绝提供。项目时间紧迫。",
+   "ai": "你是 IT 主管，你非常看重信息安全，担心数据泄露，但你明白 DD 对公司融资很重要。",
+   "you": "FDD advisor",
+   "task": "提出替代方案，在满足合规要求的前提下获取必要信息。",
+   "tgt": [
+    "I understand the data privacy concerns, but we need a way to verify the integrity of the underlying records.",
+    "Perhaps we could arrange a joint review session where your team can filter the data while we observe?",
+    "Is there an alternative format that would satisfy your security requirements while providing the necessary validation?"
+   ],
+   "traps": [
+    "避免使用 'You must give me'，改为 'Is there an alternative'，体现解决问题的姿态。",
+    "不要直接说 'I don't trust your report'，要说 'verify the integrity'，更专业。",
+    "注意 'alternative format' 后面接 'would satisfy' 的虚拟语气使用。"
+   ]
+  },
+  {
+   "id": "dd_reconciling_report_gap",
+   "t": "要求调节报表重大差异",
+   "lvl": "★★★",
+   "sit": "管理报表与审计后财务报表存在大额调节项，对方一直含糊其辞，没有提供详细的 reconciliation 表。",
+   "ai": "你是公司的资深财务，工作压力很大，你认为这些差异是会计准则不同导致的，觉得顾问问得太多了。",
+   "you": "FDD advisor",
+   "task": "重申调节表对审阅工作的重要性，催促对方提供详细清单。",
+   "tgt": [
+    "We really need a detailed reconciliation to bridge the gap between the management accounts and the audited figures.",
+    "Could you point us to the specific items that account for this variance?",
+    "I need to document this properly, so could we get a breakdown of these adjustments as soon as possible?"
+   ],
+   "traps": [
+    "不要说 'Give me the list'，使用 'Could you point us to' 更客气。",
+    "注意 'variance' 是财务审阅中最地道的词，不要用 'difference'。",
+    "不要说 'It is not clear'，说 'I need to document this properly'，将责任归于工作要求。"
+   ]
+  },
+  {
+   "id": "dd_addressing_concentration",
+   "t": "谈论客户集中度风险",
+   "lvl": "★★★",
+   "sit": "公司最大客户占 FY25 收入比重过高且合同即将到期。你需要提醒对方这一风险点对估值的影响。",
+   "ai": "你是销售总监，你非常有信心客户会续约，觉得风险被夸大了，但你愿意如实提供合同情况。",
+   "you": "FDD advisor",
+   "task": "以客观的市场视角，探讨客户集中度带来的潜在经营稳定性风险。",
+   "tgt": [
+    "Given that this client accounts for a significant portion of FY25 revenue, we need to assess the risk of non-renewal.",
+    "How are the renewal negotiations progressing, and is there any flexibility in the current terms?",
+    "It would be prudent for us to discuss the contingency plans in case the contract terms change significantly."
+   ],
+   "traps": [
+    "避免使用 'You are too risky'，使用 'it would be prudent' 来表述风险规避。",
+    "不要直接问 'Will they leave'，使用 'How are the renewal negotiations progressing'。",
+    "注意 'account for' 的搭配，不要说 'account to'。"
+   ]
+  },
+  {
+   "id": "aud_confirm_trial_balance",
+   "t": "确认试算平衡表版本",
+   "lvl": "★☆☆",
+   "sit": "你需要最新的试算平衡表（TB）来执行分析性程序。对方之前发的是初稿，你需要确认这是否为最新的定稿版本。",
+   "ai": "你是公司的财务助理。你手头有很多版本，容易搞混，但你很愿意配合审计工作。",
+   "you": "审计经理 / 现场负责人",
+   "task": "向对方确认当前TB是否为最终版本。",
+   "tgt": [
+    "Could you please confirm if this trial balance is the final version for FY25?",
+    "We need to ensure we are using the updated figures to finalize our analytical procedures.",
+    "Please let me know if there have been any further adjustments since this version."
+   ],
+   "traps": [
+    "Avoid 'Is this the last version?' (use 'latest' or 'final' instead).",
+    "Avoid 'Give me the TB' (too blunt, use 'Could you please confirm').",
+    "Use 'analytical procedures' instead of just 'checking numbers' to sound professional."
+   ]
+  },
+  {
+   "id": "aud_request_meeting_room",
+   "t": "协调现场会议室",
+   "lvl": "★☆☆",
+   "sit": "下周审计团队正式进场，你需要确保有足够的空间和网络连接。对方负责行政协助，但不清楚审计的具体需求。",
+   "ai": "你是行政主管，非常忙碌但很乐意帮忙。你担心会议室太拥挤，希望审计团队能灵活安排。",
+   "you": "审计经理 / 现场负责人",
+   "task": "向行政主管提出对办公空间及网络的需求。",
+   "tgt": [
+    "We will need a dedicated meeting room for the audit team starting next Monday.",
+    "Could you also ensure that we have stable internet access in that room?",
+    "It would be helpful if we could stay in the same area throughout the fieldwork."
+   ],
+   "traps": [
+    "Avoid 'I want a room' (too aggressive, use 'We will need').",
+    "Avoid 'We need internet' (a bit vague, use 'stable internet access').",
+    "Avoid 'all the time' (use 'throughout the fieldwork' for formal context)."
+   ]
+  },
+  {
+   "id": "aud_clarify_expense_nature",
+   "t": "询问费用报销性质",
+   "lvl": "★☆☆",
+   "sit": "你在测试 FY25 期间的费用，看到有一笔金额较大的咨询费，但在发票上看不出具体服务的业务内容。",
+   "ai": "你是负责入账的会计。你记得这笔费用是老板直接批准的，具体内容你也不太清楚。",
+   "you": "审计经理 / 现场负责人",
+   "task": "委婉地请对方解释这笔费用的业务背景。",
+   "tgt": [
+    "Could you provide some background on the nature of this consulting service?",
+    "The invoice is a bit generic, so we need a brief description to support our audit file.",
+    "Is there a service agreement or a breakdown available for this payment?"
+   ],
+   "traps": [
+    "Avoid 'What is this money for?' (sounds accusing, use 'nature of this...').",
+    "Avoid 'I don't understand the invoice' (sounds incompetent, use 'The invoice is a bit generic').",
+    "Avoid 'Explain this to me' (use 'Could you provide some background')."
+   ]
+  },
+  {
+   "id": "aud_check_authorized_signatory",
+   "t": "核实印鉴审批权限",
+   "lvl": "★☆☆",
+   "sit": "在核对银行流水审批记录时，你发现某几笔大额支出仅由财务经理签字，未按流程由财务总监审批。你需要确认流程是否变更。",
+   "ai": "你是财务主管。你觉得这些小额支出没必要惊动总监，所以简化了流程，不想承认那是错误。",
+   "you": "审计经理 / 现场负责人",
+   "task": "在不让对方感到受指责的前提下，询问审批权限。",
+   "tgt": [
+    "I noticed these payments were authorized by the finance manager only.",
+    "Has there been a recent update to the company's internal authorization policy?",
+    "We just need to ensure our understanding of the current approval process is consistent."
+   ],
+   "traps": [
+    "Avoid 'You broke the rules' (too aggressive, use 'Has there been an update?').",
+    "Avoid 'You skipped a step' (use 'ensure our understanding is consistent').",
+    "Use 'internal authorization policy' instead of 'sign-off rules'."
+   ]
+  },
+  {
+   "id": "aud_follow_up_missing_data",
+   "t": "跟进缺失的审计资料",
+   "lvl": "★☆☆",
+   "sit": "审计资料清单里有一份‘董事会会议纪要’迟迟未提供，对方一直说在整理中。你需要给对方压力，确保明天能拿到。",
+   "ai": "你是秘书处员工。会议纪要涉及敏感内容，你需要逐页审核才能发给外部审计，确实有难度。",
+   "you": "审计经理 / 现场负责人",
+   "task": "礼貌但坚定地要求对方在明天结束前提供纪要。",
+   "tgt": [
+    "We still haven't received the board meeting minutes requested last week.",
+    "Could you please arrange to have them sent over by the end of tomorrow?",
+    "These minutes are essential for us to complete the governance review."
+   ],
+   "traps": [
+    "Avoid 'You haven't sent it' (sounds like a complaint, use 'We haven't received').",
+    "Avoid 'I need it now' (use 'by the end of tomorrow').",
+    "Use 'essential' instead of 'very important' for professional emphasis."
+   ]
+  },
+  {
+   "id": "aud_confirm_bank_confirmation",
+   "t": "核对银行函证回函",
+   "lvl": "★☆☆",
+   "sit": "银行函证已经寄回，但银行盖章处模糊不清。你需要对方协助联系银行重新补盖一个清晰的章。",
+   "ai": "你是出纳。你觉得函证看起来没问题，不想再去跑一趟银行，觉得对方在找茬。",
+   "you": "审计经理 / 现场负责人",
+   "task": "解释为什么盖章模糊会导致函证无效，请对方协助处理。",
+   "tgt": [
+    "The bank stamp on the confirmation letter is not clearly visible.",
+    "Unfortunately, we cannot accept this as valid evidence for our audit.",
+    "Could you please coordinate with the bank to get a clearer stamp on a new copy?"
+   ],
+   "traps": [
+    "Avoid 'This is messy' (too colloquial, use 'not clearly visible').",
+    "Avoid 'This is useless' (too harsh, use 'cannot accept as valid evidence').",
+    "Use 'coordinate with' instead of 'go and ask'."
+   ]
+  },
+  {
+   "id": "wk_clarify_nonrecurring",
+   "t": "追问杂项损益分类",
+   "lvl": "★★☆",
+   "sit": "你在复核 FY25 审计底稿时，发现非经常性损益里塞了很多模糊的‘杂项支出’。对方财务经理认为这只是惯例操作，但他可能并不清楚你要求的披露颗粒度。",
+   "ai": "客户方的财务经理，为人友善但非常忙，他觉得这些支出金额不大没必要细查，希望尽快通过这部分审核。",
+   "you": "项目负责人",
+   "task": "要求对方按明细科目重新归集，并给出单笔超过 50 万的支出解释。",
+   "tgt": [
+    "Could you please provide a breakdown of these miscellaneous expenses in the FY25 non-recurring items?",
+    "I need to ensure our disclosure meets the standard, so could you clarify the nature of any item exceeding 500k?",
+    "It would be helpful if you could reclassify these under their respective account codes."
+   ],
+   "traps": [
+    "避免使用 'make it clear' 这种模糊表达，使用 'provide a breakdown' 更专业。",
+    "避免使用中式思维 'give me the explanation of...'，用 'clarify the nature of' 更地道。",
+    "注意 'disclose' 与 'reclassify' 在审计语境下的动词搭配。"
+   ]
+  },
+  {
+   "id": "wk_reconcile_gl_diff",
+   "t": "核实账面勾稽差异",
+   "lvl": "★★☆",
+   "sit": "你核对 9M26 的应收账款时，发现明细表与总账有 2% 的差异。对接人说是系统结转口径不同导致的，但你需要明确具体的逻辑。",
+   "ai": "客户方的会计主管，对系统操作很熟，但他习惯用‘系统问题’来解释一切，你需要引导他给出技术性解释。",
+   "you": "项目负责人",
+   "task": "让对方解释差异的具体原因，并确认这是否会影响后续数据的准确性。",
+   "tgt": [
+    "I noticed a 2% variance between the sub-ledger and the general ledger for 9M26.",
+    "Could you walk me through the specific logic behind this system conversion gap?",
+    "Is this variance expected to be cleared by the period-end, or does it reflect a data integrity issue?"
+   ],
+   "traps": [
+    "不要说 'there is a difference'，用 'variance' 在审计语境更精确。",
+    "不要用 'explain me the logic'（语法错误），应使用 'walk me through the logic'。",
+    "避免使用口语词 'fix'，在财务审计中 'clear' 或 'resolve' 差异更专业。"
+   ]
+  },
+  {
+   "id": "wk_decline_scope_creep",
+   "t": "委婉拒绝额外要求",
+   "lvl": "★★☆",
+   "sit": "客户高层在会议中随口要求你评估公司的人力资源绩效体系。虽然这听起来顺手就能做，但完全超出了合同内的财务 DD 范围。",
+   "ai": "客户方的财务总监，他不想给高层难堪，但他知道如果不拒绝你会超负荷，他会试图用‘能不能带一下’来测试你的底线。",
+   "you": "项目负责人",
+   "task": "在不冒犯客户的情况下，明确指出该任务不在服务范围内，并建议通过正式变更流程申请。",
+   "tgt": [
+    "That falls outside the scope of our current engagement letter.",
+    "We are strictly focused on the financial due diligence for the FY25 audit.",
+    "If you need an HR assessment, we can discuss a separate scope or a project amendment."
+   ],
+   "traps": [
+    "不要说 'this is not our job'，这听起来太傲慢，用 'falls outside the scope' 更职场。",
+    "避免使用 'we can't do it'，使用 'we are focused on' 表达你的专业边界。",
+    "不要用 'change the contract'，使用 'project amendment' 更符合投行/审计语域。"
+   ]
+  },
+  {
+   "id": "wk_explain_data_bottleneck_5237",
+   "t": "沟通数据交付瓶颈",
+   "lvl": "★★☆",
+   "sit": "因为 9M26 的 ERP 数据迁移丢包，部分指标无法出具。合伙人正在催进度，你需要让客户方的 IT 对接人意识到后果严重性。",
+   "ai": "客户方的 IT 主管，他认为这只是个小技术故障，不理解为什么审计组这么着急，他觉得多给几天就行。",
+   "you": "项目负责人",
+   "task": "强调此数据缺失对整个项目进度的影响，并索要一个确定的恢复时间点。",
+   "tgt": [
+    "The data loss during the 9M26 migration is creating a critical bottleneck for our analysis.",
+    "We need to finalize the key financial indicators by this week, so this delay is quite impactful.",
+    "Could you provide a firm timeline on when the data integrity will be restored?"
+   ],
+   "traps": [
+    "避免说 'the data is wrong'，用 'data integrity issue' 描述更地道。",
+    "不要用 'give me a time'，用 'provide a firm timeline' 语气更坚定。",
+    "避免使用 'it's a big problem'，用 'creating a critical bottleneck' 更有说服力。"
+   ]
+  },
+  {
+   "id": "wk_challenge_valuation_impact",
+   "t": "指出重大资产瑕疵",
+   "lvl": "★★☆",
+   "sit": "你在 DD 中发现核心厂房存在抵押权归属不清的问题。这直接影响交易估值，你需要跟客户财务负责人核实情况。",
+   "ai": "客户方财务经理，他可能没意识到法律权属会对财务估值产生这种量级的影响，他希望能淡化这个风险。",
+   "you": "项目负责人",
+   "task": "冷静陈述这一发现，并解释为什么这会直接影响资产折现和后续的估值模型。",
+   "tgt": [
+    "We have identified a significant legal encumbrance regarding the core production facility.",
+    "This ownership ambiguity could directly impact the valuation model we are building for FY25.",
+    "We need to clarify this issue as it is material to the investment thesis."
+   ],
+   "traps": [
+    "避免使用 'this is a big mess'，在财务审计中 'significant encumbrance' 更准确。",
+    "不要说 'we think this affects the price'，使用 'material to the investment thesis' 更具职业水准。",
+    "注意 'ambiguity' 与 'uncertainty' 在权属问题上的细微差异。"
+   ]
+  },
+  {
+   "id": "aud_fix_depreciation_error_5245",
+   "t": "纠正折旧计算错误",
+   "lvl": "★★☆",
+   "sit": "你在复核 FY25 折旧表时，发现对方未按会计政策预留 5% 的残值，导致折旧多计了 HK$150k。你需要请会计调账。",
+   "ai": "你是负责固定资产的会计，工作很细致但最近忙于其他结账任务。你认为这笔偏差可能不重大，担心调整会影响财务报表整体逻辑。",
+   "you": "审计经理",
+   "task": "指出会计处理偏差并要求调账，确保符合 HKAS 16。",
+   "tgt": [
+    "It appears the residual value wasn't factored into the depreciation schedule, leading to an overstatement of HK$150k.",
+    "To ensure compliance with HKAS 16, we need to adjust the current year's depreciation expense.",
+    "Could you please recalculate this and provide an updated schedule for our review?"
+   ],
+   "traps": [
+    "避免使用 'Your calculation is wrong' 这种指责性语气。",
+    "'Factor in' 优于中式直译的 'consider in the calculation'。",
+    "不要用 'You should adjust it'，改用更委婉专业的 'We need to adjust'。"
+   ]
+  },
+  {
+   "id": "aud_address_weak_internal_control",
+   "t": "披露内控流程缺失",
+   "lvl": "★★☆",
+   "sit": "你发现存货出入库系统缺乏权限审批，且未留下操作日志。财务经理认为这是小事，认为员工都很自觉。",
+   "ai": "你是财务经理，公司规模扩张太快，系统还没来得及完善。你觉得审计经理小题大作，不希望在管理建议书里写上这一条。",
+   "you": "审计经理",
+   "task": "强调内控缺失对财务数据准确性的风险，坚持披露必要性。",
+   "tgt": [
+    "The lack of an approval trail poses a significant risk to the integrity of the inventory records.",
+    "Without proper authorization, we cannot obtain sufficient audit evidence to verify the accuracy of these movements.",
+    "I’m afraid this is a control deficiency that we are required to report in the management letter."
+   ],
+   "traps": [
+    "不要说 'This is a big problem'，要用 'control deficiency' 这一专业术语。",
+    "'I’m afraid' 比 'I must tell you' 听起来更职业且带有专业客观性。",
+    "不要用 'check the goods'，要用 'verify the accuracy of movements'。"
+   ]
+  },
+  {
+   "id": "aud_verify_subsequent_event",
+   "t": "核实重大期后事项",
+   "lvl": "★★☆",
+   "sit": "FY25 报表审计期间，核心供应商在 2026 年 1 月发生生产事故。对方觉得这只影响明年，与今年报表无关。",
+   "ai": "你是财务总监，事故确实严重但还没完全评估影响，你不希望审计师把这个事写进本年报表附注，担心引起银行关注。",
+   "you": "审计经理",
+   "task": "解释此类事项对财务状况的潜在影响，要求进行披露评估。",
+   "tgt": [
+    "Given the criticality of this supplier, we need to assess whether this event has a material impact on the FY25 financial statements.",
+    "Has the management performed an analysis to determine if any provision is required?",
+    "We need to ensure that all relevant information is adequately disclosed in the notes."
+   ],
+   "traps": [
+    "不要问 'Why didn't you write it down?'，要用 'We need to assess'。",
+    "'Adequately disclosed' 是标准用法，不要说 'tell people clearly'。",
+    "避免使用 'I think you should'，使用 'We need to ensure' 体现审计方的立场。"
+   ]
+  },
+  {
+   "id": "dd_verify_tax_rebate_timing",
+   "t": "核实税收返还时点",
+   "lvl": "★☆☆",
+   "sit": "你在 FY25 的其他收益明细中看到一笔大额税收返还，但入账日期比银行收款单晚了两个月。你需要询问会计为什么账务处理有滞后。",
+   "ai": "你是公司的会计，你很负责但工作量大。由于年底核对工作繁重，你有时为了方便会批量入账，你很乐意配合解释原因。",
+   "you": "FDD advisor",
+   "task": "询问该笔收益入账时间与实际到账时间不符的原因",
+   "tgt": [
+    "I noticed a discrepancy between the cash receipt date and the accounting entry date for the tax rebate in FY25.",
+    "Could you clarify why this subsidy was recorded two months after the actual payment was received?",
+    "Is there a specific internal process that causes this timing gap?"
+   ],
+   "traps": [
+    "Avoid 'Why you write it later' (Grammar: use passive voice 'why it was recorded').",
+    "Avoid 'I see a time difference' (Collocation: use 'discrepancy' or 'timing gap' for professional tone).",
+    "Avoid 'Because the money came late' (Register: use 'receipt of funds' instead of 'money came')."
+   ]
+  },
+  {
+   "id": "dd_inquire_software_cost_allocation",
+   "t": "询问软件成本分摊",
+   "lvl": "★☆☆",
+   "sit": "公司在 Q1 26 购买了一套新 ERP 系统，所有支出直接计入了本季度费用。你需要请财务经理说明为什么没有按无形资产处理。",
+   "ai": "你是财务经理，你认为这笔支出金额不大且属于年度维护性质，所以直接费用化了。你觉得你的处理是合理的。",
+   "you": "FDD advisor",
+   "task": "挑战费用化处理方式，询问是否有资本化考虑",
+   "tgt": [
+    "Regarding the ERP system implementation in Q1 26, why was the entire amount expensed rather than capitalized?",
+    "Could you walk me through the criteria used to decide whether to capitalize or expense this IT cost?",
+    "I'd like to understand if this aligns with the standard accounting policy for intangible assets."
+   ],
+   "traps": [
+    "Avoid 'Why you put it in expense' (Grammar: use 'expensed' as a verb).",
+    "Avoid 'tell me the standard' (Register: use 'walk me through the criteria' for professional engagement).",
+    "Avoid 'This is not right' (Tone: use 'I'd like to understand' to remain neutral and inquisitive)."
+   ]
+  },
+  {
+   "id": "dd_request_intercompany_reconciliation",
+   "t": "核对关联方往来金额",
+   "lvl": "★☆☆",
+   "sit": "在复核 FY25 财务数据时，你发现母公司与子公司之间的往来余额未抵消干净，存在一笔 Rmb 50k 的未结余额。",
+   "ai": "你是负责合并报表的专员，由于不同子公司的记账币种和时效不同，经常产生尾差。你很愿意提供明细协助对账。",
+   "you": "FDD advisor",
+   "task": "询问未结余额产生的原因及是否有核对计划",
+   "tgt": [
+    "I found a remaining balance of 50k RMB in the intercompany reconciliation between the parent and the subsidiary for FY25.",
+    "Could you provide a breakdown of these outstanding transactions?",
+    "Are there any plans to reconcile this difference before the year-end closing?"
+   ],
+   "traps": [
+    "Avoid 'Why it's not same' (Grammar: use 'reconciliation' as the noun).",
+    "Avoid 'You have 50k left' (Tone: use 'I found a remaining balance' to focus on the data, not the person).",
+    "Avoid 'give me the list' (Register: use 'provide a breakdown' for professional requests)."
+   ]
+  },
+  {
+   "id": "dd_clarify_employee_count_logic",
+   "t": "厘清员工人数逻辑",
+   "lvl": "★☆☆",
+   "sit": "你发现 FY25 的薪酬总额与 HR 提供的平均人数计算出的平均工资存在偏差。你需要问 HR 经理确认计算逻辑。",
+   "ai": "你是 HR 经理，你工作很忙，你意识到可能是季节性临时工没有计入平均人数。你愿意配合解决这个数据出入。",
+   "you": "FDD advisor",
+   "task": "请对方解释人均薪酬计算口径",
+   "tgt": [
+    "I'm trying to reconcile the total payroll expense with the average headcount provided for FY25.",
+    "Could you clarify if the average headcount includes temporary or seasonal staff?",
+    "It seems the implied average salary differs from our initial calculation."
+   ],
+   "traps": [
+    "Avoid 'The math is wrong' (Tone: avoid accusatory language; use 'It seems...').",
+    "Avoid 'Does the number include...' (Grammar: use 'include' rather than 'have inside').",
+    "Avoid 'I want to know how you count' (Register: use 'reconcile the payroll expense' to sound like an auditor)."
+   ]
+  },
+  {
+   "id": "dd_ask_inventory_count_method",
+   "t": "询问存货盘点细节",
+   "lvl": "★☆☆",
+   "sit": "你在查阅 FY25 的存货盘点记录时，发现缺乏盘点计划和最终汇总报告。你想了解现场盘点是如何组织的。",
+   "ai": "你是仓库主管，你有进行盘点，只是记录比较简单。你以为你已经提交了所有资料，对审计要求不太熟悉。",
+   "you": "FDD advisor",
+   "task": "询问具体的盘点执行程序",
+   "tgt": [
+    "Could you describe the procedure you followed for the FY25 year-end inventory count?",
+    "Were there any specific measures in place to ensure the accuracy of the stock take?",
+    "Could you please share the final inventory summary report with us?"
+   ],
+   "traps": [
+    "Avoid 'How you count' (Grammar: use 'describe the procedure').",
+    "Avoid 'Did you count well?' (Register: use 'ensure the accuracy of the stock take' to sound professional).",
+    "Avoid 'I need your papers' (Tone: use 'Could you please share' for polite professional request)."
+   ]
+  },
+  {
+   "id": "dd_inquire_legal_fee_nature",
+   "t": "询问大额法律费用",
+   "lvl": "★☆☆",
+   "sit": "你在 FY25 的管理费用中看到一笔金额较大的法律咨询费。由于没有合同附件，你需要向法务部确认其用途。",
+   "ai": "你是法务专员，这笔费用是针对一个临时的知识产权诉讼支付的。因为处理得很紧急，归档还没完全做好。",
+   "you": "FDD advisor",
+   "task": "礼貌询问该项大额法律费用的性质",
+   "tgt": [
+    "I noticed a significant legal fee payment in the FY25 general expenses.",
+    "Could you provide some context regarding the nature of this service?",
+    "Is there a supporting contract or invoice available that I could review?"
+   ],
+   "traps": [
+    "Avoid 'Why you paid so much money?' (Tone: sounds like an interrogation; use 'nature of this service').",
+    "Avoid 'What is this for?' (Register: use 'provide some context' for more formal inquiry).",
+    "Avoid 'I need to see the proof' (Tone: use 'could I review' to sound cooperative)."
+   ]
+  },
+  {
+   "id": "dd_inconsistent_depreciation_policy",
+   "t": "追问折旧政策变更",
+   "lvl": "★★☆",
+   "sit": "在复核固定资产折旧表时，你发现 FY25 新购入的生产设备折旧年限由 10 年缩短为 5 年。财务经理认为这只是为了更谨慎，但你怀疑这会影响利润波动。",
+   "ai": "财务经理，工作极其忙碌，真心认为缩短折旧年限是符合资产损耗的审慎做法，没有隐藏利润的想法，觉得你太纠结会计细节。",
+   "you": "FDD advisor",
+   "task": "使用委婉的专业语气，质疑折旧政策变更的合理性及其对财务报表的影响。",
+   "tgt": [
+    "I've noted that the depreciation period for the new equipment in FY25 has been shortened to five years.",
+    "Could you walk me through the rationale behind this adjustment and how it aligns with the expected useful life?",
+    "I'm concerned about the potential impact on our period-over-period comparability."
+   ],
+   "traps": [
+    "Avoid 'Why you change this?', which sounds accusatory; use 'Could you walk me through...' for a professional tone.",
+    "Don't use 'It makes the numbers weird', use 'impact on comparability' to sound like an FDD professional.",
+    "Avoid 'I think you are wrong', replace with 'I'm concerned about the potential impact'."
+   ]
+  },
+  {
+   "id": "dd_operating_lease_classification",
+   "t": "核实经营租赁分类",
+   "lvl": "★★☆",
+   "sit": "公司在 FY25 新租了一批仓库，被分类为经营租赁。根据合同条款，你发现租赁期几乎覆盖了设备全寿命，怀疑应分类为融资租赁。",
+   "ai": "租赁部经理，只关心租金是否按时支付，认为只要合同叫 lease 就是经营租赁，对会计分类不敏感。",
+   "you": "FDD advisor",
+   "task": "指出合同条款与当前会计分类的潜在冲突，要求对方重新评估。",
+   "tgt": [
+    "Regarding the new warehouse leases in FY25, they are currently classified as operating leases.",
+    "Given that the lease term covers most of the asset's useful life, should we reconsider the classification?",
+    "Could you share the contract terms so we can verify if this aligns with the accounting standards?"
+   ],
+   "traps": [
+    "Avoid 'You classified this wrong', use 'should we reconsider the classification'.",
+    "Don't use 'This is a finance lease', use 'should we reconsider if this aligns with accounting standards'.",
+    "Avoid 'Show me the deal', use 'Could you share the contract terms'."
+   ]
+  },
+  {
+   "id": "wk_clarify_retained_earnings",
+   "t": "核实留存收益口径",
+   "lvl": "★☆☆",
+   "sit": "在复核 FY25 审计底稿时，发现留存收益的调整项逻辑不清。你需要写邮件询问客户财务经理，确认该调整是否仅针对税后利润。",
+   "ai": "客户方会计经理，非常配合但工作繁忙，希望你能直接点出需要确认的具体科目，不要兜圈子。",
+   "you": "财务尽调负责人",
+   "task": "邮件核实留存收益调整口径",
+   "tgt": [
+    "Could you please confirm if the adjustment to retained earnings relates solely to the post-tax profit?",
+    "I need to verify the basis for this entry to ensure it aligns with our FY25 audit requirements.",
+    "Could you clarify if there are any other underlying items included in this adjustment?"
+   ],
+   "traps": [
+    "Avoid 'Is this adjustment for post-tax profit only?' (too informal); use 'relates solely to' for precision.",
+    "Don't say 'I need to check why you put this' (sounds accusatory); use 'verify the basis' for professional tone.",
+    "Avoid 'I want to know if there's anything else inside'; use 'underlying items' for financial domain vocabulary."
+   ]
+  },
+  {
+   "id": "wk_request_access_logs",
+   "t": "请求调阅系统日志",
+   "lvl": "★☆☆",
+   "sit": "为了核实 9M26 的收入确认完整性，你需要调阅系统操作日志。你需要请 IT 对接人协助开通权限。",
+   "ai": "IT 部门的技术主管，很乐意协助但需要明确的审批依据和时间段，否则他无法开通权限。",
+   "you": "项目负责人",
+   "task": "向 IT 主管申请系统操作权限",
+   "tgt": [
+    "I would appreciate it if you could grant us temporary access to the system logs for the 9M26 period.",
+    "This access is essential for us to verify the revenue recognition process within our due diligence scope.",
+    "Could you please let me know the standard procedure or any authorization needed to expedite this request?"
+   ],
+   "traps": [
+    "Avoid 'Can you give me the logs?' (too blunt); use 'I would appreciate it if you could' for polite professional request.",
+    "Don't say 'We need this to check your system' (sounds like auditing the IT team); use 'verify the revenue recognition process' to specify business context.",
+    "Avoid 'How can I get this fast?'; use 'expedite this request' to maintain professional register."
+   ]
+  },
+  {
+   "id": "wk_confirm_tax_impact",
+   "t": "确认税务处理影响",
+   "lvl": "★☆☆",
+   "sit": "在分析目标公司 FY25 的税务申报时，发现有大额的进项税额转出。你需要向税务经理确认这是否为行业普遍做法。",
+   "ai": "目标公司税务主管，对公司的税务处理很有信心，乐于解释背景，希望你理解这是基于合规考量。",
+   "you": "税务尽调负责人",
+   "task": "咨询税务处理合规性",
+   "tgt": [
+    "Could you please walk me through the rationale behind the significant input VAT reversal in FY25?",
+    "Is this treatment consistent with standard industry practices in the region?",
+    "I would like to better understand the compliance context for this specific tax filing."
+   ],
+   "traps": [
+    "Avoid 'Why did you reverse the input VAT?' (interrogative tone); use 'walk me through the rationale' to invite explanation.",
+    "Don't say 'Is this normal?'; use 'consistent with standard industry practices' to show professional curiosity.",
+    "Avoid 'I want to check if you are doing this right'; use 'understand the compliance context' to sound collaborative."
+   ]
+  },
+  {
+   "id": "wk_adjust_meeting_agenda",
+   "t": "建议调整会议议程",
+   "lvl": "★☆☆",
+   "sit": "原定下午讨论 FY25 财务报表，但由于资料还没传齐，你希望会议重点改为初步的 DD 流程梳理。",
+   "ai": "对方财务总监，很支持 DD 项目，也理解资料整理需要时间，愿意配合调整重点。",
+   "you": "项目负责人",
+   "task": "礼貌提出变更会议重点",
+   "tgt": [
+    "Given that some documents are still pending, I suggest we pivot our discussion to the high-level DD procedures this afternoon.",
+    "We can then focus on the detailed financial statement review once all the data is available.",
+    "Would this adjustment to the agenda work for your schedule?"
+   ],
+   "traps": [
+    "Avoid 'We can't talk about the statements because you didn't send them' (blaming); use 'Given that some documents are still pending' to frame it neutrally.",
+    "Don't say 'Change the meeting plan'; use 'pivot our discussion' or 'adjustment to the agenda' for professional word choice.",
+    "Avoid 'Are you okay with this?'; use 'Would this adjustment work for your schedule?' for better politeness."
+   ]
+  },
+  {
+   "id": "wk_clarify_intercompany_debt",
+   "t": "询问关联方往来余额",
+   "lvl": "★☆☆",
+   "sit": "9M26 的往来明细中，有一笔长期挂账的关联方余额。你需要请对方对接人解释该金额的形成原因及还款计划。",
+   "ai": "对接人，对这笔账历史比较了解，愿意提供背景，希望能快速核对完毕。",
+   "you": "财务尽调负责人",
+   "task": "请对方说明关联方余额背景",
+   "tgt": [
+    "Could you provide some background on the long-outstanding intercompany balance as of 9M26?",
+    "Specifically, we would like to understand the nature of this transaction and any repayment schedule in place.",
+    "Your insights would be very helpful for our analysis of the company's liquidity position."
+   ],
+   "traps": [
+    "Avoid 'Why is this money still sitting here?'; use 'long-outstanding intercompany balance' for professional terminology.",
+    "Don't say 'What is this?'; use 'nature of this transaction' to sound more analytical.",
+    "Avoid 'I need this for my work'; use 'helpful for our analysis of the company's liquidity position' to provide professional justification."
+   ]
+  },
+  {
+   "id": "wk_follow_up_missing_data",
+   "t": "跟进数据补充进度",
+   "lvl": "★☆☆",
+   "sit": "昨天约好提供 FY25 的存货明细表，现在还没收到，你需要给对接人发个信息跟进。",
+   "ai": "对接人，工作量很大，资料在整理中，还没来得及发，态度很客气。",
+   "you": "项目负责人",
+   "task": "催促补充资料",
+   "tgt": [
+    "I'm following up on the FY25 inventory schedule we discussed yesterday.",
+    "Could you please provide an update on when we might receive those files?",
+    "We are aiming to complete our analysis by tomorrow, so your prompt response would be greatly appreciated."
+   ],
+   "traps": [
+    "Avoid 'Where is the file?'; use 'I'm following up on...' for a standard professional follow-up.",
+    "Don't say 'When can I get it?'; use 'provide an update on when we might receive' for better flow.",
+    "Avoid 'I need it fast'; use 'prompt response would be greatly appreciated' to maintain professional distance and courtesy."
+   ]
+  },
+  {
+   "id": "aud_cfo_debt_covenant",
+   "t": "规劝CFO承认违约",
+   "lvl": "★★★",
+   "sit": "在复核FY25借款协议时，发现公司当前的流动比率触发了银行的限制性条款。CFO认为只要银行没发函，就不算违约，试图隐瞒该事项。",
+   "ai": "你是CFO。你认为公司现金流没问题，担心披露违约会导致股价波动和银行抽贷，处于两难境地，并非恶意作假。",
+   "you": "审计项目经理",
+   "task": "说服CFO承认该事项必须披露，以符合HKSA要求。",
+   "tgt": [
+    "If we don't disclose this breach, it will be a significant issue for the audit opinion.",
+    "Even if the bank hasn't taken action yet, the breach has already occurred under the covenant.",
+    "We need to address this transparency issue now before the final report is issued."
+   ],
+   "traps": [
+    "Avoid 'we must say this' (too informal); use 'disclosure is required by standards'.",
+    "Avoid 'the bank didn't call you' (vague); use 'the bank has not formally waived the covenant'.",
+    "Don't use 'it will make you look bad' (unprofessional); focus on 'risk of material misstatement'."
+   ]
+  },
+  {
+   "id": "aud_revenue_cutoff_dispute",
+   "t": "纠正收入截止时点",
+   "lvl": "★★★",
+   "sit": "Q1 26审计中，发现有大额销售在3月底已开票但4月才发货。客户坚持以开票日作为收入确认点，拒绝调整。",
+   "ai": "你是财务经理。你希望达成季度业绩指标，且认为合同约定发货前所有权已转移，对审计的截止标准感到困惑。",
+   "you": "审计高级经理",
+   "task": "引用HKFRS 15原则，要求客户将这笔收入调整回下一季度。",
+   "tgt": [
+    "According to HKFRS 15, the control of the goods only transfers upon delivery.",
+    "The revenue recognition should follow the substance of the transfer of control, not the invoicing date.",
+    "Could we please prepare a journal entry to shift this revenue to the next period?"
+   ],
+   "traps": [
+    "Avoid 'you are wrong' (confrontational); use 'this approach deviates from HKFRS 15'.",
+    "Avoid 'this is the rule' (vague); use 'this aligns with the performance obligation criteria'.",
+    "Don't use 'you need to change this'; use 'we need to ensure the period-end cut-off is accurate'."
+   ]
+  },
+  {
+   "id": "aud_impairment_wacc",
+   "t": "质疑减值折现率",
+   "lvl": "★★★",
+   "sit": "客户对一项长期投资做减值测试，使用的WACC远低于行业水平。对方财务认为这是由于公司融资成本低，并未意识到这与业务风险脱节。",
+   "ai": "你是财务总监。你对公司财务有信心，认为审计师对估值模型的要求过于死板，忽视了你们的特殊融资背景。",
+   "you": "审计经理",
+   "task": "指出WACC选择需考虑行业风险溢价，要求重新测算。",
+   "tgt": [
+    "The WACC used seems significantly lower than the industry peer average.",
+    "Could you walk me through the rationale for the beta and the risk premium applied?",
+    "We need to ensure the discount rate accurately reflects the specific risks of the cash-generating unit."
+   ],
+   "traps": [
+    "Avoid 'this number is fake'; use 'the assumption appears aggressive'.",
+    "Don't say 'you don't understand WACC'; use 'how did you derive these specific inputs?'",
+    "Avoid 'your model is wrong'; use 'the sensitivity analysis suggests a different outcome'."
+   ]
+  },
+  {
+   "id": "aud_related_party_offset_5431",
+   "t": "解决关联方抵销差异",
+   "lvl": "★★★",
+   "sit": "FY25集团内往来对账，有HK$5M余额不平。客户认为差异较小且由于汇率导致，不愿深入调查，审计时间已迫在眉睫。",
+   "ai": "你是财务主管。你非常忙碌，认为这500万港币相对集团收入微不足道，希望能直接平账了事。",
+   "you": "审计项目负责人",
+   "task": "强调抵销差异背后的内控风险，坚持必须查明差异原因。",
+   "tgt": [
+    "This variance requires a thorough investigation to ensure the integrity of the consolidated financial statements.",
+    "Even if the amount seems immaterial, we need to understand if it stems from a system reconciliation issue.",
+    "Could we prioritize identifying the root cause before we finalize the intercompany consolidation?"
+   ],
+   "traps": [
+    "Avoid 'it's a small amount' (colloquial); use 'the magnitude is not the primary concern here'.",
+    "Don't use 'just fix it'; use 'please provide a reconciliation for the discrepancy'.",
+    "Avoid 'I don't care'; focus on 'the audit trail must be complete'."
+   ]
+  },
+  {
+   "id": "aud_post_balance_sheet_lawsuit",
+   "t": "处理资产负债表日后诉讼",
+   "lvl": "★★★",
+   "sit": "Q1 26发生了一起重大诉讼。客户认为这是今年发生的事，与FY25报表无关，拒绝进行会计估计或披露。",
+   "ai": "你是公司法务财务负责人。你认为该事项属于今年，强行挂钩FY25会引起投资者不必要的恐慌。",
+   "you": "审计经理",
+   "task": "解释资产负债表日后事项的判定标准，要求补充披露。",
+   "tgt": [
+    "We need to evaluate whether the conditions for this litigation existed at the balance sheet date.",
+    "Even if the lawsuit was filed in 2026, we must assess if it provides evidence of conditions that existed at year-end.",
+    "Transparency in the notes is essential to protect the company from future liabilities."
+   ],
+   "traps": [
+    "Avoid 'it's definitely related'; use 'we need to perform a subsequent event review'.",
+    "Don't say 'you're hiding it'; use 'the disclosure needs to be more comprehensive'.",
+    "Avoid 'the law says so'; use 'HKAS 10 provides specific guidance on non-adjusting events'."
+   ]
+  },
+  {
+   "id": "dd_tax_incentive_verification",
+   "t": "追问税收优惠依据",
+   "lvl": "★★☆",
+   "sit": "目标公司在 FY24 和 FY25 享受了高新企业税率，但你查看备案文件时发现专利持有方与运营主体不完全一致。你需要提醒对方提供补充文件以规避潜在的追缴风险。",
+   "ai": "财务经理，工作极其细致但因琐事缠身。他坚信当前的税务筹划是合规的，不理解为什么审计和尽调会对这些老合同抓着不放。",
+   "you": "FDD Advisor",
+   "task": "要求对方提供完整的法律协议链条，且不能表现出指责感。",
+   "tgt": [
+    "To reconcile the tax benefits with the current operating structure, could you provide the underlying IP assignment agreements?",
+    "We need to ensure all documentation is robust to mitigate any potential exposure during a tax audit.",
+    "Could you clarify how the technical expertise is legally mapped to this specific entity?"
+   ],
+   "traps": [
+    "Avoid 'You need to give me...' (too demanding); use 'Could you provide...' (polite professional request).",
+    "Avoid 'tax risk' directly; use 'potential exposure' to maintain a neutral advisory tone.",
+    "Avoid 'I think you are wrong'; use 'To reconcile...' to frame the request as a collaborative task."
+   ]
+  },
+  {
+   "id": "dd_inventory_scrap_gap",
+   "t": "挑战报废核销流程",
+   "lvl": "★★☆",
+   "sit": "FY25 的存货盘点中，仓库有大量陈旧物料，但财务账面很少有报废核销记录。管理层称这是为了保留‘备用价值’。",
+   "ai": "仓库主管，人很诚恳但对财务准则不敏感。他认为只要还没卖出去，东西就还有用，不想做报废处理增加财务麻烦。",
+   "you": "FDD Advisor",
+   "task": "指出会计报表与物理库龄的严重错位，要求对方提供合理的减值依据。",
+   "tgt": [
+    "Given the slow movement of these items, how does the company determine when an inventory write-down becomes necessary?",
+    "It seems there is a disconnect between the physical aging and the current carrying value on the books.",
+    "Could you walk me through the criteria used to justify keeping these items as non-impaired?"
+   ],
+   "traps": [
+    "Avoid 'Your records are fake' (too aggressive); use 'a disconnect between...' (neutral observation).",
+    "Avoid 'write off' as a noun; use 'write-down' for accounting adjustments.",
+    "Avoid 'show me the rules'; use 'walk me through the criteria' to sound more professional."
+   ]
+  },
+  {
+   "id": "dd_contract_timeline_issue",
+   "t": "核实合同到期风险",
+   "lvl": "★★☆",
+   "sit": "你在审阅 9M26 收入时发现，头部客户的框架合同将在明年到期，但管理层尚未启动续约谈判。买方对此非常焦虑。",
+   "ai": "销售部总监，信心满满。他认为与客户关系极好，续约只是‘走过场’，觉得你在小题大做，浪费他时间。",
+   "you": "FDD Advisor",
+   "task": "以客观的中介身份，表达买方对收入连续性的担忧。",
+   "tgt": [
+    "Given that this contract accounts for a significant portion of revenue, the investors are concerned about the renewal status.",
+    "Have there been any preliminary discussions with the client regarding the terms post-expiration?",
+    "It would be prudent to document the current pipeline to provide clarity on the revenue stability for FY26 and beyond."
+   ],
+   "traps": [
+    "Avoid 'You haven't renewed it yet' (blaming); use 'the investors are concerned' (distancing).",
+    "Avoid 'It is important to...' (cliché); use 'It would be prudent to...' (more sophisticated).",
+    "Avoid 'money' in professional context; use 'revenue stability' or 'commercial terms'."
+   ]
+  },
+  {
+   "id": "dd_miscellaneous_expense",
+   "t": "刨根问底零碎费用",
+   "lvl": "★★☆",
+   "sit": "9M26 的‘其他运营费用’科目里有一笔频繁出现的‘咨询费’，每笔金额刚好低于审批权限。你怀疑这在规避内控。",
+   "ai": "财务负责人，非常忙碌，认为这些零碎费用金额小、不重要，觉得你这种‘查底稿’的问法是浪费效率。",
+   "you": "FDD Advisor",
+   "task": "在对方不耐烦的情况下，坚持要求拆解费用背后的商业实质。",
+   "tgt": [
+    "Could you provide a breakdown of these recurring expenses to help us understand their commercial purpose?",
+    "I understand these amounts appear immaterial individually, but we need to assess the underlying authorization process.",
+    "It is standard procedure for us to verify the nature of these disbursements to ensure compliance with the internal control policy."
+   ],
+   "traps": [
+    "Avoid 'I don't believe you' (confrontational); use 'help us understand the purpose' (analytical).",
+    "Avoid 'too small to care' (lazy); use 'appear immaterial' (technical audit terminology).",
+    "Avoid 'check your homework'; use 'verify the nature of these disbursements'."
+   ]
+  },
+  {
+   "id": "dd_subsidiary_profit_transfer",
+   "t": "追问利润转移嫌疑",
+   "lvl": "★★☆",
+   "sit": "集团内子公司 A 把产品低价卖给子公司 B 再高价卖出，你在计算 FY25 的合并抵消时发现了这笔不寻常的定价偏移。",
+   "ai": "集团会计，觉得这是内部资源优化，理所应当。他没意识到这会扭曲各子公司的独立估值。",
+   "you": "FDD Advisor",
+   "task": "要求解释定价逻辑，并指出这会导致财务报表在评估时的失真。",
+   "tgt": [
+    "The pricing mechanism between these two entities seems to deviate from the arm's length principle.",
+    "Could you help me clarify the rationale behind these inter-company transfer prices?",
+    "To ensure a fair valuation of each entity, we need to adjust for these internal margins."
+   ],
+   "traps": [
+    "Avoid 'You are transferring profit'; use 'deviate from the arm's length principle' (correct technical term).",
+    "Avoid 'Why do you do this?'; use 'clarify the rationale behind...' (formal).",
+    "Avoid 'It makes the report wrong'; use 'ensure a fair valuation' (professional objective)."
+   ]
+  },
+  {
+   "id": "dd_capitalization_policy_5439",
+   "t": "质疑研发资本化尺度",
+   "lvl": "★★☆",
+   "sit": "公司在 Q1 26 将大量的研发人工直接资本化。你认为这部分属于维持性支出，应计入费用。",
+   "ai": "技术部负责人，很傲气，认为研发成果是公司的核心竞争力，一定要把开支都计入资产以显示更高的盈利能力。",
+   "you": "FDD Advisor",
+   "task": "引用准则要求，坚定地否定其激进的资本化处理，但保持职业礼貌。",
+   "tgt": [
+    "I have concerns regarding the capitalization criteria used for these R&D personnel costs.",
+    "Under the current accounting standards, we need to distinguish between development costs and routine maintenance.",
+    "Could you provide the project milestones that justify treating these expenditures as assets?"
+   ],
+   "traps": [
+    "Avoid 'You are inflating profit' (accusatory); use 'I have concerns regarding the criteria' (objective).",
+    "Avoid 'You should expense it'; use 'distinguish between development and maintenance'.",
+    "Avoid 'Prove it' (aggressive); use 'Could you provide the milestones that justify...' (evidence-based)."
+   ]
+  },
+  {
+   "id": "aud_request_adjustment_reclassification",
+   "t": "建议重分类长期借款",
+   "lvl": "★★☆",
+   "sit": "FY25审计中，发现一笔长期借款即将在下季度到期。按照HKAS 1，这笔钱必须划入流动负债，但CFO担心这会影响公司的流动比率指标，不想动账。",
+   "ai": "你是财务总监，很看重公司的财务指标表现，尤其是流动比率。你认为这笔钱很快就能申请展期，所以没必要调整报表。",
+   "you": "审计项目经理",
+   "task": "坚持会计准则要求，要求客户将借款重分类至流动负债。",
+   "tgt": [
+    "According to HKAS 1, we must reclassify this portion of the loan as a current liability since it matures within the next twelve months.",
+    "I understand your concern regarding the current ratio, but the presentation must strictly reflect the repayment schedule as of the balance sheet date.",
+    "Could you please prepare the adjustment entry so we can ensure the financial statements are compliant with the reporting standards?"
+   ],
+   "traps": [
+    "避免使用 'I think you should change it'，应使用更具客观性的 'The standard requires us to...'。",
+    "避免使用中文直译的 'make the ratio bad'，应使用更专业的 'impact the liquidity ratio'。",
+    "避免 'move to short-term'，在财务语境下使用 'reclassify as a current liability'。"
+   ]
+  },
+  {
+   "id": "aud_discuss_internal_control_weakness",
+   "t": "披露库存管理内控缺陷",
+   "lvl": "★★☆",
+   "sit": "你在盘点时发现仓库缺乏定期盘点制度，且出入库单据经常缺失，存在重大内控缺陷。财务经理认为这些都是琐碎的行政流程问题。",
+   "ai": "你是财务经理，你认为仓库管理是仓储部的事，财务只负责录入系统，没必要为了这些流程细节在管理建议书里大做文章。",
+   "you": "审计项目经理",
+   "task": "向对方解释为什么这属于严重的内控缺陷，并强调其财务影响。",
+   "tgt": [
+    "We’ve identified a potential material weakness in your inventory management process due to the lack of periodic physical counts.",
+    "This isn't just an administrative issue; it directly impacts the accuracy of the inventory valuation in our financial statements.",
+    "We need to document these control gaps to ensure the management is aware of the potential risks involved."
+   ],
+   "traps": [
+    "避免使用 'it's not a big deal'，审计正式场合应说 'this is a significant control gap'。",
+    "不要用 'your warehouse team is lazy' 的语气，应客观描述 'lack of periodic physical counts'。",
+    "避免 'this will make the audit hard'，应说 'it impacts the accuracy of inventory valuation'。"
+   ]
+  },
+  {
+   "id": "aud_negotiate_audit_fee_increase",
+   "t": "协商审计费用调整",
+   "lvl": "★★☆",
+   "sit": "客户今年新增了两家子公司，工作量大幅增加。你需要跟对方谈加钱，但你平时不太擅长直接谈商务条件。",
+   "ai": "你是客户方的财务总监，预算非常紧张。你认为审计是例行工作，去年做得很好，今年应该更熟练，不理解为什么还要加钱。",
+   "you": "审计合伙人/经理",
+   "task": "以工作范围扩大为由，有理有据地提出调整审计费用。",
+   "tgt": [
+    "Given the recent expansion with two new subsidiaries, our scope of work for the FY25 audit has increased significantly.",
+    "We would like to propose an adjustment to the audit fee to reflect the additional resources required to cover these new entities.",
+    "Let’s discuss how we can align our fee structure with the expanded scale of the audit engagement."
+   ],
+   "traps": [
+    "避免使用 'we need more money'，应使用专业的 'propose an adjustment to the audit fee'。",
+    "不要说 'it's too much work for us'，应表述为 'the scope of work has increased significantly'。",
+    "避免使用 'we want to charge you'，应使用 'align our fee structure with the engagement scale'。"
+   ]
+  },
+  {
+   "id": "wk_address_data_security",
+   "t": "协调敏感信息合规交付",
+   "lvl": "★★☆",
+   "sit": "目标公司法务因数据安全政策，拒绝提供包含员工工资明细的原始文档。你需要向对方沟通，提出脱敏方案以推进尽调进度。",
+   "ai": "你是公司法务，非常严谨，真心担心数据泄露违规，但你也知道业务需要推进，如果你能确认风险受控，你会同意。",
+   "you": "财务尽调项目组负责人",
+   "task": "提议使用脱敏后的数据版本以绕过合规限制",
+   "tgt": [
+    "I understand your concerns regarding data privacy and the sensitivity of the payroll information.",
+    "Would a redacted version of the report, with personal identifiers removed, be acceptable?",
+    "We are happy to sign an additional data processing agreement to ensure full compliance."
+   ],
+   "traps": [
+    "不要用 'give me the data anyway'，这是无视合规，应先 acknowledge 对方的担忧",
+    "不要简单说 'hide names'，应使用 'redacted version' 和 'personal identifiers' 才是专业术语",
+    "注意口语流畅度，避免中式长句，应使用短句体现专业度"
+   ]
+  },
+  {
+   "id": "wk_negotiate_erp_delay",
+   "t": "协商系统故障后的交付",
+   "lvl": "★★☆",
+   "sit": "ERP 系统在 9M26 数据迁移中丢包，导致关键财务指标无法出具。你必须和财务总监重新协商交付时间，并确保不影响整体 DD 进度。",
+   "ai": "你是财务总监，系统崩溃让你焦头烂额。你很焦虑，希望能得到宽限，而不是被催促。",
+   "you": "财务尽调项目组负责人",
+   "task": "与对方达成一致，延后关键财务报表的交付时间",
+   "tgt": [
+    "Given the technical issues with the ERP migration, I understand that the data extraction is delayed.",
+    "What is the earliest realistic timeframe we can expect the complete report?",
+    "Let’s adjust our internal schedule to prioritize other modules while your team resolves the system issue."
+   ],
+   "traps": [
+    "不要说 'I need it now'，要展现出对 'technical issues' 的体谅",
+    "不要用 'when can you give it to me'，应使用 'What is the earliest realistic timeframe'",
+    "避免使用 'I'll wait'，应使用 'Let’s adjust our internal schedule' 显得你在积极管理项目"
+   ]
+  },
+  {
+   "id": "wk_decline_scope_creep_5456",
+   "t": "礼貌拒绝合同外工作",
+   "lvl": "★★☆",
+   "sit": "客户高层在会议中要求你顺便评估公司的 HR 绩效体系。这超出了本次财务尽调范围，且会占用你团队过多人力。",
+   "ai": "你是客户高层，你觉得你们团队做财务很出色，所以顺便问问 HR 绩效，没意识到这增加了工作量，如果你能解释原因，你会理解。",
+   "you": "财务尽调项目组负责人",
+   "task": "在不冒犯对方的前提下，拒绝这一额外要求",
+   "tgt": [
+    "That is an interesting request, but it falls outside the scope of our current engagement agreement.",
+    "Our primary focus remains on the financial due diligence to meet the upcoming transaction deadline.",
+    "We wouldn't want to dilute our efforts on the current scope, which would be risky given the tight schedule."
+   ],
+   "traps": [
+    "不要说 'this is not in our contract'，听起来很僵硬，应说 'falls outside the scope of our engagement'",
+    "不要直接说 'I can't do it'，应强调 'primary focus' 是为了保证项目质量",
+    "避免语气过硬，要用 'That is an interesting request' 做开场缓冲"
+   ]
+  },
+  {
+   "id": "dd_tax_compliance_risk_5463",
+   "t": "追问历史税筹合规性",
+   "lvl": "★★★",
+   "sit": "公司在 FY24 和 FY25 频繁变更税务注册地以享受优惠政策。相关备案文件缺失，对方坚称这是当地政府的特殊协议，担心影响未来税务合规。",
+   "ai": "你是财务总监。你相信这是合法的商业布局，认为对方在过度纠结文书工作，但这确实在拖慢进度。",
+   "you": "FDD advisor",
+   "task": "在不冒犯对方的前提下，委婉指出文件缺失对买方评估税务风险的必要性。",
+   "tgt": [
+    "Could you help us understand the basis for these incentives? We need to document the historical tax treatment for our report.",
+    "It would be very helpful if we could review the underlying agreements, as our tax team needs to assess the sustainability of these arrangements.",
+    "To provide the investor with clarity, we need to bridge the gap between the tax savings and the available supporting documentation."
+   ],
+   "traps": [
+    "Avoid 'You didn't give us documents' (accusatory). Use 'We need to document'.",
+    "Avoid 'Is this legal?' (too blunt/aggressive). Use 'assess the sustainability of these arrangements'.",
+    "Don't use 'Why did you change locations?' (interrogative). Use 'help us understand the basis'."
+   ]
+  },
+  {
+   "id": "dd_r_and_d_fluctuation_5463",
+   "t": "质疑研发费用异常波动",
+   "lvl": "★★★",
+   "sit": "9M26 的研发费用在 Q3 出现剧烈下滑。财务负责人忙于其他事务，解释说只是“优化了流程”，你需要获取更扎实的凭证。",
+   "ai": "你是财务部负责人。你认为这只是效率提升的结果，对财务顾问反反复复盘问同一个科目感到不耐烦，但愿意配合。",
+   "you": "FDD advisor",
+   "task": "通过解释数据差异的重要性，引导对方提供具体的科目明细。",
+   "tgt": [
+    "Given the significant variance observed in Q3, we need to understand the underlying drivers to reconcile the trend with the previous periods.",
+    "Could you provide a breakdown of these expenses? This will allow us to demonstrate the cost-saving logic to the investor.",
+    "We want to ensure our findings accurately reflect your operational improvements, but we need the supporting data to validate this."
+   ],
+   "traps": [
+    "Avoid 'Your data is weird' (informal). Use 'Given the significant variance'.",
+    "Avoid 'I don't believe you' (confrontational). Use 'To validate this'.",
+    "Avoid 'Tell me why' (commanding). Use 'Could you provide a breakdown'."
+   ]
+  },
+  {
+   "id": "dd_capitalization_policy_5463",
+   "t": "纠正资本化政策偏差",
+   "lvl": "★★★",
+   "sit": "Q1 26 一笔大额 ERP 升级被直接费用化。你认为根据准则应资本化，对方坚持“谨慎原则”不愿调整。",
+   "ai": "你是 CFO。你觉得费用化能减少未来折旧压力，财务处理是合规的。你对被质疑专业性感到有些委屈。",
+   "you": "FDD advisor",
+   "task": "从专业会计准则出发，平稳地指出该处理方式对 EBITDA 的影响。",
+   "tgt": [
+    "From an accounting standard perspective, we are considering whether this expenditure meets the criteria for capitalization.",
+    "Our analysis suggests that this treatment might not be fully aligned with the accounting policy applied in prior periods.",
+    "Would you be open to discussing the criteria used? We need to ensure consistency for the financial projections."
+   ],
+   "traps": [
+    "Avoid 'You are wrong' (confrontational). Use 'We are considering whether...'.",
+    "Avoid 'This is a mistake' (judgmental). Use 'might not be fully aligned'.",
+    "Avoid 'You must change it' (directive). Use 'Would you be open to discussing'."
+   ]
+  },
+  {
+   "id": "dd_reconciliation_gap",
+   "t": "处理管理报表差异",
+   "lvl": "★★★",
+   "sit": "9M26 管理报表与审计后数据存在大额调节项。对方用“账务调整复杂”推诿，你需要一个清晰的调节表。",
+   "ai": "你是财务经理。你确实很忙，且觉得这些差异解释起来极其耗时，你希望对方能自己从底稿里推导出来。",
+   "you": "FDD advisor",
+   "task": "强调获取调节表的必要性，以减轻双方后续沟通的负担。",
+   "tgt": [
+    "To avoid any misinterpretation of the financial performance, we would appreciate a formal reconciliation of these two sets of figures.",
+    "Having a clear breakdown would significantly streamline our review process and address the query from our client directly.",
+    "Is there a summary available that explains these specific adjustments? It would help us finalize our analysis much faster."
+   ],
+   "traps": [
+    "Avoid 'Give me the table now' (demanding). Use 'We would appreciate a formal reconciliation'.",
+    "Avoid 'You are making it difficult' (blaming). Use 'streamline our review process'.",
+    "Avoid 'I can't understand these' (weak). Use 'To avoid any misinterpretation'."
+   ]
+  },
+  {
+   "id": "aud_request_bank_reconciliation",
+   "t": "索要银行余额调节表",
+   "lvl": "★☆☆",
+   "sit": "你在做银行存款审计，账面余额与银行对账单不符，需要对方提供调节表。对方没意识到这是审计必查项。",
+   "ai": "新入职财务，不太清楚审计流程。他觉得余额没对上很正常，不知道为什么需要正式的调节表。",
+   "you": "审计员",
+   "task": "解释需要调节表的原因并索要该文件",
+   "tgt": [
+    "We noticed a discrepancy between the bank statement and the general ledger as of 31 December 2025.",
+    "Could you provide the bank reconciliation statement to explain these timing differences?",
+    "It is standard procedure to reconcile these amounts to ensure the accuracy of the cash balance."
+   ],
+   "traps": [
+    "Avoid 'The numbers are different' (too informal); use 'discrepancy'.",
+    "Don't translate 'adjusting table' literally; the industry term is 'bank reconciliation statement'.",
+    "Avoid 'make sure' when 'ensure' is more professional in audit contexts."
+   ]
+  },
+  {
+   "id": "aud_inquire_nature_of_expense",
+   "t": "询问费用性质归属",
+   "lvl": "★☆☆",
+   "sit": "抽凭时发现一笔大额支出记在了‘其他业务费用’，需要了解其实际用途。对方很忙但愿意解释。",
+   "ai": "财务经理，手里有很多事。他记得这笔钱的大概用途，但需要翻一下当时的审批记录。",
+   "you": "审计经理",
+   "task": "请对方明确该费用的性质以便分类",
+   "tgt": [
+    "Could you clarify the nature of this expense recorded in 'Other Operating Expenses'?",
+    "We need to understand the business purpose of this payment for our classification review.",
+    "Could you provide some context or supporting documents regarding this transaction?"
+   ],
+   "traps": [
+    "Don't say 'What is this money for' (too direct/rude); use 'clarify the nature'.",
+    "Avoid 'tell me about' (vague); use 'provide context'.",
+    "Don't use 'other expenses' loosely; always refer to the specific GL account name."
+   ]
+  },
+  {
+   "id": "aud_follow_up_missing_document",
+   "t": "跟进缺失凭证",
+   "lvl": "★☆☆",
+   "sit": "抽取的样本中有两张发票原件没找到，对方说可能是归档时漏了，答应去档案室找。",
+   "ai": "会计，负责凭证归档。他非常有礼貌，因为疏忽感到抱歉，并承诺会尽快找出来。",
+   "you": "审计负责人",
+   "task": "礼貌但坚定地要求在特定时间内找回文件",
+   "tgt": [
+    "We are missing the supporting invoices for these two transactions.",
+    "Could you please look into this and get back to us by end of the day?",
+    "It is essential for our testing that we have the original documents on file."
+   ],
+   "traps": [
+    "Don't say 'You lost the invoice' (accusatory); use 'We are missing the supporting invoices'.",
+    "Avoid 'I need you to find this right now' (too demanding); use 'Could you please look into this'.",
+    "Don't use 'on file' when you mean 'supporting document evidence'."
+   ]
+  },
+  {
+   "id": "aud_schedule_walkthrough_meeting",
+   "t": "安排穿行测试会议",
+   "lvl": "★☆☆",
+   "sit": "为了解内控，你需要和关键岗位人员进行一次穿行测试。对方时间比较紧，你需要协调一个合适的时间。",
+   "ai": "部门负责人，这周有多个会议。他愿意配合但需要审计方给出明确的时间段。",
+   "you": "审计经理",
+   "task": "与对方商定 30 分钟的穿行测试会议时间",
+   "tgt": [
+    "We would like to schedule a 30-minute walkthrough meeting to understand your internal control process.",
+    "Would you be available for a brief discussion later this week?",
+    "Please let me know a time that fits your schedule, and I will send a calendar invitation."
+   ],
+   "traps": [
+    "Don't say 'Can I talk to you' (too informal); use 'schedule a walkthrough meeting'.",
+    "Avoid 'when are you free' (too vague); use 'fits your schedule'.",
+    "Don't say 'I'll email you' (generic); use 'send a calendar invitation'."
+   ]
+  },
+  {
+   "id": "aud_clarify_prepayment_status",
+   "t": "询问预付款核销情况",
+   "lvl": "★☆☆",
+   "sit": "账上有大额预付款一直未转销，你需要确认对方是否已经收到了对应的货物或服务。",
+   "ai": "财务主管，对该项目比较了解。他解释说因为供应商进度慢，所以预付款一直挂着。",
+   "you": "审计负责人",
+   "task": "询问预付款未核销的具体原因",
+   "tgt": [
+    "We noticed a significant balance in the prepayments account that has been outstanding for a while.",
+    "Could you explain the status of the goods or services related to these payments?",
+    "Are there any plans to offset these against future invoices in Q2 26?"
+   ],
+   "traps": [
+    "Don't say 'The money is stuck' (colloquial); use 'outstanding balance'.",
+    "Avoid 'Why is this still here' (aggressive); use 'Could you explain the status'.",
+    "Don't say 'clear the account'; use 'offset' or 'reclassify' in accounting contexts."
+   ]
+  },
+  {
+   "id": "dd_verify_bank_reconciliation",
+   "t": "核实银行余额调节表",
+   "lvl": "★☆☆",
+   "sit": "你在复核 FY25 年底的货币资金时，发现账面金额与银行对账单存在微小差异。你需要向出纳询问这些未达账项的具体构成。",
+   "ai": "你是一名负责任的出纳，账目是你亲自做的，你很确定这只是由于跨期造成的正常现象，正准备整理凭证给审计师看。",
+   "you": "FDD advisor",
+   "task": "请求对方提供银行余额调节表，并解释未达账项的成因。",
+   "tgt": [
+    "Could you please provide the bank reconciliation statement for the year ended FY25?",
+    "I noticed a small discrepancy between our GL balance and the bank statement. Could you clarify the nature of these outstanding items?",
+    "Are these reconciling items primarily timing differences?"
+   ],
+   "traps": [
+    "Avoid 'what is this difference' (vague), use 'clarify the nature of these items' (professional).",
+    "Don't use 'money record', use 'GL balance' (General Ledger).",
+    "Don't use 'Why is it different', use 'Could you clarify' (more formal and objective)."
+   ]
+  },
+  {
+   "id": "dd_clarify_prepayment_nature",
+   "t": "追问预付账款性质",
+   "lvl": "★☆☆",
+   "sit": "在预付账款科目中，你发现几笔金额较大的款项挂账超过一年。你需要询问财务经理这些款项对应的项目进度以及为什么尚未结转。",
+   "ai": "你是一名业务财务，你负责这个项目，你认为这只是正常的商业进度，对方之所以还没开票是因为工程还没验收。",
+   "you": "FDD advisor",
+   "task": "询问长期挂账的预付账款的原因及其结算计划。",
+   "tgt": [
+    "I’ve noticed some large prepayment balances that have been outstanding for over a year.",
+    "Could you provide an update on the status of these projects and when they are expected to be settled?",
+    "Are there any specific reasons why these have not yet been recognized as expenses?"
+   ],
+   "traps": [
+    "Avoid 'Why is the money still here', use 'outstanding for over a year' (professional).",
+    "Avoid 'I want to know the reason', use 'Could you provide an update' (softer tone).",
+    "Use 'settled' instead of 'paid back' for prepayments."
+   ]
+  },
+  {
+   "id": "dd_request_asset_registry_5478",
+   "t": "索要资产折旧明细",
+   "lvl": "★☆☆",
+   "sit": "在查看固定资产列表时，你发现缺少每项资产的折旧年限和原值信息。你需要向资产管理人员索要完整的折旧明细表以便核算。",
+   "ai": "你是资产管理经理，资料都在电脑里，你很乐意提供，只是最近比较忙还没来得及整理成方便审计看的格式。",
+   "you": "FDD advisor",
+   "task": "礼貌索要完整的固定资产折旧明细表。",
+   "tgt": [
+    "Would it be possible to get a detailed breakdown of the fixed asset registry including depreciation schedules?",
+    "I am looking for the acquisition cost and useful life for each asset in this category.",
+    "Having this in an Excel format would be very helpful for our analysis."
+   ],
+   "traps": [
+    "Don't use 'I want the list', use 'Would it be possible to get' (polite).",
+    "Use 'useful life' instead of 'depreciation time'.",
+    "Don't use 'Give me the excel', use 'Having this in an Excel format would be helpful'."
+   ]
+  },
+  {
+   "id": "dd_confirm_tax_filing",
+   "t": "确认税务申报情况",
+   "lvl": "★☆☆",
+   "sit": "你在复核 FY25 税务合规性时，发现缺少某些季度增值税的申报回执。你需要提醒财务部门尽快提供这些凭证以确保合规。",
+   "ai": "你是负责报税的会计，文件都在归档室，你很配合，确认公司没有税务违规风险，只是文件多找起来需要时间。",
+   "you": "FDD advisor",
+   "task": "询问税务申报记录并说明索要原因。",
+   "tgt": [
+    "We are currently reviewing the tax compliance status for FY25.",
+    "Could you please share the VAT filing receipts for the remaining quarters?",
+    "This is just to ensure our records align with the official tax filings."
+   ],
+   "traps": [
+    "Don't say 'You didn't give me the tax paper', say 'We are reviewing the tax compliance status'.",
+    "Avoid 'check if you are lying', use 'ensure our records align with the official filings'.",
+    "Use 'tax filings' instead of 'tax papers'."
+   ]
+  },
+  {
+   "id": "dd_inquire_bad_debt_method",
+   "t": "询问坏账计提方法",
+   "lvl": "★☆☆",
+   "sit": "管理层在 FY25 年末对应收账款计提了坏账准备，但你看不出计提依据。你想了解他们具体是如何评估坏账风险的。",
+   "ai": "你是财务主管，公司一直沿用以前的坏账计提流程，你认为这很合理，想解释给审计听。",
+   "you": "FDD advisor",
+   "task": "请对方解释坏账准备的计提逻辑和评估过程。",
+   "tgt": [
+    "Could you walk me through the methodology used for the FY25 bad debt provision?",
+    "Is there a specific policy regarding the aging analysis for these receivables?",
+    "I'd like to understand how the company assesses the collectibility of these outstanding invoices."
+   ],
+   "traps": [
+    "Avoid 'How do you calculate this', use 'walk me through the methodology' (professional).",
+    "Avoid 'Are these debts bad', use 'assess the collectibility' (technical).",
+    "Use 'provision' instead of 'prepare money'."
+   ]
+  },
+  {
+   "id": "dd_check_revenue_cutoff",
+   "t": "确认收入截止测试",
+   "lvl": "★☆☆",
+   "sit": "你发现 FY25 年末有几笔发货记录发生在 12 月 31 日之后，但收入却确认在 FY25。你需要核实公司收入确认的 cutoff 政策。",
+   "ai": "你是销售财务，你认为这是按照合同约定的发货日期入账，虽然没收到货但流程是规范的，你愿意配合查明原因。",
+   "you": "FDD advisor",
+   "task": "询问年末销售截止测试的依据及具体确认准则。",
+   "tgt": [
+    "I noticed a few transactions recognized in FY25 where the goods were shipped after the year-end.",
+    "Could you explain the revenue recognition policy regarding the cutoff timing?",
+    "Are these entries based on the shipping date or the arrival date?"
+   ],
+   "traps": [
+    "Avoid 'You recorded this wrong', use 'I noticed a few transactions... could you explain' (neutral).",
+    "Use 'cutoff' instead of 'stop time'.",
+    "Use 'revenue recognition' instead of 'record income'."
+   ]
+  },
+  {
+   "id": "wk_clarify_reclassification",
+   "t": "确认调整分录归类",
+   "lvl": "★☆☆",
+   "sit": "在复核 FY25 审计底稿时，你对一笔大额非经常性损益的分类有疑虑。你需要向对接人确认这是否属于一次性开支。",
+   "ai": "对方是客户财务经理，他很认真但在记录上有些混乱，他真心以为自己已经分类清楚了，请协助他理清。",
+   "you": "审计项目负责人",
+   "task": "询问对方确认该笔支出是否属于一次性费用归集",
+   "tgt": [
+    "Could you please confirm if this expense is a one-off item?",
+    "I need to verify if this should be classified as a non-recurring cost."
+   ],
+   "traps": [
+    "不要说 'Is this one time cost?'，one-off 是地道的表达",
+    "避免使用 'Are you sure about this?'，这会显得像质疑对方能力，用 Could you confirm 更有礼貌",
+    "注意区分 non-recurring 和 exceptional 在财务语域中的细微差别"
+   ]
+  },
+  {
+   "id": "wk_request_missing_notes_5484",
+   "t": "索要缺失的财务附注",
+   "lvl": "★☆☆",
+   "sit": "你在检查 FY25 财务报告，发现长期待摊费用部分的附注缺失了明细表。你需要提醒对方尽快补充。",
+   "ai": "对方是客户会计主管，他这几天被年结工作缠身，资料确实没理完，对你的索要表示理解。",
+   "you": "财务尽调负责人",
+   "task": "礼貌提醒对方补齐缺失的附注细节",
+   "tgt": [
+    "It seems the breakdown for long-term deferred expenses is missing from the notes.",
+    "Could you please provide the supporting table for this section at your earliest convenience?"
+   ],
+   "traps": [
+    "不要说 'The file is short of a table'，用 breakdown 或 supporting table 更专业",
+    "避免使用 'Give me the table'，这是祈使句，用 Could you please 更符合职场语域",
+    "at your earliest convenience 是职场催促的固定地道搭配"
+   ]
+  },
+  {
+   "id": "wk_propose_sync_call_5484",
+   "t": "预约进度同步短会",
+   "lvl": "★☆☆",
+   "sit": "DD 项目进入收尾阶段，有些细节需要当面过一下。你建议明天上午开个 15 分钟的短会。",
+   "ai": "对方是客户项目负责人，他也很关心进度，乐于通过短会解决问题。",
+   "you": "尽调项目经理",
+   "task": "建议预约明天上午的 15 分钟短会",
+   "tgt": [
+    "Do you have 15 minutes tomorrow morning for a quick sync-up?",
+    "I suggest we have a brief call to align on the remaining items."
+   ],
+   "traps": [
+    "不要说 'Do you have time for a meeting?'，sync-up 是地道的项目管理词汇",
+    "不要用 '15 minutes long'，15-minute call 是形容词短语",
+    "align on the items 比 'talk about the things' 更符合财务人的语域"
+   ]
   }
  ]
 }
