@@ -1955,6 +1955,7 @@ async function render(d){
   }
 
   record(d);                      // 落错题本 + 今天算打卡
+  markDaily('speak');             // 说了一句就算今天练过口语
   recordTurn(d);                  // 这一轮也存进历史，别等「结束」才存
   S.turns++;
   S.nSince = d.break ? 0 : S.nSince + 1;
@@ -2774,6 +2775,7 @@ function answerListen(k){
 function listenDone(){
   const f = $('#feed'); f.innerHTML = '';
   ST.turns += LSN.items.length; checkIn(); saveST();
+  markDaily(LSN.news ? 'news' : 'listen');   // 做完一组听力就算这一项
   const d = document.createElement('div');
   d.className = 'turn alex';
   d.innerHTML = '<div class="who">这一组做完了</div>' +
@@ -2838,6 +2840,52 @@ const TABS = {
 };
 let TAB_CUR = 'home';
 
+/* ═══ 每日打卡 ═══
+   Kevin：「设计一个每日打卡功能，让用户每天完成听力训练」。
+   做法：每天固定三件小事（一段时事听力 / 一组配音听力 / 一场口语），
+   做掉哪件就亮哪件，三件全亮算今天打卡完成。
+   🚨 「今天做了什么」按**日期**记，不按次数 —— 跨天自动清零，
+      不能让昨天的进度顶今天的卡。 */
+const DAILY = [
+  {k:'news',  ic:'📰', nm:'一段时事听力', go:() => go(showNews, '时事听力')},
+  {k:'listen',ic:'🎧', nm:'一组配音听力', go:() => goTab('listen')},
+  {k:'speak', ic:'🗣️', nm:'一场口语陪练', go:() => goTab('speak')},
+];
+function dailyState(){
+  try {
+    const d = JSON.parse(localStorage.getItem('alex_daily') || '{}');
+    return d.on === TODAY() ? d : {on: TODAY()};
+  } catch(_){ return {on: TODAY()}; }
+}
+function markDaily(k){
+  const d = dailyState();
+  if (d[k]) return;
+  d[k] = true;
+  try { localStorage.setItem('alex_daily', JSON.stringify(d)); } catch(_){}
+}
+function dailyCard(){
+  const d = dailyState();
+  const done = DAILY.filter(x => d[x.k]).length;
+  const box = document.createElement('div');
+  box.className = 'better';
+  box.style.marginTop = '14px';
+  box.innerHTML = `<div class="lb">今日打卡 ${done}/${DAILY.length}` +
+    (done === DAILY.length ? ' · 今天完成了 🎉' : '') + '</div>';
+  DAILY.forEach(x => {
+    const row = document.createElement('div');
+    row.className = 'card';
+    row.style.margin = '8px 0 0';
+    row.innerHTML = `<div class="hd">
+        <span class="role">${x.ic} ${x.nm}</span>
+        ${d[x.k] ? '<span class="done">✓ 已完成</span>'
+                 : '<span class="ct" style="color:var(--muted);font-size:12px">去做</span>'}
+      </div>`;
+    row.onclick = x.go;
+    box.appendChild(row);
+  });
+  return box;
+}
+
 /* 落地页：四个大方框 */
 function showHome(){
   $('#list').hidden = false;
@@ -2875,6 +2923,7 @@ function showHome(){
          practised(rec.id) ? ' · 练过 ' + practised(rec.id) : ' · 还没练过'}</div>
        </div>` : '');
   if (rec) $('#resume').onclick = () => start(rec);
+  $('#list').appendChild(dailyCard());
   const GO = {
     speak: () => goTab('speak'),
     listen: () => goTab('listen'),
