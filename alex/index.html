@@ -21,14 +21,36 @@
    换成高饱和的珊瑚橙做主色，配亮蓝/亮绿/紫，底色转成干净的冷白。
    参照的是多邻国和 51Talk 的做法：**一个高饱和主色 + 干净中性底**，
    靠饱和度而不是靠深色来出精神。 */
-:root{--bg:#f6f7fb;--fg:#16181d;--muted:#6f7480;--line:#e6e9f0;--card:#fff;
-  --accent:#ff5a36;--accent2:#ff8a5c;--soft:#fff0eb;
-  --alex:#3b82f6;--alexsoft:#eaf2ff;--rec:#ef4444;
-  --ok:#16a34a;--purple:#8b5cf6;--amber:#f59e0b}
-@media(prefers-color-scheme:dark){:root{--bg:#111318;--fg:#eceef3;--muted:#98a0ae;
-  --line:#282c35;--card:#1a1d24;--accent:#ff6b47;--accent2:#ff9470;--soft:#2b1d18;
-  --alex:#60a5fa;--alexsoft:#16233a;--rec:#f87171;
-  --ok:#4ade80;--purple:#a78bfa;--amber:#fbbf24}}
+/* ═══ 调色板：直接照搬多邻国的**纪律**，不是照抄它的绿 ═══
+   2026-08-02 从 duolingo.com 线上把他们的命名调色板扒下来：
+     owl #58CC02(品牌绿) tree-frog #58A700(绿的暗部) macaw #1CB0F6(蓝)
+     cardinal #FF4B4B(错) bee #FFC800(XP) fox #FF9600(连击) beetle #CE82FF
+     eel #4B4B4B(正文) wolf #777(次要) hare #AFAFAF(再次) 
+     swan #E5E5E5(描边) polar #F7F7F7(浅底) snow #FFF
+   🚨 我之前一直没抓住的那条纪律：
+     · 页面**几乎全是白和浅灰**，正文是 #4B4B4B 不是纯黑
+     · **只有一个品牌色**，用在主操作上；其余颜色**只做语义**（错/连击/XP），面积极小
+     · 绝不拿四种高饱和色做四块装饰 —— 那就是 Kevin 说的「又红又绿」
+   Alex 的品牌色取 macaw 蓝 #1CB0F6：出自同一套成熟配色，
+   而且商务英语这个场景用蓝比用绿稳。 */
+:root{
+  --brand:#1cb0f6;--brand-dark:#1899d6;--brand-soft:#ddf4ff;
+  --bg:#ffffff;--surface:#f7f7f7;--card:#ffffff;
+  --fg:#4b4b4b;--fg-strong:#3c3c3c;--muted:#777777;--faint:#afafaf;
+  --line:#e5e5e5;
+  --rec:#ff4b4b;--rec-soft:#ffdfe0;--ok:#58cc02;--ok-dark:#58a700;
+  --streak:#ff9600;--xp:#ffc800;
+  --accent:var(--brand);--accent2:#4fc3f7;--soft:var(--brand-soft);
+  --alex:#1cb0f6;--alexsoft:#ddf4ff;--purple:#ce82ff;--amber:#ffc800}
+@media(prefers-color-scheme:dark){:root{
+  --brand:#1cb0f6;--brand-dark:#1899d6;--brand-soft:#122b3a;
+  --bg:#131f24;--surface:#1b2b32;--card:#1b2b32;
+  --fg:#e8eef2;--fg-strong:#f3f7f9;--muted:#9bb0bd;--faint:#6b8291;
+  --line:#2b3f4a;
+  --rec:#ff5d5d;--rec-soft:#3a1f22;--ok:#61d02f;--ok-dark:#4c9c17;
+  --streak:#ffa733;--xp:#ffd233;
+  --accent:var(--brand);--accent2:#5cc8ff;--soft:var(--brand-soft);
+  --alex:#4cc2ff;--alexsoft:#122b3a;--purple:#c79bff;--amber:#ffd233}}
 /* ═══ 从多邻国量来的几条（2026-08-02 实测他们线上的计算样式，不是凭印象）═══
    · 按钮：高 50px、圆角 12px、字重 700、字距 0.8px
    · 🚨 那个「厚实感」不是阴影，是 **border-width: 2px 2px 4px** —— 底边比其他边厚一倍，
@@ -86,10 +108,8 @@ body{margin:0;background:var(--bg);color:var(--fg);font-size:16px;line-height:1.
      用 dvh 而不是 vh：iOS 上地址栏收放会改变 vh，dvh 才是当前真实高度。 */
   min-height:100dvh}
 @supports not (height: 100dvh){.wrap{min-height:100vh}}
-h1{font-size:23px;font-weight:800;margin:2px 0 3px;letter-spacing:-.4px;
-  background:linear-gradient(100deg,var(--accent),var(--accent2));
-  -webkit-background-clip:text;background-clip:text;
-  -webkit-text-fill-color:transparent;display:inline-block}
+h1{font-size:22px;font-weight:800;margin:2px 0 3px;letter-spacing:-.3px;
+  color:var(--fg-strong)}
 .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
 button{font-family:inherit}
 
@@ -98,21 +118,21 @@ button{font-family:inherit}
    改动三处：①统计条不折行 ②分类做成横向 tab，一次只看一组 ③卡片建立层级：
    标题=对手方是谁（短），情境降为两行截断的副文，难度用点不用星堆在句首。 */
 .stats{display:flex;align-items:center;gap:10px;margin:0 0 16px;
-  background:var(--card);border:none;box-shadow:var(--sh);
-  border-radius:var(--r);padding:15px 17px}
-.stats .n{font-size:22px;font-weight:800;line-height:1.1;letter-spacing:-.5px;
-  color:var(--accent)}
+  background:var(--card);border:2px solid var(--line);box-shadow:none;
+  border-radius:16px;padding:15px 17px}
+.stats .n{font-size:23px;font-weight:800;line-height:1.1;letter-spacing:-.5px;
+  color:var(--fg-strong)}
 .stats .l{font-size:10.5px;color:var(--muted);letter-spacing:.3px}
 .stats .col{min-width:52px}
 .stats .sp{flex:1}
-.stats button{background:var(--bg);border:1px solid var(--line);color:var(--fg);
+.stats button{background:var(--card);border:2px solid var(--line);
+  border-bottom-width:3px;color:var(--fg);
   border-radius:10px;padding:7px 10px;font-size:12.5px;font-weight:600;
   white-space:nowrap}
 .stats button:active{border-color:var(--accent);color:var(--accent)}
 .stats .dot{display:inline-block;min-width:18px;height:18px;line-height:18px;
   background:var(--rec);color:#fff;border-radius:9px;font-size:11px;
-  margin-left:5px;padding:0 5px;font-weight:800;
-  box-shadow:0 2px 8px rgba(239,68,68,.4)}
+  margin-left:5px;padding:0 5px;font-weight:800;box-shadow:none}
 
 /* ═══ 首页：大方块选模块 → 选难度 → 才开始练 ═══
    Kevin 2026-08-02：「一开始先放几个大的方块，让用户选择想进入哪一个模块，
@@ -120,11 +140,10 @@ button{font-family:inherit}
    原来是一进来就 18 张卡糊脸上，没有层次。 */
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:2px 0 4px}
 .tile{position:relative;border-radius:22px;padding:17px 16px 15px;
-  min-height:158px;display:flex;flex-direction:column;justify-content:flex-end;
-  box-shadow:var(--sh-lg);
+  min-height:150px;display:flex;flex-direction:column;justify-content:flex-end;
   color:#fff;overflow:hidden;cursor:pointer;transition:transform .07s}
-.tile{border-bottom:4px solid rgba(0,0,0,.22)}
-.tile:active{transform:translateY(2px);border-bottom-width:1px}
+.tile{border:2px solid transparent;border-bottom-width:4px}
+.tile:active{transform:translateY(2px);border-bottom-width:2px}
 .tile .ic{position:absolute;top:11px;right:13px;font-size:30px;opacity:.85;
   line-height:1}
 .tile .nm{font-size:18.5px;font-weight:800;letter-spacing:-.2px}
@@ -135,26 +154,30 @@ button{font-family:inherit}
 .resume .k{font-size:11px;letter-spacing:.4px;color:var(--muted);font-weight:700}
 .resume .v{font-size:15px;font-weight:700;margin-top:3px}
 .resume .s{font-size:12.5px;color:var(--muted);margin-top:2px}
-.t-speak{background:linear-gradient(140deg,#ff7a4d,#ff4b2b)}
-.t-listen{background:linear-gradient(140deg,#4facfe,#2563eb)}
-.t-book{background:linear-gradient(140deg,#34d399,#059669)}
-.t-hist{background:linear-gradient(140deg,#a78bfa,#7c3aed)}
+/* 🚨 不再四种高饱和色 —— 那正是「又红又绿」。
+   照多邻国的做法：**主操作用品牌色，其余是白底描边**，
+   靠图标和文案区分，不靠颜色区分。 */
+.t-speak{background:var(--brand);border-bottom-color:var(--brand-dark)}
+.t-listen{background:var(--brand);border-bottom-color:var(--brand-dark)}
+.t-book,.t-hist{background:var(--card);color:var(--fg);
+  border:2px solid var(--line);border-bottom-width:4px}
+.t-book .ds,.t-hist .ds{color:var(--muted);opacity:1}
+.t-book .ic,.t-hist .ic{filter:grayscale(.15)}
 @media(prefers-color-scheme:dark){
-  .t-speak{background:linear-gradient(140deg,#ff6a3d,#e03e20)}
-  .t-listen{background:linear-gradient(140deg,#3b9bf0,#1d4ed8)}
-  .t-book{background:linear-gradient(140deg,#2bbd88,#047857)}
-  .t-hist{background:linear-gradient(140deg,#9575f5,#6d28d9)}}
+  .t-book,.t-hist{background:var(--card);color:var(--fg)}}
 
 /* 难度选择：一屏三张，说清每一档是什么 */
 .lvpick{margin-top:4px}
 .lvcard{background:var(--card);border:var(--bd) solid var(--line);
-  border-radius:var(--r);box-shadow:var(--sh);
+  border-radius:16px;border:2px solid var(--line);border-bottom-width:4px;
+  box-shadow:none;
   padding:18px 17px;margin:var(--gap) 0;cursor:pointer;display:flex;align-items:center;
-  gap:15px;transition:transform .07s,box-shadow .12s}
-.lvcard:active{transform:translateY(2px) scale(.995);box-shadow:0 1px 5px rgba(0,0,0,.06)}
+  gap:15px;transition:transform .06s,border-color .12s,border-bottom-width .06s}
+.lvcard:active{transform:translateY(2px);border-bottom-width:2px;
+  border-color:var(--brand)}
 .lvcard .lv{flex:0 0 auto;display:flex;gap:4px}
 .lvcard .lv i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block}
-.lvcard .lv i.f{background:var(--accent)}
+.lvcard .lv i.f{background:var(--brand)}
 .lvcard .tx{flex:1}
 .lvcard .nm{font-size:15.5px;font-weight:700}
 .lvcard .ds{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.5}
@@ -166,7 +189,7 @@ button{font-family:inherit}
    🚨 跟麦克风底栏会打架 —— 练习进行中麦克风要占住底部，
       所以「对话中」隐藏标签栏（那时候他要的是说话，不是切模块），其余时候都在。 */
 #tabbar{position:fixed;left:0;right:0;bottom:0;z-index:5;
-  background:var(--card);border-top:none;box-shadow:0 -3px 18px rgba(0,0,0,.09);
+  background:var(--card);border-top:2px solid var(--line);box-shadow:none;
   display:flex;padding-bottom:env(safe-area-inset-bottom,0px)}
 #tabbar button{flex:1;background:none;border:none;color:var(--muted);
   padding:9px 2px 7px;display:flex;flex-direction:column;align-items:center;
@@ -179,18 +202,19 @@ button{font-family:inherit}
 .tabs{display:flex;gap:6px;margin:0 0 12px;overflow-x:auto;
   scrollbar-width:none;-ms-overflow-style:none}
 .tabs::-webkit-scrollbar{display:none}
-.tabs button{flex:0 0 auto;background:none;border:1px solid var(--line);
-  color:var(--muted);border-radius:999px;padding:10px 18px;font-size:14px;
-  font-weight:700;white-space:nowrap;background:var(--card);border-color:transparent;
-  box-shadow:var(--sh)}
-.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff;
-  box-shadow:0 4px 14px rgba(255,90,54,.38)}
+.tabs button{flex:0 0 auto;background:var(--card);border:2px solid var(--line);
+  border-bottom-width:3px;color:var(--muted);border-radius:14px;
+  padding:10px 18px;font-size:14px;font-weight:700;white-space:nowrap;box-shadow:none}
+.tabs button.on{background:var(--brand);border-color:var(--brand-dark);color:#fff;
+  box-shadow:none}
 
 .card{background:var(--card);border:var(--bd) solid var(--line);
-  border-radius:var(--r);box-shadow:var(--sh);
+  border-radius:16px;border:2px solid var(--line);border-bottom-width:4px;
+  box-shadow:none;
   padding:16px 17px;margin:var(--gap) 0;cursor:pointer;
-  transition:transform .07s,box-shadow .12s}
-.card:active{transform:translateY(2px) scale(.995);box-shadow:0 1px 5px rgba(0,0,0,.06)}
+  transition:transform .06s,border-color .12s,border-bottom-width .06s}
+.card:active{transform:translateY(2px);border-bottom-width:2px;
+  border-color:var(--brand)}
 .card .hd{display:flex;align-items:center;gap:8px}
 .card .role{font-size:16.5px;font-weight:800;line-height:1.35;flex:1;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -201,9 +225,9 @@ button{font-family:inherit}
 /* 难度用点，不用一串星号挤在句首 */
 .lvl{flex:0 0 auto;display:flex;gap:3px}
 .lvl i{width:6px;height:6px;border-radius:50%;background:var(--line);display:block}
-.lvl i.f{background:var(--accent)}
-.done{flex:0 0 auto;font-size:11px;color:var(--ok);font-weight:800;
-  background:rgba(22,163,74,.12);padding:3px 9px;border-radius:999px}
+.lvl i.f{background:var(--brand)}
+.done{flex:0 0 auto;font-size:11px;color:var(--ok-dark);font-weight:800;
+  background:#e8f8dc;padding:3px 9px;border-radius:999px}
 /* 简介卡：原来是一块灰底，跟卡片体系不搭 */
 #brief{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);
   padding:15px 17px;margin-bottom:14px;font-size:14.5px;line-height:1.6}
@@ -216,58 +240,54 @@ button{font-family:inherit}
   margin-bottom:5px;font-weight:700}
 /* 气泡：加大圆角和内距，你说的话用主色实底（像正经聊天 App），
    对方用白底带阴影，Alex 用一张独立的浅色卡片 —— 三者一眼分得开 */
-.you .bub{background:var(--accent);color:#fff;border-radius:20px 20px 6px 20px;
+.you .bub{background:var(--brand);color:#fff;border-radius:18px 18px 6px 18px;
   padding:11px 15px;margin-left:auto;max-width:86%;font-size:15.5px;line-height:1.55;
-  box-shadow:var(--sh)}
-.char .bub{background:var(--card);border:none;box-shadow:var(--sh);
-  border-radius:20px 20px 20px 6px;padding:12px 15px;max-width:88%;
+  box-shadow:none}
+.char .bub{background:var(--card);border:2px solid var(--line);box-shadow:none;
+  border-radius:18px 18px 18px 6px;padding:12px 15px;max-width:88%;
   font-size:15.5px;line-height:1.55}
-.alex .bub{background:var(--alexsoft);border-left:4px solid var(--alex);
-  border-radius:6px 16px 16px 6px;padding:13px 15px;box-shadow:var(--sh);
+.alex .bub{background:var(--brand-soft);border:2px solid var(--brand);
+  border-radius:14px;padding:13px 15px;box-shadow:none;
   font-size:14.5px;line-height:1.65}
 .alex .who{color:var(--alex);font-weight:700}
 .tags{font-size:11px;color:var(--muted);margin-top:4px}
 /* 「该这么说」—— 完整可念的整句，视觉上要最抢眼 */
-.better{background:var(--card);border:var(--bd) solid var(--accent);
-  border-radius:var(--r-sm);box-shadow:var(--sh);
-  padding:15px 17px;margin-top:13px}
-.better .lb{font-size:11px;letter-spacing:.4px;color:var(--accent);
+.better{background:var(--card);border:2px solid var(--brand);border-bottom-width:4px;
+  border-radius:14px;box-shadow:none;padding:15px 17px;margin-top:13px}
+.better .lb{font-size:11px;letter-spacing:.4px;color:var(--brand-dark);
   font-weight:700;margin-bottom:5px}
 .better .en{font-size:15.5px;line-height:1.6}
 .play{display:inline-flex;align-items:center;gap:5px;margin-top:10px;
   border:var(--bd) solid var(--line);border-bottom-width:4px;
   background:var(--card);color:var(--fg);font-weight:700;letter-spacing:.3px;
-  border:none;box-shadow:var(--sh);
-  border-radius:999px;padding:11px 20px;font-size:13.5px;min-height:44px;
-  transition:transform .07s,box-shadow .12s}
-.play:active{transform:translateY(1px);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  border:2px solid var(--line);border-bottom-width:4px;box-shadow:none;
+  border-radius:14px;padding:10px 18px;font-size:13.5px;min-height:44px;
+  transition:transform .06s,border-bottom-width .06s,border-color .12s}
+.play:active{transform:translateY(2px);border-bottom-width:2px;border-color:var(--brand)}
 .play.on{border-color:var(--accent);color:var(--accent)}
 .note{font-size:13px;color:var(--muted);font-style:normal;margin:10px 0;line-height:1.65}
 /* 返回键：Apple 的人机指南要求点击区至少 44×44，原来只有约 15×28，
    本来就难点，再被状态栏压住就完全点不到了。 */
 #topnav{margin:4px 0 8px;min-height:44px;display:flex;align-items:center}
-#topnav button{background:none;border:none;color:var(--accent);font-size:16px;
+#topnav button{background:none;border:none;color:var(--brand);font-size:16px;
   padding:10px 14px 10px 0;font-weight:600;min-height:44px;
   display:flex;align-items:center}
 #topnav button:active{opacity:.55}
 .grp{font-size:12.5px;letter-spacing:.6px;color:var(--muted);font-weight:800;
   margin:22px 0 10px;padding:0;border:none;text-transform:none}
 #bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);
-  border-top:none;box-shadow:0 -3px 18px rgba(0,0,0,.09);
-  border-radius:24px 24px 0 0;
+  border-top:2px solid var(--line);box-shadow:none;border-radius:0;
   padding:12px 14px calc(10px + env(safe-area-inset-bottom));text-align:center}
 /* 🚨 渐变必须写在 background 简写**之后** —— 简写会把 background-image 重置成 none，
    我第一次写在前面，结果按钮还是一块死色（自检抓到的）。 */
-#mic{width:92px;height:92px;border-radius:50%;font-size:15px;
+#mic{width:96px;height:96px;border-radius:50%;font-size:15px;
   font-weight:800;letter-spacing:.5px;color:#fff;
-  background:linear-gradient(145deg,var(--accent2),var(--accent));
-  box-shadow:0 8px 24px rgba(255,90,54,.34);
-  touch-action:none;border:none;border-bottom:6px solid rgba(0,0,0,.25);
+  background:var(--brand);box-shadow:none;
+  touch-action:none;border:none;border-bottom:5px solid var(--brand-dark);
   transition:transform .06s,border-bottom-width .06s;
   -webkit-user-select:none;user-select:none}
-#mic.rec{background:linear-gradient(145deg,#fb7185,var(--rec));
-  box-shadow:0 4px 16px rgba(239,68,68,.42);
-  transform:translateY(3px);border-bottom-width:3px}
+#mic.rec{background:var(--rec);border-bottom-color:#e04343;
+  transform:translateY(2px);border-bottom-width:3px}
 #mic:disabled{opacity:.4}
 #hint{font-size:13px;color:var(--muted);margin-top:7px;min-height:0}
 #hint:empty{display:none}
@@ -276,10 +296,11 @@ button{font-family:inherit}
 #err:empty{display:none}
 .ctl{display:flex;gap:7px;justify-content:center;margin-top:9px;flex-wrap:wrap}
 .ctl button{background:var(--card);border:var(--bd) solid var(--line);
-  border:none;box-shadow:var(--sh);color:var(--fg);font-weight:700;
-  border-radius:999px;padding:8px 14px;font-size:12.5px;min-height:38px;
-  transition:transform .07s,box-shadow .12s}
-.ctl button:active{transform:translateY(1px);box-shadow:none}
+  border:2px solid var(--line);border-bottom-width:3px;box-shadow:none;
+  color:var(--fg);font-weight:700;
+  border-radius:12px;padding:8px 14px;font-size:12.5px;min-height:38px;
+  transition:transform .06s,border-bottom-width .06s}
+.ctl button:active{transform:translateY(1px);border-bottom-width:2px}
 .ctl button.on{border-color:var(--accent);color:var(--accent)}
 #setup{background:var(--card);border:1px solid var(--line);border-radius:12px;
   padding:16px;margin:12px 0}
