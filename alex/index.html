@@ -22,9 +22,35 @@
 @media(prefers-color-scheme:dark){:root{--bg:#16151a;--fg:#e8e5e0;--muted:#9a938c;
   --line:#2f2c33;--card:#1e1d23;--accent:#e08a5c;--soft:#2a211d;--alex:#7fb0dd;
   --alexsoft:#1b2530;--rec:#e07a7a;--ok:#6fbf92}}
+/* ═══ 从多邻国量来的几条（2026-08-02 实测他们线上的计算样式，不是凭印象）═══
+   · 按钮：高 50px、圆角 12px、字重 700、字距 0.8px
+   · 🚨 那个「厚实感」不是阴影，是 **border-width: 2px 2px 4px** —— 底边比其他边厚一倍，
+     按下去把底边收掉、整体下移 2px，就有了「按进去」的手感。这是他们最标志性的一条。
+   · 正文字重 500（比常规的 400 重一档），标题 700；卡片边框 2px 不是 1px 发丝线
+   · 配色是「一个高饱和主色 + 一套中性灰」：eel #4b4b4b 正文、wolf #777 次要、
+     swan #e5e5e5 描边、polar #f7f7f7 底色
+   我们不抄它的绿，保留自己的陶土橙，只借这套「厚、圆、重」的做法。 */
+:root{--r:14px;--btn-h:50px;--bd:2px}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:var(--bg);color:var(--fg);font-size:16px;line-height:1.65;
+/* 🚨 [hidden] 的默认 display:none 权重极低，**任何 display 声明都能压过它**。
+   我给 #topnav 加了 display:flex，于是「首页不该有返回键」这条就失效了 ——
+   属性设了、看着也设了，但元素还在屏幕上。#typebox 的内联 display:flex
+   更是从一开始就压着它（一路没被发现，因为它恰好高度为 0）。
+   这条兜底放在最前面，以后再给谁加 display 都不会重蹈。 */
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-size:16px;line-height:1.6;
+  font-weight:500;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+
+/* 主按钮：厚底边 + 按下陷进去 */
+.btn{display:inline-flex;align-items:center;justify-content:center;
+  min-height:var(--btn-h);padding:0 20px;border-radius:var(--r);
+  font-size:15.5px;font-weight:700;letter-spacing:.6px;cursor:pointer;
+  border:var(--bd) solid transparent;border-bottom-width:4px;
+  background:var(--accent);color:#fff;transition:transform .05s,border-bottom-width .05s}
+.btn:active{transform:translateY(2px);border-bottom-width:var(--bd)}
+.btn.ghost{background:var(--card);color:var(--accent);border-color:var(--line);
+  border-bottom-color:var(--line)}
 /* 底部留白由 JS 按底栏实际高度算（底栏会因打字框/自检面板变高，
    写死数值必然挡住内容 —— Kevin 反馈刷不上去就是这个） */
 /* 🚨 顶部安全区。Kevin 反馈「返回按钮跟 iPhone 系统时间贴在一起，点不到」。
@@ -36,7 +62,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-size:16px;line-height:1.
 .wrap{max-width:640px;margin:0 auto;
   padding:calc(env(safe-area-inset-top, 0px) + 24px) 14px 0;
   padding-bottom:var(--barpad,200px)}
-h1{font-size:19px;margin:2px 0 2px;letter-spacing:-.2px}
+h1{font-size:22px;font-weight:800;margin:2px 0 3px;letter-spacing:-.3px}
 .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
 button{font-family:inherit}
 
@@ -44,9 +70,9 @@ button{font-family:inherit}
    原来是 18 张卡直接铺开、每张把整段情境当正文 —— 一堵墙，Kevin 说「看上去还是很丑」。
    改动三处：①统计条不折行 ②分类做成横向 tab，一次只看一组 ③卡片建立层级：
    标题=对手方是谁（短），情境降为两行截断的副文，难度用点不用星堆在句首。 */
-.stats{display:flex;align-items:center;gap:8px;margin:0 0 14px;
-  background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:10px 12px}
+.stats{display:flex;align-items:center;gap:10px;margin:0 0 16px;
+  background:var(--card);border:var(--bd) solid var(--line);
+  border-bottom-width:4px;border-radius:var(--r);padding:12px 14px}
 .stats .n{font-size:19px;font-weight:800;line-height:1.1;letter-spacing:-.5px}
 .stats .l{font-size:10.5px;color:var(--muted);letter-spacing:.3px}
 .stats .col{min-width:52px}
@@ -67,10 +93,11 @@ button{font-family:inherit}
 .tile{position:relative;border-radius:18px;padding:16px 15px 14px;
   min-height:158px;display:flex;flex-direction:column;justify-content:flex-end;
   color:#fff;overflow:hidden;cursor:pointer;transition:transform .07s}
-.tile:active{transform:scale(.975)}
+.tile{border-bottom:4px solid rgba(0,0,0,.22)}
+.tile:active{transform:translateY(2px);border-bottom-width:1px}
 .tile .ic{position:absolute;top:11px;right:13px;font-size:30px;opacity:.85;
   line-height:1}
-.tile .nm{font-size:17.5px;font-weight:800;letter-spacing:-.2px}
+.tile .nm{font-size:18.5px;font-weight:800;letter-spacing:-.2px}
 .tile .ds{font-size:12px;opacity:.88;margin-top:3px;line-height:1.45}
 .tile.wide{grid-column:1 / -1;min-height:82px}
 .resume{background:var(--card);border:1px solid var(--line);border-radius:14px;
@@ -90,10 +117,12 @@ button{font-family:inherit}
 
 /* 难度选择：一屏三张，说清每一档是什么 */
 .lvpick{margin-top:4px}
-.lvcard{background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:14px 16px;margin:9px 0;cursor:pointer;display:flex;align-items:center;
-  gap:13px;transition:transform .07s,border-color .12s}
-.lvcard:active{transform:scale(.985);border-color:var(--accent)}
+.lvcard{background:var(--card);border:var(--bd) solid var(--line);
+  border-bottom-width:4px;border-radius:var(--r);
+  padding:16px;margin:11px 0;cursor:pointer;display:flex;align-items:center;
+  gap:14px;transition:transform .05s,border-bottom-width .05s,border-color .12s}
+.lvcard:active{transform:translateY(2px);border-bottom-width:var(--bd);
+  border-color:var(--accent)}
 .lvcard .lv{flex:0 0 auto;display:flex;gap:4px}
 .lvcard .lv i{width:8px;height:8px;border-radius:50%;background:var(--line);display:block}
 .lvcard .lv i.f{background:var(--accent)}
@@ -110,12 +139,14 @@ button{font-family:inherit}
   font-weight:600;white-space:nowrap}
 .tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:13px 15px;margin:8px 0;cursor:pointer;
-  transition:transform .06s,border-color .12s}
-.card:active{border-color:var(--accent);transform:scale(.985)}
+.card{background:var(--card);border:var(--bd) solid var(--line);
+  border-bottom-width:4px;border-radius:var(--r);
+  padding:14px 16px;margin:10px 0;cursor:pointer;
+  transition:transform .05s,border-bottom-width .05s,border-color .12s}
+.card:active{border-color:var(--accent);transform:translateY(2px);
+  border-bottom-width:var(--bd)}
 .card .hd{display:flex;align-items:center;gap:8px}
-.card .role{font-size:15.5px;font-weight:700;line-height:1.35;flex:1;
+.card .role{font-size:16.5px;font-weight:800;line-height:1.35;flex:1;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card .sit{font-size:13px;color:var(--muted);line-height:1.55;margin-top:5px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
@@ -139,14 +170,17 @@ button{font-family:inherit}
 .alex .who{color:var(--alex);font-weight:700}
 .tags{font-size:11px;color:var(--muted);margin-top:4px}
 /* 「该这么说」—— 完整可念的整句，视觉上要最抢眼 */
-.better{background:var(--card);border:2px solid var(--accent);border-radius:10px;
-  padding:11px 13px;margin-top:9px}
+.better{background:var(--card);border:var(--bd) solid var(--accent);
+  border-bottom-width:4px;border-radius:12px;padding:13px 15px;margin-top:11px}
 .better .lb{font-size:11px;letter-spacing:.4px;color:var(--accent);
   font-weight:700;margin-bottom:5px}
 .better .en{font-size:15.5px;line-height:1.6}
-.play{display:inline-flex;align-items:center;gap:4px;margin-top:8px;
-  border:1px solid var(--line);background:var(--bg);color:var(--muted);
-  border-radius:16px;padding:4px 12px;font-size:12.5px}
+.play{display:inline-flex;align-items:center;gap:5px;margin-top:10px;
+  border:var(--bd) solid var(--line);border-bottom-width:4px;
+  background:var(--card);color:var(--fg);font-weight:700;letter-spacing:.3px;
+  border-radius:12px;padding:9px 15px;font-size:13.5px;min-height:42px;
+  transition:transform .05s,border-bottom-width .05s}
+.play:active{transform:translateY(2px);border-bottom-width:var(--bd)}
 .play.on{border-color:var(--accent);color:var(--accent)}
 .note{font-size:12px;color:var(--muted);font-style:italic;margin:5px 0}
 /* 返回键：Apple 的人机指南要求点击区至少 44×44，原来只有约 15×28，
@@ -161,16 +195,22 @@ button{font-family:inherit}
 #bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);
   border-top:1px solid var(--line);padding:14px 14px calc(14px + env(safe-area-inset-bottom));
   text-align:center}
-#mic{width:104px;height:104px;border-radius:50%;border:none;font-size:15px;
-  font-weight:700;color:#fff;background:var(--accent);touch-action:none;
-  transition:transform .08s;-webkit-user-select:none;user-select:none}
-#mic.rec{background:var(--rec);transform:scale(1.09)}
+#mic{width:108px;height:108px;border-radius:50%;font-size:16px;
+  font-weight:800;letter-spacing:.5px;color:#fff;background:var(--accent);
+  touch-action:none;border:none;border-bottom:6px solid rgba(0,0,0,.25);
+  transition:transform .06s,border-bottom-width .06s;
+  -webkit-user-select:none;user-select:none}
+#mic.rec{background:var(--rec);transform:translateY(3px);border-bottom-width:3px}
 #mic:disabled{opacity:.4}
 #hint{font-size:13px;color:var(--muted);margin-top:8px;min-height:19px}
+#typebox{margin-top:10px;display:flex;gap:6px}
 #err{color:var(--rec);font-size:13px;margin-top:4px;min-height:17px}
 .ctl{display:flex;gap:7px;justify-content:center;margin-top:10px;flex-wrap:wrap}
-.ctl button{background:none;border:1px solid var(--line);color:var(--muted);
-  border-radius:20px;padding:5px 13px;font-size:12.5px}
+.ctl button{background:var(--card);border:var(--bd) solid var(--line);
+  border-bottom-width:3px;color:var(--fg);font-weight:700;
+  border-radius:12px;padding:9px 14px;font-size:13px;min-height:40px;
+  transition:transform .05s,border-bottom-width .05s}
+.ctl button:active{transform:translateY(1px);border-bottom-width:var(--bd)}
 .ctl button.on{border-color:var(--accent);color:var(--accent)}
 #setup{background:var(--card);border:1px solid var(--line);border-radius:12px;
   padding:16px;margin:12px 0}
@@ -225,7 +265,7 @@ button{font-family:inherit}
     <button id="end">结束</button>
     <button id="reset">key</button>
   </div>
-  <div id="typebox" hidden style="margin-top:10px;display:flex;gap:6px">
+  <div id="typebox" hidden>
     <input id="typein" placeholder="打字说这一句（英文）" style="flex:1;padding:10px;
       border:1px solid var(--line);border-radius:8px;background:var(--bg);
       color:var(--fg);font-size:15px">
