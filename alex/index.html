@@ -1625,10 +1625,72 @@ function showList(){
 }
 
 /* ② 选难度 —— 口语和听力都走这一步 */
+/* ═══ 时事听力（BBC）═══
+   Kevin：「听力不能只练我知识库里的素材，最好接入 YouTube、BBC…
+   这些才是锻炼听力最好的素材」。
+   🚨 音频**不落地**：播放时直接走 BBC 自己的 https 地址，我们不托管任何音频，
+      等于一个播客客户端。题目是我自己出的，那是我的内容。
+      （feed 给的是 http，必须跟到 CDN 换成 https，否则 https 页面会按混合内容拦死。）*/
+let NEWS = null;
+async function loadNews(){
+  if (NEWS) return NEWS;
+  const r = await fetch('news.json', {cache:'no-cache'});
+  if (!r.ok) throw new Error('时事题库还没上传（HTTP ' + r.status + '）');
+  NEWS = await r.json();
+  return NEWS;
+}
+async function showNews(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = '时事听力 · BBC';
+  const f = $('#feed');
+  f.innerHTML = '<div class="note"><span class="dots">在取</span></div>';
+  let nb;
+  try { nb = await loadNews(); }
+  catch(e){ f.innerHTML = `<div class="note">${esc(e.message)}</div>`; return; }
+  f.innerHTML = '<div class="note">真实的 BBC 6 Minute English，每集约 6 分钟。'
+    + '音频直接来自 BBC，我们不转存。题目按段落出，答错可以只回听那 20 秒。</div>';
+  nb.eps.forEach(ep => {
+    const c = document.createElement('div');
+    c.className = 'card';
+    const done = newsDone().has(ep.title);
+    c.innerHTML = `<div class="hd"><span class="role">${esc(ep.title)}</span>
+        ${done ? '<span class="done">做过</span>' : ''}</div>
+      <div class="sit">${esc(ep.gist || '')}</div>
+      <div class="t">${esc(ep.src)} · ${esc(ep.pub)} · ${Math.round((ep.dur||0)/60)} 分钟 ·
+        ${ep.items.length} 题</div>`;
+    c.onclick = () => startNews(ep);
+    f.appendChild(c);
+  });
+}
+function newsDone(){
+  try { return new Set(JSON.parse(localStorage.getItem('alex_news_done') || '[]')); }
+  catch(_){ return new Set(); }
+}
+function startNews(ep){
+  LSN.items = ep.items.map(x => Object.assign({}, x, {audio:null, url:ep.audio}));
+  LSN.i = 0; LSN.right = 0; LSN.scn = null; LSN.recycled = false;
+  LSN.news = ep;
+  const s = newsDone(); s.add(ep.title);
+  try { localStorage.setItem('alex_news_done', JSON.stringify([...s].slice(-100))); } catch(_){}
+  listenItem();
+}
+
 function showLevel(mode){
   $('#list').hidden = false;
   $('#feed').innerHTML = '';
+  $('#feed').hidden = false;
   $('#sub').textContent = mode === 'speak' ? '口语陪练 · 选难度' : '听力 · 选难度';
+  // 听力这一屏顶上加「时事」入口：工作场景之外，用真实新闻练耳朵
+  if (mode === 'listen'){
+    const n = document.createElement('div');
+    n.className = 'card';
+    n.innerHTML = `<div class="hd"><span class="role">📰 时事听力（BBC）</span></div>
+      <div class="sit">真实的 BBC 6 Minute English，时事热点、语速正常。
+        比工作场景难，练这个平时开会就不吃力。</div>
+      <div class="t">音频直接来自 BBC · 每题只回听相关的那 20 秒</div>`;
+    n.onclick = () => go(showNews, '时事听力');
+    $('#feed').appendChild(n);
+  }
   const cnt = lv => SCENARIOS.filter(s => lvlNum(s.lvl) === lv).length;
   $('#list').innerHTML = '<div class="lvpick">' + LEVELS.map(L =>
     `<div class="lvcard" data-lv="${L.n}">
@@ -2502,6 +2564,40 @@ function markSeen(ids){
    慢速用 playbackRate=0.7 并保持音高（preservesPitch），不会变成怪腔。 */
 function player(it, autoplay){
   const wrap = document.createElement('div');
+  /* 时事听力：音频在 BBC 那边，而且每题只考其中一小段 —— 播到 end 就停，
+     不然他得自己在 6 分钟里找那 20 秒。 */
+  if (it.url){
+    const au = document.createElement('audio');
+    au.src = it.url; au.preload = 'metadata'; au.crossOrigin = null;
+    const seg = () => { au.currentTime = Math.max(0, (it.start || 0) - 1); };
+    au.ontimeupdate = () => { if (it.end && au.currentTime >= it.end + 0.5) au.pause(); };
+    au.onpause = () => wrap.querySelectorAll('.play').forEach(x=>x.classList.remove('on'));
+    au.onerror = () => {
+      const w = document.createElement('div'); w.className='note';
+      w.textContent = '这段音频加载不了（BBC 那边的地址可能变了），先看下一题。';
+      wrap.appendChild(w);
+    };
+    const mk = (label, rate) => {
+      const b = document.createElement('button');
+      b.className='play'; b.style.marginRight='8px'; b.textContent=label;
+      b.onclick = () => { au.pause(); au.playbackRate = rate;
+        au.preservesPitch = au.webkitPreservesPitch = true;
+        if (au.readyState >= 1) seg(); else au.onloadedmetadata = seg;
+        b.classList.add('on'); au.play().catch(()=>{}); };
+      return b;
+    };
+    wrap.appendChild(mk('🔊 听这一段', 1));
+    wrap.appendChild(mk('🐢 慢速', 0.75));
+    const tag = document.createElement('div');
+    tag.className='tags';
+    tag.textContent = `第 ${Math.floor((it.start||0)/60)}:${String((it.start||0)%60).padStart(2,'0')}`
+      + ` – ${Math.floor((it.end||0)/60)}:${String((it.end||0)%60).padStart(2,'0')} 秒`;
+    wrap.appendChild(tag);
+    wrap.appendChild(au);
+    if (autoplay){ if (au.readyState>=1) seg(); else au.onloadedmetadata = seg;
+                   au.play().catch(()=>{}); }
+    return wrap;
+  }
   // 现场出的题没有 mp3，退回浏览器合成（音质差，但总比没有强）
   if (!it.audio){
     const mk = (label, rate) => {
