@@ -107,13 +107,9 @@ button{font-family:inherit}
 .resume .s{font-size:12.5px;color:var(--muted);margin-top:2px}
 .t-speak{background:linear-gradient(150deg,#c2603a,#9a4525)}
 .t-listen{background:linear-gradient(150deg,#3a6f9e,#274d6e)}
-.t-book{background:linear-gradient(150deg,#5b6b52,#3d4a37)}
-.t-hist{background:linear-gradient(150deg,#6a6259,#494340)}
 @media(prefers-color-scheme:dark){
   .t-speak{background:linear-gradient(150deg,#a0492c,#6f3119)}
-  .t-listen{background:linear-gradient(150deg,#2d587e,#1c3850)}
-  .t-book{background:linear-gradient(150deg,#47543f,#2c352a)}
-  .t-hist{background:linear-gradient(150deg,#4f4a44,#35312e)}}
+  .t-listen{background:linear-gradient(150deg,#2d587e,#1c3850)}}
 
 /* 难度选择：一屏三张，说清每一档是什么 */
 .lvpick{margin-top:4px}
@@ -130,6 +126,22 @@ button{font-family:inherit}
 .lvcard .nm{font-size:15.5px;font-weight:700}
 .lvcard .ds{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.5}
 .lvcard .ct{font-size:12px;color:var(--muted);flex:0 0 auto}
+
+/* ═══ 底部标签栏 ═══
+   多邻国/51Talk 这类 C 端 App 都是底部常驻标签，而不是靠返回键层层往回走。
+   好处很实在：任何时候一键直达，不用记自己在第几层。
+   🚨 跟麦克风底栏会打架 —— 练习进行中麦克风要占住底部，
+      所以「对话中」隐藏标签栏（那时候他要的是说话，不是切模块），其余时候都在。 */
+#tabbar{position:fixed;left:0;right:0;bottom:0;z-index:5;
+  background:var(--bg);border-top:var(--bd) solid var(--line);
+  display:flex;padding-bottom:env(safe-area-inset-bottom,0px)}
+#tabbar button{flex:1;background:none;border:none;color:var(--muted);
+  padding:9px 2px 7px;display:flex;flex-direction:column;align-items:center;
+  gap:3px;font-size:11px;font-weight:700;letter-spacing:.2px;min-height:52px}
+#tabbar button .ti{font-size:21px;line-height:1;filter:grayscale(1);opacity:.55}
+#tabbar button.on{color:var(--accent)}
+#tabbar button.on .ti{filter:none;opacity:1}
+#tabbar button:active{opacity:.6}
 
 .tabs{display:flex;gap:6px;margin:0 0 12px;overflow-x:auto;
   scrollbar-width:none;-ms-overflow-style:none}
@@ -252,6 +264,13 @@ button{font-family:inherit}
   <div id="brief" hidden></div>
   <div id="feed"></div>
 </div>
+
+<nav id="tabbar">
+  <button data-tab="speak"><span class="ti">🗣️</span>口语</button>
+  <button data-tab="listen"><span class="ti">🎧</span>听力</button>
+  <button data-tab="book"><span class="ti">📕</span>错题本</button>
+  <button data-tab="me"><span class="ti">👤</span>我的</button>
+</nav>
 
 <div id="bar" hidden>
   <button id="mic">按住<br>说话</button>
@@ -1418,64 +1437,37 @@ const LEVELS = [
 ];
 let LV = 0;                 // 选中的难度（0 = 还没选）
 
-/* ① 首页：大方块选模块 */
+/* ① 口语 tab 的根视图：直接选难度。
+   底部标签栏已经是「选模块」了，再放一屏大方块就是多一次无意义的点击。 */
 function showList(){
   $('#list').hidden = false;
   $('#feed').innerHTML = '';
-  const n = drilling().length;
-  $('#sub').textContent = '选一个模块开始';
+  $('#sub').textContent = '口语陪练 · 选难度';
+  const last = loadSess().slice(-1)[0];
+  const lastScn = last && SCENARIOS.find(x => x.id === last.scn);
+  const cnt = lv => SCENARIOS.filter(x => lvlNum(x.lvl) === lv).length;
   $('#list').innerHTML =
     `<div class="stats">
        <div class="col"><div class="n">${streak()}</div><div class="l">连续天数</div></div>
        <div class="col"><div class="n">${ST.turns}</div><div class="l">累计轮数</div></div>
        <div class="sp"></div>
-     </div>
-     <div class="tiles">
-       <div class="tile t-speak" data-go="speak"><span class="ic">🗣️</span>
-         <div class="nm">口语陪练</div>
-         <div class="ds">按住说英语，Alex 当场纠</div></div>
-       <div class="tile t-listen" data-go="listen"><span class="ic">🎧</span>
-         <div class="nm">听力</div>
-         <div class="ds">真人配音，不用开口</div></div>
-       <div class="tile t-book wide" data-go="book"><span class="ic">📕</span>
-         <div class="nm">错题本${n ? ` · ${n}` : ''}</div>
-         <div class="ds">错过的说法和该怎么说，都在这儿</div></div>
-       <div class="tile t-hist wide" data-go="hist"><span class="ic">🕘</span>
-         <div class="nm">历史</div>
-         <div class="ds">翻回以前练过的每一场</div></div>
-     </div>`;
-  // 上次练到哪 —— 首页下半部分空着不好看，而且「接着上次练」是最常见的动作
-  const last = loadSess().slice(-1)[0];
-  const lastScn = last && SCENARIOS.find(x => x.id === last.scn);
-  if (lastScn){
-    const r = document.createElement('div');
-    r.className = 'resume';
-    r.innerHTML = `<div class="k">上次练到</div>
-      <div class="v">${esc(lastScn.t || lastScn.id)}</div>
-      <div class="s">${esc(last.on)} · ${last.turns.length} 轮 · 点这里接着练</div>`;
-    r.onclick = () => start(lastScn);
-    $('#list').appendChild(r);
-  }
-  // 备份入口：工具性质，放底部一行小字，不跟主模块抢注意力
-  const bk = document.createElement('div');
-  bk.className = 'note';
-  bk.style.cssText = 'text-align:center;margin-top:16px;cursor:pointer;'
-    + 'text-decoration:underline;font-style:normal';
-  bk.innerHTML = '<span id="vcbtn">🔈 陪练的声音</span>'
-    + '<span style="opacity:.4;margin:0 10px">·</span>'
-    + '<span id="bkbtn">备份与恢复</span>';
-  $('#list').appendChild(bk);
-  bk.querySelector('#vcbtn').onclick = e => { e.stopPropagation(); go(showVoice, '声音'); };
-  bk.querySelector('#bkbtn').onclick = e => { e.stopPropagation(); go(showBackup, '备份'); };
-
-  const GOTO = {
-    speak: () => go(() => showLevel('speak'), '口语陪练'),
-    listen: () => go(() => showLevel('listen'), '听力'),
-    book: () => go(showBook, '错题本'),
-    hist: () => go(showHistory, '历史'),
-  };
-  document.querySelectorAll('.tile').forEach(t =>
-    t.onclick = () => GOTO[t.dataset.go]());
+     </div>` +
+    (lastScn ? `<div class="resume" id="resume">
+       <div class="k">接着上次练</div>
+       <div class="v">${esc(lastScn.t || lastScn.id)}</div>
+       <div class="s">${esc(last.on)} · ${last.turns.length} 轮</div></div>` : '') +
+    '<div class="lvpick">' + LEVELS.map(L =>
+      `<div class="lvcard" data-lv="${L.n}">
+         <span class="lv">${[1,2,3].map(i=>`<i class="${i<=L.n?'f':''}"></i>`).join('')}</span>
+         <span class="tx"><span class="nm">${L.nm}</span>
+           <div class="ds">${L.ds}</div></span>
+         <span class="ct">${cnt(L.n)} 个</span>
+       </div>`).join('') + '</div>';
+  if (lastScn) $('#resume').onclick = () => start(lastScn);
+  document.querySelectorAll('.lvcard').forEach(c => c.onclick = () => {
+    LV = +c.dataset.lv;
+    go(showScenarios, '选场景');
+  });
 }
 
 /* ② 选难度 —— 口语和听力都走这一步 */
@@ -1940,13 +1932,9 @@ function back(){
 function paintNav(){
   $('#topnav').hidden = NAV.length === 0;
 }
+/* 回到「当前这个 tab 的根」，而不是硬回口语 —— 在听力里点返回不该被扔去口语。 */
 function home(){
-  NAV.length = 0;
-  paintNav();
-  $('#bar').hidden = true; $('#brief').hidden = true;
-  S.scn = null;
-  $('#sub').textContent = '选一个场景开始';
-  showList();
+  goTab(TAB_CUR || 'speak');
 }
 $('#backbtn').onclick = back;
 
@@ -2486,15 +2474,71 @@ $('#save').onclick = () => {
   syncPad();
 };
 
-/* 底栏多高，正文就留多少白 —— 加了打字框/自检面板后底栏会变高 */
+/* 底栏多高，正文就留多少白 —— 加了打字框/自检面板后底栏会变高。
+   现在底部可能是麦克风栏、也可能是标签栏，取当前真正显示的那个。 */
 function syncPad(){
-  const bar = $('#bar');
-  const h = bar.hidden ? 24 : bar.getBoundingClientRect().height + 24;
+  const bar = $('#bar'), tb = $('#tabbar');
+  const inChat = !bar.hidden;
+  tb.hidden = inChat;                  // 对话中让位给麦克风
+  const el = inChat ? bar : tb;
+  const h = el.hidden ? 24 : el.getBoundingClientRect().height + 24;
   document.documentElement.style.setProperty('--barpad', h + 'px');
 }
 new ResizeObserver(syncPad).observe($('#bar'));
+new ResizeObserver(syncPad).observe($('#tabbar'));
 window.addEventListener('resize', syncPad);
-syncPad();
+
+/* ── 标签栏：四个根视图，一键直达，不用层层返回 ── */
+const TABS = {
+  speak: {nm:'口语', go:() => { NAV.length = 0; showList(); }},
+  listen:{nm:'听力', go:() => { NAV.length = 0; showLevel('listen'); }},
+  book:  {nm:'错题本', go:() => { NAV.length = 0; showBook(); }},
+  me:    {nm:'我的', go:() => { NAV.length = 0; showMe(); }},
+};
+let TAB_CUR = 'speak';
+function paintTabs(){
+  document.querySelectorAll('#tabbar button').forEach(b =>
+    b.classList.toggle('on', b.dataset.tab === TAB_CUR));
+}
+function goTab(name){
+  if (!TABS[name]) return;
+  TAB_CUR = name;
+  $('#bar').hidden = true; S.scn = null;
+  $('#brief').hidden = true; $('#list').hidden = true;
+  $('#feed').innerHTML = '';
+  paintTabs(); paintNav(); syncPad();
+  TABS[name].go();
+  syncPad();
+}
+document.querySelectorAll('#tabbar button').forEach(b =>
+  b.onclick = () => goTab(b.dataset.tab));
+
+/* 「我的」：把打卡、历史、声音、备份这些收在一处，首页就不用挂一堆入口了 */
+function showMe(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = '我的';
+  const st = loadST() || ST, f = $('#feed');
+  f.innerHTML = `<div class="stats">
+      <div class="col"><div class="n">${streak()}</div><div class="l">连续天数</div></div>
+      <div class="col"><div class="n">${st.turns||0}</div><div class="l">累计轮数</div></div>
+      <div class="col"><div class="n">${Object.keys(st.book||{}).length}</div>
+        <div class="l">错题条目</div></div>
+    </div>`;
+  const row = (icon, name, desc, fn) => {
+    const c = document.createElement('div');
+    c.className = 'card';
+    c.innerHTML = `<div class="hd"><span class="role">${icon} ${name}</span></div>
+      <div class="t">${esc(desc)}</div>`;
+    c.onclick = fn; f.appendChild(c);
+  };
+  row('🕘','历史','翻回以前练过的每一场', () => go(showHistory,'历史'));
+  row('🔈','陪练的声音','换一个好听点的嗓子；iOS 要先下载增强语音', () => go(showVoice,'声音'));
+  row('💾','备份与恢复','数据只存在这台设备，导出一份存自己那儿', () => go(showBackup,'备份'));
+  row('🔑','换 / 加 API key','两把 key 可以同时存着，各干各的', () => {
+    $('#feed').innerHTML = ''; $('#setup').hidden = false; $('#sub').textContent = '设置 key';
+  });
+}
+syncPad(); paintTabs();
 
 /* ───────── 起步 ───────── */
 loadST();
