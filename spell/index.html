@@ -96,13 +96,16 @@ var WORDS=[
 {w:"PIG",e:"🐷",c:"猪",col:"#ffb0c8"},{w:"FOX",e:"🦊",c:"狐狸",col:"#ff6b1a"},
 {w:"BEE",e:"🐝",c:"蜜蜂",col:"#ffd400"},{w:"OWL",e:"🦉",c:"猫头鹰",col:"#8b6b3a"},
 {w:"COW",e:"🐮",c:"牛",col:"#f5e6c8"},{w:"BAT",e:"🦇",c:"蝙蝠",col:"#7b5ea7"},
+{w:"ANT",e:"🐜",c:"蚂蚁",col:"#8b4513"},{w:"HEN",e:"🐔",c:"母鸡",col:"#d4a017"},
+{w:"YAK",e:"🦬",c:"牦牛",col:"#5a3a1a"},{w:"ELK",e:"🦌",c:"麋鹿",col:"#a0703a"},
 {w:"FISH",e:"🐟",c:"鱼",col:"#2f80ff"},{w:"BIRD",e:"🐦",c:"鸟",col:"#5ab3e8"},
 {w:"FROG",e:"🐸",c:"青蛙",col:"#33cc55"},{w:"BEAR",e:"🐻",c:"熊",col:"#a0703a"},
 {w:"LION",e:"🦁",c:"狮子",col:"#ffcc00"},{w:"DUCK",e:"🦆",c:"鸭子",col:"#ffd400"},
 {w:"TIGER",e:"🐯",c:"老虎",col:"#ff8a00"},{w:"PANDA",e:"🐼",c:"熊猫",col:"#5a5a8a"},
 {w:"HORSE",e:"🐴",c:"马",col:"#a0703a"},{w:"WHALE",e:"🐳",c:"鲸鱼",col:"#2f80ff"},
 {w:"EGG",e:"🥚",c:"鸡蛋",col:"#fff0c0"},{w:"JAM",e:"🍯",c:"果酱",col:"#d44a8a"},
-{w:"NUT",e:"🥜",c:"坚果",col:"#a0703a"},{w:"MILK",e:"🥛",c:"牛奶",col:"#e8e8f0"},
+{w:"NUT",e:"🥜",c:"坚果",col:"#a0703a"},{w:"PIE",e:"🥧",c:"派",col:"#d4843a"},
+{w:"TEA",e:"🍵",c:"茶",col:"#7cb342"},{w:"ICE",e:"🧊",c:"冰",col:"#a0d8f0"},{w:"MILK",e:"🥛",c:"牛奶",col:"#e8e8f0"},
 {w:"RICE",e:"🍚",c:"米饭",col:"#fff8e0"},{w:"CAKE",e:"🍰",c:"蛋糕",col:"#ffb3d9"},
 {w:"CORN",e:"🌽",c:"玉米",col:"#ffd400"},{w:"MEAT",e:"🍖",c:"肉",col:"#e85a5a"},
 {w:"APPLE",e:"🍎",c:"苹果",col:"#ff3b5c"},{w:"LEMON",e:"🍋",c:"柠檬",col:"#ffeb3b"},
@@ -123,7 +126,12 @@ var WORDS=[
 {w:"EAR",e:"👂",c:"耳朵",col:"#e8c4a0"},{w:"ARM",e:"💪",c:"手臂",col:"#f0c8a0"},
 {w:"LEG",e:"🦵",c:"腿",col:"#e8c4a0"},{w:"NOSE",e:"👃",c:"鼻子",col:"#f0c8a0"},
 {w:"HAND",e:"✋",c:"手",col:"#f0c8a0"},{w:"FOOT",e:"🦶",c:"脚",col:"#f0c8a0"},
-{w:"FACE",e:"😊",c:"脸",col:"#f0c8a0"}
+{w:"FACE",e:"😊",c:"脸",col:"#f0c8a0"},
+{w:"BAG",e:"🎒",c:"书包",col:"#6a4cff"},{w:"CUP",e:"☕",c:"杯子",col:"#e0e0e0"},
+{w:"BOX",e:"📦",c:"盒子",col:"#c89060"},{w:"KEY",e:"🔑",c:"钥匙",col:"#ffd400"},
+{w:"HAT",e:"🎩",c:"帽子",col:"#5a3a1a"},{w:"MAP",e:"🗺️",c:"地图",col:"#7ec8e0"},
+{w:"BUS",e:"🚌",c:"公交车",col:"#ffd400"},{w:"CAR",e:"🚗",c:"汽车",col:"#ff4444"},
+{w:"TOY",e:"🧸",c:"玩具",col:"#ff9db8"},{w:"BED",e:"🛏️",c:"床",col:"#c8a0d4"}
 ];
 function lvCfg(lv){
 var maxLen=lv<=3?3:lv<=6?4:lv<=9?5:lv<=12?5:6;
@@ -143,6 +151,15 @@ var muted=localStorage.getItem("cs_muted")==="1";
 var maxPassed=parseInt(localStorage.getItem("cs_max")||"0",10)||0;
 var learnedWords=JSON.parse(localStorage.getItem("cs_words")||"[]");
 var wrongWords=JSON.parse(localStorage.getItem("cs_wrong")||"[]");
+var recentWords=JSON.parse(localStorage.getItem("cs_recent")||"[]");
+function pushRecent(w){recentWords.push(w);if(recentWords.length>20)recentWords=recentWords.slice(-20);localStorage.setItem("cs_recent",JSON.stringify(recentWords))}
+function smartPool(minLen,maxLen,exclude){
+var pool=WORDS.filter(function(w){return w.w.length>=minLen&&w.w.length<=maxLen&&!(exclude&&exclude[w.w])});
+if(!pool.length)pool=WORDS.filter(function(w){return w.w.length>=minLen&&w.w.length<=maxLen});
+var fresh=pool.filter(function(w){return recentWords.indexOf(w.w)<0});
+var stale=pool.filter(function(w){return recentWords.indexOf(w.w)>=0});
+shuffle(fresh);shuffle(stale);return fresh.concat(stale)
+}
 var AC=null;
 function ac(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();return AC}
 function tone(f,d,type,g,when){if(muted)return;try{var a=ac(),o=a.createOscillator(),v=a.createGain();type=type||"sine";g=g||0.14;when=when||0;o.type=type;o.frequency.value=f;v.gain.setValueAtTime(g,a.currentTime+when);v.gain.exponentialRampToValueAtTime(0.001,a.currentTime+when+d);o.connect(v);v.connect(a.destination);o.start(a.currentTime+when);o.stop(a.currentTime+when+d)}catch(e){}}
@@ -188,17 +205,15 @@ return false
 }
 function spawnNewWord(){
 var cfg=lvCfg(level);var used={};zones.forEach(function(z){used[z.word.w]=1});
-var pool=WORDS.filter(function(w){return w.w.length>=cfg.minLen&&w.w.length<=cfg.maxLen&&!used[w.w]});
-if(!pool.length)pool=WORDS.filter(function(w){return w.w.length>=cfg.minLen&&w.w.length<=cfg.maxLen});
-shuffle(pool);
-for(var i=0;i<pool.length;i++){if(tryPlaceWord(pool[i]))return}
+var pool=smartPool(cfg.minLen,cfg.maxLen,used);
+for(var i=0;i<pool.length;i++){if(tryPlaceWord(pool[i])){pushRecent(pool[i].w);return}}
 }
 function prefillBoard(lv){
 grid=Array.from({length:ROWS},function(){return Array(COLS).fill(null)});zones=[];zoneIdSeq=0;
-var cfg=lvCfg(lv);var used={};var pool=WORDS.filter(function(w){return w.w.length>=cfg.minLen&&w.w.length<=cfg.maxLen});shuffle(pool);
+var cfg=lvCfg(lv);var pool=smartPool(cfg.minLen,cfg.maxLen);
 var placed=0;
 for(var i=0;i<pool.length&&placed<cfg.concurrent;i++){
-if(tryPlaceWord(pool[i])){used[pool[i].w]=1;placed++}
+if(tryPlaceWord(pool[i])){pushRecent(pool[i].w);placed++}
 }
 for(var i=0,tries=0;i<cfg.ice&&tries<80;tries++){var r=Math.floor(Math.random()*ROWS),c=Math.floor(Math.random()*COLS);if(grid[r][c])continue;grid[r][c]={t:"I"};i++}
 }
@@ -360,7 +375,7 @@ $("btnReviewReveal").addEventListener("click",reviewReveal);
 $("btnReviewNext").addEventListener("click",reviewNext);
 $("btnCloseReview").addEventListener("click",function(){hideOv($("ovReview"))});
 $("btnStart").addEventListener("click",function(){hideOv($("ovStart"));startLevel(maxPassed+1)});
-$("btnRestartAll").addEventListener("click",function(){maxPassed=0;localStorage.setItem("cs_max","0");score=0;learnedWords=[];localStorage.setItem("cs_words","[]");wrongWords=[];localStorage.setItem("cs_wrong","[]");hideOv($("ovStart"));startLevel(1)});
+$("btnRestartAll").addEventListener("click",function(){maxPassed=0;localStorage.setItem("cs_max","0");score=0;learnedWords=[];localStorage.setItem("cs_words","[]");wrongWords=[];localStorage.setItem("cs_wrong","[]");recentWords=[];localStorage.setItem("cs_recent","[]");hideOv($("ovStart"));startLevel(1)});
 $("btnNext").addEventListener("click",function(){hideOv($("ovWin"));startLevel(level+1)});
 $("btnShuffle").addEventListener("click",function(){refreshTray();hideOv($("ovDead"));playing=true;updateHUD();if(!anyTrayUseful()){spawnNewWord();refreshTray()}});
 $("btnSound").textContent=muted?"🔇":"🔊";
