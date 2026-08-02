@@ -175,7 +175,7 @@ swap:function(){tone(700,0.1,"sine",0.1);tone(900,0.12,"sine",0.1,0.08)},
 dead:function(){tone(300,0.3,"sine",0.09);tone(220,0.4,"sine",0.09,0.15)}
 };
 function vib(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
-function speak(text){if(muted||!('speechSynthesis'in window))return;try{var u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=0.8;u.pitch=1.1;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+function speak(text,lang){if(muted||!('speechSynthesis'in window))return;lang=lang||'en-US';try{var u=new SpeechSynthesisUtterance(text);u.lang=lang;u.rate=lang==='zh-CN'?0.9:0.8;u.pitch=1.1;speechSynthesis.speak(u)}catch(e){}}
 function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
 function shade(col,amt){var r=parseInt(col.slice(1,3),16),g=parseInt(col.slice(3,5),16),b=parseInt(col.slice(5,7),16);r=Math.max(0,Math.min(255,r+amt));g=Math.max(0,Math.min(255,g+amt));b=Math.max(0,Math.min(255,b+amt));return"#"+[r,g,b].map(function(x){return x.toString(16).padStart(2,'0')}).join('')}
 function praise(txt){var d=document.createElement("div");d.className="praise";d.textContent=txt;document.body.appendChild(d);setTimeout(function(){d.remove()},1300)}
@@ -237,7 +237,7 @@ if(wordsDone>=goal){playing=false;setTimeout(completeLevel,900)}else checkStuck(
 function showWordCard(wo){
 var d=document.createElement("div");d.className="wordCardFloater";
 d.innerHTML='<div class="card"><div class="wordEmoji">'+wo.e+'</div><div class="wordEng">'+wo.w+'</div><div class="wordCn">'+wo.c+'</div></div>';
-document.body.appendChild(d);speak(wo.w);
+document.body.appendChild(d);speechSynthesis.cancel();speak(wo.w);setTimeout(function(){speak(wo.c,'zh-CN')},800);
 setTimeout(function(){d.remove()},2500)
 }
 function addLearnedWord(wo){if(!learnedWords.some(function(w){return w.w===wo.w})){learnedWords.push(wo);localStorage.setItem("cs_words",JSON.stringify(learnedWords))}}
