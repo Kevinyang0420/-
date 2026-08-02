@@ -27,7 +27,14 @@ body{margin:0;background:var(--bg);color:var(--fg);font-size:16px;line-height:1.
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
 /* 底部留白由 JS 按底栏实际高度算（底栏会因打字框/自检面板变高，
    写死数值必然挡住内容 —— Kevin 反馈刷不上去就是这个） */
-.wrap{max-width:640px;margin:0 auto;padding:16px 14px;
+/* 🚨 顶部安全区。Kevin 反馈「返回按钮跟 iPhone 系统时间贴在一起，点不到」。
+   根因：我给 App 设了 apple-mobile-web-app-status-bar-style=black-translucent，
+   再加 viewport-fit=cover，内容会一直顶到**状态栏底下**（时间/信号那一条）。
+   底栏我留了 safe-area-inset-bottom，顶部却忘了 —— 于是返回键正好压在时间上。
+   加了 env(safe-area-inset-top) 之后，刘海机自动让出 ~47px，非刘海机让出 ~20px，
+   都不用写死数值。再多给 8px 呼吸，别贴着。 */
+.wrap{max-width:640px;margin:0 auto;
+  padding:calc(env(safe-area-inset-top, 0px) + 24px) 14px 0;
   padding-bottom:var(--barpad,200px)}
 h1{font-size:19px;margin:2px 0 2px;letter-spacing:-.2px}
 .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
@@ -142,9 +149,13 @@ button{font-family:inherit}
   border-radius:16px;padding:4px 12px;font-size:12.5px}
 .play.on{border-color:var(--accent);color:var(--accent)}
 .note{font-size:12px;color:var(--muted);font-style:italic;margin:5px 0}
-#topnav{margin:0 0 6px}
-#topnav button{background:none;border:none;color:var(--accent);font-size:15px;
-  padding:6px 2px;font-weight:600}
+/* 返回键：Apple 的人机指南要求点击区至少 44×44，原来只有约 15×28，
+   本来就难点，再被状态栏压住就完全点不到了。 */
+#topnav{margin:4px 0 8px;min-height:44px;display:flex;align-items:center}
+#topnav button{background:none;border:none;color:var(--accent);font-size:16px;
+  padding:10px 14px 10px 0;font-weight:600;min-height:44px;
+  display:flex;align-items:center}
+#topnav button:active{opacity:.55}
 .grp{font-size:12px;letter-spacing:.5px;color:var(--muted);font-weight:700;
   margin:20px 0 4px;padding-bottom:5px;border-bottom:1px solid var(--line)}
 #bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);
