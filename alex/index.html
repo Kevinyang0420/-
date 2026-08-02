@@ -1788,13 +1788,27 @@ function start(scn){
     `<div class="k">你是 ${scn.you}</div><div class="k">任务 ${scn.task}</div>`;
   $('#bar').hidden = false;
   $('#feed').innerHTML = '';
-  applyDens();                       // 让按钮显示当前档位，别让他猜自己在哪一档
+  applyDens();
+  /* 进场景就先把麦克风要下来并**留着流不关**：这样一次会话只弹一次权限，
+     而不是每次录音都弹。（关掉流再开会再弹一次。） */
+  primeMic();                       // 让按钮显示当前档位，别让他猜自己在哪一档
 }
 
 /* ───────── 录音 ───────── */
 let rec = null, stream = null, chunks = [], busy = false;
 /* 🚨 iOS 上 MediaRecorder stop 之后不能复用（第二次 start 无声/不触发）。
    流可以留着，录音器每轮新建。 */
+let micPrimed = false;
+async function primeMic(){
+  if (micPrimed || !pick('audio')) return;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia(
+      {audio:{echoCancellation:true, noiseSuppression:true}});
+    micPrimed = true;
+    $('#hint').textContent = '点一下开始说，说完再点一下';
+  } catch(err){ micHelp(err); }
+}
+
 async function getRec(){
   if (!stream || !stream.active){
     stream = await navigator.mediaDevices.getUserMedia(
@@ -1835,10 +1849,31 @@ async function down(e){
     return true;
   } catch(err){
     resetMic();
-    $('#err').textContent = '拿不到麦克风：' + err.message;
+    micHelp(err);
     return false;
   }
 }
+/* 🚨 拿不到麦克风时，「NotAllowedError」这种话等于没说。
+   Kevin 2026-08-02：「每次打开网页浏览器都要征询权限，必须点一下允许才能用，
+   有什么办法可以设置为一直授予权限吗」。
+   查下来 iOS 上有两条路，而**他的情况只有第一条管用**：
+     ① 设置 → Safari浏览器 → 麦克风 → 允许（全局，主屏 App 也吃这个设置）
+     ② Safari 里 aA → 网站设置 → 麦克风 → 允许（按站记住）
+        —— 但**加到主屏之后那个 aA 菜单就没有了**，够不着，所以他得走 ①
+   把这两条直接写在报错里，别让他去猜。 */
+function micHelp(err){
+  const name = (err && (err.name || err.message)) || '';
+  const denied = /NotAllowed|Permission|denied/i.test(name);
+  $('#err').innerHTML = denied
+    ? '麦克风被拒了。<b>要一次性设成永久允许：</b>'
+      + '设置 → Safari浏览器 → 麦克风 → 选「允许」。'
+      + '<br>（主屏 App 里没有 aA 菜单，所以只能走系统设置这条；'
+      + '改完把这个 App 从后台划掉重开一次。）'
+    : /NotFound|Devices/i.test(name)
+      ? '找不到麦克风设备。'
+      : '拿不到麦克风（' + esc(name) + '）。可以先用下面的<b>「打字」</b>练。';
+}
+
 /* 按钮回到「点一下说话」的样子 —— 三处（正常停止、出错、回合结束）都要走这里，
    不然会停在「停止并发送」上，下一次点等于直接停止，看着像没反应。 */
 function resetMic(){
@@ -2968,6 +3003,22 @@ function showMe(){
       <div class="t">${esc(desc)}</div>`;
     c.onclick = fn; f.appendChild(c);
   };
+  row('🎙️','麦克风每次都要授权？','一次设成永久允许的办法（iOS）', () => {
+    const f2 = $('#feed'); f2.innerHTML = '';
+    $('#sub').textContent = '麦克风权限';
+    const d = document.createElement('div');
+    d.className = 'note';
+    d.innerHTML = '<b>为什么每次都问：</b>Safari 默认每次打开网页都重新征询麦克风权限。'
+      + '<br><br><b>一次设成永久允许：</b><br>'
+      + '设置 → Safari浏览器 → 麦克风 → 选「允许」<br>'
+      + '改完把这个 App 从后台完全划掉再打开。'
+      + '<br><br>🚨 网上常说的另一种办法（在 Safari 里点 aA → 网站设置 → 麦克风）'
+      + '<b>对你不管用</b> —— 你是从主屏图标打开的，那个界面里根本没有 aA 菜单。'
+      + '所以只能走上面系统设置那条。'
+      + '<br><br>另外我这边也改了：进入一个场景时把麦克风一次要好并保持着，'
+      + '所以**一次会话里只会问一次**，不会每说一句都问。';
+    f2.appendChild(d);
+  });
   row('🕘','历史','翻回以前练过的每一场', () => go(showHistory,'历史'));
   row('🔈','陪练的声音','换一个好听点的嗓子；iOS 要先下载增强语音', () => go(showVoice,'声音'));
   row('💾','备份与恢复','数据只存在这台设备，导出一份存自己那儿', () => go(showBackup,'备份'));
