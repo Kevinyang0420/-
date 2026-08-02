@@ -16,12 +16,19 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Alex 英语陪练</title>
 <style>
-:root{--bg:#f4f2ef;--fg:#1c1a17;--muted:#6b6560;--line:#e6e1da;--card:#fff;
-  --accent:#b4552d;--soft:#f6ece6;--alex:#2f5d8a;--alexsoft:#e8eff6;--rec:#c0392b;
-  --ok:#2f6f4e}
-@media(prefers-color-scheme:dark){:root{--bg:#16151a;--fg:#e8e5e0;--muted:#9a938c;
-  --line:#2f2c33;--card:#1e1d23;--accent:#e08a5c;--soft:#2a211d;--alex:#7fb0dd;
-  --alexsoft:#1b2530;--rec:#e07a7a;--ok:#6fbf92}}
+/* 🚨 Kevin 2026-08-02：「整个界面显得更青春、年轻一点，这个死气沉沉的颜色
+   看起来确实不舒服」。原来是一套低饱和的陶土橙 + 灰绿 + 暖灰 —— 稳重但发闷。
+   换成高饱和的珊瑚橙做主色，配亮蓝/亮绿/紫，底色转成干净的冷白。
+   参照的是多邻国和 51Talk 的做法：**一个高饱和主色 + 干净中性底**，
+   靠饱和度而不是靠深色来出精神。 */
+:root{--bg:#f6f7fb;--fg:#16181d;--muted:#6f7480;--line:#e6e9f0;--card:#fff;
+  --accent:#ff5a36;--accent2:#ff8a5c;--soft:#fff0eb;
+  --alex:#3b82f6;--alexsoft:#eaf2ff;--rec:#ef4444;
+  --ok:#16a34a;--purple:#8b5cf6;--amber:#f59e0b}
+@media(prefers-color-scheme:dark){:root{--bg:#111318;--fg:#eceef3;--muted:#98a0ae;
+  --line:#282c35;--card:#1a1d24;--accent:#ff6b47;--accent2:#ff9470;--soft:#2b1d18;
+  --alex:#60a5fa;--alexsoft:#16233a;--rec:#f87171;
+  --ok:#4ade80;--purple:#a78bfa;--amber:#fbbf24}}
 /* ═══ 从多邻国量来的几条（2026-08-02 实测他们线上的计算样式，不是凭印象）═══
    · 按钮：高 50px、圆角 12px、字重 700、字距 0.8px
    · 🚨 那个「厚实感」不是阴影，是 **border-width: 2px 2px 4px** —— 底边比其他边厚一倍，
@@ -70,8 +77,19 @@ body{margin:0;background:var(--bg);color:var(--fg);font-size:16px;line-height:1.
    都不用写死数值。再多给 8px 呼吸，别贴着。 */
 .wrap{max-width:640px;margin:0 auto;
   padding:calc(env(safe-area-inset-top, 0px) + 24px) 14px 0;
-  padding-bottom:var(--barpad,200px)}
-h1{font-size:22px;font-weight:800;margin:2px 0 3px;letter-spacing:-.3px}
+  padding-bottom:var(--barpad,200px);
+  /* 🚨 Kevin：「听力和我的这几个 tab 的下巴位置跟首页不一样」。
+     量下来标签栏本身四个 tab 完全同位（757–812px），差的是**内容底部**：
+     首页内容到 976px（要滚动），听力只到 633px —— 底下空出两三百像素，
+     视觉上就是「下巴不一样高」。
+     让每一屏至少撑满一个视口，空白量就一致了。
+     用 dvh 而不是 vh：iOS 上地址栏收放会改变 vh，dvh 才是当前真实高度。 */
+  min-height:100dvh}
+@supports not (height: 100dvh){.wrap{min-height:100vh}}
+h1{font-size:23px;font-weight:800;margin:2px 0 3px;letter-spacing:-.4px;
+  background:linear-gradient(100deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;display:inline-block}
 .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
 button{font-family:inherit}
 
@@ -82,7 +100,8 @@ button{font-family:inherit}
 .stats{display:flex;align-items:center;gap:10px;margin:0 0 16px;
   background:var(--card);border:none;box-shadow:var(--sh);
   border-radius:var(--r);padding:15px 17px}
-.stats .n{font-size:19px;font-weight:800;line-height:1.1;letter-spacing:-.5px}
+.stats .n{font-size:22px;font-weight:800;line-height:1.1;letter-spacing:-.5px;
+  color:var(--accent)}
 .stats .l{font-size:10.5px;color:var(--muted);letter-spacing:.3px}
 .stats .col{min-width:52px}
 .stats .sp{flex:1}
@@ -90,9 +109,10 @@ button{font-family:inherit}
   border-radius:10px;padding:7px 10px;font-size:12.5px;font-weight:600;
   white-space:nowrap}
 .stats button:active{border-color:var(--accent);color:var(--accent)}
-.stats .dot{display:inline-block;min-width:16px;height:16px;line-height:16px;
-  background:var(--accent);color:#fff;border-radius:8px;font-size:10.5px;
-  margin-left:4px;padding:0 4px;font-weight:700}
+.stats .dot{display:inline-block;min-width:18px;height:18px;line-height:18px;
+  background:var(--rec);color:#fff;border-radius:9px;font-size:11px;
+  margin-left:5px;padding:0 5px;font-weight:800;
+  box-shadow:0 2px 8px rgba(239,68,68,.4)}
 
 /* ═══ 首页：大方块选模块 → 选难度 → 才开始练 ═══
    Kevin 2026-08-02：「一开始先放几个大的方块，让用户选择想进入哪一个模块，
@@ -115,15 +135,15 @@ button{font-family:inherit}
 .resume .k{font-size:11px;letter-spacing:.4px;color:var(--muted);font-weight:700}
 .resume .v{font-size:15px;font-weight:700;margin-top:3px}
 .resume .s{font-size:12.5px;color:var(--muted);margin-top:2px}
-.t-speak{background:linear-gradient(150deg,#c2603a,#9a4525)}
-.t-listen{background:linear-gradient(150deg,#3a6f9e,#274d6e)}
-.t-book{background:linear-gradient(150deg,#5b6b52,#3d4a37)}
-.t-hist{background:linear-gradient(150deg,#6a6259,#494340)}
+.t-speak{background:linear-gradient(140deg,#ff7a4d,#ff4b2b)}
+.t-listen{background:linear-gradient(140deg,#4facfe,#2563eb)}
+.t-book{background:linear-gradient(140deg,#34d399,#059669)}
+.t-hist{background:linear-gradient(140deg,#a78bfa,#7c3aed)}
 @media(prefers-color-scheme:dark){
-  .t-speak{background:linear-gradient(150deg,#a0492c,#6f3119)}
-  .t-listen{background:linear-gradient(150deg,#2d587e,#1c3850)}
-  .t-book{background:linear-gradient(150deg,#47543f,#2c352a)}
-  .t-hist{background:linear-gradient(150deg,#4f4a44,#35312e)}}
+  .t-speak{background:linear-gradient(140deg,#ff6a3d,#e03e20)}
+  .t-listen{background:linear-gradient(140deg,#3b9bf0,#1d4ed8)}
+  .t-book{background:linear-gradient(140deg,#2bbd88,#047857)}
+  .t-hist{background:linear-gradient(140deg,#9575f5,#6d28d9)}}
 
 /* 难度选择：一屏三张，说清每一档是什么 */
 .lvpick{margin-top:4px}
@@ -133,7 +153,7 @@ button{font-family:inherit}
   gap:15px;transition:transform .07s,box-shadow .12s}
 .lvcard:active{transform:translateY(2px) scale(.995);box-shadow:0 1px 5px rgba(0,0,0,.06)}
 .lvcard .lv{flex:0 0 auto;display:flex;gap:4px}
-.lvcard .lv i{width:8px;height:8px;border-radius:50%;background:var(--line);display:block}
+.lvcard .lv i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block}
 .lvcard .lv i.f{background:var(--accent)}
 .lvcard .tx{flex:1}
 .lvcard .nm{font-size:15.5px;font-weight:700}
@@ -163,7 +183,8 @@ button{font-family:inherit}
   color:var(--muted);border-radius:999px;padding:10px 18px;font-size:14px;
   font-weight:700;white-space:nowrap;background:var(--card);border-color:transparent;
   box-shadow:var(--sh)}
-.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff;
+  box-shadow:0 4px 14px rgba(255,90,54,.38)}
 
 .card{background:var(--card);border:var(--bd) solid var(--line);
   border-radius:var(--r);box-shadow:var(--sh);
@@ -181,7 +202,8 @@ button{font-family:inherit}
 .lvl{flex:0 0 auto;display:flex;gap:3px}
 .lvl i{width:6px;height:6px;border-radius:50%;background:var(--line);display:block}
 .lvl i.f{background:var(--accent)}
-.done{flex:0 0 auto;font-size:11px;color:var(--ok);font-weight:700}
+.done{flex:0 0 auto;font-size:11px;color:var(--ok);font-weight:800;
+  background:rgba(22,163,74,.12);padding:3px 9px;border-radius:999px}
 /* 简介卡：原来是一块灰底，跟卡片体系不搭 */
 #brief{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);
   padding:15px 17px;margin-bottom:14px;font-size:14.5px;line-height:1.6}
@@ -234,12 +256,18 @@ button{font-family:inherit}
   border-top:none;box-shadow:0 -3px 18px rgba(0,0,0,.09);
   border-radius:24px 24px 0 0;
   padding:12px 14px calc(10px + env(safe-area-inset-bottom));text-align:center}
+/* 🚨 渐变必须写在 background 简写**之后** —— 简写会把 background-image 重置成 none，
+   我第一次写在前面，结果按钮还是一块死色（自检抓到的）。 */
 #mic{width:92px;height:92px;border-radius:50%;font-size:15px;
-  font-weight:800;letter-spacing:.5px;color:#fff;background:var(--accent);
+  font-weight:800;letter-spacing:.5px;color:#fff;
+  background:linear-gradient(145deg,var(--accent2),var(--accent));
+  box-shadow:0 8px 24px rgba(255,90,54,.34);
   touch-action:none;border:none;border-bottom:6px solid rgba(0,0,0,.25);
   transition:transform .06s,border-bottom-width .06s;
   -webkit-user-select:none;user-select:none}
-#mic.rec{background:var(--rec);transform:translateY(3px);border-bottom-width:3px}
+#mic.rec{background:linear-gradient(145deg,#fb7185,var(--rec));
+  box-shadow:0 4px 16px rgba(239,68,68,.42);
+  transform:translateY(3px);border-bottom-width:3px}
 #mic:disabled{opacity:.4}
 #hint{font-size:13px;color:var(--muted);margin-top:7px;min-height:0}
 #hint:empty{display:none}
