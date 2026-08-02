@@ -239,7 +239,7 @@ button{font-family:inherit}
 <div class="wrap">
   <div id="topnav" hidden><button id="backbtn">← 返回</button></div>
   <h1>Alex 英语陪练</h1>
-  <div class="sub" id="sub">按住说英语，他会在需要时打断你</div>
+  <div class="sub" id="sub">点一下说英语，他会在需要时打断你</div>
 
   <div id="setup" hidden>
     <div class="warn">
@@ -273,8 +273,8 @@ button{font-family:inherit}
 </nav>
 
 <div id="bar" hidden>
-  <button id="mic">按住<br>说话</button>
-  <div id="hint">按住说，松开发送</div>
+  <button id="mic">点一下<br>说话</button>
+  <div id="hint">点一下开始说，说完再点一下</div>
   <div id="err"></div>
   <div class="ctl">
     <button id="dens">陪练模式</button>
@@ -486,6 +486,80 @@ const SCENARIOS = [
   you:'项目负责人', task:'30 秒说清你是谁、做过什么相关的、这个项目上你负责哪块',
   tgt:['I lead the financial due diligence workstream.','I have run similar deals in the payments and media sectors over the past six years.','On this project I will be your main contact for anything on the numbers.'],
   traps:['🚨 背简历流水账 —— 30 秒说了五份工作，客户一个字没记住','过度谦虚到听不出你能干什么','说完不说自己负责哪块，客户不知道该找谁']},
+ /* ═══ 第二批：补入门档和职场，每张压一种不同的语言难点 ═══ */
+ {id:'dd_stock_count', t:'问一次盘点怎么做的', lvl:'★☆☆',
+  sit:'目标公司说存货每年盘一次，最近一次是 FY25 年底。你想知道具体怎么盘的、有没有第三方在场。',
+  ai:'仓储主管。人很实在，愿意讲流程，只是习惯用车间里的叫法，不太会用书面说法。',
+  you:'FDD advisor', task:'把流程问清楚，并且用对方听得懂的话确认你的理解',
+  tgt:['Could you take me through how the count is actually done?','So if I understand correctly, …  — is that right?','Was anyone from outside the company present?'],
+  traps:['确认理解时说 So you mean…，听着像在挑刺；中性说法是 So if I understand correctly…','how do you do the count 太笼统，问不出细节；take me through 才会让对方按步骤讲','对方用车间叫法时直接跟着用，自己都没搞清是什么']},
+ {id:'dd_related_party', t:'确认一家关联方', lvl:'★☆☆',
+  sit:'供应商名单里有一家跟老板同姓的小公司，FY25 采购额 Rmb2.1m。你要问清楚这是什么关系。',
+  ai:'Target 财务经理。知道这层关系，也不觉得有什么好瞒的，会直接说是老板亲戚开的。',
+  you:'FDD advisor', task:'把关系和定价方式问清楚，问法要中性',
+  tgt:['Could you tell me a bit about this supplier?','How was the pricing agreed?','Is it on the same terms as your other suppliers?'],
+  traps:['Is this a related party? 是封闭式质问，先用 Could you tell me a bit about… 打开','关系问清楚了却忘了问定价 —— 英语里顺着问是 And how was the pricing agreed?','用 you guys 这类口语称呼，正式场合偏随便']},
+ {id:'aud_bank_letter', t:'请客户发一封函证', lvl:'★☆☆',
+  sit:'要发银行函证，需要客户在信上盖章寄出。客户第一次做审计，不知道为什么不能自己填。',
+  ai:'客户会计。第一次配合审计，很配合但完全不懂流程，会问「这个我自己填不行吗」。',
+  you:'审计现场负责人', task:'把要他做什么、为什么必须他来做，讲成一步步的动作',
+  tgt:['We will prepare the letter; what we need from you is the company chop and for it to be sent from your side.','The reply needs to come back to us directly.','It should take about ten minutes on your end.'],
+  traps:['一次性把所有步骤倒给对方；英语里分步说 First…, then…, and after that… 更好跟','用 you need to 一连三句，语气偏命令；What we need from you is… 更平等','confirmation 和 letter 混着用，对方不知道是同一个东西']},
+ {id:'wk_ask_for_time', t:'跟老板要更多时间', lvl:'★☆☆',
+  sit:'手上三件事撞在同一周。你要跟老板说清楚，请他帮你排优先级。',
+  ai:'你的老板。忙但讲道理，只要你把选项摆出来他会很快拍板。',
+  you:'团队成员', task:'摆事实、给选项、请他选，而不是抱怨',
+  tgt:['I have three things landing in the same week and I would like your steer on the order.','If A goes first, B slips to the following Monday.','Which would you rather have on time?'],
+  traps:['I am too busy 是抱怨；英语里摆事实是 I have three things landing in the same week','只说困难不给选项，对方还得替你想','用 maybe / probably 把每句都软化，听着没准备好']},
+ {id:'wk_intro_call', t:'开场寒暄和自我介绍', lvl:'★☆☆',
+  sit:'跟新客户第一次视频会，前两分钟的寒暄和开场。对方在香港。',
+  ai:'客户方财务总监。礼貌，语速正常，会礼节性地问你一句最近忙不忙。',
+  you:'项目负责人', task:'自然地寒暄两句，然后把会议带进正题',
+  tgt:['Thanks for making the time.','Shall we get started? I thought we could begin with…','Before we dive in, is there anything you would like to cover today?'],
+  traps:['寒暄完直接开始，缺一句过渡；英语里常用 Shall we get started? 收尾寒暄','How are you 之后接不下去；对方回完可以顺一句 Good to hear','把 agenda 念一遍就完了，没问对方还想聊什么']},
+ {id:'dd_cost_alloc', t:'弄清一笔分摊怎么分的', lvl:'★★☆',
+  sit:'集团把总部费用按收入比例分摊给各子公司，FY25 分给目标公司 Rmb4.8m。你要弄清分摊基础是否合理、拆分后还剩多少。',
+  ai:'集团财务经理。这套分摊是他做的，讲得很顺，但没意识到你关心的是拆分后的口径。',
+  you:'FDD advisor', task:'问清分摊基础，并说清你需要的是拆分后的口径',
+  tgt:['What is the allocation based on?','On a stand-alone basis, how much of this would remain?','Could you split it between what is genuinely shared and what is head-office only?'],
+  traps:['stand-alone 这个词不说出来，对方永远答不到你要的口径','用 is this fair? 问合理性，太主观；问 What is it based on? 更有效','把 allocation 和 recharge 混用，两边说的不是一件事']},
+ {id:'aud_subsequent_events', t:'问期后有没有大事', lvl:'★★☆',
+  sit:'资产负债表日之后到今天，你要确认有没有需要披露的重大事项。客户觉得这个问题很空泛。',
+  ai:'客户财务总监。配合，但被问得太笼统时只会说「没什么特别的」。',
+  you:'审计经理', task:'把空泛的问题拆成对方答得上来的具体问题',
+  tgt:['Since the year end, has there been anything significant — new borrowings, disposals, litigation, anything like that?','Has anything changed with your major customers since January?','Nothing on the financing side either?'],
+  traps:['只问 any subsequent events?，对方一定答 no；要给例子把问题落地','对方说 nothing special 就收工，英语里可以再补一句 Nothing on the financing side either?','用 material 这种术语问非财务的人，对方不知道你要什么']},
+ {id:'aud_disagree_politely', t:'跟客户说他算错了', lvl:'★★☆',
+  sit:'客户算的折旧多计了 HK$310k，是把残值算漏了。要跟做这张表的人说清楚。',
+  ai:'客户资深会计。做这张表十年了，第一反应是自己的方法一直没问题。',
+  you:'审计现场负责人', task:'把问题说清楚，不让对方觉得被当面否定',
+  tgt:['Could we look at the residual value together?','I may be reading this wrong, but it looks like the residual has not been picked up.','Would you mind walking me through how it flows?'],
+  traps:['This is wrong 或 You forgot the residual —— 直接判错，英语里先说 I may be reading this wrong','把 mistake / error 挂在嘴边，中性说法是 it looks like… has not been picked up','为了不得罪人绕了半天没说清是哪一项']},
+ {id:'wk_status_update', t:'一分钟汇报进度', lvl:'★★☆',
+  sit:'周会上轮到你，一分钟说清项目进度。有一项延了，但整体可控。',
+  ai:'部门总监。听得很快，会在你说完延误后立刻问「那会不会影响交付」。',
+  you:'项目负责人', task:'先给整体判断，再说延误，最后说你要什么',
+  tgt:['Overall we are on track for the end of the month.','One piece has slipped — the data extraction — and here is what I am doing about it.','I do not need anything from you at this point.'],
+  traps:['按时间顺序流水账，一分钟说不完；英语里结论先行 Overall we are on track…','延误说得含糊 there are some delays，不如直接点名是哪一项','不说要不要支援，对方还得追问']},
+ {id:'wk_decline_meeting', t:'礼貌推掉一个会', lvl:'★★☆',
+  sit:'有人拉你进一个跟你关系不大的会，跟你手上的交付撞时间。',
+  ai:'隔壁组的经理。人不错，是顺手拉你进来的，你说清楚他不会介意。',
+  you:'团队负责人', task:'推掉但留门，并给一个替代方案',
+  tgt:['I do not think I will add much value in that one.','Could you send me the notes afterwards instead?','If something comes up that needs me, just ping me and I will join.'],
+  traps:['I am busy 是最弱的理由；英语里说 I will not add much value 更得体','直接说 I cannot join 就完了，没给替代方案','为了礼貌答应下来又不去，比一开始就说清楚更糟']},
+ {id:'dd_customer_concentration', t:'谈客户集中度', lvl:'★★★',
+  sit:'前两大客户占 FY25 收入 58%，其中最大一家的合同今年到期。买方非常在意这个。',
+  ai:'Target 销售总监。对续约有信心，会讲关系多好、合作多少年，但拿不出已签的续约。',
+  you:'FDD advisor', task:'问出续约的实际进展，把「有信心」和「已落实」分开',
+  tgt:['Where are you in the renewal process at the moment?','Has anything been signed, or is it still at discussion stage?','What would happen to volumes if it were not renewed?'],
+  traps:['对方说 we are confident 就往下走；英语里要追一句 Has anything been signed?','用 What if you lose them? 太直接，What would happen to volumes if… 更中性','把 confident 直接写进结论，那是他的说法不是事实']},
+ {id:'aud_fee_conversation', t:'谈加钱这件事', lvl:'★★★',
+  sit:'客户今年多了两家子公司，工作量明显增加，需要跟对方谈调整费用。你不习惯谈钱。',
+  ai:'客户财务总监。预算已经定了，会说今年很紧，但不是不讲理，会问多出来的工作具体是什么。',
+  you:'审计经理', task:'把加钱说成工作量的变化，而不是要求',
+  tgt:['The scope has changed since we agreed the fee — two additional entities.','That is roughly forty additional hours on our side.','I wanted to raise it now rather than at the end.'],
+  traps:['We need more money 太生硬；英语里从 The scope has changed 讲起','用 sorry to bring this up 开场，一上来就把自己放低了','只说工作量增加，不说具体多少，对方没法判断']},
+
 ];
 
 /* ───────── 判官规则（浏览器端，与桌面版同源） ───────── */
@@ -1319,9 +1393,41 @@ async function screen(items, want){
 }
 
 /* ───────── 出声 ───────── */
-let VOICES = [], ttsUnlocked = false;
-function loadVoices(){ VOICES = speechSynthesis.getVoices() || []; }
-loadVoices(); speechSynthesis.onvoiceschanged = loadVoices;
+/* ═══ 取语音列表 ═══
+   🚨 Kevin 2026-08-02：「我在 iPhone 上下载了 Allison，但列表里没有」。
+   根因是这里原来只有一句 `VOICES = getVoices()` —— 一次性同步取。iOS 上：
+     · 首次 getVoices() 常常是空的或只有一个精简集，真正的列表随后才通过
+       voiceschanged 事件送来；我取一次就渲染，拿到的是旧的
+     · 语音引擎「热身」前（还没 speak 过）新下载的音色也可能不出现
+     · 事件可能在我挂上 handler 之前就已经触发过
+   改法：**累积**而不是覆盖（取到的并进来，只增不减），开头连续轮询几次，
+   voiceschanged 时再并一次，并给一个手动「重新扫描」。 */
+let VOICES = [], ttsUnlocked = false, onVoices = null;
+function mergeVoices(list){
+  const key = v => (v.voiceURI || '') + '|' + v.name + '|' + v.lang;
+  const seen = new Set(VOICES.map(key));
+  let added = 0;
+  for (const v of (list || [])){
+    if (!seen.has(key(v))){ VOICES.push(v); seen.add(key(v)); added++; }
+  }
+  return added;
+}
+function loadVoices(){
+  const n = mergeVoices(speechSynthesis.getVoices());
+  if (n && typeof onVoices === 'function') onVoices();
+  return n;
+}
+/* 连着扫几秒 —— iOS 上列表是分批到的，扫一次必然漏 */
+function scanVoices(rounds = 12, gap = 400){
+  let i = 0;
+  const tick = () => {
+    loadVoices();
+    if (++i < rounds) setTimeout(tick, gap);
+  };
+  tick();
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+scanVoices();
 
 /* 🚨 iOS 上 speechSynthesis 必须在**用户手势里真的 speak 过一次**才解锁；
    只调 resume() 不够 —— 之后所有 speak 会静默失败，页面看着正常但没声音
@@ -1481,8 +1587,12 @@ function showList(){
   $('#list').hidden = false;
   $('#feed').innerHTML = '';
   $('#sub').textContent = '口语陪练 · 选难度';
-  const last = loadSess().slice(-1)[0];
-  const lastScn = last && SCENARIOS.find(x => x.id === last.scn);
+  /* 首页推荐一张**没练过的**，而不是「接着上次练」——
+     后者会把他一直钉在同一张卡上，正是他抱怨的那个现象。 */
+  const never = SCENARIOS.filter(x => !practised(x.id));
+  const pool = never.length ? never : SCENARIOS;
+  const h = x => [...x].reduce((k,c) => (k*31 + c.charCodeAt(0)) % 9973, 7);
+  const freshScn = pool.slice().sort((a,b) => h(a.id+DAYSEED) - h(b.id+DAYSEED))[0];
   const cnt = lv => SCENARIOS.filter(x => lvlNum(x.lvl) === lv).length;
   $('#list').innerHTML =
     `<div class="stats">
@@ -1490,10 +1600,12 @@ function showList(){
        <div class="col"><div class="n">${ST.turns}</div><div class="l">累计轮数</div></div>
        <div class="sp"></div>
      </div>` +
-    (lastScn ? `<div class="resume" id="resume">
-       <div class="k">接着上次练</div>
-       <div class="v">${esc(lastScn.t || lastScn.id)}</div>
-       <div class="s">${esc(last.on)} · ${last.turns.length} 轮</div></div>` : '') +
+    (freshScn ? `<div class="resume" id="resume">
+       <div class="k">今天试试这个</div>
+       <div class="v">${esc(freshScn.t || freshScn.id)}</div>
+       <div class="s">${esc(freshScn.you)} · ${'★'.repeat(lvlNum(freshScn.lvl))}${
+         practised(freshScn.id) ? ' · 练过 ' + practised(freshScn.id) : ' · 还没练过'}</div>
+       </div>` : '') +
     '<div class="lvpick">' + LEVELS.map(L =>
       `<div class="lvcard" data-lv="${L.n}">
          <span class="lv">${[1,2,3].map(i=>`<i class="${i<=L.n?'f':''}"></i>`).join('')}</span>
@@ -1501,7 +1613,7 @@ function showList(){
            <div class="ds">${L.ds}</div></span>
          <span class="ct">${cnt(L.n)} 个</span>
        </div>`).join('') + '</div>';
-  if (lastScn) $('#resume').onclick = () => start(lastScn);
+  if (freshScn) $('#resume').onclick = () => start(freshScn);
   document.querySelectorAll('.lvcard').forEach(c => c.onclick = () => {
     LV = +c.dataset.lv;
     go(showScenarios, '选场景');
@@ -1544,12 +1656,24 @@ function showScenarios(){
   paintCards();
 }
 
+const DAYSEED = TODAY();
 const lvlNum = lv => ((String(lv).match(/★/g) || []).length || 1);
 
 function paintCards(){
   const pre = GRP[TAB][0];
+  /* 🚨 排序：练得少的排前面，练过的沉底。
+     Kevin 2026-08-02：「来来去去都是那一道装修款的题，这个我说过好几次了」。
+     根因不是题少，是 paintCards 一直按原始顺序渲染 —— dd_odd_payable 永远第一张，
+     他每次点最上面那个，当然永远是它。同样次数的再按 id 哈希打散，
+     避免第二名又变成新的「永远第一」。 */
   const hit = SCENARIOS.map((sc,i) => [sc,i])
-    .filter(([sc]) => sc.id.startsWith(pre) && (!LV || lvlNum(sc.lvl) === LV));
+    .filter(([sc]) => sc.id.startsWith(pre) && (!LV || lvlNum(sc.lvl) === LV))
+    .sort((a,b) => {
+      const d = practised(a[0].id) - practised(b[0].id);
+      if (d) return d;
+      const h = x => [...x].reduce((k,c) => (k*31 + c.charCodeAt(0)) % 9973, 7);
+      return h(a[0].id + DAYSEED) - h(b[0].id + DAYSEED);
+    });
   if (!hit.length){
     $('#cards').innerHTML =
       '<div class="note">这一档下这个分类还没有场景，换个分类看看。</div>';
@@ -1576,7 +1700,7 @@ function start(scn){
   S.scn = scn; S.nSince = 99; S.hist = []; S.turns = 0; S.breaks = 0;
   S.sessId = 's' + Date.now();       // 这一场的 id，用来实时落盘
   $('#list').hidden = true;
-  $('#sub').textContent = '按住下面的按钮说英语';
+  $('#sub').textContent = '点下面的按钮开始说英语';
   $('#brief').hidden = false;
   $('#brief').innerHTML = scn.sit +
     `<div class="k">你是 ${scn.you}</div><div class="k">任务 ${scn.task}</div>`;
@@ -1605,34 +1729,44 @@ async function getRec(){
 }
 async function down(e){
   e.preventDefault();
-  if (busy || !S.scn) return;
+  if (busy || !S.scn) return false;
   // 🚨 DeepSeek 收不了音频。只有 DeepSeek key 时别让他按了没反应，直接说清楚
   if (!pick('audio')){
-    $('#err').innerHTML = '「按住说话」需要一把 Gemini key（DeepSeek 收不了录音）。'
+    $('#err').innerHTML = '说话需要一把 Gemini key（DeepSeek 收不了录音）。'
       + '点下面的<b>「key」</b>加一把，或者先用<b>「打字」</b>和<b>「🎧 听力」</b>。';
-    return;
+    return false;
   }
   $('#err').textContent = '';
   unlockTTS();                       // 借这次按下解锁语音合成（iOS 必须）
   $('#mic').classList.add('rec');
-  $('#hint').textContent = '在听…松开发送';
+  $('#mic').innerHTML = '停止<br>并发送';
+  $('#hint').textContent = '在听…说完点一下停止';
   if (S.backend === 'deepseek'){
     // 手机自带识别是「说完自己停」，没有松手即停的概念，
     // 所以这里按下就开始听，松手时读结果
     try { S.srPromise = listenOnce(); }
-    catch(err){ $('#err').textContent = err.message; }
-    return;
+    catch(err){ $('#err').textContent = err.message; return false; }
+    return true;
   }
   try {
     const r = await getRec(); chunks = []; r.start();
+    return true;
   } catch(err){
-    $('#mic').classList.remove('rec');
+    resetMic();
     $('#err').textContent = '拿不到麦克风：' + err.message;
+    return false;
   }
+}
+/* 按钮回到「点一下说话」的样子 —— 三处（正常停止、出错、回合结束）都要走这里，
+   不然会停在「停止并发送」上，下一次点等于直接停止，看着像没反应。 */
+function resetMic(){
+  recOn = false;
+  $('#mic').classList.remove('rec');
+  $('#mic').innerHTML = '点一下<br>说话';
 }
 function up(e){
   e.preventDefault();
-  $('#mic').classList.remove('rec');
+  resetMic();
   if (S.backend === 'deepseek'){
     try { window.__sr && window.__sr.stop(); } catch(_) {}
     if (S.srPromise) sendText(S.srPromise);
@@ -1651,7 +1785,8 @@ async function sendText(promise){
   finally {
     busy = false; $('#mic').disabled = false;
     S.srPromise = null;
-    $('#hint').textContent = '按住说，松开发送';
+    resetMic();
+    $('#hint').textContent = '点一下开始说，说完再点一下';
   }
 }
 
@@ -1671,7 +1806,8 @@ async function send(){
       : e.message;
   } finally {
     busy = false; $('#mic').disabled = false;
-    $('#hint').textContent = '按住说，松开发送';
+    resetMic();
+    $('#hint').textContent = '点一下开始说，说完再点一下';
   }
 }
 
@@ -1773,19 +1909,37 @@ async function nudge(){
   } catch(e){ $('#err').textContent = e.message; }
   finally {
     busy = false; $('#mic').disabled = false;
-    $('#hint').textContent = '按住说，松开发送';
+    resetMic();
+    $('#hint').textContent = '点一下开始说，说完再点一下';
   }
 }
 
 /* 🚨 按下时按钮会放大(transform:scale)，手指很容易落到按钮外面 →
    pointerleave 触发 → 录音提前中断。用 pointer capture 把这段手势
    锁在按钮上，就不会再有 leave。 */
-$('#mic').addEventListener('pointerdown', e => {
-  try { e.currentTarget.setPointerCapture(e.pointerId); } catch(_){}
-  down(e);
+/* 🚨 改成「点一下开始、再点一下停」。
+   Kevin 2026-08-02：「不要用按住说话这种需要一直按着的方式，很不方便」。
+   按住式还有个附带毛病：按钮按下会放大，手指容易滑出去触发 pointerleave，
+   录音会莫名其妙提前中断（之前专门用 pointer capture 绕过这个）。
+   点按式没有这个问题，也不用一直保持接触。 */
+let recOn = false, recBusy = false;
+$('#mic').addEventListener('click', async e => {
+  e.preventDefault();
+  if (busy) return;
+  /* 🚨 down() 是异步的（要 await getRec 拿麦克风），快速连点会在录音还没起来时
+     再点一次 —— 实测三连点得到 start / start，中间没有 stop：
+     录音器泄漏，状态也卡住。用 recBusy 把「正在启动/正在停止」这段挡掉。 */
+  if (recBusy) return;
+  recBusy = true;
+  try {
+    if (recOn){ recOn = false; up(e); }
+    else {
+      recOn = true;
+      const ok = await down(e);
+      if (ok === false) recOn = false;
+    }
+  } finally { recBusy = false; }
 });
-$('#mic').addEventListener('pointerup', up);
-$('#mic').addEventListener('pointercancel', up);
 
 /* ───────── 自检：把「Load failed」拆成能行动的结论 ─────────
    iOS 上 file:// 和 edge://external-file 这类特殊协议会禁掉跨域请求，
@@ -1845,7 +1999,8 @@ async function typedTurn(){
   catch(e){ $('#err').textContent = e.message; }
   finally {
     busy = false; $('#mic').disabled = false;
-    $('#hint').textContent = '按住说，松开发送';
+    resetMic();
+    $('#hint').textContent = '点一下开始说，说完再点一下';
   }
 }
 $('#typego').onclick = typedTurn;
@@ -1962,6 +2117,7 @@ function go(render, title){
   paintNav();
 }
 function back(){
+  onVoices = null;
   NAV.pop();
   const v = NAV[NAV.length - 1];
   if (v) v.render(); else home();
@@ -1986,6 +2142,10 @@ function showVoice(){
   $('#sub').textContent = '陪练的声音';
   const f = $('#feed'); f.innerHTML = '';
   loadVoices();
+  // 🚨 进这一页就再扫一轮，并且**扫到新的就自动重画** ——
+  //    iOS 的列表是分批到的，只在进页面时取一次必然漏掉刚下载的音色。
+  onVoices = () => { if (NAV.length && NAV[NAV.length-1].title === '声音') showVoice(); };
+  scanVoices(10, 500);
   const en = VOICES.filter(v => /^en/i.test(v.lang))
                    .sort((a,b) => voiceScore(b) - voiceScore(a));
   const note = document.createElement('div');
@@ -1993,10 +2153,33 @@ function showVoice(){
   note.innerHTML = '听力用的是<b>预先合成的真人录音</b>，所以好听。'
     + '陪练是实时生成的，只能用你手机自带的语音 —— 我试过让网页直接调同一家的服务，'
     + '它要求特定的 User-Agent，而浏览器不允许网页设这个，所以走不通（要等有后端）。'
-    + '<br><br>能做的是把系统自带的挑到最好。'
-    + '<b>iOS 上好声音要先下载</b>：设置 → 辅助功能 → 朗读内容 → 声音 → 英语，'
-    + '选一个带「增强」或「高级」的下载，回来这里就会出现。';
+    + '<br><br><b>下载了新语音却看不到？</b>iOS 把语音列表缓存在这个网页里，'
+    + '下载完不会自动同步。按这个顺序：①先点下面任意一个声音试听一次'
+    + '（这一下会把语音引擎叫醒）②点「重新扫描」③还没有就把这个 App 从后台'
+    + '完全划掉再打开。'
+    + '<br>下载路径：设置 → 辅助功能 → 朗读内容 → 声音 → 英语。';
   f.appendChild(note);
+
+  const rescan = document.createElement('button');
+  rescan.className = 'play'; rescan.textContent = '↻ 重新扫描';
+  rescan.onclick = () => {
+    unlockTTS();                       // 叫醒引擎，很多时候这一下列表就全了
+    const before = VOICES.length;
+    scanVoices(14, 350);
+    setTimeout(() => {
+      const add = VOICES.length - before;
+      $('#sub').textContent = add ? `扫到 ${add} 个新声音` : '没扫到新的';
+      showVoice();
+    }, 5200);
+    $('#sub').textContent = '扫描中…';
+  };
+  f.appendChild(rescan);
+
+  const stat = document.createElement('div');
+  stat.className = 'note';
+  stat.textContent = `这台设备现在能看到 ${VOICES.length} 个语音，其中英语 ${en.length} 个。`;
+  f.appendChild(stat);
+
   if (!en.length){
     const w = document.createElement('div');
     w.className = 'note'; w.textContent = '这台设备上没找到英语语音。';
@@ -2598,8 +2781,8 @@ if (S.key){
   showList();
   $('#sub').textContent =
     (S.keys.gemini && S.keys.deepseek) ? '说话走 Gemini，听力和打字走 DeepSeek'
-    : S.keys.gemini ? '按住说英语（Gemini 直接听录音）'
-    : '听力和打字可用；「按住说话」需要再加一把 Gemini key';
+    : S.keys.gemini ? '点一下说英语（Gemini 直接听录音）'
+    : '听力和打字可用；说话需要再加一把 Gemini key';
   if (!localStorage.getItem(LS.be)) detectBackend().catch(()=>{});
 } else {
   $('#setup').hidden = false;
