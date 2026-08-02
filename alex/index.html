@@ -1229,8 +1229,49 @@ function unlockTTS(){
     ttsUnlocked = true;
   } catch(_) {}
 }
+/* ═══ 挑声音 ═══
+   Kevin 2026-08-02：「口语陪练的声音还是很难听」。
+   原来这里是 `VOICES.find(第一个匹配英语的)` —— 在 iOS 上第一个往往正是那个
+   最差的压缩音（compact），系统里明明装着好得多的。
+
+   🚨 陪练为什么不能用听力那套真人录音：听力是**预生成**的 mp3，陪练是实时的。
+      我试过让浏览器直接调微软那个神经语音服务（就是听力用的那家），
+      实测结论是**走不通**：它必须带特定的 User-Agent 才放行
+      （只带 UA 就通过、全套头去掉 UA 就 403），而浏览器不允许给 WebSocket 设 UA。
+      跟 Origin 无关 —— Python 客户端自己那个 Origin 一样是 403。
+      所以陪练要用同一套嗓子，只能等有后端。在那之前，把系统自带的挑到最好。
+
+   排序依据：premium/enhanced > Siri > 已知好听的名字 > 本地 > 其余；compact 垫底。 */
+const VOICE_PREF = ['premium', 'enhanced', 'siri'];
+const GOOD_NAMES = ['daniel','serena','stephanie','samantha','ava','allison',
+                    'karen','moira','tessa','arthur','martha','nicky','aaron'];
+/* 🚨 macOS/桌面版里混着一堆玩具音（Zarvox、Bubbles、Trinoids…），它们**不带
+   compact 标记**，所以只罚 compact 的话，正经的压缩音反而会排在玩具音后面
+   —— 自检里 Daniel 就输给了 Zarvox。玩具音要单独重罚，compact 的罚则调轻。 */
+const NOVELTY = ['zarvox','bells','bubbles','trinoids','boing','bahh','albert',
+                 'jester','organ','cellos','wobble','whisper','superstar',
+                 'bad news','good news','deranged','hysterical','pipe organ'];
+function voiceScore(v){
+  const uri = (v.voiceURI || '').toLowerCase(), nm = (v.name || '').toLowerCase();
+  let s = 0;
+  VOICE_PREF.forEach((k, i) => { if (uri.includes(k) || nm.includes(k)) s += 100 - i * 10; });
+  if (GOOD_NAMES.some(n => nm.includes(n))) s += 25;
+  if (NOVELTY.some(n => nm.includes(n))) s -= 200;      // 玩具音，永远垫底
+  if (/compact/.test(uri) || /compact/.test(nm)) s -= 20;
+  if (v.localService) s += 5;
+  if (/en-gb/i.test(v.lang)) s += 3;          // 商务英语场景，英音略优先
+  return s;
+}
 function pickVoice(lang){
-  return VOICES.find(v=>v.lang.replace('_','-').toLowerCase().startsWith(lang)) || null;
+  const want = localStorage.getItem('alex_voice_' + lang);
+  const all = VOICES.filter(v =>
+    v.lang.replace('_','-').toLowerCase().startsWith(lang));
+  if (!all.length) return null;
+  if (want){
+    const hit = all.find(v => v.voiceURI === want || v.name === want);
+    if (hit) return hit;                       // 他自己选过就听他的
+  }
+  return all.slice().sort((a,b) => voiceScore(b) - voiceScore(a))[0];
 }
 /* 🚨 iOS 上 speechSynthesis 的 onend 经常不触发。原来 await say(...) 等它，
    Promise 永远不 resolve → send() 的 finally 不执行 → 按钮永久禁用，
@@ -1364,6 +1405,18 @@ function showList(){
     r.onclick = () => start(lastScn);
     $('#list').appendChild(r);
   }
+  // 备份入口：工具性质，放底部一行小字，不跟主模块抢注意力
+  const bk = document.createElement('div');
+  bk.className = 'note';
+  bk.style.cssText = 'text-align:center;margin-top:16px;cursor:pointer;'
+    + 'text-decoration:underline;font-style:normal';
+  bk.innerHTML = '<span id="vcbtn">🔈 陪练的声音</span>'
+    + '<span style="opacity:.4;margin:0 10px">·</span>'
+    + '<span id="bkbtn">备份与恢复</span>';
+  $('#list').appendChild(bk);
+  bk.querySelector('#vcbtn').onclick = e => { e.stopPropagation(); go(showVoice, '声音'); };
+  bk.querySelector('#bkbtn').onclick = e => { e.stopPropagation(); go(showBackup, '备份'); };
+
   const GOTO = {
     speak: () => go(() => showLevel('speak'), '口语陪练'),
     listen: () => go(() => showLevel('listen'), '听力'),
@@ -1845,6 +1898,216 @@ function home(){
   showList();
 }
 $('#backbtn').onclick = back;
+
+/* 声音设置：把系统里所有英语嗓子列出来，他自己点着听、选一个。
+   我的打分只是启发式，真难听还是他耳朵说了算。
+   🚨 iOS 上好声音要先去「设置 → 辅助功能 → 朗读内容 → 声音」里下载，
+      没下载的话列表里只有那个压缩音，怎么挑都难听 —— 这句必须写在界面上，
+      否则他会以为是我没做好。 */
+function showVoice(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = '陪练的声音';
+  const f = $('#feed'); f.innerHTML = '';
+  loadVoices();
+  const en = VOICES.filter(v => /^en/i.test(v.lang))
+                   .sort((a,b) => voiceScore(b) - voiceScore(a));
+  const note = document.createElement('div');
+  note.className = 'note';
+  note.innerHTML = '听力用的是<b>预先合成的真人录音</b>，所以好听。'
+    + '陪练是实时生成的，只能用你手机自带的语音 —— 我试过让网页直接调同一家的服务，'
+    + '它要求特定的 User-Agent，而浏览器不允许网页设这个，所以走不通（要等有后端）。'
+    + '<br><br>能做的是把系统自带的挑到最好。'
+    + '<b>iOS 上好声音要先下载</b>：设置 → 辅助功能 → 朗读内容 → 声音 → 英语，'
+    + '选一个带「增强」或「高级」的下载，回来这里就会出现。';
+  f.appendChild(note);
+  if (!en.length){
+    const w = document.createElement('div');
+    w.className = 'note'; w.textContent = '这台设备上没找到英语语音。';
+    f.appendChild(w); return;
+  }
+  const cur = localStorage.getItem('alex_voice_en');
+  const DEMO = 'Under HKAS 1, the loan must be classified as current.';
+  en.forEach(v => {
+    const c = document.createElement('div');
+    c.className = 'card';
+    const on = (v.voiceURI === cur || v.name === cur);
+    c.innerHTML = `<div class="hd"><span class="role">${esc(v.name)}</span>
+      ${on ? '<span class="done">在用</span>' : ''}
+      <span class="ct" style="font-size:12px;color:var(--muted)">${esc(v.lang)}</span></div>
+      <div class="t">${/premium|enhanced|siri/i.test(v.voiceURI + v.name)
+        ? '高质量' : (/compact/i.test(v.voiceURI + v.name) ? '压缩音（较差）' : '标准')}</div>`;
+    c.onclick = () => {
+      unlockTTS();
+      localStorage.setItem('alex_voice_en', v.voiceURI || v.name);
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(DEMO);
+      u.voice = v; u.lang = v.lang; u.rate = 0.95;
+      speechSynthesis.speak(u);
+      showVoice();                       // 重画，标出「在用」
+      $('#sub').textContent = '已选 ' + v.name;
+    };
+    f.appendChild(c);
+  });
+}
+
+/* 备份界面。放在首页底部一个不起眼的入口 —— 它是工具不是模块，
+   不该跟「口语陪练」抢注意力，但必须找得到。 */
+function showBackup(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = '备份与恢复';
+  const f = $('#feed'); f.innerHTML = '';
+  const st = loadST() || ST;
+  const sess = loadSess();
+  const note = document.createElement('div');
+  note.className = 'note';
+  note.innerHTML = '你的打卡、错题本、历史都只存在这台设备的浏览器里。' +
+    '<b>清缓存、换手机、或者 Safari 自己清理，都会全部消失，而且不会有任何提示。</b>' +
+    '在做出后端之前，定期导出一份存在自己那儿是唯一的保险。';
+  f.appendChild(note);
+
+  const box = document.createElement('div');
+  box.className = 'better';
+  box.innerHTML = `<div class="lb">现在有多少</div><div class="en">` +
+    `打卡 ${(st.days||[]).length} 天 · 累计 ${st.turns||0} 轮 · ` +
+    `错题本 ${Object.keys(st.book||{}).length} 条 · 历史 ${sess.length} 场</div>`;
+  f.appendChild(box);
+
+  const mk = (txt, fn) => {
+    const b = document.createElement('button');
+    b.className = 'play'; b.style.marginRight = '8px'; b.style.marginTop = '12px';
+    b.textContent = txt; b.onclick = fn; f.appendChild(b); return b;
+  };
+  mk('⬇️ 导出备份', () => {
+    exportData();
+    $('#sub').textContent = '已导出，存到你自己的网盘或聊天里';
+  });
+
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'application/json,.json'; inp.hidden = true;
+  inp.onchange = () => {
+    const file = inp.files && inp.files[0];
+    if (!file) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      const res = document.createElement('div');
+      res.className = 'note'; res.style.marginTop = '12px';
+      try {
+        const stats = importData(String(rd.result), false);
+        res.innerHTML = '✅ 已合并：' + (stats.join('；') || '（文件里没有数据）');
+        showList();                       // 数字立刻刷新
+        $('#list').hidden = true;
+      } catch(e){
+        res.textContent = '🚨 导入失败：' + e.message;
+      }
+      f.appendChild(res);
+      inp.value = '';
+    };
+    rd.readAsText(file);
+  };
+  f.appendChild(inp);
+  mk('⬆️ 从备份恢复', () => inp.click());
+
+  const tip = document.createElement('div');
+  tip.className = 'note'; tip.style.marginTop = '14px';
+  tip.textContent = '恢复是「合并」不是「覆盖」：两台设备各练过的都会保留，'
+    + '打卡日期取并集、错题次数相加、历史按场次去重。'
+    + '有一条特意做保守了 —— 只要任一边还没掌握，就算还在练，不会因为另一边毕业了就跳过。';
+  f.appendChild(tip);
+}
+
+/* ═══ 备份 / 恢复 ═══
+   打卡、错题本、历史全在 localStorage —— 清缓存、换手机、Safari 自动清理，
+   任何一样都会让它全部归零，而且没有任何提示。在没有后端之前，
+   能做的就是让他自己把数据拿在手上。
+   🚨 导入默认**合并**不是覆盖：他很可能在两台设备上都练过，
+      覆盖会静默吃掉其中一边。合并才是安全的默认。 */
+const BACKUP_KEYS = ['alex_state', 'alex_sessions', 'alex_lsn_seen', 'alex_dens'];
+
+/* 🚨 每份导出带一个唯一 id：错题次数是**相加**的，同一份备份导两次
+   会让次数翻倍（自检里实测 5 → 7），而且悄无声息。
+   记下导过哪些 id，重复的直接挡掉。 */
+function exportData(){
+  const id = 'bk' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  const dump = {app:'alex', v:1, id, on:TODAY(), data:{}};
+  for (const k of BACKUP_KEYS){
+    const v = localStorage.getItem(k);
+    if (v !== null) dump.data[k] = v;
+  }
+  const blob = new Blob([JSON.stringify(dump, null, 1)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `alex-备份-${TODAY()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+}
+
+/* 合并两份进度。规则按各自的语义来，不是无脑覆盖：
+   打卡日期取并集、累计轮数取大的、错题本按 pattern 合（次数相加、
+   毕业进度取更靠前的）、历史按 id 去重、做过的听力题取并集。 */
+function mergeState(cur, inc){
+  const out = {book:{}, days:[], turns:0};
+  out.days = [...new Set([...(cur.days||[]), ...(inc.days||[])])].sort();
+  out.turns = Math.max(cur.turns||0, inc.turns||0);
+  const keys = new Set([...Object.keys(cur.book||{}), ...Object.keys(inc.book||{})]);
+  for (const k of keys){
+    const a = (cur.book||{})[k], b = (inc.book||{})[k];
+    if (!a || !b){ out.book[k] = a || b; continue; }
+    out.book[k] = Object.assign({}, a, {
+      n: (a.n||0) + (b.n||0),
+      hits: Math.max(a.hits||0, b.hits||0),
+      hitDays: [...new Set([...(a.hitDays||[]), ...(b.hitDays||[])])],
+      // 任一边还在练，就算还在练 —— 宁可多练一次，不能把没掌握的判成毕业
+      state: (a.state === 'graduated' && b.state === 'graduated')
+             ? 'graduated' : 'practising',
+      ex: [...(a.ex||[]), ...(b.ex||[])]
+            .filter((x,i,arr) => arr.findIndex(y=>y.better===x.better)===i)
+            .slice(0,3),
+      first: [a.first, b.first].filter(Boolean).sort()[0],
+    });
+  }
+  return out;
+}
+
+function importData(text, replace){
+  let d;
+  try { d = JSON.parse(text); } catch(_){ throw new Error('不是合法的备份文件'); }
+  if (!d || d.app !== 'alex' || !d.data) throw new Error('这不是 Alex 的备份文件');
+  let done = [];
+  try { done = JSON.parse(localStorage.getItem('alex_imported') || '[]'); } catch(_){}
+  if (d.id && done.includes(d.id) && !replace)
+    throw new Error('这份备份已经导入过了（' + d.on + '）。'
+                    + '重复导入会让错题次数翻倍，所以挡下了。');
+  const stats = [];
+  for (const k of BACKUP_KEYS){
+    if (!(k in d.data)) continue;
+    if (replace || k === 'alex_dens'){
+      localStorage.setItem(k, d.data[k]);
+      stats.push(k === 'alex_dens' ? '密度设置' : k);
+      continue;
+    }
+    if (k === 'alex_state'){
+      const merged = mergeState(loadST() || ST, JSON.parse(d.data[k]));
+      localStorage.setItem(k, JSON.stringify(merged));
+      stats.push(`错题本 ${Object.keys(merged.book).length} 条 · 打卡 ${merged.days.length} 天`);
+    } else if (k === 'alex_sessions'){
+      const cur = loadSess(), inc = JSON.parse(d.data[k]);
+      const seen = new Set(cur.map(x=>x.id));
+      const add = inc.filter(x => !seen.has(x.id));
+      saveSess(cur.concat(add).sort((a,b)=>(a.on||'').localeCompare(b.on||'')));
+      stats.push(`历史 +${add.length} 场`);
+    } else if (k === 'alex_lsn_seen'){
+      const a = seenIds(), b = JSON.parse(d.data[k]) || [];
+      localStorage.setItem(k, JSON.stringify([...new Set([...a, ...b])].slice(-500)));
+      stats.push('听力记录已合并');
+    }
+  }
+  if (d.id){
+    done.push(d.id);
+    try { localStorage.setItem('alex_imported', JSON.stringify(done.slice(-50))); } catch(_){}
+  }
+  loadST();
+  return stats;
+}
 
 /* ── 对话历史 ── */
 function sessKey(){ return 'alex_sessions'; }
