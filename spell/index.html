@@ -96,11 +96,13 @@ var WORDS=[
 {w:"PIG",e:"🐷",c:"猪",col:"#ffb0c8"},{w:"FOX",e:"🦊",c:"狐狸",col:"#ff6b1a"},
 {w:"BEE",e:"🐝",c:"蜜蜂",col:"#ffd400"},{w:"OWL",e:"🦉",c:"猫头鹰",col:"#8b6b3a"},
 {w:"COW",e:"🐮",c:"牛",col:"#f5e6c8"},{w:"BAT",e:"🦇",c:"蝙蝠",col:"#7b5ea7"},
+{w:"RAT",e:"🐀",c:"老鼠",col:"#8b8b8b"},{w:"MAT",e:"🧘",c:"垫子",col:"#5ab3e8"},
 {w:"ANT",e:"🐜",c:"蚂蚁",col:"#8b4513"},{w:"HEN",e:"🐔",c:"母鸡",col:"#d4a017"},
 {w:"YAK",e:"🦬",c:"牦牛",col:"#5a3a1a"},{w:"ELK",e:"🦌",c:"麋鹿",col:"#a0703a"},
 {w:"FISH",e:"🐟",c:"鱼",col:"#2f80ff"},{w:"BIRD",e:"🐦",c:"鸟",col:"#5ab3e8"},
 {w:"FROG",e:"🐸",c:"青蛙",col:"#33cc55"},{w:"BEAR",e:"🐻",c:"熊",col:"#a0703a"},
 {w:"LION",e:"🦁",c:"狮子",col:"#ffcc00"},{w:"DUCK",e:"🦆",c:"鸭子",col:"#ffd400"},
+{w:"LUCK",e:"🍀",c:"运气",col:"#33cc55"},{w:"TUCK",e:"🛏️",c:"掖好",col:"#e0c8f0"},{w:"BUCK",e:"🦌",c:"雄鹿",col:"#a0703a"},
 {w:"TIGER",e:"🐯",c:"老虎",col:"#ff8a00"},{w:"PANDA",e:"🐼",c:"熊猫",col:"#5a5a8a"},
 {w:"HORSE",e:"🐴",c:"马",col:"#a0703a"},{w:"WHALE",e:"🐳",c:"鲸鱼",col:"#2f80ff"},
 {w:"EGG",e:"🥚",c:"鸡蛋",col:"#fff0c0"},{w:"JAM",e:"🍯",c:"果酱",col:"#d44a8a"},
@@ -111,7 +113,7 @@ var WORDS=[
 {w:"APPLE",e:"🍎",c:"苹果",col:"#ff3b5c"},{w:"LEMON",e:"🍋",c:"柠檬",col:"#ffeb3b"},
 {w:"GRAPE",e:"🍇",c:"葡萄",col:"#a64dff"},{w:"BREAD",e:"🍞",c:"面包",col:"#e0b070"},
 {w:"BANANA",e:"🍌",c:"香蕉",col:"#ffd400"},{w:"ORANGE",e:"🍊",c:"橙子",col:"#ff8a00"},
-{w:"SUN",e:"☀️",c:"太阳",col:"#ffd400"},{w:"SEA",e:"🌊",c:"大海",col:"#2f80ff"},
+{w:"SUN",e:"☀️",c:"太阳",col:"#ffd400"},{w:"FUN",e:"🎉",c:"好玩的",col:"#ff6bff"},{w:"SEA",e:"🌊",c:"大海",col:"#2f80ff"},
 {w:"SKY",e:"🌐",c:"天空",col:"#5ab3e8"},{w:"STAR",e:"⭐",c:"星星",col:"#ffd400"},
 {w:"MOON",e:"🌙",c:"月亮",col:"#c8c8e8"},{w:"FIRE",e:"🔥",c:"火",col:"#ff5a2c"},
 {w:"RAIN",e:"🌧️",c:"雨",col:"#5ab3e8"},{w:"SNOW",e:"❄️",c:"雪",col:"#e0f0ff"},
@@ -196,7 +198,7 @@ var ok=true;
 for(var i=0;i<len;i++){var rr=dir==="H"?r:r+i,cc=dir==="H"?c+i:c;if(grid[rr][cc]!==null){ok=false;break}}
 if(!ok)continue;
 var id=zoneIdSeq++;var cells=[];
-for(var i=0;i<len;i++){var rr=dir==="H"?r:r+i,cc=dir==="H"?c+i:c;cells.push({r:rr,c:cc,l:w[i],f:true});grid[rr][cc]={t:"L",l:w[i],col:wo.col,z:id,f:true,hintLetter:false}}
+for(var i=0;i<len;i++){var rr=dir==="H"?r:r+i,cc=dir==="H"?c+i:c;cells.push({r:rr,c:cc,l:w[i],f:true});grid[rr][cc]={t:"L",l:w[i],col:wo.col,z:id,f:true,hintLetter:false,origL:w[i]}}
 var ng=Math.min(lvCfg(level).gaps,len-1);var idxs=shuffle(Array.from({length:len},function(_,i){return i})).slice(0,ng);
 idxs.forEach(function(i){cells[i].f=false;grid[cells[i].r][cells[i].c].f=false});
 zones.push({id:id,word:wo,cells:cells,dir:dir});return true
@@ -217,15 +219,17 @@ if(tryPlaceWord(pool[i])){pushRecent(pool[i].w);placed++}
 }
 for(var i=0,tries=0;i<cfg.ice&&tries<80;tries++){var r=Math.floor(Math.random()*ROWS),c=Math.floor(Math.random()*COLS);if(grid[r][c])continue;grid[r][c]={t:"I"};i++}
 }
-function checkZone(z){return z.cells.every(function(c){return c.f})}
+function checkZone(z){if(!z.cells.every(function(c){return c.f}))return false;var w=z.cells.map(function(c){return c.l}).join('');return WORDS.some(function(wo){return wo.w===w})}
 function clearZone(z){
+var actualW=z.cells.map(function(c){return c.l}).join('');
+var wo=WORDS.find(function(w){return w.w===actualW})||z.word;
 var now=performance.now();var cs=new Set();
-z.cells.forEach(function(c){grid[c.r][c.c]=null;cs.add(c.r+","+c.c);anims.push({r:c.r,c:c.c,t0:now,col:z.word.col});spawnBurst(gx+c.c*C+C/2,gy+c.r*C+C/2,z.word.col)});
+z.cells.forEach(function(c){grid[c.r][c.c]=null;cs.add(c.r+","+c.c);anims.push({r:c.r,c:c.c,t0:now,col:wo.col});spawnBurst(gx+c.c*C+C/2,gy+c.r*C+C/2,wo.col)});
 for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){if(grid[r][c]&&grid[r][c].t==="I"){if([[1,0],[-1,0],[0,1],[0,-1]].some(function(d){return cs.has((r+d[0])+","+(c+d[1]))})){grid[r][c]=null;anims.push({r:r,c:c,t0:now,col:"#a0e0ff"});spawnBurst(gx+c*C+C/2,gy+r*C+C/2,"#a0e0ff")}}}
 zones=zones.filter(function(zn){return zn.id!==z.id});
 wordsDone++;score+=z.cells.length*20+30;
 sfx.clear(z.cells.length);vib([30,40,30]);
-showWordCard(z.word);addLearnedWord(z.word);
+showWordCard(wo);addLearnedWord(wo);
 if(zones.length<lvCfg(level).concurrent&&wordsDone<goal)spawnNewWord();
 refreshTray();updateHUD();updateTargets();
 if(wordsDone>=goal){playing=false;setTimeout(completeLevel,900)}else checkStuck()
@@ -285,16 +289,13 @@ function dropTarget(){
 if(!drag||!tray[drag.idx])return null;var p=tray[drag.idx];
 var cx=drag.x,cy=drag.y;
 var col=Math.floor((cx-gx)/C),row=Math.floor((cy-gy)/C);
-if(row>=0&&col>=0&&row<ROWS&&col<COLS){var cell=grid[row][col];if(cell&&cell.t==="L"&&!cell.f&&cell.l===p.letter)return{r:row,c:col}}
+function tryCell(rr,cc){if(rr<0||cc<0||rr>=ROWS||cc>=COLS)return null;var cell=grid[rr][cc];if(!cell||cell.t!=="L"||cell.f)return null;var z=zones.find(function(zn){return zn.id===cell.z});if(!z)return {r:rr,c:cc};var wouldComplete=true,testWord="";for(var i=0;i<z.cells.length;i++){if(z.cells[i].r===rr&&z.cells[i].c===cc){testWord+=p.letter}else if(z.cells[i].f){testWord+=z.cells[i].l}else{wouldComplete=false;break}}if(!wouldComplete)return{r:rr,c:cc};if(WORDS.some(function(wo){return wo.w===testWord}))return{r:rr,c:cc};return null}
+var t=tryCell(row,col);if(t)return t;
 var best=null,bestDist=Infinity;
 for(var r=Math.max(0,row-1);r<=Math.min(ROWS-1,row+1);r++){
 for(var c=Math.max(0,col-1);c<=Math.min(COLS-1,col+1);c++){
-var cell=grid[r][c];if(cell&&cell.t==="L"&&!cell.f&&cell.l===p.letter){
-var dx=gx+c*C+C/2-cx,dy=gy+r*C+C/2-cy,d=dx*dx+dy*dy;
-if(d<bestDist){bestDist=d;best={r:r,c:c}}
-}
-}
-}
+var t2=tryCell(r,c);if(t2){var dx=gx+c*C+C/2-cx,dy=gy+r*C+C/2-cy,d=dx*dx+dy*dy;if(d<bestDist){bestDist=d;best=t2}}
+}}
 return best
 }
 function draw(){
@@ -315,12 +316,12 @@ requestAnimationFrame(draw)
 }
 function placeLetter(idx,r,c){
 var p=tray[idx];var cell=grid[r][c];
-if(!cell||cell.t!=="L"||cell.f||cell.l!==p.letter){sfx.bad();return}
-cell.f=true;tray[idx]=null;hintStep=0;
+if(!cell||cell.t!=="L"||cell.f){sfx.bad();return}
+cell.f=true;cell.l=p.letter;tray[idx]=null;hintStep=0;
 var z=zones.find(function(zn){return zn.id===cell.z});
-if(z){var zc=z.cells.find(function(cc){return cc.r===r&&cc.c===c});if(zc)zc.f=true;
+if(z){var zc=z.cells.find(function(cc){return cc.r===r&&cc.c===c});if(zc){zc.f=true;zc.l=p.letter}
 sfx.place();vib(12);score+=5;
-if(checkZone(z)){clearZone(z)}else{refreshTray();updateHUD();updateTargets();checkStuck()}
+if(checkZone(z)){clearZone(z)}else if(z.cells.every(function(c){return c.f})){cell.f=false;cell.l=cell.origL||cell.l;tray[idx]=p;if(zc){zc.f=false;zc.l=cell.origL||zc.l}sfx.bad();vib([40,60]);praise("再想想～");updateHUD();updateTargets();checkStuck()}else{refreshTray();updateHUD();updateTargets();checkStuck()}
 }else{refreshTray()}
 }
 function checkStuck(){if(anyTrayUseful())return;refreshTray();if(anyTrayUseful())return;playing=false;sfx.dead();zones.forEach(function(z){addWrongWord(z.word)});$("btnHint").classList.remove("shake");showOv($("ovDead"))}
@@ -343,9 +344,10 @@ scoreEl.textContent="分数 "+score;wordCount.textContent="📚 "+learnedWords.l
 function updateTargets(){
 var el=$("targets");el.innerHTML="";
 zones.forEach(function(z){var d=document.createElement("div");d.className="target"+(checkZone(z)?" done":"");
-var w=z.word.w,html="";for(var i=0;i<w.length;i++){var cell=z.cells[i];html+=cell.f?w[i]:'<span class="gap">&nbsp;</span>'}
+var html="";for(var i=0;i<z.cells.length;i++){var cell=z.cells[i];html+=cell.f?cell.l:'<span class="gap">&nbsp;</span>'}
 d.innerHTML='<span class="em">'+z.word.e+'</span><span class="wd">'+html+'</span>';el.appendChild(d)})
 }
+function anyTrayUseful(){var gaps=getGaps();if(!gaps.length)return false;return tray.some(function(t){return t!=null})}
 function showOv(o){o.classList.remove("hidden")}function hideOv(o){o.classList.add("hidden")}
 function startLevel(lv){
 var cfg=lvCfg(lv);level=lv;goal=cfg.target;wordsDone=0;hintsLeft=cfg.hints;usedHint=false;hintStep=0;
