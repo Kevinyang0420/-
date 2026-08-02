@@ -16,7 +16,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>Alex 英语陪练</title>
 <style>
-:root{--bg:#faf9f7;--fg:#1c1a17;--muted:#6b6560;--line:#e0dbd4;--card:#fff;
+:root{--bg:#f4f2ef;--fg:#1c1a17;--muted:#6b6560;--line:#e6e1da;--card:#fff;
   --accent:#b4552d;--soft:#f6ece6;--alex:#2f5d8a;--alexsoft:#e8eff6;--rec:#c0392b;
   --ok:#2f6f4e}
 @media(prefers-color-scheme:dark){:root{--bg:#16151a;--fg:#e8e5e0;--muted:#9a938c;
@@ -30,7 +30,16 @@
    · 配色是「一个高饱和主色 + 一套中性灰」：eel #4b4b4b 正文、wolf #777 次要、
      swan #e5e5e5 描边、polar #f7f7f7 底色
    我们不抄它的绿，保留自己的陶土橙，只借这套「厚、圆、重」的做法。 */
-:root{--r:14px;--btn-h:50px;--bd:2px}
+/* ═══ 设计变量：多邻国 + 51Talk 各取所长（都是量出来的，不是凭印象）═══
+   多邻国：按下会陷进去的厚底边、字重 700、字距 0.8px
+   51Talk：按钮全圆角(999px)高 53-60px、卡片圆角 20px、
+           **柔和阴影而不是硬边框**、页面底色带一点冷灰跟卡片拉开
+   我原来全靠 2px 硬边框 + 14px 圆角，所以显得糙。 */
+:root{--r:20px;--r-sm:14px;--btn-h:54px;--bd:1.5px;
+  --sh:0 2px 12px rgba(0,0,0,.07);--sh-lg:0 6px 22px rgba(0,0,0,.10);
+  --gap:14px}
+@media(prefers-color-scheme:dark){:root{
+  --sh:0 2px 12px rgba(0,0,0,.45);--sh-lg:0 6px 22px rgba(0,0,0,.55)}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 /* 🚨 [hidden] 的默认 display:none 权重极低，**任何 display 声明都能压过它**。
    我给 #topnav 加了 display:flex，于是「首页不该有返回键」这条就失效了 ——
@@ -44,7 +53,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-size:16px;line-height:1.
 
 /* 主按钮：厚底边 + 按下陷进去 */
 .btn{display:inline-flex;align-items:center;justify-content:center;
-  min-height:var(--btn-h);padding:0 20px;border-radius:var(--r);
+  min-height:var(--btn-h);padding:0 26px;border-radius:999px;
   font-size:15.5px;font-weight:700;letter-spacing:.6px;cursor:pointer;
   border:var(--bd) solid transparent;border-bottom-width:4px;
   background:var(--accent);color:#fff;transition:transform .05s,border-bottom-width .05s}
@@ -71,8 +80,8 @@ button{font-family:inherit}
    改动三处：①统计条不折行 ②分类做成横向 tab，一次只看一组 ③卡片建立层级：
    标题=对手方是谁（短），情境降为两行截断的副文，难度用点不用星堆在句首。 */
 .stats{display:flex;align-items:center;gap:10px;margin:0 0 16px;
-  background:var(--card);border:var(--bd) solid var(--line);
-  border-bottom-width:4px;border-radius:var(--r);padding:12px 14px}
+  background:var(--card);border:none;box-shadow:var(--sh);
+  border-radius:var(--r);padding:15px 17px}
 .stats .n{font-size:19px;font-weight:800;line-height:1.1;letter-spacing:-.5px}
 .stats .l{font-size:10.5px;color:var(--muted);letter-spacing:.3px}
 .stats .col{min-width:52px}
@@ -90,8 +99,9 @@ button{font-family:inherit}
    进入大模块之后，再让用户选择具体的难度，选择完之后才开始做练习」。
    原来是一进来就 18 张卡糊脸上，没有层次。 */
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:2px 0 4px}
-.tile{position:relative;border-radius:18px;padding:16px 15px 14px;
+.tile{position:relative;border-radius:22px;padding:17px 16px 15px;
   min-height:158px;display:flex;flex-direction:column;justify-content:flex-end;
+  box-shadow:var(--sh-lg);
   color:#fff;overflow:hidden;cursor:pointer;transition:transform .07s}
 .tile{border-bottom:4px solid rgba(0,0,0,.22)}
 .tile:active{transform:translateY(2px);border-bottom-width:1px}
@@ -118,11 +128,10 @@ button{font-family:inherit}
 /* 难度选择：一屏三张，说清每一档是什么 */
 .lvpick{margin-top:4px}
 .lvcard{background:var(--card);border:var(--bd) solid var(--line);
-  border-bottom-width:4px;border-radius:var(--r);
-  padding:16px;margin:11px 0;cursor:pointer;display:flex;align-items:center;
-  gap:14px;transition:transform .05s,border-bottom-width .05s,border-color .12s}
-.lvcard:active{transform:translateY(2px);border-bottom-width:var(--bd);
-  border-color:var(--accent)}
+  border-radius:var(--r);box-shadow:var(--sh);
+  padding:18px 17px;margin:var(--gap) 0;cursor:pointer;display:flex;align-items:center;
+  gap:15px;transition:transform .07s,box-shadow .12s}
+.lvcard:active{transform:translateY(2px) scale(.995);box-shadow:0 1px 5px rgba(0,0,0,.06)}
 .lvcard .lv{flex:0 0 auto;display:flex;gap:4px}
 .lvcard .lv i{width:8px;height:8px;border-radius:50%;background:var(--line);display:block}
 .lvcard .lv i.f{background:var(--accent)}
@@ -137,7 +146,7 @@ button{font-family:inherit}
    🚨 跟麦克风底栏会打架 —— 练习进行中麦克风要占住底部，
       所以「对话中」隐藏标签栏（那时候他要的是说话，不是切模块），其余时候都在。 */
 #tabbar{position:fixed;left:0;right:0;bottom:0;z-index:5;
-  background:var(--bg);border-top:var(--bd) solid var(--line);
+  background:var(--card);border-top:none;box-shadow:0 -3px 18px rgba(0,0,0,.09);
   display:flex;padding-bottom:env(safe-area-inset-bottom,0px)}
 #tabbar button{flex:1;background:none;border:none;color:var(--muted);
   padding:9px 2px 7px;display:flex;flex-direction:column;align-items:center;
@@ -151,16 +160,16 @@ button{font-family:inherit}
   scrollbar-width:none;-ms-overflow-style:none}
 .tabs::-webkit-scrollbar{display:none}
 .tabs button{flex:0 0 auto;background:none;border:1px solid var(--line);
-  color:var(--muted);border-radius:20px;padding:7px 15px;font-size:13.5px;
-  font-weight:600;white-space:nowrap}
+  color:var(--muted);border-radius:999px;padding:10px 18px;font-size:14px;
+  font-weight:700;white-space:nowrap;background:var(--card);border-color:transparent;
+  box-shadow:var(--sh)}
 .tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 
 .card{background:var(--card);border:var(--bd) solid var(--line);
-  border-bottom-width:4px;border-radius:var(--r);
-  padding:14px 16px;margin:10px 0;cursor:pointer;
-  transition:transform .05s,border-bottom-width .05s,border-color .12s}
-.card:active{border-color:var(--accent);transform:translateY(2px);
-  border-bottom-width:var(--bd)}
+  border-radius:var(--r);box-shadow:var(--sh);
+  padding:16px 17px;margin:var(--gap) 0;cursor:pointer;
+  transition:transform .07s,box-shadow .12s}
+.card:active{transform:translateY(2px) scale(.995);box-shadow:0 1px 5px rgba(0,0,0,.06)}
 .card .hd{display:flex;align-items:center;gap:8px}
 .card .role{font-size:16.5px;font-weight:800;line-height:1.35;flex:1;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -173,32 +182,45 @@ button{font-family:inherit}
 .lvl i{width:6px;height:6px;border-radius:50%;background:var(--line);display:block}
 .lvl i.f{background:var(--accent)}
 .done{flex:0 0 auto;font-size:11px;color:var(--ok);font-weight:700}
-#brief{background:var(--soft);border-radius:12px;padding:13px 15px;margin-bottom:12px;font-size:14px}
-#brief .k{color:var(--muted);font-size:12px;margin-top:6px}
-.turn{margin:12px 0}
-.who{font-size:11.5px;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
-.you .bub{background:var(--soft);border-radius:12px 12px 4px 12px;padding:9px 13px;
-  margin-left:auto;max-width:88%}
-.char .bub{background:var(--card);border:1px solid var(--line);
-  border-radius:12px 12px 12px 4px;padding:9px 13px;max-width:92%}
-.alex .bub{background:var(--alexsoft);border-left:3px solid var(--alex);
-  border-radius:4px;padding:10px 13px}
+/* 简介卡：原来是一块灰底，跟卡片体系不搭 */
+#brief{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);
+  padding:15px 17px;margin-bottom:14px;font-size:14.5px;line-height:1.6}
+#brief .k{color:var(--muted);font-size:12.5px;margin-top:7px}
+#brief .k b{color:var(--fg);font-weight:700}
+.turn{margin:16px 0}
+.you{display:flex;flex-direction:column;align-items:flex-end}
+.you .who{text-align:right}
+.who{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);
+  margin-bottom:5px;font-weight:700}
+/* 气泡：加大圆角和内距，你说的话用主色实底（像正经聊天 App），
+   对方用白底带阴影，Alex 用一张独立的浅色卡片 —— 三者一眼分得开 */
+.you .bub{background:var(--accent);color:#fff;border-radius:20px 20px 6px 20px;
+  padding:11px 15px;margin-left:auto;max-width:86%;font-size:15.5px;line-height:1.55;
+  box-shadow:var(--sh)}
+.char .bub{background:var(--card);border:none;box-shadow:var(--sh);
+  border-radius:20px 20px 20px 6px;padding:12px 15px;max-width:88%;
+  font-size:15.5px;line-height:1.55}
+.alex .bub{background:var(--alexsoft);border-left:4px solid var(--alex);
+  border-radius:6px 16px 16px 6px;padding:13px 15px;box-shadow:var(--sh);
+  font-size:14.5px;line-height:1.65}
 .alex .who{color:var(--alex);font-weight:700}
 .tags{font-size:11px;color:var(--muted);margin-top:4px}
 /* 「该这么说」—— 完整可念的整句，视觉上要最抢眼 */
 .better{background:var(--card);border:var(--bd) solid var(--accent);
-  border-bottom-width:4px;border-radius:12px;padding:13px 15px;margin-top:11px}
+  border-radius:var(--r-sm);box-shadow:var(--sh);
+  padding:15px 17px;margin-top:13px}
 .better .lb{font-size:11px;letter-spacing:.4px;color:var(--accent);
   font-weight:700;margin-bottom:5px}
 .better .en{font-size:15.5px;line-height:1.6}
 .play{display:inline-flex;align-items:center;gap:5px;margin-top:10px;
   border:var(--bd) solid var(--line);border-bottom-width:4px;
   background:var(--card);color:var(--fg);font-weight:700;letter-spacing:.3px;
-  border-radius:12px;padding:9px 15px;font-size:13.5px;min-height:42px;
-  transition:transform .05s,border-bottom-width .05s}
-.play:active{transform:translateY(2px);border-bottom-width:var(--bd)}
+  border:none;box-shadow:var(--sh);
+  border-radius:999px;padding:11px 20px;font-size:13.5px;min-height:44px;
+  transition:transform .07s,box-shadow .12s}
+.play:active{transform:translateY(1px);box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .play.on{border-color:var(--accent);color:var(--accent)}
-.note{font-size:12px;color:var(--muted);font-style:italic;margin:5px 0}
+.note{font-size:13px;color:var(--muted);font-style:normal;margin:10px 0;line-height:1.65}
 /* 返回键：Apple 的人机指南要求点击区至少 44×44，原来只有约 15×28，
    本来就难点，再被状态栏压住就完全点不到了。 */
 #topnav{margin:4px 0 8px;min-height:44px;display:flex;align-items:center}
@@ -206,27 +228,30 @@ button{font-family:inherit}
   padding:10px 14px 10px 0;font-weight:600;min-height:44px;
   display:flex;align-items:center}
 #topnav button:active{opacity:.55}
-.grp{font-size:12px;letter-spacing:.5px;color:var(--muted);font-weight:700;
-  margin:20px 0 4px;padding-bottom:5px;border-bottom:1px solid var(--line)}
-#bar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);
-  border-top:1px solid var(--line);padding:14px 14px calc(14px + env(safe-area-inset-bottom));
-  text-align:center}
-#mic{width:108px;height:108px;border-radius:50%;font-size:16px;
+.grp{font-size:12.5px;letter-spacing:.6px;color:var(--muted);font-weight:800;
+  margin:22px 0 10px;padding:0;border:none;text-transform:none}
+#bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);
+  border-top:none;box-shadow:0 -3px 18px rgba(0,0,0,.09);
+  border-radius:24px 24px 0 0;
+  padding:12px 14px calc(10px + env(safe-area-inset-bottom));text-align:center}
+#mic{width:92px;height:92px;border-radius:50%;font-size:15px;
   font-weight:800;letter-spacing:.5px;color:#fff;background:var(--accent);
   touch-action:none;border:none;border-bottom:6px solid rgba(0,0,0,.25);
   transition:transform .06s,border-bottom-width .06s;
   -webkit-user-select:none;user-select:none}
 #mic.rec{background:var(--rec);transform:translateY(3px);border-bottom-width:3px}
 #mic:disabled{opacity:.4}
-#hint{font-size:13px;color:var(--muted);margin-top:8px;min-height:19px}
+#hint{font-size:13px;color:var(--muted);margin-top:7px;min-height:0}
+#hint:empty{display:none}
 #typebox{margin-top:10px;display:flex;gap:6px}
-#err{color:var(--rec);font-size:13px;margin-top:4px;min-height:17px}
-.ctl{display:flex;gap:7px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+#err{color:var(--rec);font-size:13px;margin-top:5px;min-height:0;line-height:1.5}
+#err:empty{display:none}
+.ctl{display:flex;gap:7px;justify-content:center;margin-top:9px;flex-wrap:wrap}
 .ctl button{background:var(--card);border:var(--bd) solid var(--line);
-  border-bottom-width:3px;color:var(--fg);font-weight:700;
-  border-radius:12px;padding:9px 14px;font-size:13px;min-height:40px;
-  transition:transform .05s,border-bottom-width .05s}
-.ctl button:active{transform:translateY(1px);border-bottom-width:var(--bd)}
+  border:none;box-shadow:var(--sh);color:var(--fg);font-weight:700;
+  border-radius:999px;padding:8px 14px;font-size:12.5px;min-height:38px;
+  transition:transform .07s,box-shadow .12s}
+.ctl button:active{transform:translateY(1px);box-shadow:none}
 .ctl button.on{border-color:var(--accent);color:var(--accent)}
 #setup{background:var(--card);border:1px solid var(--line);border-radius:12px;
   padding:16px;margin:12px 0}
@@ -282,11 +307,12 @@ button{font-family:inherit}
   <div id="err"></div>
   <div class="ctl">
     <button id="dens">陪练模式</button>
-    <button id="book">错题本</button>
     <button id="type">打字</button>
-    <button id="diag">自检</button>
     <button id="end">结束</button>
-    <button id="reset">key</button>
+    <button id="more">⋯</button>
+    <button id="book" hidden>错题本</button>
+    <button id="diag" hidden>自检</button>
+    <button id="reset" hidden>key</button>
   </div>
   <div id="typebox" hidden>
     <input id="typein" placeholder="打字说这一句（英文）" style="flex:1;padding:10px;
@@ -1936,7 +1962,11 @@ async function render(d){
   /* 🚨 「错了」和「对，但能更好」必须一眼分得开。
      实测模型会先夸再硬纠，如果两种长一个样，他会以为自己每句都错，
      练几轮就不信这些纠错了。所以按 level 打不同的标，polish 也给整句范例。 */
-  if (!d.break && d.alex_zh){
+  /* 🚨 判断依据必须是**最终会显示的那句话**（critique 拼出来的），
+     不能是 d.alex_zh —— 改成三槽之后规则明确说 alex_zh 只补细节、可以为空，
+     于是「模型只填了 quote/issue/native」时整条纠错会**静默消失**。
+     实测第一条纠错就是这么丢的：你说了话、对方接了话，中间该有的点评没了。 */
+  if (!d.break && critique(d)){
     const lv = d.level === 'fine' ? '✅ 这句没问题'
              : d.level === 'polish' ? '💡 说得对，还能更精' : '✅ 这句没问题';
     const el = bubble('alex','Alex', critique(d) || d.said && '这句可以。', lv);
@@ -1955,7 +1985,7 @@ async function render(d){
       el.appendChild(box);
     }
   }
-  if (d.break && d.alex_zh){
+  if (d.break && critique(d)){
     S.breaks++;
     const el = bubble('alex','Alex', critique(d),
            `${esc(d.issue||'')} ${d.severity||''}`.trim());
@@ -2098,6 +2128,14 @@ async function selfTest(){
   push('  · 若只有 Google 打不开 = 需要梯子，或点「换 key」改用 DeepSeek。');
 }
 $('#diag').onclick = selfTest;
+/* 底栏原来 6 个按钮挤成两行、占掉 293px（大半屏）。
+   常用的三个留在外面，其余收进「⋯」。 */
+$('#more').onclick = () => {
+  const on = $('#book').hidden;
+  ['book','diag','reset'].forEach(id => { $('#'+id).hidden = !on; });
+  $('#more').textContent = on ? '收起' : '⋯';
+  syncPad();
+};
 
 /* 打字兜底：录音或识别不可用时，至少能练 */
 $('#type').onclick = () => {
