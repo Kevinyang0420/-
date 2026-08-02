@@ -307,7 +307,6 @@ ctx.clearRect(0,0,W,H);
 rr(0,0,W,trayTop-6,18);ctx.fillStyle="rgba(255,255,255,0.45)";ctx.fill();
 rr(0,trayTop-2,W,H-trayTop+2,18);ctx.fillStyle="rgba(255,255,255,0.35)";ctx.fill();
 for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){var x=gx+c*C,y=gy+r*C;rr(x+2,y+2,C-4,C-4,C*0.2);ctx.fillStyle="rgba(255,255,255,0.6)";ctx.fill();ctx.strokeStyle="rgba(200,180,220,0.4)";ctx.lineWidth=1;ctx.stroke()}
-if(drag&&tray[drag.idx]){var hovCol=Math.floor((drag.x-gx)/C),hovRow=Math.floor((drag.y-gy)/C);if(hovRow>=0&&hovCol>=0&&hovRow<ROWS&&hovCol<COLS){ctx.fillStyle="rgba(200,180,220,0.18)";rr(gx+hovCol*C,gy+hovRow*C,C,C,C*0.24);ctx.fill()}}
 for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){var cell=grid[r][c];if(!cell)continue;var x=gx+c*C,y=gy+r*C;if(cell.t==="I"){drawIce(x,y,C)}else if(cell.t==="L"){drawCandy(x,y,C,cell.l,cell.col,cell.f,null,cell.hintLetter)}}
 var now=performance.now();
 anims=anims.filter(function(a){var t=(now-a.t0)/260;if(t>=1)return false;var s=C*(1+t*0.4),off=(s-C)/2;ctx.save();ctx.globalAlpha=1-t;rr(gx+a.c*C-off+2,gy+a.r*C-off+2,s-4,s-4,s*0.25);ctx.fillStyle=a.col||"#ffffff";ctx.fill();ctx.restore();return true});
