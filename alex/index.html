@@ -250,13 +250,19 @@ button{font-family:inherit}
   border-radius:14px;padding:13px 15px;box-shadow:none;
   font-size:14.5px;line-height:1.65}
 .alex .who{color:var(--alex);font-weight:700}
-.tags{font-size:11px;color:var(--muted);margin-top:4px}
+/* 🚨 截图里发现「语气强度」这个标签孤零零挂在气泡外面，像掉出来的。
+   它原来是配深色底设计的，换成白底后就裸露了。做成小徽章。 */
+.tags{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
+.turn.alex > .tags{display:inline-block;background:var(--surface);
+  border:1.5px solid var(--line);border-radius:999px;padding:3px 10px;
+  font-weight:700;color:var(--muted);margin-top:7px}
 /* 「该这么说」—— 完整可念的整句，视觉上要最抢眼 */
 .better{background:var(--card);border:2px solid var(--brand);border-bottom-width:4px;
   border-radius:14px;box-shadow:none;padding:15px 17px;margin-top:13px}
 .better .lb{font-size:11px;letter-spacing:.4px;color:var(--brand-dark);
   font-weight:700;margin-bottom:5px}
 .better .en{font-size:15.5px;line-height:1.6}
+.better .play{margin-right:8px}
 .play{display:inline-flex;align-items:center;gap:5px;margin-top:10px;
   border:var(--bd) solid var(--line);border-bottom-width:4px;
   background:var(--card);color:var(--fg);font-weight:700;letter-spacing:.3px;
@@ -1610,7 +1616,8 @@ function youglish(phrase){
   a.target = '_blank'; a.rel = 'noopener';
   a.href = 'https://youglish.com/pronounce/' +
            encodeURIComponent(String(phrase).trim()) + '/english';
-  a.textContent = '🎬 看真人怎么说 “' + phrase + '”';
+  a.textContent = '🎬 真人怎么说';
+  a.title = phrase;
   a.style.marginLeft = '8px';
   a.style.textDecoration = 'none';
   return a;
