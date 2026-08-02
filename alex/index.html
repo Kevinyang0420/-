@@ -107,9 +107,13 @@ button{font-family:inherit}
 .resume .s{font-size:12.5px;color:var(--muted);margin-top:2px}
 .t-speak{background:linear-gradient(150deg,#c2603a,#9a4525)}
 .t-listen{background:linear-gradient(150deg,#3a6f9e,#274d6e)}
+.t-book{background:linear-gradient(150deg,#5b6b52,#3d4a37)}
+.t-hist{background:linear-gradient(150deg,#6a6259,#494340)}
 @media(prefers-color-scheme:dark){
   .t-speak{background:linear-gradient(150deg,#a0492c,#6f3119)}
-  .t-listen{background:linear-gradient(150deg,#2d587e,#1c3850)}}
+  .t-listen{background:linear-gradient(150deg,#2d587e,#1c3850)}
+  .t-book{background:linear-gradient(150deg,#47543f,#2c352a)}
+  .t-hist{background:linear-gradient(150deg,#4f4a44,#35312e)}}
 
 /* 难度选择：一屏三张，说清每一档是什么 */
 .lvpick{margin-top:4px}
@@ -266,9 +270,9 @@ button{font-family:inherit}
 </div>
 
 <nav id="tabbar">
+  <button data-tab="home"><span class="ti">🏠</span>首页</button>
   <button data-tab="speak"><span class="ti">🗣️</span>口语</button>
   <button data-tab="listen"><span class="ti">🎧</span>听力</button>
-  <button data-tab="book"><span class="ti">📕</span>错题本</button>
   <button data-tab="me"><span class="ti">👤</span>我的</button>
 </nav>
 
@@ -370,7 +374,7 @@ async function gemini(parts, temp){
 }
 
 /* ───────── 场景卡（取自 Kevin 真实的普华 FDD 报告） ───────── */
-const SCENARIOS = [
+let SCENARIOS = [
  {id:'dd_odd_payable', t:'问清一笔陌生应付款', lvl:'★☆☆',
   sit:'试算表里有一笔 Rmb367k 应付给一家装修设计公司。你不知道这是什么。',
   ai:'Target 财务经理。知道这笔账，但要看你怎么问。',
@@ -1679,7 +1683,15 @@ function paintCards(){
       '<div class="note">这一档下这个分类还没有场景，换个分类看看。</div>';
     return;
   }
-  $('#cards').innerHTML = hit
+  /* 🚨 题库到 200 张之后不能全铺出来 —— 那比 18 张一堵墙更糟。
+     Kevin：「每次出来的、能够看到的场景，你可以从里面抽个三五个出来给用户看到」。
+     取排序后的前 5 张（练得少的在前），另给「换一批」往后翻。 */
+  const PAGE = 5;
+  const total = hit.length;
+  const from = (PAGEAT[pre + LV] || 0) % Math.max(total, 1);
+  const show = [];
+  for (let k = 0; k < Math.min(PAGE, total); k++) show.push(hit[(from + k) % total]);
+  $('#cards').innerHTML = show
     .map(([sc,i]) => {
       const done = practised(sc.id);
       return `<div class="card" data-i="${i}">
@@ -1694,7 +1706,15 @@ function paintCards(){
     }).join('');
   document.querySelectorAll('#cards .card').forEach(c =>
     c.onclick = () => start(SCENARIOS[+c.dataset.i]));
+  if (total > PAGE){
+    const more = document.createElement('button');
+    more.className = 'play'; more.style.marginTop = '14px';
+    more.textContent = `↻ 换一批（共 ${total} 个）`;
+    more.onclick = () => { PAGEAT[pre + LV] = from + PAGE; paintCards(); };
+    $('#cards').appendChild(more);
+  }
 }
+const PAGEAT = {};
 
 function start(scn){
   S.scn = scn; S.nSince = 99; S.hist = []; S.turns = 0; S.breaks = 0;
@@ -2691,7 +2711,7 @@ $('#save').onclick = () => {
   localStorage.setItem(LS.be, kind);
   $('#setup').hidden = true;
   $('#key').value = '';
-  showList();
+  goTab('home');                     // 落地页是首页大方框
   syncPad();
 };
 
@@ -2710,13 +2730,64 @@ new ResizeObserver(syncPad).observe($('#tabbar'));
 window.addEventListener('resize', syncPad);
 
 /* ── 标签栏：四个根视图，一键直达，不用层层返回 ── */
+/* 🚨 Kevin 2026-08-02：「现在一上来就是四个 Tab，这个设计不合理。
+   请改回一开始的设计：首页展示四个大方框标签，点击后再进入下一步。」
+   —— 是我在加标签栏时把大方框砍掉了（当时想少一层点击）。改回来：
+   落地页是彩色大方框，标签栏保留但第一格就是首页，两者不冲突。 */
 const TABS = {
+  home:  {nm:'首页', go:() => { NAV.length = 0; showHome(); }},
   speak: {nm:'口语', go:() => { NAV.length = 0; showList(); }},
   listen:{nm:'听力', go:() => { NAV.length = 0; showLevel('listen'); }},
-  book:  {nm:'错题本', go:() => { NAV.length = 0; showBook(); }},
   me:    {nm:'我的', go:() => { NAV.length = 0; showMe(); }},
 };
-let TAB_CUR = 'speak';
+let TAB_CUR = 'home';
+
+/* 落地页：四个大方框 */
+function showHome(){
+  $('#list').hidden = false;
+  $('#feed').innerHTML = '';
+  const n = drilling().length;
+  $('#sub').textContent = '今天想练哪一块';
+  const never = SCENARIOS.filter(x => !practised(x.id));
+  const pool = never.length ? never : SCENARIOS;
+  const h = x => [...x].reduce((k,c) => (k*31 + c.charCodeAt(0)) % 9973, 7);
+  const rec = pool.slice().sort((a,b) => h(a.id+DAYSEED) - h(b.id+DAYSEED))[0];
+  $('#list').innerHTML =
+    `<div class="stats">
+       <div class="col"><div class="n">${streak()}</div><div class="l">连续天数</div></div>
+       <div class="col"><div class="n">${ST.turns}</div><div class="l">累计轮数</div></div>
+       <div class="col"><div class="n">${SCENARIOS.length}</div><div class="l">场景总数</div></div>
+     </div>
+     <div class="tiles">
+       <div class="tile t-speak" data-go="speak"><span class="ic">🗣️</span>
+         <div class="nm">口语陪练</div>
+         <div class="ds">点一下说英语，Alex 当场纠</div></div>
+       <div class="tile t-listen" data-go="listen"><span class="ic">🎧</span>
+         <div class="nm">听力</div>
+         <div class="ds">真人配音，不用开口</div></div>
+       <div class="tile t-book wide" data-go="book"><span class="ic">📕</span>
+         <div class="nm">错题本${n ? ` · ${n}` : ''}</div>
+         <div class="ds">错过的说法和该怎么说，都在这儿</div></div>
+       <div class="tile t-hist wide" data-go="hist"><span class="ic">🕘</span>
+         <div class="nm">历史</div>
+         <div class="ds">翻回以前练过的每一场</div></div>
+     </div>` +
+    (rec ? `<div class="resume" id="resume">
+       <div class="k">今天试试这个</div>
+       <div class="v">${esc(rec.t || rec.id)}</div>
+       <div class="s">${esc(rec.you)} · ${'★'.repeat(lvlNum(rec.lvl))}${
+         practised(rec.id) ? ' · 练过 ' + practised(rec.id) : ' · 还没练过'}</div>
+       </div>` : '');
+  if (rec) $('#resume').onclick = () => start(rec);
+  const GO = {
+    speak: () => goTab('speak'),
+    listen: () => goTab('listen'),
+    book: () => go(showBook, '错题本'),
+    hist: () => go(showHistory, '历史'),
+  };
+  document.querySelectorAll('.tile').forEach(t =>
+    t.onclick = () => GO[t.dataset.go]());
+}
 function paintTabs(){
   document.querySelectorAll('#tabbar button').forEach(b =>
     b.classList.toggle('on', b.dataset.tab === TAB_CUR));
@@ -2759,7 +2830,31 @@ function showMe(){
     $('#feed').innerHTML = ''; $('#setup').hidden = false; $('#sub').textContent = '设置 key';
   });
 }
+/* ═══ 场景题库：外挂文件，不再写死在页面里 ═══
+   Kevin 2026-08-02：「场景你放个 200 个吧…你自己要有个题库并且去维护它，
+   保证它是活水的状态」。写死在 HTML 里的东西没法活水（每加一张都要改页面，
+   还得躲单引号转义的雷 —— 本会话被一个 it's 炸掉过整页）。
+   现在：bank/scenarios.json 由 build_scenarios.py 生成并过闸，页面按需加载。
+   🚨 加载失败不能让 App 挂掉 —— 内嵌的这 30 张就是兜底。 */
+async function loadScenarios(){
+  try {
+    const r = await fetch('scenarios.json', {cache:'no-cache'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const b = await r.json();
+    const ok = (b.items || []).filter(c =>
+      c && c.id && c.t && c.lvl && c.sit && c.ai && c.you && c.task &&
+      Array.isArray(c.tgt) && Array.isArray(c.traps));
+    if (ok.length >= SCENARIOS.length){
+      SCENARIOS.length = 0;
+      SCENARIOS.push(...ok);
+      if (TAB_CUR === 'home') showHome();
+    }
+  } catch(_){ /* 用内嵌的兜底，静默即可 */ }
+}
+loadScenarios();
+
 syncPad(); paintTabs();
+/* 起步：落地页是首页那四个大方框，不是直接进某个 tab */
 
 /* ───────── 起步 ───────── */
 loadST();
@@ -2778,7 +2873,7 @@ S.backend = localStorage.getItem(LS.be) ||
    现在：有 key 就用，backend 缺了就在后台补探，探完自动切。 */
 if (S.key){
   if (!S.backend) S.backend = 'gemini';        // 先按最常见的走
-  showList();
+  goTab('home');
   $('#sub').textContent =
     (S.keys.gemini && S.keys.deepseek) ? '说话走 Gemini，听力和打字走 DeepSeek'
     : S.keys.gemini ? '点一下说英语（Gemini 直接听录音）'
