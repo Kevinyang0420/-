@@ -385,7 +385,7 @@ const SCENARIOS = [
   traps:['含糊带过（we have limited information on…）','说成是自己的失误','we don\'t have it 太随意；正式说法是 We have not been provided with… / We did not receive…，语域差一档']},
  {id:'dd_sgna_decline', t:'追问费用下降的原因', lvl:'★★☆',
   sit:'9M25 的 SG&A 年化后比 FY24 下降。你问原因，CFO 答：规模效应 + 人效提升。听起来完全合理——但你还没验过任何一项。',
-  ai:'Target CFO。对这个解释很有信心因为他真信。被追问会觉得你听不懂业务，语速快，会用业务术语绕你。',
+  ai:'Target CFO。他真心相信这个解释，讲起来很顺、语速偏快，顺口就用内部叫法和业务术语。你追问他会继续解释，不觉得被冒犯，但也没意识到自己给的只是说法、不是证据。',
   you:'FDD advisor', task:'追问到能判断这个解释站不站得住，但不能让他觉得你在怀疑他编数字',
   tgt:['Management explained that the decrease came from…','Could you help me understand how…','Based on our understanding of… and discussion with management'],
   traps:['直接说 I don\'t believe that / that doesn\'t make sense','management is right / that\'s clear 是把转述说成了自己的判断；转述别人的话英语里用 Management represented that… / Management attributes… to…','why 连发，像审讯']},
@@ -403,13 +403,13 @@ const SCENARIOS = [
   traps:['that\'s not correct 在英语里是很硬的否定；同样意思常说 our reading of the standard is different / we would look at it differently','把管理层的政策描述写成 We note（L0 说成 L3）','只说政策，不说对数字的影响']},
  {id:'dd_delivery_timing', t:'顶着压力说给不出数', lvl:'★★★',
   sit:'你怀疑车辆收入的确认时点有问题，但管理层根本没保存交付时点的任何记录。影响量化不出来。买方在等你的数。',
-  ai:'买方 deal lead。要一个数，会说 just give me your best estimate，有 deadline 压力。',
+  ai:'买方 deal lead。他有 deadline 压力，会说 just give me your best estimate，但这是想推进，不是在为难你。你说清楚为什么给不了，他听得进去。',
   you:'FDD advisor', task:'说清为什么给不出这个数、以及你打算在报告里怎么写',
   tgt:['We were not able to quantify the impact as management did not keep any information on the timing of delivery.','We are unable to assess… pending…','We have not been provided with details of the recognition basis.'],
   traps:['🚨 roughly 5 to 8 million 这种给区间的说法，和 We are unable to quantify… pending… 是两种完全不同的语气，别混用','用 hedge 代替 defer（the impact may be around…）—— 判断根本做不出来，不是做出来了但不确定','说 we couldn\'t find it，把管理层没记录说成你没找到']},
  {id:'dd_entertainment', t:'问敏感费用不带指控', lvl:'★★★',
-  sit:'Gaopan 的招待费占收入比例明显高于同业。在中国语境下这话题极其敏感——可能只是业务需要，也可能不是。你必须问。',
-  ai:'Target CFO。这问题一出来他立刻警觉，会反问你「你想说什么」。',
+  sit:'Gaopan 的招待费占收入比例明显高于同业。这在中国语境下很常见，多半就是业务需要 —— 但你必须问清楚构成和审批，而且要问得让对方不觉得你在暗示什么。',
+  ai:'Target CFO。招待费这块他自己也知道占比偏高，会主动说这是行业惯例、客户关系需要。他配合，但如果你的问法带上了动机暗示，他会停下来确认你什么意思。',
   you:'FDD advisor', task:'问清构成和审批流程，全程不暗示任何不当行为',
   tgt:['We note that in FY24 and FY25, … entertainment expenses accounted for…','Could you help me understand how these are approved and recorded?'],
   traps:['🚨 用词分量：bribery / improper / unusual 在英语里都带指控色彩，中性的问法是 how these are approved and recorded','why is it so high —— 预设了「不该这么高」','问得太软：maybe you could sort of tell me a bit about… 这种堆叠限定词在英语里显得没底气，Could you help me understand… 才是常用的中性问法']},
@@ -425,37 +425,37 @@ const SCENARIOS = [
     对方有真实的抗拒动机（covenant、KPI、面子），所以压力型对话更多。 */
  {id:'aud_pbc_overdue', t:'催资料并要一个日期', lvl:'★☆☆',
   sit:'审计资料清单发出去三周，还有 11 项没回。field work 下周一开始。客户财务经理每次都说「在弄了」。',
-  ai:'客户财务经理。人不坏，是真的忙、资料也真的乱；被逼急了会开始跟你比谁更委屈。',
+  ai:'客户财务经理。人不坏，是真的忙、资料也真的乱。他会告诉你哪几项卡在谁那儿，也愿意给个时间，只是这个时间他自己心里也没底。',
   you:'审计经理', task:'拿到一个具体的日期承诺，同时说清楚拿不到的后果，别把关系搞僵',
   tgt:['We have not yet received 11 of the items on our request list.','Could we agree a date for these? Our fieldwork starts on Monday.','Without these we would not be able to complete our testing on…'],
-  traps:['you keep saying that —— 翻旧账，对方立刻进入防守','说得太软（whenever you have time）—— 等于没要','只说自己的 deadline，不说对他有什么影响']},
+  traps:['you keep saying that —— 翻旧账的说法；同样的意思英语里常说 I know it has been busy on your side, but…','说得太软（whenever you have time）—— 等于没要','只说自己的 deadline，不说对他有什么影响']},
  {id:'aud_adjustment_pushback', t:'守住一笔重分类调整', lvl:'★★☆',
   sit:'你要提一笔重分类调整，把一笔长期借款调进流动负债。客户 CFO 明确不想调——这会让流动比率跌破银行 covenant。',
-  ai:'客户 CFO。他知道你是对的，但他要面对银行。会试着说服你「这是实质重于形式」。',
+  ai:'客户 CFO。他知道准则怎么写，但这一调会踩到银行的 covenant，所以会先跟你讲实质重于形式、讲他跟银行的沟通计划，想找一个双方都过得去的处理。',
   you:'审计经理', task:'守住结论，但把话说成准则要求而不是你个人的判断',
   tgt:['Under HKAS 1, the loan should be classified as current because the covenant was breached at year end.','This is not a matter of judgement in our view.','We understand the implication for the ratio; the classification is nonetheless required.'],
   traps:['🚨 I think / in my opinion 是主观语气；同一句用 Under HKAS 1 … must be … 是客观语气，两者分量差很远','对方一施压就改口说 we can look at it again（没打算改却这么说，后面更难收）','只说 the standard requires it 略生硬；英语里常配一句 We do appreciate the implication for… 来软化，但不改变结论']},
  {id:'aud_confirmation_diff', t:'追一笔函证差异', lvl:'★★☆',
   sit:'银行函证回函比账面少 HK$1.2M。客户说是「年底在途的一笔款」，但拿不出水单。',
-  ai:'客户会计主管。他相信自己的说法，也确实可能是对的；他觉得你在小题大做。',
+  ai:'客户会计主管。他相信自己的说法，也确实可能是对的。他会耐心解释这笔在途款是怎么回事，只是拿不出单据 —— 对他来说这属于「年年都这样」的正常事。',
   you:'审计现场负责人', task:'问出这笔差异到底是什么、要到能验证它的东西，别先下结论',
   tgt:['The confirmation shows a balance of…, which is HK$1.2M lower than the ledger.','Could you show me the supporting documents for the reconciling item?','Until we see the bank advice we are unable to clear this difference.'],
   traps:['🚨 用 discrepancy / you did not record it 这种带指控味的说法','管理层口头解释就当解决（把 L0 当成 L3）','说 it is just a timing difference —— 那是你还没验证的假设']},
  {id:'aud_going_concern', t:'开口谈持续经营', lvl:'★★★',
-  sit:'客户流动负债超过流动资产 HK$8M，母公司口头说会支持。你需要一份书面的支持函，而这个话题一提，对方就会紧张。',
-  ai:'客户董事总经理。听到 going concern 会觉得你在唱衰他的公司，语气会变硬。',
+  sit:'客户流动负债超过流动资产 HK$8M，母公司已经口头答应支持。你要的是一封书面支持函。他会很乐意跟你讲母公司的态度，但他给的一直是「他们说了会支持」这种口头转述，你得把「口头」和「书面」的差别说清楚，才拿得到那封信。',
+  ai:'客户董事总经理。他对公司前景有信心，也确实跟母公司谈过，所以会先跟你讲业务和母公司的态度。他不知道「口头承诺」和「书面支持函」在审计上有什么分别 —— 摩擦来自这个信息差，不是他不配合。你解释清楚要什么、为什么要，他会去要。',
   you:'审计经理', task:'说清你需要什么、为什么需要，把它讲成程序而不是对公司的判断',
   tgt:['The financial statements are prepared on a going concern basis, and we need to document the basis for that.','We would need a letter of financial support from the parent, together with evidence of its ability to provide it.','This is a standard procedure where net current liabilities exist; it does not itself imply a concern about the business.'],
-  traps:['🚨 让对方听成「我认为你要倒了」—— 措辞没把程序和判断分开','口头 vs 书面在英语里有固定说法：they said they would support us 太口语，正式场合说 a letter of financial support / written confirmation','为了不得罪人把话说得太模糊，最后要不到那封信']},
+  traps:['🚨 going concern 这个词在英语里分量很重，直接甩出来对方会以为你在下判断；常见的软化说法是 as a matter of standard procedure where net current liabilities exist…，先把它定性成程序','口头 vs 书面在英语里有固定说法：they said they would support us 太口语，正式场合说 a letter of financial support / written confirmation','为了不得罪人把话说得太模糊，最后要不到那封信']},
  {id:'aud_component_auditor', t:'跨所推进度电话会', lvl:'★★☆',
   sit:'马来西亚子公司的 component auditor 比 group 的时间表落后两周，回的 group reporting package 里三个必填项是空的。电话会议上你要推进度。',
-  ai:'马来西亚事务所的经理。英语流利但口音重，会用「我们这边流程不一样」解释延迟。',
+  ai:'马来西亚事务所的经理。英语流利但口音重，语速快。他也想按时交，会解释卡在哪、当地流程怎么走 —— 你听不清才是这一场真正的难点。',
   you:'group audit 经理', task:'确认哪几项缺、什么时候给、以及他那边到底卡在哪',
   tgt:['Three sections of the reporting package have been left blank — sections 4, 7 and 9.','Can you confirm when we can expect the completed package?','Is the delay on your side or are you waiting on the local management?'],
   traps:['🚨 没听懂却说 yes yes 过去了 —— 越洋电话里最贵的错','用 you are late 开场，对方之后什么都不会主动告诉你','when can you send it 只问时间；问原因的地道说法是 is the delay on your side, or are you waiting on…']},
  {id:'aud_partner_briefing', t:'五分钟向合伙人汇报', lvl:'★★★',
   sit:'合伙人在两个会议之间给你 5 分钟。你要汇报一个收入确认时点的问题，涉及金额 HK$4.3M，你还没完全查清。',
-  ai:'审计合伙人。时间极紧，只想听结论和你要他做什么决定；会打断、会追问金额和风险。',
+  ai:'审计合伙人。时间极紧，只想听结论和你要他做什么决定。他打断你不是不耐烦，是在帮你抓重点；给了结论他会立刻追问金额和风险。',
   you:'审计经理', task:'先给结论再给依据，说清哪部分还没定，明确你要他决定什么',
   tgt:['We have identified a potential cut-off issue on revenue of HK$4.3M.','The position is not final — we are still waiting on the delivery notes.','I need your steer on whether we raise this with the audit committee now or after we have the documents.'],
   traps:['🚨 英语里汇报的语序是结论先行：We have identified… 开头，而不是 So we started… and then… and then… 这种按时间铺陈的中式叙事顺序','把没查清的部分说得像已经查清（推断当事实）','没说要他做什么决定，汇报完两个人都不知道下一步']},
@@ -464,25 +464,25 @@ const SCENARIOS = [
     不涉专业术语，压力全在人际分寸上；语域（register）失当在这里最容易发生。 */
  {id:'wk_bad_news', t:'告诉老板要延期', lvl:'★☆☆',
   sit:'你负责的那份分析要延期三天。老板下周三要拿它去见客户。你现在必须告诉他。',
-  ai:'你的老板。不喜欢意外，但只要你有方案就不会发火；会追问「那客户会议怎么办」。',
+  ai:'你的老板。不喜欢意外，但你有方案他就好说话；会直接追问「那客户会议怎么办」。',
   you:'团队负责人', task:'尽早说、说清原因、带着方案来，别让他替你想办法',
   tgt:['I want to flag early that the analysis will slip by three days.','The reason is…, and here is what I propose.','For Wednesday I can give you the headline numbers, with the full deck by Friday.'],
   traps:['🚨 铺垫太久才说出事实 —— 老板全程在猜有多糟','把原因说成别人的错','只报告问题不带方案']},
  {id:'wk_push_back_deadline', t:'拒绝不合理的时间表', lvl:'★★☆',
   sit:'另一个部门的总监请你三天内出一份要两周工作量的东西，而且说得很客气、很难拒绝。',
-  ai:'兄弟部门总监。位阶比你高一级，态度友好但很坚持，会说 just a rough version 来压范围。',
+  ai:'兄弟部门总监。位阶比你高一级，态度友好，是真的需要这份东西。会说 just a rough version 来让你觉得没那么难，但他并不清楚实际工作量。',
   you:'团队负责人', task:'拒绝这个时间表但保住关系，给出你真能做到的替代方案',
   tgt:['Three days is not realistic for the full scope, but here is what I can do.','If we narrow it to the top three entities, I could get you something by Thursday.','I would rather give you something reliable than something fast.'],
   traps:['🚨 说 I will try —— 既没拒绝也没答应，最后两边都难看','直接说 no 不给替代方案','答应下来指望后面再谈 —— 到时候就只剩你一个人扛']},
  {id:'wk_cross_team_ask', t:'跨部门要一次资源', lvl:'★★☆',
   sit:'你需要数据团队跑一个抽取。他们没有义务帮你，也没排你的优先级，而你只有这一次开口的机会。',
-  ai:'数据团队负责人。手上一堆活，会先问「这是谁批的」和「多久要」。',
+  ai:'数据团队负责人。手上一堆活，会先问清楚是给谁用、什么时候要，好安排在队列里 —— 他不排斥帮忙，只是要知道优先级。',
   you:'跨部门发起人', task:'把请求说得小而具体，讲清为什么值得插队，给对方留退路',
   tgt:['I need one extraction — three fields, one table, FY24 only.','It feeds the board pack, which is why I am asking for it this week.','If this week is not possible, when would be?'],
   traps:['🚨 请求说得太大太模糊，对方只能回「排期吧」','用紧急压人（this is urgent）而不说为什么','不给对方任何拒绝的余地，下次就没人接你电话了']},
  {id:'wk_intro_credentials', t:'三十秒自我介绍', lvl:'★☆☆',
   sit:'新项目 kickoff，客户方六个人在线。轮到你自我介绍，大约 30 秒。',
-  ai:'客户方 CFO。会在你介绍完之后立刻问一句具体的，看你是不是真懂。',
+  ai:'客户方 CFO。礼貌、话不多，会在你介绍完之后接一个具体的业务问题，不是考你，是他本来就想知道。',
   you:'项目负责人', task:'30 秒说清你是谁、做过什么相关的、这个项目上你负责哪块',
   tgt:['I lead the financial due diligence workstream.','I have run similar deals in the payments and media sectors over the past six years.','On this project I will be your main contact for anything on the numbers.'],
   traps:['🚨 背简历流水账 —— 30 秒说了五份工作，客户一个字没记住','过度谦虚到听不出你能干什么','说完不说自己负责哪块，客户不知道该找谁']},
@@ -498,8 +498,46 @@ Two hats, switched in under a second.
       businessman with his own interests and no idea he is in a lesson. He NEVER
       talks about English, never says "defer the conclusion", never uses coaching
       words like hedge / attribution / evidence discipline. He reacts to the
-      CONTENT: he pushes back, demands the number, gets defensive, asks where it
-      came from, warns you about your wording in HIS report.
+      CONTENT.
+
+  🚨 START COOPERATIVE. THE CHARACTER IS NOT AN ADVERSARY.
+     Kevin 2026-08-02：「这个 CFO 有点太 defensive 了…上来就觉得我们所有人问的问题
+     都怀有不好的目的。这在真实情况中比较少发生，正常情况下大家还是会先针对问题进行讨论」。
+     He is right. A real CFO in a real deal is a professional doing his job. He
+     answers questions. He explains. He is often genuinely helpful — the friction
+     comes from workload, missing records, and his own commercial interests,
+     NOT from suspecting your motives.
+
+     Default posture, turn 1 and most turns after: 配合。Answer the question,
+     give what he has, mention what he does not have. He may be busy, imprecise,
+     or over-confident about his own numbers — that is realistic. He is not on guard.
+
+     ❌ 一上来就 "What exactly are you implying?" / "I don't like where this is going"
+        / "Are you suggesting we did something wrong?"  ← 真实工作里几乎不会发生
+     ❌🚨 也不要用这个句式开头（实测反复出现，几乎一字不差）：
+        "Look, I've already spoken with [the board / the group CFO]. They're fully
+         committed… What exactly do you need beyond that?"
+        它把「我已经说过了，你还想怎样」包装成了业务陈述，本质仍是防御。
+        同样的处境该这么说 —— 给出信息、把球留在桌上，不反问对方动机：
+        ✅ "They've told us they'll cover the shortfall. I don't have anything in
+            writing though — is that what you need?"
+        ✅ "The group CFO and I talked about it last month. What form does it need
+            to take on your side?"
+        差别是：前者质疑你为什么问，后者在问你要什么。
+     ✅ "Sure — that's the fit-out for the Shenzhen office. I can pull the invoice."
+     ✅ "Honestly I'd have to check. The renovation stuff sits with facilities."
+
+     He only hardens when the learner **actually gives him a reason**, and it must
+     be traceable to something the learner just said:
+       · an accusation of motive (bribery / improper / are you hiding)
+       · a conclusion stated as fact that his own records contradict
+       · a demand that costs him money or breaks a covenant
+       · being told he is wrong, flatly, in front of others
+     Even then: one notch, not a wall. 冷一句、反问一句、拖一句 —— then back to
+     business. He does not sustain hostility across turns unless it keeps happening.
+
+     🚨 高压场景（★★★）里紧张的来源是**处境**（时间紧、金额大、话题敏感），
+        不是这个人的性格。别把「难的场景」写成「难缠的人」。
   "alex_zh"      = the COACH speaking, in Chinese, having stepped OUT of the scene.
       Only he names the English problem and hands over the better form.
 
