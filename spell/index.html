@@ -282,10 +282,20 @@ ctx.fillText(letter,x+s*0.5,y+s*0.52);ctx.restore()
 }
 function validGapsFor(letter){var out=[];for(var r=0;r<ROWS;r++)for(var c=0;c<COLS;c++){var cell=grid[r][c];if(cell&&cell.t==="L"&&!cell.f&&cell.l===letter)out.push([r,c])}return out}
 function dropTarget(){
-if(!drag||!tray[drag.idx])return null;var p=tray[drag.idx];var lift=drag.touch?C*1.6:C*0.6;
-var cx=drag.x,cy=drag.y-lift;var col=Math.floor((cx-gx)/C),row=Math.floor((cy-gy)/C);
-if(row<0||col<0||row>=ROWS||col>=COLS)return null;
-var cell=grid[row][col];if(cell&&cell.t==="L"&&!cell.f&&cell.l===p.letter)return{r:row,c:col};return null
+if(!drag||!tray[drag.idx])return null;var p=tray[drag.idx];
+var cx=drag.x,cy=drag.y;
+var col=Math.floor((cx-gx)/C),row=Math.floor((cy-gy)/C);
+if(row>=0&&col>=0&&row<ROWS&&col<COLS){var cell=grid[row][col];if(cell&&cell.t==="L"&&!cell.f&&cell.l===p.letter)return{r:row,c:col}}
+var best=null,bestDist=Infinity;
+for(var r=Math.max(0,row-1);r<=Math.min(ROWS-1,row+1);r++){
+for(var c=Math.max(0,col-1);c<=Math.min(COLS-1,col+1);c++){
+var cell=grid[r][c];if(cell&&cell.t==="L"&&!cell.f&&cell.l===p.letter){
+var dx=gx+c*C+C/2-cx,dy=gy+r*C+C/2-cy,d=dx*dx+dy*dy;
+if(d<bestDist){bestDist=d;best={r:r,c:c}}
+}
+}
+}
+return best
 }
 function draw(){
 ctx.clearRect(0,0,W,H);
@@ -299,7 +309,7 @@ var now=performance.now();
 anims=anims.filter(function(a){var t=(now-a.t0)/260;if(t>=1)return false;var s=C*(1+t*0.4),off=(s-C)/2;ctx.save();ctx.globalAlpha=1-t;rr(gx+a.c*C-off+2,gy+a.r*C-off+2,s-4,s-4,s*0.25);ctx.fillStyle=a.col||"#ffffff";ctx.fill();ctx.restore();return true});
 var slotW=W/3;
 for(var i=0;i<3;i++){var p=tray[i];if(!p||(drag&&drag.idx===i))continue;var ts=C*0.65;var ox=slotW*i+(slotW-ts)/2;var oy=trayTop+(trayH-ts)/2;drawPlainTile(ox,oy,ts,p.letter,1)}
-if(drag&&tray[drag.idx]){var p=tray[drag.idx];var lift=drag.touch?C*1.6:C*0.6;var ts=C;ctx.save();ctx.shadowColor="rgba(120,60,160,0.25)";ctx.shadowBlur=10;ctx.shadowOffsetY=4;drawPlainTile(drag.x-ts/2,drag.y-lift-ts/2,ts,p.letter,0.96);ctx.restore()}
+if(drag&&tray[drag.idx]){var p=tray[drag.idx];var lift=drag.touch?C:0.6*C;var ts=C;ctx.save();ctx.shadowColor="rgba(120,60,160,0.25)";ctx.shadowBlur=10;ctx.shadowOffsetY=4;drawPlainTile(drag.x-ts/2,drag.y-lift-ts/2,ts,p.letter,0.96);ctx.restore()}
 particles=particles.filter(function(pt){pt.x+=pt.vx;pt.y+=pt.vy;pt.vy+=pt.g;pt.life-=0.025;if(pt.life<=0)return false;ctx.save();ctx.globalAlpha=Math.max(0,pt.life);ctx.fillStyle=pt.color;ctx.beginPath();ctx.arc(pt.x,pt.y,pt.r,0,Math.PI*2);ctx.fill();ctx.restore();return true});
 requestAnimationFrame(draw)
 }
