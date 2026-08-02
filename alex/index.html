@@ -52,6 +52,49 @@ button{font-family:inherit}
   background:var(--accent);color:#fff;border-radius:8px;font-size:10.5px;
   margin-left:4px;padding:0 4px;font-weight:700}
 
+/* ═══ 首页：大方块选模块 → 选难度 → 才开始练 ═══
+   Kevin 2026-08-02：「一开始先放几个大的方块，让用户选择想进入哪一个模块，
+   进入大模块之后，再让用户选择具体的难度，选择完之后才开始做练习」。
+   原来是一进来就 18 张卡糊脸上，没有层次。 */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:2px 0 4px}
+.tile{position:relative;border-radius:18px;padding:16px 15px 14px;
+  min-height:158px;display:flex;flex-direction:column;justify-content:flex-end;
+  color:#fff;overflow:hidden;cursor:pointer;transition:transform .07s}
+.tile:active{transform:scale(.975)}
+.tile .ic{position:absolute;top:11px;right:13px;font-size:30px;opacity:.85;
+  line-height:1}
+.tile .nm{font-size:17.5px;font-weight:800;letter-spacing:-.2px}
+.tile .ds{font-size:12px;opacity:.88;margin-top:3px;line-height:1.45}
+.tile.wide{grid-column:1 / -1;min-height:82px}
+.resume{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:13px 15px;margin-top:11px;cursor:pointer}
+.resume .k{font-size:11px;letter-spacing:.4px;color:var(--muted);font-weight:700}
+.resume .v{font-size:15px;font-weight:700;margin-top:3px}
+.resume .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+.t-speak{background:linear-gradient(150deg,#c2603a,#9a4525)}
+.t-listen{background:linear-gradient(150deg,#3a6f9e,#274d6e)}
+.t-book{background:linear-gradient(150deg,#5b6b52,#3d4a37)}
+.t-hist{background:linear-gradient(150deg,#6a6259,#494340)}
+@media(prefers-color-scheme:dark){
+  .t-speak{background:linear-gradient(150deg,#a0492c,#6f3119)}
+  .t-listen{background:linear-gradient(150deg,#2d587e,#1c3850)}
+  .t-book{background:linear-gradient(150deg,#47543f,#2c352a)}
+  .t-hist{background:linear-gradient(150deg,#4f4a44,#35312e)}}
+
+/* 难度选择：一屏三张，说清每一档是什么 */
+.lvpick{margin-top:4px}
+.lvcard{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:14px 16px;margin:9px 0;cursor:pointer;display:flex;align-items:center;
+  gap:13px;transition:transform .07s,border-color .12s}
+.lvcard:active{transform:scale(.985);border-color:var(--accent)}
+.lvcard .lv{flex:0 0 auto;display:flex;gap:4px}
+.lvcard .lv i{width:8px;height:8px;border-radius:50%;background:var(--line);display:block}
+.lvcard .lv i.f{background:var(--accent)}
+.lvcard .tx{flex:1}
+.lvcard .nm{font-size:15.5px;font-weight:700}
+.lvcard .ds{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.5}
+.lvcard .ct{font-size:12px;color:var(--muted);flex:0 0 auto}
+
 .tabs{display:flex;gap:6px;margin:0 0 12px;overflow-x:auto;
   scrollbar-width:none;-ms-overflow-style:none}
 .tabs::-webkit-scrollbar{display:none}
@@ -265,13 +308,13 @@ const SCENARIOS = [
   tgt:['We noted a payable of Rmb367k due to…','Could you walk me through…','We understand that…'],
   traps:['is this a related party? —— 这种问法在英语里是封闭式质问，开放式的 Could you walk me through… 才是这个场合的常用说法','问「还有没有同类」时说成 Are there others like this?，偏口语；书面/正式场合用 Are there any similar balances?','用 problem/issue 这种万能词描述它']},
  {id:'dd_missing_financials', t:'说明资料缺口和影响', lvl:'★☆☆',
-  sit:'Hekang 集团的 FY18 和 9M19 财报始终没拿到，你无法对它的表现发表任何意见。今天要跟买方项目负责人说明。',
+  sit:'Hekang 集团的 FY24 和 9M25 财报始终没拿到，你无法对它的表现发表任何意见。今天要跟买方项目负责人说明。',
   ai:'买方 deal lead。只关心这会不会影响估值，不接受含糊。',
   you:'FDD advisor', task:'说清缺什么、因此不能说什么、对交易的影响',
-  tgt:['We did not receive the FY18 and 9M19 financials of…, therefore we cannot comment on its performance.','Due to limitation of information, we are unable to verify…'],
+  tgt:['We did not receive the FY24 and 9M25 financials of…, therefore we cannot comment on its performance.','Due to limitation of information, we are unable to verify…'],
   traps:['含糊带过（we have limited information on…）','说成是自己的失误','we don\'t have it 太随意；正式说法是 We have not been provided with… / We did not receive…，语域差一档']},
  {id:'dd_sgna_decline', t:'追问费用下降的原因', lvl:'★★☆',
-  sit:'9M19 的 SG&A 年化后比 FY18 下降。你问原因，CFO 答：规模效应 + 人效提升。听起来完全合理——但你还没验过任何一项。',
+  sit:'9M25 的 SG&A 年化后比 FY24 下降。你问原因，CFO 答：规模效应 + 人效提升。听起来完全合理——但你还没验过任何一项。',
   ai:'Target CFO。对这个解释很有信心因为他真信。被追问会觉得你听不懂业务，语速快，会用业务术语绕你。',
   you:'FDD advisor', task:'追问到能判断这个解释站不站得住，但不能让他觉得你在怀疑他编数字',
   tgt:['Management explained that the decrease came from…','Could you help me understand how…','Based on our understanding of… and discussion with management'],
@@ -298,13 +341,13 @@ const SCENARIOS = [
   sit:'Gaopan 的招待费占收入比例明显高于同业。在中国语境下这话题极其敏感——可能只是业务需要，也可能不是。你必须问。',
   ai:'Target CFO。这问题一出来他立刻警觉，会反问你「你想说什么」。',
   you:'FDD advisor', task:'问清构成和审批流程，全程不暗示任何不当行为',
-  tgt:['We note that in FY18 and FY19, … entertainment expenses accounted for…','Could you help me understand how these are approved and recorded?'],
+  tgt:['We note that in FY24 and FY25, … entertainment expenses accounted for…','Could you help me understand how these are approved and recorded?'],
   traps:['🚨 用词分量：bribery / improper / unusual 在英语里都带指控色彩，中性的问法是 how these are approved and recorded','why is it so high —— 预设了「不该这么高」','问得太软：maybe you could sort of tell me a bit about… 这种堆叠限定词在英语里显得没底气，Could you help me understand… 才是常用的中性问法']},
  {id:'dd_forecast_challenge', t:'挑战一个激进的预测', lvl:'★★★',
-  sit:'Jinchen 的 FY20F 间接人工和其他经营费用，居然低于 FY19F——在收入还要增长的前提下。这个预测很激进。',
+  sit:'Jinchen 的 FY26F 间接人工和其他经营费用，居然低于 FY25F——在收入还要增长的前提下。这个预测很激进。',
   ai:'Target CFO。预测是他做的，他会为它辩护。',
   you:'FDD advisor', task:'挑战这个假设、拿到支撑依据，但不说「你的预测是错的」',
-  tgt:['We have noticed that forecast … in FY20F is lower than FY19F.','appears to be optimistic based on recent financial performance','We would expect…'],
+  tgt:['We have noticed that forecast … in FY26F is lower than FY25F.','appears to be optimistic based on recent financial performance','We would expect…'],
   traps:['your forecast is too aggressive —— 下断言，且对人不对事','this is impossible 是绝对化表述；英语里同样的意思常说 that seems optimistic / we would expect… ，留出讨论空间','appears optimistic 用错对象：乐观的是预测/假设，不是费用本身']},
 
  /* ═══ 审计（HK，HKSA 口径） ═══
@@ -632,7 +675,7 @@ use. Not a textbook sentence. Not a narration. Someone actually talking.
    A detail item is one where the three options are IDENTICAL except for one
    concrete thing that exists only in the audio:
      · a figure          42 / 46 / 44 million
-     · a period          FY18 / 9M19 / Q4
+     · a period          FY24 / 9M25 / Q4
      · a name or party   Sarah / EY / the parent
      · a direction       up 6% / down 6% / flat
      · a modal           will / would / might
@@ -646,7 +689,7 @@ use. Not a textbook sentence. Not a narration. Someone actually talking.
    Every distractor must be information that WAS in the audio — just not the answer
    to the question asked. Test the things his ear actually drops:
      · who said it / how strongly it was said (management claims vs verified)
-     · numbers, periods, directions (up or down, FY18 or 9M19, gross or net)
+     · numbers, periods, directions (up or down, FY24 or 9M25, gross or net)
      · what was NOT committed to (hedges, conditions, "subject to")
      · the turn the speaker takes at the end (agreeing? deferring? refusing?)
 
@@ -1276,37 +1319,109 @@ function practised(id){
   return loadSess().filter(x => x.scn === id && x.turns && x.turns.length).length;
 }
 
+const LEVELS = [
+  {n:1, nm:'入门',   ds:'情境直接，对方配合，先把话说顺'},
+  {n:2, nm:'进阶',   ds:'对方会追问、会绕，要顶住还要说清楚'},
+  {n:3, nm:'高压',   ds:'时间紧、话题敏感、对方不好惹'},
+];
+let LV = 0;                 // 选中的难度（0 = 还没选）
+
+/* ① 首页：大方块选模块 */
 function showList(){
   $('#list').hidden = false;
   $('#feed').innerHTML = '';
   const n = drilling().length;
+  $('#sub').textContent = '选一个模块开始';
   $('#list').innerHTML =
     `<div class="stats">
        <div class="col"><div class="n">${streak()}</div><div class="l">连续天数</div></div>
        <div class="col"><div class="n">${ST.turns}</div><div class="l">累计轮数</div></div>
        <div class="sp"></div>
-       <button id="lsnbtn">🎧 听力</button>
-       <button id="histbtn">历史</button>
-       <button id="bookbtn">错题本${n ? `<span class="dot">${n}</span>` : ''}</button>
      </div>
-     <div class="tabs">` +
+     <div class="tiles">
+       <div class="tile t-speak" data-go="speak"><span class="ic">🗣️</span>
+         <div class="nm">口语陪练</div>
+         <div class="ds">按住说英语，Alex 当场纠</div></div>
+       <div class="tile t-listen" data-go="listen"><span class="ic">🎧</span>
+         <div class="nm">听力</div>
+         <div class="ds">真人配音，不用开口</div></div>
+       <div class="tile t-book wide" data-go="book"><span class="ic">📕</span>
+         <div class="nm">错题本${n ? ` · ${n}` : ''}</div>
+         <div class="ds">错过的说法和该怎么说，都在这儿</div></div>
+       <div class="tile t-hist wide" data-go="hist"><span class="ic">🕘</span>
+         <div class="nm">历史</div>
+         <div class="ds">翻回以前练过的每一场</div></div>
+     </div>`;
+  // 上次练到哪 —— 首页下半部分空着不好看，而且「接着上次练」是最常见的动作
+  const last = loadSess().slice(-1)[0];
+  const lastScn = last && SCENARIOS.find(x => x.id === last.scn);
+  if (lastScn){
+    const r = document.createElement('div');
+    r.className = 'resume';
+    r.innerHTML = `<div class="k">上次练到</div>
+      <div class="v">${esc(lastScn.t || lastScn.id)}</div>
+      <div class="s">${esc(last.on)} · ${last.turns.length} 轮 · 点这里接着练</div>`;
+    r.onclick = () => start(lastScn);
+    $('#list').appendChild(r);
+  }
+  const GOTO = {
+    speak: () => go(() => showLevel('speak'), '口语陪练'),
+    listen: () => go(() => showLevel('listen'), '听力'),
+    book: () => go(showBook, '错题本'),
+    hist: () => go(showHistory, '历史'),
+  };
+  document.querySelectorAll('.tile').forEach(t =>
+    t.onclick = () => GOTO[t.dataset.go]());
+}
+
+/* ② 选难度 —— 口语和听力都走这一步 */
+function showLevel(mode){
+  $('#list').hidden = false;
+  $('#feed').innerHTML = '';
+  $('#sub').textContent = mode === 'speak' ? '口语陪练 · 选难度' : '听力 · 选难度';
+  const cnt = lv => SCENARIOS.filter(s => lvlNum(s.lvl) === lv).length;
+  $('#list').innerHTML = '<div class="lvpick">' + LEVELS.map(L =>
+    `<div class="lvcard" data-lv="${L.n}">
+       <span class="lv">${[1,2,3].map(i=>`<i class="${i<=L.n?'f':''}"></i>`).join('')}</span>
+       <span class="tx"><span class="nm">${L.nm}</span>
+         <div class="ds">${L.ds}</div></span>
+       <span class="ct">${cnt(L.n)} 个场景</span>
+     </div>`).join('') + '</div>';
+  document.querySelectorAll('.lvcard').forEach(c => c.onclick = () => {
+    LV = +c.dataset.lv;
+    if (mode === 'speak') go(showScenarios, '选场景');
+    else go(listenPick, '听力');
+  });
+}
+
+/* ③ 该难度下的场景，仍可按分类切 */
+function showScenarios(){
+  $('#list').hidden = false;
+  $('#feed').innerHTML = '';
+  const L = LEVELS.find(x => x.n === LV) || LEVELS[0];
+  $('#sub').textContent = `${L.nm} · ${L.ds}`;
+  $('#list').innerHTML = '<div class="tabs">' +
     GRP.map(([pre,name],i) =>
       `<button data-tab="${i}" class="${i===TAB?'on':''}">${name} ${
-        SCENARIOS.filter(s=>s.id.startsWith(pre)).length}</button>`).join('') +
-    `</div><div id="cards"></div>`;
-  $('#bookbtn').onclick = () => go(showBook, '错题本');
-  $('#lsnbtn').onclick  = () => go(listenHome, '听力');
-  $('#histbtn').onclick = () => go(showHistory, '历史');
+        SCENARIOS.filter(s=>s.id.startsWith(pre)&&lvlNum(s.lvl)===LV).length}</button>`
+    ).join('') + '</div><div id="cards"></div>';
   document.querySelectorAll('.tabs button').forEach(b =>
-    b.onclick = () => { TAB = +b.dataset.tab; showList(); });
+    b.onclick = () => { TAB = +b.dataset.tab; showScenarios(); });
   paintCards();
 }
 
+const lvlNum = lv => ((String(lv).match(/★/g) || []).length || 1);
+
 function paintCards(){
   const pre = GRP[TAB][0];
-  $('#cards').innerHTML = SCENARIOS
-    .map((sc,i) => [sc,i])
-    .filter(([sc]) => sc.id.startsWith(pre))
+  const hit = SCENARIOS.map((sc,i) => [sc,i])
+    .filter(([sc]) => sc.id.startsWith(pre) && (!LV || lvlNum(sc.lvl) === LV));
+  if (!hit.length){
+    $('#cards').innerHTML =
+      '<div class="note">这一档下这个分类还没有场景，换个分类看看。</div>';
+    return;
+  }
+  $('#cards').innerHTML = hit
     .map(([sc,i]) => {
       const done = practised(sc.id);
       return `<div class="card" data-i="${i}">
@@ -1811,51 +1926,138 @@ $('#book').onclick = () => go(showBook, '错题本');
    一次要一整组题，之后翻页不再请求网络 —— 地铁里断网也能把这组做完。 */
 const LSN = {items:[], i:0, right:0, scn:null, dropped:0};
 
-function listenHome(){
-  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
-  $('#sub').textContent = '听力 · 不用说话，用点的';
-  const f = $('#feed'); f.innerHTML = '';
-  const box = document.createElement('div');
-  box.innerHTML = '<div class="note">选一个场景，Alex 会用那个角色的口吻说几段话，' +
-    '你听完答题。先听，答完才给原文。</div>';
-  f.appendChild(box);
-  SCENARIOS.forEach((sc, i) => {
-    const c = document.createElement('div');
-    c.className = 'card';
-    c.innerHTML = `<b>${sc.lvl}</b>${esc(sc.ai)}<div class="t">${esc(sc.sit)}</div>`;
-    c.onclick = () => beginListen(sc);
-    f.appendChild(c);
-  });
-  const back = document.createElement('button');
-  back.className = 'play'; back.style.marginTop = '18px';
-  back.textContent = '← 回首页';
-  back.onclick = home;
-  f.appendChild(back);
+/* ═══ 听力题库（预生成）═══
+   Kevin 2026-08-02 三条抱怨，根子是同一个：运行时现场出题 + 浏览器机器音。
+     「声音像机器人」→ speechSynthesis 就是那个味儿
+     「每次都要写很久」→ 每组题都在等模型
+     「来来回回就那一题」→ 每次现出，重复度高又不受控
+   改成**离线预生成**：题目和 mp3 都提前做好放在同目录（build_bank.py），
+   页面只下一个 JSON + 播 mp3，秒开、真人嗓子、不花任何额度。
+   做过的题记在本地，优先出没做过的。 */
+let BANK = null;
+async function loadBank(){
+  if (BANK) return BANK;
+  const r = await fetch('listening.json', {cache:'no-cache'});
+  if (!r.ok) throw new Error('题库还没上传（HTTP ' + r.status + '）');
+  BANK = await r.json();
+  return BANK;
+}
+function seenIds(){
+  try { return new Set(JSON.parse(localStorage.getItem('alex_lsn_seen') || '[]')); }
+  catch(_){ return new Set(); }
+}
+function markSeen(ids){
+  const s = seenIds();
+  ids.forEach(x => s.add(x));
+  try { localStorage.setItem('alex_lsn_seen', JSON.stringify([...s].slice(-500))); } catch(_){}
 }
 
-async function beginListen(scn){
-  unlockTTS();                       // 借这次点击解锁，否则整块都是哑的
-  const f = $('#feed');
-  // 别报一个自己做不到的时间：Gemini 约 15 秒，落到 DeepSeek 要一分多钟（它是推理模型）
-  f.innerHTML = '<div class="note"><span class="dots">Alex 在写题</span>（' +
-    (pick('text') === 'deepseek'
-       ? 'DeepSeek 出题慢，要一分多钟，别关页面'
-       : '约十几秒') +
-    '，写好后这一组翻页就不用网络了）</div>';
-  try {
-    LSN.items = await askListen(scn, 5);
-    LSN.i = 0; LSN.right = 0; LSN.scn = scn;
-    listenItem();
-  } catch(e){
-    f.innerHTML = '';
-    const d = document.createElement('div');
-    d.className = 'note'; d.textContent = '出题失败：' + e.message;
-    f.appendChild(d);
-    const again = document.createElement('button');
-    again.className = 'play'; again.textContent = '再试一次';
-    again.onclick = () => beginListen(scn);
-    f.appendChild(again);
+/* 播放器：真人配音的 mp3。
+   🚨 用 <audio> 而不是 speechSynthesis —— 这就是「声音像机器人」的根治办法。
+      顺带 iOS 上 <audio> 比 speechSynthesis 稳得多（不需要那套解锁把戏，
+      只要是用户点击触发的 play() 就一定响）。
+   慢速用 playbackRate=0.7 并保持音高（preservesPitch），不会变成怪腔。 */
+function player(it, autoplay){
+  const wrap = document.createElement('div');
+  // 现场出的题没有 mp3，退回浏览器合成（音质差，但总比没有强）
+  if (!it.audio){
+    const mk = (label, rate) => {
+      const b = document.createElement('button');
+      b.className = 'play'; b.style.marginRight = '8px'; b.textContent = label;
+      b.onclick = () => { unlockTTS(); b.classList.add('on');
+        say(it.say, 'en', rate).then(()=>b.classList.remove('on')); };
+      return b;
+    };
+    wrap.appendChild(mk('🔊 播放', 0.95));
+    wrap.appendChild(mk('🐢 慢速', 0.65));
+    if (autoplay){ unlockTTS(); say(it.say, 'en', 0.95); }
+    return wrap;
   }
+  const au = document.createElement('audio');
+  au.src = 'audio/' + it.audio;
+  au.preload = 'auto';
+  const mk = (label, rate) => {
+    const b = document.createElement('button');
+    b.className = 'play'; b.style.marginRight = '8px'; b.textContent = label;
+    b.onclick = () => {
+      au.pause();
+      au.playbackRate = rate;
+      au.preservesPitch = au.mozPreservesPitch = au.webkitPreservesPitch = true;
+      au.currentTime = 0;
+      b.classList.add('on');
+      au.play().catch(()=>{ $('#err') && ($('#err').textContent = ''); });
+    };
+    return b;
+  };
+  au.onended = () => wrap.querySelectorAll('.play').forEach(x => x.classList.remove('on'));
+  au.onerror = () => {
+    const w = document.createElement('div');
+    w.className = 'note';
+    w.textContent = '这条音频加载不了（' + it.audio + '），先看下一题吧。';
+    wrap.appendChild(w);
+  };
+  wrap.appendChild(mk('🔊 播放', 1));
+  wrap.appendChild(mk('🐢 慢速', 0.7));
+  wrap.appendChild(au);
+  if (autoplay) au.play().catch(()=>{});   // 被浏览器拦了也没事，按钮还在
+  return wrap;
+}
+
+/* 选完难度后进这里：从题库里抽一组没做过的 */
+async function listenPick(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  const L = LEVELS.find(x => x.n === LV) || LEVELS[0];
+  $('#sub').textContent = `听力 · ${L.nm}`;
+  const f = $('#feed');
+  f.innerHTML = '<div class="note"><span class="dots">在挑题</span></div>';
+  let bank;
+  try { bank = await loadBank(); }
+  catch(e){
+    f.innerHTML = `<div class="note">题库读不到：${esc(e.message)}</div>`;
+    return;
+  }
+  const okScn = new Set(SCENARIOS.filter(s => lvlNum(s.lvl) === LV).map(s => s.id));
+  const pool = bank.items.filter(it => okScn.has(it.scn));
+  if (!pool.length){
+    // 兜底：题库这一档还没生成时，回到现场出题（慢，但有得练）
+    const scn = SCENARIOS.filter(s => lvlNum(s.lvl) === LV)[0];
+    if (!scn){ f.innerHTML = '<div class="note">这一档还没有场景。</div>'; return; }
+    f.innerHTML = '<div class="note"><span class="dots">这一档题库还没备好，现场出题</span>' +
+                  '（要等十几秒到一分多钟；出好之后翻页就不用网络了）</div>';
+    try {
+      LSN.items = await askListen(scn, 5);
+      LSN.i = 0; LSN.right = 0; LSN.scn = scn; LSN.recycled = false;
+      LSN.live = true;                 // 标记：这组是现场出的，没有 mp3
+      return listenItem();
+    } catch(e){
+      f.innerHTML = `<div class="note">出题失败：${esc(e.message)}</div>`;
+      return;
+    }
+  }
+  LSN.live = false;
+  // 没做过的优先；都做过了就整批重来（并清掉这批的记录）
+  const seen = seenIds();
+  let fresh = pool.filter(it => !seen.has(it.audio));
+  let recycled = false;
+  if (fresh.length < 3){ fresh = pool; recycled = true; }
+  // 洗牌后取 5 题，且尽量来自不同场景 —— 免得连着五题都是同一个人说话
+  fresh = fresh.slice().sort(() => Math.random() - 0.5);
+  const picked = [], used = {};
+  for (const it of fresh){
+    if (picked.length >= 5) break;
+    used[it.scn] = (used[it.scn] || 0) + 1;
+    if (used[it.scn] <= 2) picked.push(it);
+  }
+  while (picked.length < Math.min(5, fresh.length)){
+    const it = fresh.find(x => !picked.includes(x));
+    if (!it) break;
+    picked.push(it);
+  }
+  LSN.items = picked; LSN.i = 0; LSN.right = 0; LSN.dropped = 0;
+  LSN.scn = SCENARIOS.find(s => s.id === picked[0].scn) || null;
+  LSN.recycled = recycled;
+  markSeen(picked.map(x => x.audio));
+  listenItem();
 }
 
 function listenItem(){
@@ -1866,25 +2068,15 @@ function listenItem(){
   const hd = document.createElement('div');
   hd.className = 'grp';
   hd.textContent = `第 ${LSN.i+1} / ${LSN.items.length} 题 · 答对 ${LSN.right}`
-    + (LSN.i === 0 && LSN.dropped
-       ? `（另有 ${LSN.dropped} 题不用听也能猜出来，已剔除）` : '');
+    + (LSN.i === 0 && LSN.recycled ? '（这一档的题你都做过了，重新抽一轮）' : '');
   f.appendChild(hd);
 
   // 播放区：原文这时候一个字都不给
   const pl = document.createElement('div');
   pl.className = 'better';
   pl.innerHTML = '<div class="lb">先听</div>';
-  const mk = (label, rate) => {
-    const b = document.createElement('button');
-    b.className = 'play'; b.style.marginRight = '8px'; b.textContent = label;
-    b.onclick = () => { b.classList.add('on');
-      say(it.say, 'en', rate).then(()=>b.classList.remove('on')); };
-    return b;
-  };
-  pl.appendChild(mk('🔊 播放', 0.95));
-  pl.appendChild(mk('🐢 慢速', 0.65));
+  pl.appendChild(player(it, true));
   f.appendChild(pl);
-  say(it.say, 'en', 0.95);           // 进来先自动播一遍
 
   const q = document.createElement('div');
   q.className = 'turn alex';
@@ -1930,16 +2122,7 @@ function answerListen(k){
   box.className = 'better';
   box.innerHTML = `<div class="lb">原文</div><div class="en">${esc(it.say)}</div>` +
                   (it.zh ? `<div class="tags">${esc(it.zh)}</div>` : '');
-  const b1 = document.createElement('button');
-  b1.className = 'play'; b1.style.marginRight = '8px';
-  b1.textContent = '🔊 对着字再听';
-  b1.onclick = () => { b1.classList.add('on');
-    say(it.say,'en',0.95).then(()=>b1.classList.remove('on')); };
-  const b2 = document.createElement('button');
-  b2.className = 'play'; b2.textContent = '🐢 慢速';
-  b2.onclick = () => { b2.classList.add('on');
-    say(it.say,'en',0.65).then(()=>b2.classList.remove('on')); };
-  box.appendChild(b1); box.appendChild(b2);
+  box.appendChild(player(it, false));   // 对着字再听，同一段真人录音
   f.appendChild(box);
 
   const next = document.createElement('button');
@@ -1962,10 +2145,10 @@ function listenDone(){
   const again = document.createElement('button');
   again.className = 'play'; again.style.marginRight = '8px';
   again.textContent = '再来一组';
-  again.onclick = () => beginListen(LSN.scn);
+  again.onclick = listenPick;          // 重新抽，优先没做过的
   const back = document.createElement('button');
-  back.className = 'play'; back.textContent = '换场景';
-  back.onclick = listenHome;   // 停在听力这一层，返回键仍可回首页
+  back.className = 'play'; back.textContent = '换难度';
+  back.onclick = back;                 // 退回上一层（难度选择）
   f.appendChild(again); f.appendChild(back);
 }
 $('#reset').onclick = () => {
