@@ -402,10 +402,11 @@ button{font-family:inherit}
 <body>
 <!-- ═══ 启动页 ═══ body 的第一个元素，所以浏览器一开始渲染就能看到它。
      Alex 是内联 SVG（由 make_alex.py 的 svg_alex() 生成，跟主屏图标同一套坐标，
-     改一处两边一起变）。下面那个 6 秒兜底很关键：万一主脚本抛异常，
+     改一处两边一起变）。形象是**穿西装的英语老师**，不是动物 ——
+     Kevin 2026-08-03：金刚鹦鹉那版「跟多邻国太像了，看上去像山寨的」。下面那个 6 秒兜底很关键：万一主脚本抛异常，
      启动页要是不撤就等于整个 App 打不开了，比一片空白严重得多。 -->
 <div id="splash">
-  <div class="fig"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Alex"><ellipse cx="50.00" cy="77.00" rx="25.00" ry="21.00" fill="#1cb0f6"/><ellipse cx="50.00" cy="80.00" rx="19.00" ry="17.00" fill="#6ccdff"/><polygon points="24.00,71.00 16.00,86.00 30.00,88.00" fill="#127ab4"/><polygon points="76.00,71.00 84.00,86.00 70.00,88.00" fill="#127ab4"/><polygon points="50.00,62.00 45.00,67.00 50.00,72.00 55.00,67.00" fill="#ff4b4b"/><polygon points="50.00,70.00 45.50,84.00 50.00,88.00 54.50,84.00" fill="#ff4b4b"/><polygon points="41.10,20.58 35.90,23.58 40.68,7.23" fill="#ffc800"/><polygon points="49.05,18.75 42.18,20.09 52.86,1.10" fill="#ff9600"/><polygon points="56.67,19.71 49.74,18.74 66.02,4.26" fill="#ffc800"/><polygon points="63.11,22.87 57.77,20.14 74.09,15.25" fill="#ff9600"/><ellipse cx="50.00" cy="42.00" rx="26.00" ry="24.96" fill="#1cb0f6"/><ellipse cx="42.20" cy="39.40" rx="10.92" ry="10.92" fill="#ffffff"/><ellipse cx="57.80" cy="39.40" rx="10.92" ry="10.92" fill="#ffffff"/><ellipse cx="41.54" cy="40.49" rx="5.02" ry="5.02" fill="#3c3c3c"/><ellipse cx="39.58" cy="37.00" rx="2.07" ry="2.07" fill="#ffffff"/><ellipse cx="58.46" cy="40.49" rx="5.02" ry="5.02" fill="#3c3c3c"/><ellipse cx="60.42" cy="37.00" rx="2.07" ry="2.07" fill="#ffffff"/><polygon points="43.24,47.26 56.76,47.26 54.19,53.50 50.68,58.18 46.89,56.10 44.59,51.42" fill="#ff9600"/><ellipse cx="49.59" cy="55.84" rx="2.47" ry="2.60" fill="#ff9600"/><polygon points="45.81,51.16 54.19,51.16 50.68,56.62 47.70,55.06" fill="#e67e00"/></svg></div>
+  <div class="fig"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Alex"><rect x="44.54" y="45.55" width="10.92" height="26.95" rx="2.73" fill="#e2b284"/><rect x="17.00" y="62.00" width="66.00" height="42.00" rx="9.90" fill="#2b3a55"/><polygon points="35.30,59.00 64.70,59.00 50.00,84.05" fill="#ffffff"/><polygon points="34.46,59.00 48.95,83.42 42.44,104.00 19.64,104.00 19.64,66.62" fill="#3a4c6b"/><polygon points="65.54,59.00 51.05,83.42 57.56,104.00 80.36,104.00 80.36,66.62" fill="#3a4c6b"/><polygon points="44.96,64.52 55.04,64.52 53.57,71.66 46.43,71.66" fill="#1cb0f6"/><polygon points="46.43,71.24 53.57,71.24 56.30,104.00 43.70,104.00" fill="#1cb0f6"/><ellipse cx="50.00" cy="31.90" rx="21.84" ry="21.42" fill="#2a2a33"/><ellipse cx="29.42" cy="36.10" rx="3.57" ry="4.62" fill="#e2b284"/><ellipse cx="70.58" cy="36.10" rx="3.57" ry="4.62" fill="#e2b284"/><ellipse cx="50.00" cy="36.10" rx="18.90" ry="19.74" fill="#f5cba0"/><polygon points="30.68,23.08 56.30,14.05 69.95,27.70 69.32,20.98 54.20,12.58 33.20,17.20" fill="#2a2a33"/><polygon points="30.26,24.34 55.46,14.68 70.16,28.96 63.02,19.30 43.70,18.88" fill="#2a2a33"/><rect x="38.24" y="27.70" width="8.40" height="2.10" rx="1.05" fill="#2a2a33"/><rect x="53.36" y="27.70" width="8.40" height="2.10" rx="1.05" fill="#2a2a33"/><ellipse cx="42.44" cy="34.42" rx="2.83" ry="3.25" fill="#3c3c3c"/><ellipse cx="43.49" cy="33.27" rx="1.05" ry="1.05" fill="#ffffff"/><ellipse cx="57.56" cy="34.42" rx="2.83" ry="3.25" fill="#3c3c3c"/><ellipse cx="58.61" cy="33.27" rx="1.05" ry="1.05" fill="#ffffff"/><polygon points="56.57,42.17 56.11,42.83 55.51,43.44 54.79,43.98 53.96,44.43 53.05,44.80 52.07,45.07 51.05,45.23 50.00,45.29 48.95,45.23 47.93,45.07 46.95,44.80 46.04,44.43 45.21,43.98 44.49,43.44 43.89,42.83 43.43,42.17 44.89,41.58 45.25,42.03 45.72,42.45 46.28,42.82 46.92,43.13 47.63,43.38 48.39,43.56 49.19,43.68 50.00,43.71 50.81,43.68 51.61,43.56 52.37,43.38 53.08,43.13 53.72,42.82 54.28,42.45 54.75,42.03 55.11,41.58" fill="#964a3a"/></svg></div>
   <div class="wm">Alex<small>英语陪练</small></div>
   <div class="ld"><i></i><i></i><i></i></div>
 </div>
@@ -1934,7 +1935,7 @@ function paintCards(){
       const done = practised(sc.id);
       return `<div class="card" data-i="${i}">
         <div class="hd">
-          <span class="role">${esc(sc.t || sc.ai.split(/[。，,.]/)[0])}</span>
+          <span class="role">${esc(sc.t || (sc.ai||'').split(/[。，,.]/)[0])}</span>
           ${done ? `<span class="done">练过 ${done}</span>` : ''}
           ${lvlDots(sc.lvl)}
         </div>
@@ -1954,7 +1955,13 @@ function paintCards(){
 }
 const PAGEAT = {};
 
-function start(scn){
+async function start(scn){
+  // 轻索引里没有 ai/task/tgt/traps，开场前先把这一片取回来
+  scn = await fillScn(scn);
+  if (!scn.task || !scn.tgt){
+    $('#err').textContent = '这张卡的详情没取到（网络？），换一张或稍后再试';
+    return;
+  }
   S.scn = scn; S.nSince = 99; S.hist = []; S.turns = 0; S.breaks = 0;
   S.sessId = 's' + Date.now();       // 这一场的 id，用来实时落盘
   $('#list').hidden = true;
@@ -3495,14 +3502,38 @@ function showMe(){
    还得躲单引号转义的雷 —— 本会话被一个 it's 炸掉过整页）。
    现在：bank/scenarios.json 由 build_scenarios.py 生成并过闸，页面按需加载。
    🚨 加载失败不能让 App 挂掉 —— 内嵌的这 30 张就是兜底。 */
+/* ═══ 题库：轻索引 + 按需取分片 ═══
+   Kevin 2026-08-03 要 2000+ 张。整包塞一个文件是 2.7 MB（gzip 919 KB），
+   而每日补给天天在改它 —— 等于**每天第一次打开都要重下将近 1 MB**，还会一直涨。
+   所以拆成：scenarios.json 只放列表要显示的（id/标题/难度/角色/情境，630 KB→gzip 207 KB），
+   tgt/traps/ai/task 按 12 片放在 scn/<n>.json，**开哪一场才取哪一片**（约 166 KB）。
+   分片号由 shard_bank.py 写在每张卡的 sh 上，前端不自己算哈希 ——
+   两边算法一漂，症状是「某几张卡永远开不了」，最难查。 */
+const SHARD = {};                    // 取过的分片留着，一场里翻好几张不会重复请求
+async function fillScn(scn){
+  if (!scn || scn.tgt) return scn;   // v1 整包、或点播出来的自制卡，本来就是全的
+  const n = scn.sh;
+  if (n === undefined) return scn;
+  try {
+    SHARD[n] = SHARD[n] || fetch('scn/' + n + '.json', {cache:'force-cache'})
+                             .then(r => r.ok ? r.json() : {});
+    const part = (await SHARD[n])[scn.id];
+    if (part) Object.assign(scn, part);
+  } catch(_){ /* 取不到就让下面那道兜底去报，别静默开一场空场景 */ }
+  return scn;
+}
+
 async function loadScenarios(){
   try {
     const r = await fetch('scenarios.json', {cache:'no-cache'});
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const b = await r.json();
+    // v2 是轻索引：ai/task/tgt/traps 不在里面，别拿它们当必填去筛
+    const light = b.v === 2;
     const ok = (b.items || []).filter(c =>
-      c && c.id && c.t && c.lvl && c.sit && c.ai && c.you && c.task &&
-      Array.isArray(c.tgt) && Array.isArray(c.traps));
+      c && c.id && c.t && c.lvl && c.sit && c.you &&
+      (light ? c.sh !== undefined
+             : (c.ai && c.task && Array.isArray(c.tgt) && Array.isArray(c.traps))));
     if (ok.length >= SCENARIOS.length){
       SCENARIOS.length = 0;
       SCENARIOS.push(...ok);
