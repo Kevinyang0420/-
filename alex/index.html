@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="booting">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -389,9 +389,19 @@ button{font-family:inherit}
    markup 是 body 的第一个元素、Alex 是内联 SVG（不发网络请求，也不会先白后闪）。
    底色用 --brand-dark 而不是 --brand：Alex 的头就是 --brand，同色会把轮廓吃掉
    —— 跟主屏图标同一个底，两边看着才是一个东西。 */
+/* 🚨 「下巴没灌满」：#splash 是 position:fixed;inset:0，可 iOS 上它盖不到
+   底部安全区（home 指示条那一条）和回弹区，露出来的就是 body 的白底。
+   光调 #splash 的高度治不了根 —— **背景要刷在 <html> 上**：
+   html 的背景色会被提升成整个窗口的画布背景，安全区、回弹区一起铺满。
+   class 直接写在 <html> 标签上，浏览器一解析到就生效，比任何脚本都早；
+   启动页退场后再摘掉，免得挡住 App 自己的白底。
+   只刷 html 不刷 body：body 的白底照旧盖住内容区，蓝色只补那截够不着的地方。 */
+html.booting{background:var(--brand-dark)}
 #splash{position:fixed;inset:0;z-index:9999;background:var(--brand-dark);
+  height:100dvh;min-height:100%;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:16px;transition:opacity .34s ease}
+@supports not (height: 100dvh){#splash{height:100vh}}
 #splash.gone{opacity:0;pointer-events:none}
 #splash .fig{width:min(40vw,156px);animation:bob 2s ease-in-out infinite}
 #splash .fig svg{display:block;width:100%;height:auto}
@@ -422,7 +432,8 @@ button{font-family:inherit}
   <div class="ld"><i></i><i></i><i></i></div>
 </div>
 <script>window.__T0=Date.now();setTimeout(function(){
-  var s=document.getElementById('splash'); if(s) s.remove();},6000);</script>
+  var s=document.getElementById('splash'); if(s) s.remove();
+  document.documentElement.classList.remove('booting');},6000);</script>
 <div class="wrap">
   <div id="topnav" hidden><button id="backbtn">← 返回</button></div>
   <h1>Alex 英语陪练</h1>
@@ -3920,7 +3931,11 @@ if (S.key){
   var wait = Math.max(0, 480 - (Date.now() - (window.__T0 || Date.now())));
   setTimeout(function(){
     el.classList.add('gone');
-    setTimeout(function(){ if (el.parentNode) el.remove(); }, 400);
+    setTimeout(function(){
+      if (el.parentNode) el.remove();
+      // 淡出**完**了再摘，否则淡出途中底部会闪一下白
+      document.documentElement.classList.remove('booting');
+    }, 400);
   }, wait);
 })();
 </script>
