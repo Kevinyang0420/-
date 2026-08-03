@@ -488,6 +488,15 @@ button{font-family:inherit}
 <script>
 const $ = s => document.querySelector(s);
 const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_model'};
+/* ═══ 题库版本号 ═══
+   🚨 2026-08-03：题库从 2061 涨到 3135、多了生活/闲聊/人际/兴趣四类，
+      服务器上确认是全的，Kevin 手机上却四类全是 0 —— **他还在吃旧的
+      scenarios.json**。文件名从来不变，浏览器就一直用缓存那份。
+      跟主屏图标同一个病、同一个药：URL 上挂**按内容算的版本号**，
+      内容一变 URL 就变，缓存自然失效；内容没变则不变，不会白刷。
+      这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
+const BANKV = 'e6c587d9';
+const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
 /* 🚨 Gemini 免费额度是 **每天 × 每个模型** 分开算的
    （错误里写得很清楚：GenerateRequestsPerDayPerProjectPerModel-FreeTier）。
@@ -1893,7 +1902,7 @@ function showList(){
 let NEWS = null;
 async function loadNews(){
   if (NEWS) return NEWS;
-  const r = await fetch('news.json', {cache:'no-cache'});
+  const r = await fetch(bankURL('news.json'), {cache:'no-cache'});
   if (!r.ok) throw new Error('时事题库还没上传（HTTP ' + r.status + '）');
   NEWS = await r.json();
   return NEWS;
@@ -2894,7 +2903,7 @@ const LSN = {items:[], i:0, right:0, scn:null, dropped:0};
 let BANK = null;
 async function loadBank(){
   if (BANK) return BANK;
-  const r = await fetch('listening.json', {cache:'no-cache'});
+  const r = await fetch(bankURL('listening.json'), {cache:'no-cache'});
   if (!r.ok) throw new Error('题库还没上传（HTTP ' + r.status + '）');
   BANK = await r.json();
   return BANK;
@@ -3232,7 +3241,7 @@ const WRULES =
 async function loadWriting(){
   if (WRITE.items.length) return WRITE.items;
   try {
-    const r = await fetch('writing.json', {cache:'no-cache'});
+    const r = await fetch(bankURL('writing.json'), {cache:'no-cache'});
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const b = await r.json();
     WRITE.items = (b.items || []).filter(c =>
@@ -3705,7 +3714,8 @@ function showHome(){
   $('#list').hidden = false;
   $('#feed').innerHTML = '';
   const n = drilling().length;
-  $('#sub').textContent = '今天想练哪一块';
+  $('#sub').textContent = BANK_OK ? '今天想练哪一块'
+    : '⚠️ 题库没下下来，现在只有内置的 ' + SCENARIOS.length + ' 张，下拉刷新试试';
   const never = SCENARIOS.filter(x => !practised(x.id));
   const pool = never.length ? never : SCENARIOS;
   const h = x => [...x].reduce((k,c) => (k*31 + c.charCodeAt(0)) % 9973, 7);
@@ -3828,7 +3838,7 @@ async function fillScn(scn){
   const n = scn.sh;
   if (n === undefined) return scn;
   try {
-    SHARD[n] = SHARD[n] || fetch('scn/' + n + '.json', {cache:'force-cache'})
+    SHARD[n] = SHARD[n] || fetch(bankURL('scn/' + n + '.json'), {cache:'force-cache'})
                              .then(r => r.ok ? r.json() : {});
     const part = (await SHARD[n])[scn.id];
     if (part) Object.assign(scn, part);
@@ -3838,7 +3848,7 @@ async function fillScn(scn){
 
 async function loadScenarios(){
   try {
-    const r = await fetch('scenarios.json', {cache:'no-cache'});
+    const r = await fetch(bankURL('scenarios.json'), {cache:'no-cache'});
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const b = await r.json();
     // v2 是轻索引：ai/task/tgt/traps 不在里面，别拿它们当必填去筛
@@ -3857,8 +3867,15 @@ async function loadScenarios(){
          正在练的时候不许刷 —— 那会把他这一场打断。 */
       if (!S.scn && TABS[TAB_CUR]) TABS[TAB_CUR].go();
     }
-  } catch(_){ /* 用内嵌的兜底，静默即可 */ }
+  } catch(e){
+    /* 🚨 不许静默：取不到就一直用内嵌那 18 张，界面上却毫无区别 ——
+       他会以为「生活、闲聊那些主题一张都没有」，而其实是没下下来。 */
+    BANK_OK = false;
+    console.warn('题库没取到', e);
+  }
+  if (TAB_CUR === 'home') showHome();
 }
+let BANK_OK = true;
 loadScenarios();
 
 syncPad(); paintTabs();
