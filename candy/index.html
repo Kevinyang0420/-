@@ -20,7 +20,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 html,body{height:100%}
-body{font-family:"Comic Sans MS","YouYuan","幼圆","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#ffe3f1 0%,#fff6d8 45%,#dff3ff 100%);overflow:hidden;touch-action:none;display:flex;flex-direction:column;align-items:center}
+body{font-family:"Comic Sans MS","YouYuan","幼圆","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#ffe3f1 0%,#fff6d8 45%,#dff3ff 100%);overflow:hidden;touch-action:none;display:flex;flex-direction:column;align-items:center;padding-top:env(safe-area-inset-top,44px)}
 .float-emoji{position:fixed;font-size:34px;opacity:.3;animation:floaty 8s ease-in-out infinite;pointer-events:none;z-index:0}
 @keyframes floaty{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-24px) rotate(8deg)}}
 #app{position:relative;z-index:1;width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;padding:8px 8px 4px}
