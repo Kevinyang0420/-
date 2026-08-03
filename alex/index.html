@@ -2022,6 +2022,7 @@ async function down(e){
   }
   try {
     const r = await getRec(); chunks = []; r.start();
+    MYREC.t0 = Date.now();             // 时长靠起停时刻算，不用去解码音频
     return true;
   } catch(err){
     resetMic();
@@ -2083,13 +2084,51 @@ async function sendText(promise){
   }
 }
 
+/* ═══ 回放自己刚才那句 ═══
+   一直没做的那件。说完只看得到转写出来的文字，可**发音和语调的毛病文字上根本
+   看不出来** —— 得先听自己、紧接着听 Alex 那句 better，两句挨着比才有用。
+
+   🚨 只留最近 90 秒。Blob URL 不主动 revoke 就一直占着内存，一场练下来几十条，
+      手机上撑不住。淘汰时同步把那颗按钮改成灰的，别留一个点了没反应的键。 */
+const MYREC = {list: [], sec: 0, t0: 0, cap: 90};
+function keepRec(blob, sec){
+  if (!blob || !blob.size) return null;
+  const it = {url: URL.createObjectURL(blob), sec: Math.max(0.3, sec || 0)};
+  MYREC.list.push(it); MYREC.sec += it.sec;
+  while (MYREC.sec > MYREC.cap && MYREC.list.length > 1){
+    const old = MYREC.list.shift();
+    MYREC.sec -= old.sec; old.gone = true;
+    try { URL.revokeObjectURL(old.url); } catch(_){}
+    if (old.btn){ old.btn.disabled = true; old.btn.textContent = '录音已释放'; }
+  }
+  return it;
+}
+function attachReplay(el, it){
+  if (!el || !it || it.gone) return el;
+  const b = document.createElement('button');
+  b.className = 'play';
+  b.textContent = '🎙 听我刚才说的';
+  it.btn = b;
+  b.onclick = () => {
+    if (it.gone) return;
+    b.classList.add('on');
+    const a = new Audio(it.url);
+    a.onended = a.onerror = () => b.classList.remove('on');
+    a.play().catch(() => b.classList.remove('on'));
+  };
+  el.appendChild(b);
+  return el;
+}
+
 async function send(){
   busy = true; $('#mic').disabled = true;
   $('#hint').innerHTML = '<span class="dots">在想</span>';
   try {
-    const part = await toAudioPart(new Blob(chunks, {type: rec?.mimeType || ''}));
+    const blob = new Blob(chunks, {type: rec?.mimeType || ''});
+    const mine = keepRec(blob, (Date.now() - (MYREC.t0 || Date.now())) / 1000);
+    const part = await toAudioPart(blob);
     const d = await askGemini(part);
-    await render(d);
+    await render(d, mine);
   } catch(e){
     // 「Load failed」这种话等于没说，补上它可能是什么、下一步点哪
     const bare = /load failed|failed to fetch|networkerror/i.test(e.message);
@@ -2104,11 +2143,11 @@ async function send(){
   }
 }
 
-async function render(d){
+async function render(d, mine){
   if (!d.said || !d.said.trim()){
     $('#err').textContent = '没听清，再说一次（离麦克风近一点）'; return;
   }
-  bubble('you','你', d.said);
+  attachReplay(bubble('you','你', d.said), mine);
   /* 🚨 「错了」和「对，但能更好」必须一眼分得开。
      实测模型会先夸再硬纠，如果两种长一个样，他会以为自己每句都错，
      练几轮就不信这些纠错了。所以按 level 打不同的标，polish 也给整句范例。 */
