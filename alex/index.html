@@ -1715,18 +1715,85 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g,
    🚨 只对**口语里真会出现**的短语有结果：书面报告的固定说法（we are unable to
       assess…）返回 0 条，点进去是空页。所以 phrase 由判官挑，挑不出就给 null，
       这里拿不到就不显示这个键。 */
-function youglish(phrase){
-  if (!phrase) return null;
+/* ═══ 「真人怎么说」：把 YouGlish 嵌在页内 ═══
+   Kevin 2026-07-31 就让我发 YouGlish 的接入链接。查下来 **widget 不要 API key**
+   （`youglish.com/public/emb/widget.js`，`new YG.Widget(id, opts)` + `fetch(词, 语言)`），
+   所以不用等他申请，现在就能从「跳出去」改成「就地播」。
+
+   🚨 但不能无脑嵌：YouGlish 放的是 YouTube，**他人在深圳**，没梯子时脚本可能
+      加载得上、视频却放不出来。所以做三件事：
+        ① 脚本**点了才加载**（平时一个外部请求都不发）
+        ② 6 秒**超时也算失败** —— 卡在「载入中」比直接给外链更糟
+        ③ 失败就换回原来那个外链按钮，并且说清楚是打不开而不是没这个词
+   顺带：`onFetchDone` 返回 0 条时也退回外链，别给他一个空播放器。 */
+let YG_N = 0;
+function ygLoad(){
+  if (window.__ygP) return window.__ygP;
+  window.__ygP = new Promise(res => {
+    let done = false;
+    const fin = ok => { if (!done){ done = true; res(ok && !!window.YG); } };
+    const sc = document.createElement('script');
+    sc.src = 'https://youglish.com/public/emb/widget.js';
+    sc.async = true;
+    sc.onload = () => fin(true);
+    sc.onerror = () => fin(false);
+    setTimeout(() => fin(false), 6000);
+    document.head.appendChild(sc);
+  });
+  return window.__ygP;
+}
+function ygLink(phrase, label){
   const a = document.createElement('a');
   a.className = 'play';
   a.target = '_blank'; a.rel = 'noopener';
   a.href = 'https://youglish.com/pronounce/' +
            encodeURIComponent(String(phrase).trim()) + '/english';
-  a.textContent = '🎬 真人怎么说';
+  a.textContent = label || '🎬 真人怎么说';
   a.title = phrase;
   a.style.marginLeft = '8px';
   a.style.textDecoration = 'none';
   return a;
+}
+function youglish(phrase){
+  if (!phrase) return null;
+  const wrap = document.createElement('span');
+  const b = document.createElement('button');
+  b.className = 'play';
+  b.style.marginLeft = '8px';
+  b.textContent = '🎬 真人怎么说';
+  const host = document.createElement('div');
+  host.id = 'yg' + (++YG_N);
+  host.hidden = true;
+  host.style.cssText = 'margin-top:10px;border-radius:14px;overflow:hidden';
+  const bail = why => {
+    host.remove();
+    b.replaceWith(ygLink(phrase, why));
+  };
+  b.onclick = async () => {
+    if (host.dataset.on){                      // 已经放出来了 → 收起/展开
+      host.hidden = !host.hidden;
+      b.textContent = host.hidden ? '🎬 真人怎么说' : '🎬 收起';
+      return;
+    }
+    b.disabled = true; b.textContent = '🎬 载入中…';
+    const ok = await ygLoad();
+    b.disabled = false;
+    if (!ok) return bail('🎬 在 YouGlish 打开');
+    host.hidden = false; host.dataset.on = '1';
+    b.textContent = '🎬 收起';
+    try {
+      const w = new YG.Widget(host.id, {
+        components: 9,
+        events: {onFetchDone: r => {
+          if (!r || !r.total) bail('🎬 这个说法 YouGlish 上没有，去站内搜');
+        }},
+      });
+      w.fetch(String(phrase).trim(), 'english');
+    } catch(_){ bail('🎬 在 YouGlish 打开'); }
+  };
+  wrap.appendChild(b);
+  wrap.appendChild(host);
+  return wrap;
 }
 
 /* speak 参数：给这条气泡挂一个可点的播放键。
