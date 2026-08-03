@@ -320,6 +320,17 @@ button{font-family:inherit}
 .dots::after{content:'';animation:d 1.1s steps(4,end) infinite}
 @keyframes d{0%{content:''}25%{content:'·'}50%{content:'··'}75%{content:'···'}}
 
+/* 报告写作 */
+.tile.t-write{background:var(--card);border:2px solid var(--line);
+  border-bottom-width:4px;color:var(--fg-strong)}
+.tile.t-write .ds{color:var(--muted)}
+#wtext{width:100%;box-sizing:border-box;min-height:190px;margin-top:14px;
+  padding:13px 14px;border:2px solid var(--line);border-radius:14px;
+  font-size:15px;line-height:1.65;font-family:inherit;color:var(--fg-strong);
+  background:var(--card);resize:vertical}
+#wtext:focus{outline:none;border-color:var(--brand)}
+#feed .better ul{padding-left:22px}
+
 /* ═══ 打卡：路线图 / 领取按钮 / 宝石商店 ═══ */
 .road{position:relative;height:100px;margin:4px 2px 2px}
 .road svg{position:absolute;inset:0;width:100%;height:100%}
@@ -1741,7 +1752,11 @@ function bubble(cls, who, txt, extra, speak){
 }
 
 /* 分类按 id 前缀推导 —— 卡片只有一处真源，不另维护一张分类表 */
-const GRP = [['dd_','尽调'], ['aud_','审计'], ['wk_','职场']];
+const GRP = [['dd_','尽调'], ['aud_','审计'], ['wk_','职场'],
+             ['life_','生活'], ['talk_','闲聊'], ['soc_','人际'], ['hob_','兴趣']];
+/* 后四类是 Kevin 要的非职业维度（2026-07-31 第一条就提过，2026-08-03 又点名：
+   「不能全都是职业相关的，你多想几个方面」）。职业仍占多数，但不再是全部。
+   🚨 分类多了以后这一行放不下，.tabs 必须能横滑 —— 见样式里的 overflow-x。 */
 let TAB = 0;
 
 /* 难度：★☆☆ 这种字符串转成实心点的个数 */
@@ -3109,6 +3124,226 @@ const TABS = {
 };
 let TAB_CUR = 'home';
 
+/* ═══ 英文报告写作练习 ═══
+   Kevin 2026-07-31：「我好久没有写英文报告了，技能也有点生疏了…从教学维度来说，
+   也是需要去练一下的。」
+
+   🚨 写作跟口语练的不是一回事，所以判官也是另一套。口语看当场说得顺不顺；
+      写作看的是**归因、模态、结构、语域** —— 就是他自己那条铁规
+      「推断不能当事实写」的语言形态：
+        归因轴  Management represented（他说的）→ We understand（我们的理解）
+                → We note（我们查的）
+        模态轴  is → appears to → We are unable to assess… pending…
+      所以每题给的是**带来源的事实清单**，逼他把「谁说的」和「我们查的」分开写。
+
+   🚨 点评仍然走三个槽（quote / issue / native），中文句子由界面拼 ——
+      跟口语那边同一套结构性约束，模型没有槽位去写专业判断。 */
+const WRITE = {items: [], cur: null, page: 0};
+
+const WRULES =
+  '你是英语写作教练 Alex，只看**英语**，不评价专业判断。' +
+  '使用者是中国人，做财务尽职调查和审计，正在练英文报告写作。\n' +
+  '他拿到的题目和事实清单如下：\n{brief}\n事实：\n{facts}\n' +
+  '这一段该出现的说法：{tgt}\n\n' +
+  '他写的是：\n"""{text}"""\n\n' +
+  '严格输出这个 JSON，不要任何解释：\n' +
+  '{"level":"error|polish|fine",' +
+  '"points":[{"quote":"原样摘出他写的有问题的片段",' +
+  '"issue":"从这六个里挑一个：语法/中式直译/搭配不地道/语域偏了/归因不清/模态太满",' +
+  '"native":"母语者写报告时这一小段会怎么写"}],' +
+  '"better":"把他整段改写成可以直接抄进报告的英文，保留他自己的事实和结构，' +
+  '不要另起炉灶",' +
+  '"kept":"中文一句话，说他这段**哪里已经写对了**"}\n\n' +
+  '规矩：\n' +
+  '- points 最多 4 条，按严重程度排；他写得好就给 0 条、level 填 fine\n' +
+  '- quote 必须是他原文里**一字不差**的片段\n' +
+  '- 🚨 归因和模态是这一维最值钱的：管理层说的写成 Management represented that…，' +
+  '我们的理解写成 We understand…，我们查到的写成 We note…；' +
+  '证据不够时用 We are unable to assess… pending…（**推迟**，不是换个软化词）\n' +
+  '- 🚨 只讲英语。不许写「证据不足不该下结论」「谈判空间」「风险敞口」这类专业判断。';
+
+async function loadWriting(){
+  if (WRITE.items.length) return WRITE.items;
+  try {
+    const r = await fetch('writing.json', {cache:'no-cache'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const b = await r.json();
+    WRITE.items = (b.items || []).filter(c =>
+      c && c.id && c.t && c.lvl && c.brief &&
+      Array.isArray(c.facts) && Array.isArray(c.tgt));
+  } catch(_){ WRITE.items = []; }
+  return WRITE.items;
+}
+
+async function showWrite(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = '写一段，Alex 按报告的写法改';
+  const f = $('#feed');
+  f.innerHTML = '<div class="note">正在取题…</div>';
+  const all = await loadWriting();
+  if (!all.length){
+    f.innerHTML = '<div class="note">写作题库还没下下来，检查一下网络再进来。</div>';
+    return;
+  }
+  const PAGE = 5;
+  const sorted = all.slice().sort((a, b) => {
+    const d = wDone(a.id) - wDone(b.id);
+    if (d) return d;
+    const h = x => [...x].reduce((k, c) => (k * 31 + c.charCodeAt(0)) % 9973, 7);
+    return h(a.id + DAYSEED) - h(b.id + DAYSEED);
+  });
+  const from = (WRITE.page * PAGE) % sorted.length;
+  const show = [];
+  for (let k = 0; k < Math.min(PAGE, sorted.length); k++)
+    show.push(sorted[(from + k) % sorted.length]);
+  f.innerHTML = show.map(w => {
+    const n = wDone(w.id);
+    return '<div class="card" data-id="' + w.id + '"><div class="hd">' +
+      '<span class="role">' + esc(w.t) + '</span>' +
+      (n ? '<span class="done">写过 ' + n + '</span>' : '') +
+      lvlDots(w.lvl) + '</div><div class="sit">' + esc(w.brief) + '</div></div>';
+  }).join('');
+  document.querySelectorAll('#feed .card').forEach(c =>
+    c.onclick = () => startWrite(all.find(x => x.id === c.dataset.id)));
+  if (sorted.length > PAGE){
+    const more = document.createElement('button');
+    more.className = 'play'; more.style.marginTop = '14px';
+    more.textContent = '换一批（共 ' + sorted.length + ' 题）';
+    more.onclick = () => { WRITE.page++; showWrite(); };
+    f.appendChild(more);
+  }
+}
+
+/* 写过几次，跟口语的 practised 分开记 */
+function wDone(id){
+  try { return (JSON.parse(localStorage.getItem('alex_wdone') || '{}'))[id] || 0; }
+  catch(_){ return 0; }
+}
+function wMark(id){
+  try {
+    const d = JSON.parse(localStorage.getItem('alex_wdone') || '{}');
+    d[id] = (d[id] || 0) + 1;
+    localStorage.setItem('alex_wdone', JSON.stringify(d));
+  } catch(_){}
+}
+
+function startWrite(w){
+  if (!w) return;
+  WRITE.cur = w;
+  const f = $('#feed');
+  $('#sub').textContent = w.t;
+  f.innerHTML =
+    '<div class="better"><div class="lb">要写什么</div>' +
+    '<div style="font-size:14px;line-height:1.65">' + esc(w.brief) + '</div></div>' +
+    '<div class="better" style="margin-top:12px"><div class="lb">手上的事实' +
+    '（注意谁说的、我们查的、还没拿到的）</div><ul style="margin:6px 0 0 -8px;' +
+    'font-size:13.5px;line-height:1.7">' +
+    w.facts.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>';
+  const ta = document.createElement('textarea');
+  ta.id = 'wtext';
+  ta.placeholder = '用英文写这一段…（写不出来也先写，写完 Alex 会给你可以直接抄的版本）';
+  f.appendChild(ta);
+  const go = document.createElement('button');
+  go.className = 'play'; go.id = 'wgo'; go.textContent = '交给 Alex 改';
+  go.onclick = () => submitWrite();
+  f.appendChild(go);
+  const err = document.createElement('div');
+  err.id = 'werr'; err.style.cssText = 'color:var(--rec);font-size:13px;margin-top:8px';
+  f.appendChild(err);
+  ta.focus();
+}
+
+async function submitWrite(){
+  const w = WRITE.cur;
+  const ta = $('#wtext'), go = $('#wgo'), err = $('#werr');
+  if (!w || !ta) return;
+  const text = ta.value.trim();
+  err.textContent = '';
+  // 🚨 太短就别送了：模型会硬夸一通，而他会以为自己写对了 —— 比不给反馈更糟
+  if (text.split(/\s+/).filter(Boolean).length < 12){
+    err.textContent = '先写够一段（至少十几个词），太短了改不出东西来。';
+    return;
+  }
+  go.disabled = true; go.textContent = 'Alex 在改…';
+  let d = null;
+  try {
+    const p = WRULES.replace('{brief}', w.brief)
+                    .replace('{facts}', w.facts.map(x => '- ' + x).join('\n'))
+                    .replace('{tgt}', (w.tgt || []).join(' / '))
+                    .replace('{text}', text);
+    d = firstJson(await textCall(p, 0.3));
+  } catch(e){
+    err.textContent = '没改成：' + (e.message || e);
+    go.disabled = false; go.textContent = '交给 Alex 改';
+    return;
+  }
+  go.disabled = false; go.textContent = '再改一遍';
+  if (!d){
+    err.textContent = '返回的东西读不出来，再点一次。';
+    return;
+  }
+  renderWrite(d, text);
+  wMark(w.id);
+  markDaily('write');
+}
+
+function renderWrite(d, mine){
+  const f = $('#feed');
+  const pts = Array.isArray(d.points) ? d.points.slice(0, 4) : [];
+  const box = document.createElement('div');
+  box.className = 'better';
+  box.style.marginTop = '14px';
+  const lv = d.level === 'fine' ? '✅ 这段没问题'
+           : d.level === 'polish' ? '💡 写对了，还能更像报告' : '✍️ 有几处要改';
+  box.innerHTML = '<div class="lb">' + lv + '</div>' +
+    (d.kept ? '<div style="font-size:13px;color:var(--muted);margin-bottom:8px">' +
+              esc(cleanZh(d.kept)) + '</div>' : '');
+  pts.forEach(p => {
+    if (!p || !p.quote) return;
+    const row = document.createElement('div');
+    row.className = 'card';
+    row.style.margin = '8px 0 0';
+    row.innerHTML =
+      '<div class="hd"><span class="ct" style="font-size:12px;color:var(--muted)">' +
+      esc(p.issue || '') + '</span></div>' +
+      '<div style="font-size:13.5px;text-decoration:line-through;color:var(--muted)">' +
+      esc(p.quote) + '</div>' +
+      '<div class="en" style="margin-top:6px">' + esc(p.native || '') + '</div>';
+    box.appendChild(row);
+  });
+  f.appendChild(box);
+  if (d.better){
+    const b2 = document.createElement('div');
+    b2.className = 'better';
+    b2.style.marginTop = '12px';
+    b2.innerHTML = '<div class="lb">可以直接抄进报告的写法</div>' +
+                   '<div class="en">' + esc(d.better) + '</div>';
+    const cp = document.createElement('button');
+    cp.className = 'play';
+    cp.textContent = '📋 复制';
+    cp.onclick = () => {
+      try { navigator.clipboard.writeText(d.better); cp.textContent = '✓ 已复制'; }
+      catch(_){ cp.textContent = '复制不了，长按选中吧'; }
+    };
+    b2.appendChild(cp);
+    f.appendChild(b2);
+  }
+  // 写错的说法也进错题本 —— 一个错题本，别开两套
+  pts.forEach(p => {
+    if (!p || !p.quote || !p.native) return;
+    try {
+      const e = ST.book[p.quote] || (ST.book[p.quote] =
+        {pat: p.quote, n: 0, hits: 0, hitDays: [], state: 'practising',
+         ex: [], first: TODAY(), from: 'write'});
+      e.n++; e.last = TODAY(); e.dim = p.issue || e.dim;
+      e.better = p.native;
+      e.state = 'practising';
+    } catch(_){}
+  });
+  checkIn(); saveST();
+  f.scrollIntoView({block: 'end', behavior: 'smooth'});
+}
+
 /* ═══ 每日打卡：路线图 + 任务领宝石 ═══
    Kevin 2026-08-03：「目前的打卡功能太枯燥、太单调……参考多邻国：引入 Road Map
    看到进度；引入任务领取机制，完成任务获得宝石，并明确宝石的具体用途」。
@@ -3128,6 +3363,8 @@ const DAILY = [
   {k:'news',  ic:'📰', nm:'一段时事听力', go:() => go(showNews, '时事听力')},
   {k:'listen',ic:'🎧', nm:'一组配音听力', go:() => goTab('listen')},
   {k:'speak', ic:'🗣️', nm:'一场口语陪练', go:() => goTab('speak')},
+  {k:'write', ic:'✍️', nm:'写一段英文', go:() => { WRITE.page = 0;
+                                                 go(showWrite, '报告写作'); }},
 ];
 const KD = 'alex_dlog', KG = 'alex_gems', KC = 'alex_custom';
 const GEM_TASK = 10, GEM_ALL = 20, GEM_WEEK = 50;
@@ -3160,7 +3397,12 @@ function dailyState(){ return dlog()[TODAY()] || {}; }
 function markDaily(k){
   const l = dlog(), d = l[TODAY()] || (l[TODAY()] = {});
   if (d[k]) return;
-  d[k] = 1; saveDlog(l);
+  d[k] = 1;
+  // 🚨 把「今天一共几项」记进去。任务从 3 项加到 4 项之后，如果还拿当前的
+  //    DAILY.length 去判历史，以前做满的日子会在路线图上**退回未完成** ——
+  //    改了功能却把用户过去的成绩改没了，最不该发生的那种。
+  d.N = d.N || DAILY.length;
+  saveDlog(l);
   if (TAB_CUR === 'home') showHome();          // 首页开着就当场亮起来
 }
 
@@ -3205,7 +3447,7 @@ function dayState(d){
   if (gems().frozen.includes(d)) return 'freeze';
   const rec = dlog()[d] || {};
   const n = DAILY.filter(x => rec[x.k]).length;
-  if (n >= DAILY.length) return 'full';
+  if (n >= (rec.N || 3)) return 'full';      // 按**那天**的任务数判，不是按今天的
   if (d > t) return 'future';
   if (n > 0 || (ST.days || []).includes(d)) return 'part';
   return d === t ? 'today' : 'miss';
@@ -3417,6 +3659,9 @@ function showHome(){
        <div class="tile t-book wide" data-go="book"><span class="ic">📕</span>
          <div class="nm">错题本${n ? ` · ${n}` : ''}</div>
          <div class="ds">错过的说法和该怎么说，都在这儿</div></div>
+       <div class="tile t-write wide" data-go="write"><span class="ic">✍️</span>
+         <div class="nm">报告写作</div>
+         <div class="ds">写一段英文，Alex 按报告的写法给你改</div></div>
        <div class="tile t-hist wide" data-go="hist"><span class="ic">🕘</span>
          <div class="nm">历史</div>
          <div class="ds">翻回以前练过的每一场</div></div>
@@ -3433,6 +3678,7 @@ function showHome(){
     speak: () => goTab('speak'),
     listen: () => goTab('listen'),
     book: () => go(showBook, '错题本'),
+    write: () => { WRITE.page = 0; go(showWrite, '报告写作'); },
     hist: () => go(showHistory, '历史'),
   };
   document.querySelectorAll('.tile').forEach(t =>
@@ -3538,7 +3784,11 @@ async function loadScenarios(){
       SCENARIOS.length = 0;
       SCENARIOS.push(...ok);
       SCENARIOS.push(...customScns());     // 宝石点播出来的那些，别被线上题库冲掉
-      if (TAB_CUR === 'home') showHome();
+      /* 🚨 题库是异步下下来的，落地时**当前在哪个 tab 就刷哪个**。
+         原来只刷首页：手快先点了「口语」的话，难度页上的题数会一直停在
+         内嵌兜底的那 30 张（实测显示 10/13/7，而实际有三千多张）。
+         正在练的时候不许刷 —— 那会把他这一场打断。 */
+      if (!S.scn && TABS[TAB_CUR]) TABS[TAB_CUR].go();
     }
   } catch(_){ /* 用内嵌的兜底，静默即可 */ }
 }

@@ -1,0 +1,3419 @@
+{
+ "v": 1,
+ "items": [
+  {
+   "id": "fdd_revenue_cut_off",
+   "t": "收入截止性测试发现",
+   "lvl": "★☆☆",
+   "brief": "编写收入确认截止性测试结论。读者为买方Deal Team，放置于Revenue Analysis章节。",
+   "facts": [
+    "管理层声称所有收入均按照发货单日期确认（来源：管理层访谈）。",
+    "我们抽查了9M26末期前后的50笔销售凭证，发现3笔订单在2026年10月发货，但被计入FY26收入（来源：抽样底稿）。",
+    "相关收入金额合计为120万元人民币（来源：ERP导出明细）。",
+    "截至发稿日，公司尚未提供这3笔订单的客户签收回单（来源：审计进度跟踪表）。"
+   ],
+   "tgt": [
+    "attributed to cut-off errors",
+    "in the absence of supporting documentation",
+    "revenue was inappropriately recognized in the wrong period"
+   ],
+   "traps": [
+    "使用 'According to management, the revenue is wrong'。建议使用 'The revenue recognition policy appears to have been inconsistently applied'。",
+    "使用 'We didn't see the document yet'。应使用 'Supporting documentation remained outstanding as of the date of this report'。",
+    "使用 'It is maybe a mistake'。应使用 'The variance is likely attributable to a cut-off error'。"
+   ]
+  },
+  {
+   "id": "fdd_inventory_obsolescence",
+   "t": "存货跌价计提风险",
+   "lvl": "★☆☆",
+   "brief": "说明存货跌价风险及潜在调整。放置于Inventory章节，供买方评估估值风险。",
+   "facts": [
+    "管理层表示FY26存货跌价准备已充分计提（来源：管理层陈述）。",
+    "银行流水显示部分存货已存放超过18个月（来源：库龄分析表）。",
+    "我们抽查了其中20个型号，发现有15个型号近半年无任何出库记录（来源：出入库台账）。",
+    "截至发稿日，公司未提供关于该部分呆滞存货的后续处置计划（来源：补充需求清单）。"
+   ],
+   "tgt": [
+    "potentially impaired inventory",
+    "lacks a documented disposal plan",
+    "necessitating a valuation adjustment"
+   ],
+   "traps": [
+    "使用 'Management said they have enough provision'。应使用 'Management asserts that the current provision is adequate'。",
+    "使用 'The goods are very old'。应使用 'A significant portion of the inventory exhibits low turnover rates'。",
+    "使用 'We can't find the plan'。应使用 'No evidence regarding the disposal strategy has been made available to date'。"
+   ]
+  },
+  {
+   "id": "fdd_prepayment_validation",
+   "t": "预付账款真实性核查",
+   "lvl": "★☆☆",
+   "brief": "说明大额预付款项核查情况。放置于Net Working Capital章节。",
+   "facts": [
+    "管理层称该笔300万元预付款系支付给核心供应商（来源：财务总监口头说明）。",
+    "合同显示该款项对应的货物应于FY26第三季度交付（来源：采购合同副本）。",
+    "我们核对银行回单发现收款方与合同名不一致（来源：银行流水核对）。",
+    "截至发稿日，仍未收到该笔款项的询证函回函（来源：函证控制表）。"
+   ],
+   "tgt": [
+    "the identity of the recipient could not be reconciled",
+    "pending external confirmation",
+    "raises concerns regarding the recoverability"
+   ],
+   "traps": [
+    "使用 'The company sent money to the wrong person'。应使用 'The payee does not correspond to the contractually named supplier'。",
+    "使用 'We are still waiting for the letter'。应使用 'External confirmation remains pending as of the issuance date'。",
+    "使用 'The money might not come back'。应使用 'There is inherent uncertainty regarding the recoverability of the prepayment'。"
+   ]
+  },
+  {
+   "id": "fdd_related_party_loan",
+   "t": "关联方资金拆借核查",
+   "lvl": "★☆☆",
+   "brief": "说明关联方往来余额。放置于Related Party Transactions章节。",
+   "facts": [
+    "管理层口头表示所有关联方往来均已结清（来源：访谈记录）。",
+    "总账数据显示FY26年末对母公司仍有200万元借款余额（来源：总账导出文件）。",
+    "我们抽查了5笔往来，发现合同利率低于同期市场水平（来源：借款协议复印件）。",
+    "截至发稿日，公司未提供关于该笔借款的审批董事会决议（来源：内控检查清单）。"
+   ],
+   "tgt": [
+    "outstanding balance as of the reporting date",
+    "below market interest rate",
+    "lacking formal board approval"
+   ],
+   "traps": [
+    "使用 'Management lied about the loan'。应使用 'The management's assertion conflicts with the general ledger data'。",
+    "使用 'The interest is too low'。应使用 'The interest rate appears to deviate from market standards'。",
+    "使用 'No board paper yet'。应使用 'Formal board authorization for this transaction has not yet been presented'。"
+   ]
+  },
+  {
+   "id": "fdd_employee_welfare",
+   "t": "社保公积金欠缴情况",
+   "lvl": "★☆☆",
+   "brief": "汇报社保与公积金合规风险。放置于Employment Costs章节。",
+   "facts": [
+    "管理层称公司已按全员薪资足额缴纳社保（来源：人力资源经理访谈）。",
+    "我们核算了FY26社保缴纳基数，发现实际缴纳人数少于实发工资人数（来源：工资单与社保台账对比）。",
+    "据估算，潜在补缴金额约为80万元（来源：测算工作表）。",
+    "截至发稿日，公司尚未提供合规性的法律意见书（来源：未决事项列表）。"
+   ],
+   "tgt": [
+    "under-provision of social security contributions",
+    "based on our preliminary estimation",
+    "remains subject to further legal review"
+   ],
+   "traps": [
+    "使用 'The company didn't pay enough money'。应使用 'The company exhibits a potential under-contribution of social security'。",
+    "使用 'We think it's 800k'。应使用 'Our preliminary assessment suggests a potential exposure of approximately 800k'。",
+    "使用 'There is no paper from the lawyer'。应使用 'The requested legal compliance opinion has not been furnished'。"
+   ]
+  },
+  {
+   "id": "fdd_sales_rebate",
+   "t": "销售返利计提不足",
+   "lvl": "★☆☆",
+   "brief": "说明销售返利政策执行情况。放置于Sales & Marketing章节。",
+   "facts": [
+    "管理层表示返利政策已在年初向所有代理商告知（来源：渠道管理访谈）。",
+    "抽查20份协议，有5份协议中的返利条款与ERP后台设置不符（来源：协议审阅底稿）。",
+    "导致9M26销售费用少计约50万元（来源：差异调节表）。",
+    "截至发稿日，针对该差异的补提计划尚未经财务总监确认（来源：审计进展跟踪）。"
+   ],
+   "tgt": [
+    "inconsistencies between contractual terms and ERP settings",
+    "resulting in an understatement of expenses",
+    "pending management's confirmation"
+   ],
+   "traps": [
+    "使用 'Management didn't set the system right'。应使用 'Discrepancies were noted between the contractual rebates and ERP configurations'。",
+    "使用 'The cost is small'。应使用 'The cumulative impact of this understatement is approximately 500k'。",
+    "使用 'The CFO hasn't said yes'。应使用 'A formal remediation plan has not been confirmed by the CFO'。"
+   ]
+  },
+  {
+   "id": "fdd_bank_reconciliation",
+   "t": "银行对账差异核查",
+   "lvl": "★☆☆",
+   "brief": "说明银行对账单调节表异常。放置于Cash & Cash Equivalents章节。",
+   "facts": [
+    "管理层称账面余额与银行余额一致（来源：月度资金例会记录）。",
+    "银行流水显示一笔100万元的款项在FY26末处于在途状态（来源：银行对账单）。",
+    "我们检查相关单据，发现收款方账号与公司提供的台账信息不一致（来源：银行回单审阅）。",
+    "截至发稿日，银行针对该笔在途款的查询回复尚未收到（来源：银行函证追踪）。"
+   ],
+   "tgt": [
+    "reconciling items identified",
+    "inconsistent with the internal subsidiary ledger",
+    "pending bank clarification"
+   ],
+   "traps": [
+    "使用 'The numbers don't match'。应使用 'There is a discrepancy between the recorded balance and the bank statement'。",
+    "使用 'The account number is wrong'。应使用 'The payee details do not align with the internal records'。",
+    "使用 'We have no answer from the bank'。应使用 'Clarification from the bank is still outstanding'。"
+   ]
+  },
+  {
+   "id": "aud_trade_receivables_aging",
+   "t": "应收账款账龄分析异常说明",
+   "lvl": "★☆☆",
+   "brief": "写给审计项目组的备忘录，说明大额逾期账款的形成原因。需区分管理层口径与底稿核查结果，指出仍待补齐的资料。",
+   "facts": [
+    "管理层表示A客户付款延迟系因其内部审批流程调整（来源：管理层访谈记录）",
+    "应收账款账龄分析表显示有1,200万港元账龄超过180天（来源：9M26财务报表）",
+    "我们抽查了15份销货凭证，其中2份发票开具日期与系统入账日期不符（来源：样本审计底稿）",
+    "截至发稿日，客户尚未提供针对该笔逾期款项的还款承诺函（来源：待补齐资料清单）"
+   ],
+   "tgt": [
+    "Management attributed the delay to...",
+    "Upon our inspection of...",
+    "Pending receipt of...",
+    "Discrepancies were noted regarding..."
+   ],
+   "traps": [
+    "滥用'due to'：避免在句首直接用'Due to the delay, the client said...'，应使用'Management attributed the delay to...'以明确责任归属。",
+    "过于口语化：'We didn't find the letter' 应改为 'We have yet to receive the document'，保持审计职业怀疑的正式语气。",
+    "时态混乱：对于已核查样本应使用过去式'We sampled 15 invoices'，而非混用现在完成时。"
+   ]
+  },
+  {
+   "id": "aud_inventory_provision",
+   "t": "存货跌价准备计提差异说明",
+   "lvl": "★☆☆",
+   "brief": "在致管理层函中说明存货减值测试差异，解释为何我方估值与管理层有出入，并告知仍缺少的证明文件。",
+   "facts": [
+    "管理层称该批存货计划于FY26第四季度完成翻新销售（来源：管理层会议纪要）",
+    "仓储记录显示该批存货自FY25年初起无任何出库记录（来源：实地盘点底稿）",
+    "我们测算该存货的可变现净值较账面价值低350万港元（来源：存货减值测试工作底稿）",
+    "截至审计截止日，尚未收到该存货质量合格的第三方检验报告（来源：未决事项清单）"
+   ],
+   "tgt": [
+    "Our assessment suggests a shortfall of...",
+    "Management asserted that...",
+    "In contrast to the management's projection...",
+    "Remains outstanding as of the reporting date."
+   ],
+   "traps": [
+    "错用'think'：不要写'Management thinks the goods are fine'，应使用'Management asserted/claimed/stated'体现专业客观。",
+    "重复词汇：避免连续使用'show'，应根据语境交替使用'reveal'、'indicate'、'demonstrate'。",
+    "缺少主语：避免使用被动语态隐藏对象，如'It was found that'应改为'Our analysis revealed that'。"
+   ]
+  },
+  {
+   "id": "aud_bank_reconciliation",
+   "t": "银行存款余额调节异常说明",
+   "lvl": "★☆☆",
+   "brief": "向审计合伙人报告银行存款调节表的异常，对比公司记录与银行流水的差异，列示未核对项。",
+   "facts": [
+    "管理层解释未达账项系由节假日跨期支付导致（来源：财务经理说明）",
+    "银行流水显示9月30日有一笔50万港元款项不明（来源：银行月结单）",
+    "我们核对调节表发现存在两项重复计提费用（来源：调节表抽查底稿）",
+    "管理层尚未提供该笔50万港元款项的银行支票存根复印件（来源：跟进事项表）"
+   ],
+   "tgt": [
+    "Reconciling items were identified as...",
+    "Management explained that the discrepancy arose from...",
+    "We have requested, but not yet received...",
+    "Inconsistency observed between bank statements and..."
+   ],
+   "traps": [
+    "冗长的从句：'The items which are not reconciled by the management were found to be...' 应简化为 'We identified unreconciled items...'。",
+    "表达模糊：'Something is wrong with the bank statement' 应改为 'A discrepancy was observed in the bank statement'。",
+    "动词弱化：不要写'Management gave an explanation about...'，应直接使用'Management explained that...'。"
+   ]
+  },
+  {
+   "id": "aud_fixed_assets_additions",
+   "t": "固定资产新增入账合规性说明",
+   "lvl": "★☆☆",
+   "brief": "就新增固定资产的核查情况致信管理层，指出底稿发现的凭证瑕疵和待补充证明。",
+   "facts": [
+    "管理层确认所有新增资产均已在FY26投入使用（来源：访谈记录）",
+    "固定资产购置清单显示新增资产价值为800万港元（来源：资产登记册）",
+    "我们抽查的10份合同中，有2份缺少采购经理签字（来源：合同抽查底稿）",
+    "截至目前，尚未收到所有新增资产的保险保单复印件（来源：待补资料清单）"
+   ],
+   "tgt": [
+    "Management confirmed that all additions...",
+    "Upon reviewing the supporting documentation...",
+    "Deficiencies were noted in the approval process...",
+    "Subject to the receipt of outstanding documentation."
+   ],
+   "traps": [
+    "介词错误：'Reviewed on the contracts' 错误，应为 'Reviewed the contracts'，注意及物动词用法。",
+    "语气生硬：'You didn't give us the insurance policy' 应改为 'The insurance policies remain outstanding'。",
+    "词汇混淆：'Addition' 审计中指资产增加，不要写成 'increase of assets'。"
+   ]
+  },
+  {
+   "id": "aud_related_party_transactions",
+   "t": "关联方交易定价合理性说明",
+   "lvl": "★☆☆",
+   "brief": "向合伙人报告关联方交易的审计发现，对比同类市场价格，列明未提供文件。",
+   "facts": [
+    "管理层声称定价系参考市场均价（来源：管理层声明）",
+    "关联方交易记录显示交易金额为600万港元（来源：总账记录）",
+    "我们检索了同期外部询价，发现公司售价低于市场价15%（来源：价格对比底稿）",
+    "截至审计截止日，管理层未提供定价政策的决策文件（来源：待办事项说明）"
+   ],
+   "tgt": [
+    "Management maintained that the pricing...",
+    "Our comparative analysis revealed...",
+    "Pricing deviates from...",
+    "Awaiting the submission of supporting rationale."
+   ],
+   "traps": [
+    "过度修饰：'The management's point of view is that...' 应直接写 'Management stated that...'。",
+    "用词不当：'Price is cheap' 极不专业，应使用 'Pricing is below market level'。",
+    "缺少证据连接：'We saw the price, it is different' 应写为 'Our analysis indicates a variance between...'。"
+   ]
+  },
+  {
+   "id": "aud_accrued_expenses",
+   "t": "预提费用真实性审核发现说明",
+   "lvl": "★☆☆",
+   "brief": "写给审计项目组，说明预提费用核查中发现的计提依据不足问题及缺失资料。",
+   "facts": [
+    "管理层解释预提金额为合同预计成本的70%（来源：财务经理电邮）",
+    "我们核查了5份大额预提项目，其中1份缺少合同支撑（来源：底稿核查）",
+    "账面预提费用余额为200万港元（来源：FY26财务报表）",
+    "截至发稿，尚未收到该项预提对应的服务验收单（来源：未决事项）"
+   ],
+   "tgt": [
+    "Management justified the accrual by...",
+    "We have verified that the amount...",
+    "Supporting documentation is insufficient to...",
+    "Pending the receipt of..."
+   ],
+   "traps": [
+    "缩写乱用：避免在报告中使用 'etc.' 或 'e.g.'，应写 'such as' 或 'including'。",
+    "被动语态滥用：'It is considered by us that...' 应改为 'We consider that...'。",
+    "词汇重复：'Amount' 出现多次，可以交替使用 'figure', 'balance', 'accrual'。"
+   ]
+  },
+  {
+   "id": "aud_revenue_recognition",
+   "t": "收入确认时点审计发现说明",
+   "lvl": "★☆☆",
+   "brief": "向合伙人反馈收入确认的核查结果，说明样本发现的截止性差异及后续补充需求。",
+   "facts": [
+    "管理层表示收入确认时点为发货日（来源：会计政策说明）",
+    "快递物流单据显示货物在FY26后才签收（来源：外部物流追踪）",
+    "我们抽查了20笔收入样本，其中3笔存在跨期确认风险（来源：截止性测试底稿）",
+    "至今未收到管理层关于上述跨期交易的调整意向说明（来源：审计进展报告）"
+   ],
+   "tgt": [
+    "Revenue was recognized based on...",
+    "Our cut-off testing identified...",
+    "The goods were delivered subsequent to...",
+    "We are currently awaiting management's response regarding..."
+   ],
+   "traps": [
+    "主观推断：'The client is cheating on revenue' 是禁忌，应写 'Revenue recognition appears to deviate from...'。",
+    "时态误用：'The goods were arrived' 错误，应为 'The goods arrived'（arrive是不及物动词）。",
+    "措辞粗糙：'Check the cut-off' 应为 'Perform cut-off testing'。"
+   ]
+  },
+  {
+   "id": "aud_employee_benefits",
+   "t": "应付职工薪酬核算异常说明",
+   "lvl": "★☆☆",
+   "brief": "致管理层函，询问关于应付工资计提比例的差异，并列示尚未提供的员工合同清单。",
+   "facts": [
+    "管理层指出计提比例调整是为了预留年终奖空间（来源：管理层回复）",
+    "我们计算的计提总额与财务账面金额相差80万港元（来源：重新测算底稿）",
+    "检查发现部分离职员工薪酬仍在计提名单中（来源：工资单抽查）",
+    "截至目前，仍未收到管理层提供的本年度薪酬福利方案文件（来源：待补资料）"
+   ],
+   "tgt": [
+    "Management explained the adjustment as...",
+    "Our recalculation indicates a variance of...",
+    "Discrepancies were observed regarding...",
+    "We are still awaiting the provision of..."
+   ],
+   "traps": [
+    "拼写错误：不要将 'benefit' 写成 'benifit'。",
+    "语法错误：'The management say'，应为 'Management says/states'（Management通常视为单数）。",
+    "指代不明：'They said'，审计报告中必须明确指代 'Management' 或 'The Finance Department'。"
+   ]
+  },
+  {
+   "id": "aud_investment_valuation_discrepancy",
+   "t": "金融资产估值差异说明",
+   "lvl": "★★★",
+   "brief": "针对长期股权投资估值差异，向审计委员会说明管理层估值模型与审计复核差异。需客观呈现双方口径，并明确审计调整建议。",
+   "facts": [
+    "管理层称FY25期末投资公允价值评估已考虑市场波动，评估结果为2.5亿元。",
+    "我们获取的估值报告显示，折现率参数选取与可比公司存在偏差，导致估值高估约3500万元。",
+    "管理层表示其测算逻辑遵循内部历史惯例，拒绝调整。",
+    "截至发稿日，我们仍未收到管理层提供的补充敏感性测试底稿。"
+   ],
+   "tgt": [
+    "Divergence in the valuation methodology",
+    "The management maintained that...",
+    "Notwithstanding the management's assertion",
+    "Pending receipt of the supplementary analysis"
+   ],
+   "traps": [
+    "使用 'We found the management is wrong' - 显得过于武断，应改为 'The assessment differs from our independent calculation'.",
+    "使用 'The management said' - 在正式报告中太随意，应用 'Management asserted' 或 'Management represented'。",
+    "使用 'They don't give us the files yet' - 太口语化，应用 'The requested supporting documentation remains outstanding'."
+   ]
+  },
+  {
+   "id": "aud_revenue_recognition_cutoff",
+   "t": "收入跨期确认审计差异",
+   "lvl": "★★★",
+   "brief": "就9M26销售收入确认是否存在跨期问题，致函CFO。需平衡解释管理层的确认逻辑与审计抽查发现的截止性差异。",
+   "facts": [
+    "管理层表示9M26收入确认已严格遵循货权转移原则。",
+    "我们抽查了15份大额出库单，其中4份显示货物在9月30日后才发出，但已被记入9月收入。",
+    "财务总监解释称该部分货物已提前开具发票，符合客户合同约定。",
+    "截至目前，我们仍未收到上述4笔交易对应的第三方签收单。"
+   ],
+   "tgt": [
+    "Cut-off discrepancy",
+    "Inconsistencies observed in the timing of revenue recognition",
+    "Subject to further verification",
+    "Contradicts the criteria stipulated in..."
+   ],
+   "traps": [
+    "使用 'We checked 15 invoices and 4 are bad' - 'bad'无法描述审计发现，应使用 'erroneous' 或 'misstated'。",
+    "使用 'The management's explanation is not convincing' - 带有个人偏见，应使用 'We are unable to reconcile the explanation with the supporting evidence'。",
+    "使用 'Wait for the proof' - 缺乏职业感，应使用 'Await receipt of evidence to substantiate the revenue recognition'。"
+   ]
+  },
+  {
+   "id": "aud_warranty_provision_gap",
+   "t": "产品质量保证金计提不足",
+   "lvl": "★★★",
+   "brief": "向管理层说明关于FY25质保金计提的差异，需对比管理层口径与实际索赔历史数据。",
+   "facts": [
+    "管理层测算FY25质保金为800万元，依据是往年平均索赔率。",
+    "我们核查发现，FY25新增产品故障率明显提升，实际索赔金额已达1200万元。",
+    "管理层认为这属于突发个案，不应计入常规计提模型。",
+    "截至发稿日，我们尚未收到管理层拟定的后续应对改进方案。"
+   ],
+   "tgt": [
+    "Inadequacy of the provision",
+    "The provision is based on historical experience, whereas...",
+    "Compelled to reassess the adequacy",
+    "Remains pending management's formal response"
+   ],
+   "traps": [
+    "使用 'The company failed to estimate enough' - 过于指责性，应改为 'The provision may be understated in light of current trends'。",
+    "使用 'Management refuses to increase it' - 缺乏商务礼貌，应使用 'Management expressed reservations regarding the proposed adjustment'。",
+    "使用 'Based on what they told us' - 应改为 'As represented by management'。"
+   ]
+  },
+  {
+   "id": "aud_r_and_d_capitalization",
+   "t": "研发支出资本化合规性说明",
+   "lvl": "★★★",
+   "brief": "审计发现部分研发支出被违规资本化，需在底稿中阐述我方意见与管理层抗辩。",
+   "facts": [
+    "管理层称FY25研发项目均已进入开发阶段，符合资本化条件。",
+    "我们抽查了30项研发工时记录，其中8项与已完成的行政办公软件开发有关。",
+    "管理层辩解该软件为研发系统支撑，应视为项目成本。",
+    "截至目前，我们仍未收到该部分费用划分的明确内部指引。"
+   ],
+   "tgt": [
+    "Capitalization criteria",
+    "Allocation of research and development costs",
+    "Lack of clear internal guidance regarding the categorization",
+    "Divergent views on the nature of these expenditures"
+   ],
+   "traps": [
+    "使用 'The capitalisation is wrong' - 太直接，应使用 'The capitalization may not meet the requisite criteria'。",
+    "使用 'Management is trying to hide expenses' - 会引发冲突，应使用 'The rationale for capitalization warrants further discussion'。",
+    "使用 'We still wait for the guidance' - 语法错误，应使用 'The guidance remains outstanding'。"
+   ]
+  },
+  {
+   "id": "aud_contingent_liabilities",
+   "t": "未决诉讼或有负债评估",
+   "lvl": "★★★",
+   "brief": "就一宗潜在合同纠纷的拨备计提，向法律部门及高管说明审计评估发现。",
+   "facts": [
+    "管理层称该诉讼案胜诉概率极高，无需计提拨备。",
+    "我们审阅律师函，显示对方索赔诉求的法律依据较为充分，存在败诉风险。",
+    "法律总监维持其乐观判断，拒绝评估赔偿额度。",
+    "截至发稿日，我们仍未收到管理层预估的潜在赔偿范围。"
+   ],
+   "tgt": [
+    "Contingent liabilities",
+    "Contrary to management's assessment",
+    "Exposure to potential financial impact",
+    "The scope of potential loss remains to be determined"
+   ],
+   "traps": [
+    "使用 'Management ignores the legal risk' - 带有主观情绪，应使用 'Management's assessment differs from our interpretation of the legal correspondence'。",
+    "使用 'Maybe they lose' - 不专业，应使用 'There is a possibility of an unfavorable outcome'。",
+    "使用 'They don't tell us the number' - 应使用 'The quantification of the exposure is currently unavailable'。"
+   ]
+  },
+  {
+   "id": "aud_related_party_loan",
+   "t": "关联方资金拆借异常",
+   "lvl": "★★★",
+   "brief": "针对FY25关联方借款利息异常，向财务部门发出质询邮件。",
+   "facts": [
+    "管理层称该笔关联方借款利率参考了同期银行贷款利率。",
+    "我们查询银行流水，发现该利率较同期市场融资成本高出400个基点。",
+    "管理层解释称涉及额外风险溢价，但未提供论证材料。",
+    "截至目前，我们尚未收到该笔借款的定价测算底稿。"
+   ],
+   "tgt": [
+    "Arm's length principle",
+    "Pricing discrepancy",
+    "Justification for the premium",
+    "Awaiting the submission of the supporting documentation"
+   ],
+   "traps": [
+    "使用 'The price is unfair' - 过于绝对，应使用 'The pricing may not be consistent with arm's length standards'。",
+    "使用 'Management's reason is weak' - 应使用 'The justification provided lacks sufficient empirical support'。",
+    "使用 'We haven't got the papers' - 应使用 'The supporting documentation has not yet been provided for our review'。"
+   ]
+  },
+  {
+   "id": "aud_fixed_asset_impairment",
+   "t": "固定资产减值迹象评估",
+   "lvl": "★★★",
+   "brief": "说明生产设备闲置导致的减值风险，阐述管理层与审计组的认知差异。",
+   "facts": [
+    "管理层表示该闲置生产线计划于9M26重启，无需计提减值。",
+    "我们实地观察发现，设备已积满灰尘且部分核心部件已拆卸挪用。",
+    "厂长口头确认该设备已停用超过18个月。",
+    "截至发稿日，我们仍未收到关于重启计划的可行性报告。"
+   ],
+   "tgt": [
+    "Impairment indicator",
+    "Physical observation reveals that...",
+    "Contrary to the management's representation",
+    "The feasibility report remains outstanding"
+   ],
+   "traps": [
+    "使用 'Management is lying' - 绝对严禁，应使用 'The physical state of the assets appears inconsistent with management's stated plans'。",
+    "使用 'The factory manager said the truth' - 不应完全依赖口头证据，应使用 'The factory manager acknowledged that...'。",
+    "使用 'We see the machine is broken' - 应用 'The asset shows signs of long-term disuse'。"
+   ]
+  },
+  {
+   "id": "aud_accrued_service_fee",
+   "t": "预提咨询费真实性核查",
+   "lvl": "★★★",
+   "brief": "针对大额咨询费预提，向财务总监确认合同背景及工作成果。",
+   "facts": [
+    "管理层称预提的500万元咨询费对应FY25战略咨询项目。",
+    "我们查看合同，发现交付标准模糊，且未明确具体的咨询产出物。",
+    "管理层表示对方已提供口头建议，无书面报告。",
+    "截至目前，我们仍未收到该次服务对应的关键沟通记录。"
+   ],
+   "tgt": [
+    "Authenticity of the accrual",
+    "Verification of the service delivery",
+    "Lack of documented deliverables",
+    "Information regarding the project outcomes is still forthcoming"
+   ],
+   "traps": [
+    "使用 'It looks like a fake payment' - 极其危险的措辞，应使用 'The substance of the transaction requires further verification'。",
+    "使用 'There is no report' - 应使用 'No written deliverables have been provided as evidence'。",
+    "使用 'They just talked' - 应使用 'Management indicated that the advice was communicated verbally'。"
+   ]
+  },
+  {
+   "id": "mail_revenue_recon",
+   "t": "收入确认差异函询",
+   "lvl": "★★★",
+   "brief": "发给目标公司CFO。管理层声称已按完工百分比确认收入，但核查发现实质性差异，需对方解释。",
+   "facts": [
+    "管理层口头表示FY25收入已根据项目进度确认完毕",
+    "我们抽查了30份项目合同，其中5份无完工进度签收单",
+    "银行流水显示上述5个项目FY25实际收款仅占合同金额的15%",
+    "截至发稿日，我们仍未收到该5个项目的成本归集明细表"
+   ],
+   "tgt": [
+    "There appears to be a discrepancy between...",
+    "We have identified a gap in the substantiation of...",
+    "Could you please reconcile the variance between..."
+   ],
+   "traps": [
+    "使用 'Your team is wrong'，过于冒犯。应改为 'We noted a variance in the data presented by your team.'",
+    "滥用 'It is clear that'，在审计中应保持客观中立。建议使用 'Our findings suggest that...'",
+    "使用 'Please give us the report now'，命令式语气不专业。应改为 'We would appreciate it if you could provide the documents by...'"
+   ]
+  },
+  {
+   "id": "mail_inventory_valuation",
+   "t": "存货减值计提沟通",
+   "lvl": "★★★",
+   "brief": "发给审计项目经理。关于存货跌价准备的计提逻辑，管理层给出的理由与抽查结果冲突。",
+   "facts": [
+    "管理层声称FY25存货减值主要系原材料价格波动导致",
+    "我们抽查了9M26存货出入库记录，显示长库龄库存占比达40%",
+    "仓库盘点结果显示，部分电子物料已超过保质期6个月",
+    "截至发稿日，管理层尚未提供减值测试模型底稿"
+   ],
+   "tgt": [
+    "The management’s assertion contradicts our observation of...",
+    "To reconcile the inconsistency between X and Y...",
+    "We are awaiting further clarification regarding..."
+   ],
+   "traps": [
+    "过多使用 'Very' 修饰，如 'Very big difference'。专业用语应为 'Significant variance'。",
+    "句子太长导致歧义。避免 'I think management said this but we find that, which is bad.'，应拆分为独立事实。",
+    "混淆 'Since' 和 'Because' 的因果逻辑。在陈述事实时应用 'Given that...' 代替 'Because...'"
+   ]
+  },
+  {
+   "id": "mail_related_party",
+   "t": "关联方交易核查函",
+   "lvl": "★★★",
+   "brief": "发给目标公司财务总监。询问未披露的关联方往来，需明确表达我们已掌握部分证据。",
+   "facts": [
+    "管理层表示FY25不存在未披露的关联交易",
+    "我们通过外部工商查询发现目标公司CEO持有供应商A 60%股权",
+    "财务系统导出明细显示FY25向供应商A支付款项达500万",
+    "截至发稿日，未收到该供应商的关联方关系确认函"
+   ],
+   "tgt": [
+    "In light of our recent findings regarding...",
+    "There is a notable inconsistency between the disclosure and the records.",
+    "Kindly provide further justification for this arrangement."
+   ],
+   "traps": [
+    "使用 'I found out you lied'，缺乏职业审慎。建议用 'We observed a discrepancy between the provided list and independent data.'",
+    "动词拼写错误，如 'We are waiting for the confirmation letter' 建议使用 'We are awaiting the receipt of...'",
+    "代词指代不清。例如 'They didn't tell us about it' 应写明 'The management did not disclose the relationship...'"
+   ]
+  },
+  {
+   "id": "mail_accounts_receivable",
+   "t": "应收账款回款异常说明",
+   "lvl": "★★★",
+   "brief": "发给财务经理。针对部分大额应收账款长期未回款且无解释的核查。",
+   "facts": [
+    "管理层口头说大客户回款延迟系因近期季节性调整",
+    "我们抽查了FY25后两个月的银行流水，未见相关大额入账",
+    "销售合同显示客户需在发货后30天内付款",
+    "截至发稿日，对方发出的询证函回函仍未收到"
+   ],
+   "tgt": [
+    "The current status of the receivable remains unresolved.",
+    "There is a mismatch between management's projections and actual cash flow.",
+    "We require additional evidence to support the recoverability of..."
+   ],
+   "traps": [
+    "语气过于软弱，如 'It might be better if you send...'。应使用 'Please provide... by [Date] to facilitate our review.'",
+    "误用 'Bad' 来形容回款情况。应使用 'Uncollectible' 或 'Delinquent'。",
+    "忽视时态的一致性。比如描述FY25情况时混用了过去时和将来时。"
+   ]
+  },
+  {
+   "id": "mail_r_and_d_expense",
+   "t": "研发费用归集性质确认",
+   "lvl": "★★★",
+   "brief": "发给目标公司技术部门负责人。核实费用资本化与费用化划分的合规性。",
+   "facts": [
+    "管理层口头表示所有研发人员工时均已按项目归集",
+    "我们抽查了10份工资单，发现有人员在FY25期间同时从事生产和研发",
+    "目前账面显示研发费用资本化率高达80%",
+    "截至发稿日，未收到各项目研发阶段划分的审批记录"
+   ],
+   "tgt": [
+    "Our review of the payroll records indicates a potential misclassification.",
+    "To ensure compliance with the accounting policy, we need...",
+    "Could you clarify the basis for the capitalization of..."
+   ],
+   "traps": [
+    "使用 'According to your words'，像是在质疑人格。应使用 'Per our discussion with the management...'",
+    "重复使用 'Ask'。建议使用 'Inquire about', 'Request', 'Seek clarification'。",
+    "短语搭配错误，如 'According to the policy' 写成 'According with the policy'。"
+   ]
+  },
+  {
+   "id": "mail_staff_turnover",
+   "t": "财务核心人员离职问询",
+   "lvl": "★★★",
+   "brief": "发给项目组。针对关键岗位人员频繁变动对内部控制影响的评估。",
+   "facts": [
+    "管理层声称核心财务人员离职不影响账务处理",
+    "我们抽查发现FY25财务主管离职后，ERP权限未及时调整",
+    "财务系统操作日志显示离职人员账号在离职后一周内仍有登录",
+    "截至发稿日，仍未拿到离职审计报告"
+   ],
+   "tgt": [
+    "This poses a significant risk to the internal control environment.",
+    "We have identified a potential control deficiency regarding...",
+    "The situation warrants further investigation into..."
+   ],
+   "traps": [
+    "使用 'I think this is dangerous'。审计应写 'This gives rise to control risks'。",
+    "形容词堆砌，如 'Very serious and dangerous problem'。应精简为 'Material control deficiency'。",
+    "忽略正式落款，使用 'Best' 代替 'Sincerely' 或 'Best regards'。"
+   ]
+  },
+  {
+   "id": "mail_cash_balance",
+   "t": "货币资金余额核实",
+   "lvl": "★★★",
+   "brief": "发给银行对接人或财务主管。对大额闲置现金的存放逻辑进行核实。",
+   "facts": [
+    "管理层口头表示存放在A银行的5000万现金系经营性备付金",
+    "我们抽查了A银行流水，发现该笔资金被冻结用于担保",
+    "银行对账单显示账户名义所有人与实际受益人存在差异",
+    "截至发稿日，仍未获得该笔质押协议的复印件"
+   ],
+   "tgt": [
+    "The account status appears to be restricted, contrary to management's statement.",
+    "We are seeking clarification on the encumbered status of the funds.",
+    "Please provide the documentation that substantiates the current balance."
+   ],
+   "traps": [
+    "将 'Restricted' 写成 'Locked'。在审计中 'Restricted cash' 是专业表达。",
+    "表达主观情绪，如 'I am surprised to see'。应使用 'We observed that...'。",
+    "句式杂糅。例如 'The fact is that the money is frozen, which is what we saw.' 应改为 'The funds are frozen, which contradicts the information provided.'"
+   ]
+  },
+  {
+   "id": "aud_deferred_tax_recoverability",
+   "t": "递延所得税资产回收性说明",
+   "lvl": "★★☆",
+   "brief": "针对客户递延所得税资产的确认依据进行说明。写给审计项目合伙人，用于‘所得税费用及资产负债表项目审查’章节，需指出对未来盈利预测的验证存在局限。",
+   "facts": [
+    "截至9M26，公司确认了5000万港元的递延所得税资产，主要源于亏损弥补。",
+    "管理层声称FY26-FY28业务增长将实现扭亏为盈，主要基于新中标的三个政府项目。",
+    "我们审查了合同原件，但其中两个项目尚处于招标公示期，并未最终签署合同。",
+    "管理层口头解释称，项目中标概率极高，无需进行减值计提。",
+    "截至发稿日，我们仍未收到详细的年度盈利预测模型及敏感性分析报表。"
+   ],
+   "tgt": [
+    "In light of the uncertainty regarding the contract finalization...",
+    "Management has asserted that...",
+    "We are unable to independently verify the underlying assumptions...",
+    "The current evidence is insufficient to conclude on the recoverability..."
+   ],
+   "traps": [
+    "Avoid using 'Management lied', use 'The management's assertion appears overly optimistic' to maintain professional tone.",
+    "Don't say 'We didn't get the file', use 'The requested documentation remains outstanding as of the reporting date'.",
+    "Don't write 'We think it's wrong', use 'The available evidence does not sufficiently support the carrying value'."
+   ]
+  },
+  {
+   "id": "aud_government_grant_recognition",
+   "t": "政府补助确认合规性分析",
+   "lvl": "★★☆",
+   "brief": "针对本期收到的一笔大额政府补助进行确认合规性评估。写给审计经理，供‘其他收益’审计底稿使用，需体现补助条件履行进度的不确定性。",
+   "facts": [
+    "FY25财年收到政府补助金800万港元，已全额确认为当期收益。",
+    "管理层口头告知该笔补助为无条件奖励，已满足所有合规要求。",
+    "我们抽查了相关批文，发现补助明确要求公司在FY26前完成技术研发指标。",
+    "公司研发部门提供的进度报告显示，目前核心技术指标完成度仅为60%。",
+    "截至发稿日，我们尚未收到政府对该阶段性目标的验收确认函。"
+   ],
+   "tgt": [
+    "Based on our review of the grant agreement...",
+    "While management represents that the conditions are met...",
+    "There is a discrepancy between the stated milestones and actual progress...",
+    "Pending further confirmation from the regulatory authority..."
+   ],
+   "traps": [
+    "Don't use 'management's word is suspicious', use 'The representation provided by management is inconsistent with the supporting documentation'.",
+    "Don't say 'Maybe', use 'There is significant uncertainty regarding the fulfillment of conditions'.",
+    "Don't write 'The file is missing', use 'We have yet to obtain the formal verification from the relevant authorities'."
+   ]
+  },
+  {
+   "id": "aud_intangible_assets_useful_life",
+   "t": "无形资产摊销年限合理性说明",
+   "lvl": "★★☆",
+   "brief": "针对核心软件技术摊销年限的变更进行分析。写给合伙人，放在‘无形资产’审计结论中，强调对行业技术迭代速度评估的证据缺失。",
+   "facts": [
+    "管理层将核心软件摊销年限由5年延长至10年，导致FY25摊销费用减少300万。",
+    "管理层口头解释称该软件技术壁垒极高，未来10年内不会被淘汰。",
+    "我们查阅了行业研究报告，显示同类软件平均寿命仅为5-7年。",
+    "我们要求查看软件的长期维护计划，但IT部门表示该计划尚未正式立项。",
+    "截至发稿日，仍未获得关于该技术十年期生命周期的外部专家评估建议。"
+   ],
+   "tgt": [
+    "The change in useful life is predicated on the assumption that...",
+    "Management has suggested that the technology remains viable...",
+    "The evidence gathered to date is not conclusive enough to support a 10-year period.",
+    "Subject to the receipt of the requested technical assessment..."
+   ],
+   "traps": [
+    "Don't say 'The client is trying to inflate profit', use 'The revised amortization policy significantly impacts the reported earnings'.",
+    "Don't write 'I can't find proof', use 'The documentation provided does not adequately justify the extended useful life'.",
+    "Don't use 'The 10-year claim is not true', use 'The justification for the 10-year term lacks support from industry benchmarks'."
+   ]
+  },
+  {
+   "id": "aud_construction_in_progress_transfer",
+   "t": "在建工程转固时点核查",
+   "lvl": "★★☆",
+   "brief": "针对生产线由在建工程转为固定资产的时点进行核查。写给管理层，用于‘管理建议书’，需指出转固时间点可能早于实质可用状态。",
+   "facts": [
+    "FY25年12月，公司将价值2000万港元的设备由在建工程转入固定资产并开始计提折旧。",
+    "管理层称该生产线在当年年底已达到设计要求并投入商业化运营。",
+    "我们实地观察发现，现场仍有部分安装工人，且生产日志显示FY26年1月才产出第一批合格品。",
+    "我们查阅了验收单，签署日期为12月28日，但技术负责人并未在验收单上签字。",
+    "截至发稿日，仍未获得该生产线通过环境安全验收的正式文件。"
+   ],
+   "tgt": [
+    "The timing of the capitalization warrants further consideration...",
+    "Management maintains that the asset was ready for its intended use...",
+    "Our observations indicate that the asset might not have been fully operational...",
+    "We are still awaiting the final safety certification to confirm the status..."
+   ],
+   "traps": [
+    "Don't use 'They are lying about the date', use 'The capitalization date appears inconsistent with the actual operational status'.",
+    "Don't write 'The document is wrong', use 'The supporting evidence for the transition date requires further verification'.",
+    "Don't use 'The evidence is not enough', use 'The evidence currently available is inconclusive regarding the exact date of readiness'."
+   ]
+  },
+  {
+   "id": "aud_warranty_provision_adequacy",
+   "t": "售后质保准备金计提不足说明",
+   "lvl": "★★☆",
+   "brief": "针对产品质量保修费用的计提比例进行评估。写给财务总监，放在‘预提费用’审计发现中，需指出当前计提依据缺乏历史数据支持。",
+   "facts": [
+    "FY25年度销售额为5亿港元，质保准备金计提比例由2%下调至0.5%。",
+    "管理层口头表示，因升级了自动化生产线，产品故障率将大幅下降。",
+    "我们抽查了过去三年的售后服务记录，平均返修率一直维持在1.8%左右。",
+    "我们对比了同行业竞争对手，其平均计提比例均在1.5%及以上。",
+    "截至发稿日，我们仍未收到管理层关于新生产线故障率预测的量化数据支持。"
+   ],
+   "tgt": [
+    "The adjustment to the provision rate appears aggressive given...",
+    "While management expects a reduction in defect rates...",
+    "We have yet to see quantitative evidence supporting this assumption...",
+    "In the absence of historical data for the new process, we suggest..."
+   ],
+   "traps": [
+    "Don't say 'The rate is too low', use 'The adequacy of the provision remains subject to further validation'.",
+    "Don't write 'I disagree with your plan', use 'We have concerns regarding the basis for the revised estimate'.",
+    "Don't use 'Management's reason is weak', use 'The management's justification lacks empirical data support'."
+   ]
+  },
+  {
+   "id": "aud_investment_valuation_uncertainty",
+   "t": "非上市股权投资估值差异说明",
+   "lvl": "★★☆",
+   "brief": "针对持有的非上市科技公司股权进行估值评估。写给审计项目组，放在‘金融工具’审计部分，强调缺乏近期交易证据。",
+   "facts": [
+    "FY25年末，公司对持有的A公司股权估值保持不变，仍按成本法计量。",
+    "管理层认为A公司目前业务发展稳定，无需进行减值测试。",
+    "我们查阅了公开新闻，显示A公司近期陷入了法律诉讼，且融资进度大幅停滞。",
+    "我们向A公司发送了询证函，但在截止日期前未收到回复。",
+    "截至发稿日，仍未获得任何关于A公司最近一轮融资估值的财务报告。"
+   ],
+   "tgt": [
+    "The current valuation approach may not reflect the potential impairment...",
+    "Management has indicated that no impairment indicators were identified...",
+    "The lack of external financial information poses a challenge to our valuation review.",
+    "We are currently unable to validate the carrying amount..."
+   ],
+   "traps": [
+    "Don't use 'The company is failing', use 'The company is facing significant operational challenges'.",
+    "Don't write 'I don't trust the value', use 'The appropriateness of the current carrying amount requires further scrutiny'.",
+    "Don't use 'We don't know the truth', use 'The valuation remains subject to significant uncertainty'."
+   ]
+  },
+  {
+   "id": "aud_related_party_loan_interest",
+   "t": "关联方借款利息收入确认合规性",
+   "lvl": "★★☆",
+   "brief": "针对关联方资金拆借的利息入账进行核查。写给财务经理，放在‘关联方交易’底稿中，需体现利息计算依据不足。",
+   "facts": [
+    "公司本年度向控股股东拆借资金3000万港元，年利率设定为2.5%。",
+    "管理层口头表示该利率参考了银行同类贷款利率，符合公平原则。",
+    "我们查阅了公司贷款合同，发现合同中并未明确约定具体的利息结算周期。",
+    "我们比对了同期银行大额存单利率为3.2%，高于关联方借款利率。",
+    "截至发稿日，我们仍未收到该利率定价的市场调研报告或关联方借款协议修订件。"
+   ],
+   "tgt": [
+    "The pricing of the related party transaction warrants further justification...",
+    "Management claims that the rate is at arm's length, however...",
+    "We have observed a significant deviation from market rates...",
+    "The evidence currently available does not sufficiently substantiate the interest rate applied."
+   ],
+   "traps": [
+    "Don't say 'You are hiding profit', use 'The transaction terms may not reflect market-based conditions'.",
+    "Don't write 'It's unfair', use 'The fairness of the transaction terms is currently unclear'.",
+    "Don't use 'The calculation is totally wrong', use 'There are discrepancies between the applied rate and market benchmarks'."
+   ]
+  },
+  {
+   "id": "aud_consulting_fee_authenticity",
+   "t": "大额咨询费支出真实性核查",
+   "lvl": "★★☆",
+   "brief": "针对咨询服务费的真实性与业务实质进行核查。写给财务总监，放在‘营业成本/期间费用’审查中，需指出业务交付物证据不足。",
+   "facts": [
+    "FY25年度支付给B咨询公司的费用总计500万港元。",
+    "管理层称该费用用于公司海外市场拓展的前期调研与品牌策划。",
+    "我们抽查了付款申请，但附件中仅有合同及发票，未见具体的调研报告。",
+    "我们询问了营销部门负责人，其表示未收到过任何关于海外调研的正式成果。",
+    "截至发稿日，我们仍未取得该咨询服务产生的相关交付物或工作成果摘要。"
+   ],
+   "tgt": [
+    "We have identified a lack of documentary evidence supporting the delivery of services...",
+    "While management asserts that the services were performed...",
+    "The absence of tangible deliverables hinders our assessment of the business purpose...",
+    "We are pending further documentation to verify the authenticity of the transaction."
+   ],
+   "traps": [
+    "Don't say 'You are faking this expense', use 'The business purpose of the expense is not clearly supported by documentation'.",
+    "Don't write 'I can't find the papers', use 'There is insufficient evidence to demonstrate the completion of the services'.",
+    "Don't use 'The expense is useless', use 'The value generated by this expenditure is not evident from the provided documentation'."
+   ]
+  },
+  {
+   "id": "aud_legal_contingency",
+   "t": "未决诉讼预计负债计提依据核查",
+   "lvl": "★★★",
+   "brief": "针对公司对未决诉讼未计提拨备的情况，在管理层会议纪要中表达审计风险判断。",
+   "facts": [
+    "管理层认为案件胜诉概率高，无需计提预计负债（律师意见书）；",
+    "我方查阅外部律师往来函件，显示案件败诉风险为‘可能’（外部函证）；",
+    "管理层称已采取庭外和解措施，涉及金额极小（口头沟通）；",
+    "截至审计报告前，公司仍未提供最新的庭审进展记录（未收到资料清单）；",
+    "银行流水显示公司已预付大额律师费，远超常规代理费用（支付凭证）。"
+   ],
+   "tgt": [
+    "There is a heightened risk regarding...",
+    "Contrary to management's assessment of...",
+    "In the absence of updated case progress documentation...",
+    "The likelihood of an outflow of resources cannot be ruled out."
+   ],
+   "traps": [
+    "使用 'they are hiding the truth', 应改为 'this raises concerns regarding the completeness of'，用风险导向表达；",
+    "使用 'the chance of losing is big', 应改为 'the potential for a negative outcome is significant'，避免口语；",
+    "使用 'we don't know the progress', 应改为 'information regarding the status of the proceedings remains pending'，书面表达。"
+   ]
+  },
+  {
+   "id": "aud_deferred_tax_recoverability_2",
+   "t": "递延所得税资产回收性评估差异",
+   "lvl": "★★★",
+   "brief": "向财务总监指出对未来亏损弥补预测过于乐观的问题，要求进行敏感性测试。",
+   "facts": [
+    "管理层预测FY26-FY28将扭亏为盈，全额确认递延所得税资产（税额测算表）；",
+    "我方审核显示，过去三年公司实际经营均处于亏损状态（审计复核结论）；",
+    "管理层认为新产品上线将带来收入激增（业务计划书）；",
+    "截至目前，公司尚未提供新产品订单储备的详细明细（待办资料清单）；",
+    "部分销售合同显示，新产品的定价远低于预期毛利水平（销售合同抽查）。"
+   ],
+   "tgt": [
+    "The recoverability of the deferred tax assets remains questionable...",
+    "Although management’s projections indicate...",
+    "Pending more robust evidence to support these forecasts...",
+    "The valuation of the tax asset may be overly optimistic."
+   ],
+   "traps": [
+    "使用 'management is too optimistic', 应改为 'the forecast appears to be overly optimistic'，将矛头指向数据而非人；",
+    "使用 'we don't believe', 应改为 'we have reservations regarding'，符合审计师的中立性；",
+    "使用 'they didn't give the list', 应改为 'supporting evidence remains outstanding'，更加书面化。"
+   ]
+  },
+  {
+   "id": "aud_government_subsidy",
+   "t": "政府补助确认合规性差异分析",
+   "lvl": "★★★",
+   "brief": "在审计总结中针对尚未达到验收标准的政府补助计入当期收益的会计处理提出质疑。",
+   "facts": [
+    "管理层认为已实质获得资金，应确认为当期营业外收入（会计政策确认）；",
+    "我方查阅补助协议，发现需通过中期验收方可最终确认（审计工作底稿）；",
+    "管理层声称当地政府已口头承诺放宽验收标准（会议纪要）；",
+    "截至发稿日，政府部门仍未下达关于验收延期或豁免的正式公函（待办督办）；",
+    "公司在账务处理上已将该笔补助全额抵减了当期相关费用（总账凭证）。"
+   ],
+   "tgt": [
+    "The recognition of the grant as revenue appears premature...",
+    "Notwithstanding the verbal assurances mentioned by management...",
+    "In the absence of written confirmation from the relevant authority...",
+    "The accounting treatment should be deferred until..."
+   ],
+   "traps": [
+    "使用 'the accounting is wrong', 应改为 'the treatment does not align with the relevant criteria'，引用标准论证；",
+    "使用 'management’s talk', 应改为 'the verbal representation provided by management'，正式且客观；",
+    "使用 'they haven't got the paper', 应改为 'written confirmation remains outstanding'，更加专业。"
+   ]
+  },
+  {
+   "id": "mail_fixed_asset_disposal",
+   "t": "固定资产处置损益核实",
+   "lvl": "★☆☆",
+   "brief": "写给被审计单位财务经理，确认FY25期间大额资产处置的合规性。用于固定资产审计章节。",
+   "facts": [
+    "管理层称处置的生产线在FY25年10月因技术落后报废。",
+    "我们抽查了3张报废申请单，显示审批日期在处置后两个月。",
+    "银行流水显示处置残值收入为85万元，入账日期为2025年12月。",
+    "资产清单显示原值500万元，但我们尚未收到对应的固定资产台账变更明细。"
+   ],
+   "tgt": [
+    "Inconsistency between... and...",
+    "Could you please clarify the discrepancy regarding...",
+    "We have yet to receive the supporting documentation for..."
+   ],
+   "traps": [
+    "用 'management said' 太随意，应改用 'Management stated that...' 或 'According to management...'",
+    "Avoid 'we found that there is a mistake', use 'We noted a discrepancy' to sound professional",
+    "别用 'we don't have it', 应改为 'The requested documentation is still pending'"
+   ]
+  },
+  {
+   "id": "mail_prepaid_rent_verification",
+   "t": "预付账款租金摊销确认",
+   "lvl": "★☆☆",
+   "brief": "写给客户对接人，核实FY26预付租金的摊销逻辑。用于预付账款审计。",
+   "facts": [
+    "管理层表示预付了FY26年度全年租金，共计120万元。",
+    "我们抽查了租赁合同，显示付款条款为季付，而非年付。",
+    "账面余额显示FY26一季度摊销额为30万元，与合同一致。",
+    "截至发稿日，我们仍未收到与业主签署的补充协议以证明年付变更。"
+   ],
+   "tgt": [
+    "Per our review of the lease agreement...",
+    "There appears to be a mismatch between...",
+    "Please provide the supplemental agreement to support the current treatment."
+   ],
+   "traps": [
+    "不要说 'the contract says it's wrong', 应为 'The accounting treatment deviates from the contract terms'",
+    "避免 'please give us', 应为 'Kindly provide us with...'",
+    "不要用 'It seems like a error', 应为 'There appears to be an inconsistency'"
+   ]
+  },
+  {
+   "id": "mail_government_grant_status",
+   "t": "政府补助到账情况查询",
+   "lvl": "★☆☆",
+   "brief": "写给被审计单位财务主管，确认FY25补助归类。用于政府补助章节。",
+   "facts": [
+    "管理层称该笔200万元款项为研发激励补助。",
+    "我们查阅了市政府文件，该款项性质明确为搬迁补偿。",
+    "银行对账单显示款项于2025年11月到账。",
+    "我们尚未收到与该笔款项相关的原始申领文件或批文。"
+   ],
+   "tgt": [
+    "We are currently reviewing the nature of...",
+    "We noted a classification difference regarding...",
+    "Please clarify the discrepancy between the bank record and the management's claim."
+   ],
+   "traps": [
+    "不要用 'the money you got', 应为 'the proceeds' 或 'the grant'",
+    "避免 'you are wrong', 应为 'we noted a potential misclassification'",
+    "不要用 'tell us why', 应为 'Could you please provide the rationale for...'"
+   ]
+  },
+  {
+   "id": "mail_tax_arrears_inquiry",
+   "t": "应交税费欠缴明细函询",
+   "lvl": "★☆☆",
+   "brief": "写给客户财务经理，询问逾期未交税费原因。用于应交税费审计。",
+   "facts": [
+    "财务经理解释由于系统故障导致FY25年12月增值税延迟申报。",
+    "我们查阅了税务局官网，显示存在滞纳金记录。",
+    "会计账簿显示该笔税款已于2026年1月缴纳。",
+    "我们尚未收到税务机关出具的罚款通知书复印件。"
+   ],
+   "tgt": [
+    "We noted that the tax payment was overdue according to...",
+    "Could you please confirm whether any penalties have been imposed?",
+    "We are awaiting the official notification regarding..."
+   ],
+   "traps": [
+    "不要用 'tax is late', 应为 'The tax payment was delayed'",
+    "避免 'you didn't pay', 应为 'The tax liability remained outstanding as of...'",
+    "不要用 'maybe there is a fine', 应为 'Please confirm the potential exposure to penalties'"
+   ]
+  },
+  {
+   "id": "mail_bank_reconciliation_diff",
+   "t": "银行对账单未达账项核对",
+   "lvl": "★☆☆",
+   "brief": "写给财务出纳，要求解释大额银行未达账项。用于货币资金章节。",
+   "facts": [
+    "出纳声称该笔50万元款项为客户预付货款，已于FY25年12月入账。",
+    "银行对账单显示该笔资金于2026年1月才到账。",
+    "我们抽查了对应的银行回单，显示转账日期为2025年12月28日。",
+    "截至目前，我们仍未收到该笔款项的银行结算明细说明。"
+   ],
+   "tgt": [
+    "There is a timing difference between the bank statement and...",
+    "Please reconcile the balance as of...",
+    "We are still waiting for the clarification on..."
+   ],
+   "traps": [
+    "不要说 'your record is wrong', 应为 'There is a discrepancy in the cut-off period'",
+    "不要用 'the money arrived late', 应为 'The receipt was recognized in the wrong period'",
+    "不要用 'check it again', 应为 'Please review and reconcile the balance'"
+   ]
+  },
+  {
+   "id": "mail_warranty_provision",
+   "t": "质保金计提比例沟通",
+   "lvl": "★☆☆",
+   "brief": "写给销售财务，讨论计提比例合理性。用于预计负债章节。",
+   "facts": [
+    "销售总监表示FY25年产品质量稳定，质保金计提比例从5%下调至2%。",
+    "我们抽查了FY25下半年的售后维修记录，报修率上升了10%。",
+    "财务系统显示计提比例确实已调整为2%。",
+    "我们尚未收到支持该下调比例的测算模型或管理层评估报告。"
+   ],
+   "tgt": [
+    "We observed that the provision rate has been adjusted to...",
+    "Given the recent trend in warranty claims, we would like to understand...",
+    "Please provide the supporting calculation for the change in estimate."
+   ],
+   "traps": [
+    "不要用 'I think this is too low', 应为 'We have concerns regarding the adequacy of the provision'",
+    "不要用 'give me the file', 应为 'Could you please provide the supporting documentation?'",
+    "不要用 'it looks weird', 应为 'The adjustment appears inconsistent with historical data'"
+   ]
+  },
+  {
+   "id": "mail_r_and_d_expense_cap",
+   "t": "研发费用资本化时点确认",
+   "lvl": "★☆☆",
+   "brief": "写给项目经理，核实研发支出资本化开始的时点。用于研发支出审计。",
+   "facts": [
+    "项目经理称研发项目于FY25年5月达到资本化条件。",
+    "我们查阅了项目日志，显示关键技术攻关阶段结束于2025年9月。",
+    "抽查凭证显示6月至8月的工资费用已全部资本化。",
+    "截至发稿日，我们仍未收到该项目的可行性分析报告。"
+   ],
+   "tgt": [
+    "We noted that the capitalization commenced on...",
+    "This differs from the project timeline which indicates...",
+    "Kindly provide the feasibility study to support the capitalization start date."
+   ],
+   "traps": [
+    "不要用 'you started too early', 应为 'The timing of capitalization seems premature'",
+    "不要用 'the file is missing', 应为 'The documentation is currently unavailable'",
+    "不要用 'why did you do this', 应为 'Could you please provide the rationale for...'"
+   ]
+  },
+  {
+   "id": "mail_subsidiary_inventory_loss",
+   "t": "子公司存货盘亏说明",
+   "lvl": "★☆☆",
+   "brief": "写给子公司财务，询问盘亏原因。用于存货审计。",
+   "facts": [
+    "子公司管理层称盘亏是由于仓库货位重码导致，并非实物丢失。",
+    "我们实地盘点时观察到仓库确实存在标识混乱情况。",
+    "系统盘点表显示亏损额度为30万元。",
+    "我们尚未收到该子公司签署的最终盘点差异说明书。"
+   ],
+   "tgt": [
+    "During our physical observation, we noted...",
+    "Could you please explain the cause of the discrepancy in...",
+    "We are still awaiting the final inventory adjustment report."
+   ],
+   "traps": [
+    "不要用 'the inventory is gone', 应为 'We noted an inventory discrepancy'",
+    "不要用 'your warehouse is messy', 应为 'There are issues with the current warehouse labeling system'",
+    "不要用 'send me the paper', 应为 'Please provide the finalized statement'"
+   ]
+  },
+  {
+   "id": "mail_revenue_cutoff_discrepancy",
+   "t": "收入跨期确认差异函询",
+   "lvl": "★★★",
+   "brief": "发给目标公司CFO，指出FY26前三季度收入确认时点与合同交付条款不符，要求解释原因。用于报告收入完整性章节。",
+   "facts": [
+    "管理层称所有FY26 Q3发出的货物均已在发货当日确认为收入。",
+    "我们抽查了15份大额销售合同，其中4份明确约定在客户签收后方可确认收入。",
+    "物流运单显示上述4笔交易于2026年10月5日才完成签收。",
+    "截至发稿日，公司尚未提供相关的出库签收单据核对。"
+   ],
+   "tgt": [
+    "There appears to be a discrepancy between...",
+    "Upon reconciliation, it was noted that...",
+    "Could you please clarify the justification for..."
+   ],
+   "traps": [
+    "不要写 'We find your revenue is wrong'，过于直接且带有攻击性，应改用 'There appears to be a discrepancy'。",
+    "不要写 'You said that...'，太口语化，应改为 'Management represented that...'。",
+    "避免使用 'I think'，在正式报告中显得不专业，应使用 'Based on our audit procedures'。"
+   ]
+  },
+  {
+   "id": "mail_long_aging_ar_reconciliation",
+   "t": "长账龄应收账款回款核查",
+   "lvl": "★★★",
+   "brief": "发给财务负责人，针对账龄超过1年的欠款无法回款的情况进行核实。用于报告应收账款坏账准备章节。",
+   "facts": [
+    "管理层声称大部分逾期款项已通过法律途径催收，近期可回款。",
+    "我们查询了法律顾问提供的诉讼清单，未发现涉及该债务人的立案记录。",
+    "银行流水显示FY26内该客户仅支付了10万元，远低于期初余额500万元。",
+    "我们多次要求查看往来函证，但截至目前未收到盖章回函。"
+   ],
+   "tgt": [
+    "We are unable to verify the collectability of...",
+    "Contrary to the assertion provided by management...",
+    "In the absence of supporting documentation..."
+   ],
+   "traps": [
+    "不要写 'You didn't give us the documents'，显得被动，应改用 'In the absence of supporting documentation'。",
+    "不要写 'The story you told is different from reality'，应改为 'The information provided contradicts our findings'。",
+    "避免使用 'So please hurry up'，应改为 'Your prompt attention to this matter would be appreciated'。"
+   ]
+  },
+  {
+   "id": "mail_capitalized_interest_validity",
+   "t": "资本化利息合理性沟通",
+   "lvl": "★★★",
+   "brief": "发给客户项目经理，质疑其在建工程资本化利息的合理性。用于报告固定资产章节。",
+   "facts": [
+    "管理层表示FY26产能扩张项目已达到预定可使用状态，应停止资本化。",
+    "我们现场走访发现该厂房仍处于施工阶段，核心生产线尚未安装。",
+    "财务账簿显示FY26利息资本化金额较预算高出30%。",
+    "公司承诺于上周提交工程完工进度表，但至今仍未提供。"
+   ],
+   "tgt": [
+    "The current capitalization status seems inconsistent with...",
+    "Given the observations from our site visit...",
+    "We request further clarification regarding the calculation of..."
+   ],
+   "traps": [
+    "不要用 'You are lying about...'，应改用 'The status appears inconsistent with our observations'。",
+    "不要写 'I want you to send me...'，应改用 'We kindly request that you provide...'。",
+    "避免使用 'Your company's mistake'，应改为 'There is a potential overstatement in...'。"
+   ]
+  },
+  {
+   "id": "mail_inventory_obsolescence_provision",
+   "t": "存货减值准备计提不足沟通",
+   "lvl": "★★★",
+   "brief": "发给目标公司财务总监，质疑存货跌价准备计提不足。用于报告资产减值章节。",
+   "facts": [
+    "管理层表示库龄超过2年的产品均为定制品，不存在跌价风险。",
+    "我们调取了库存台账，发现该类产品过去12个月内无任何出库记录。",
+    "市场调研显示同类技术规格产品价格已较FY25下降40%。",
+    "我们请求提供该批次产品的重置成本评估报告，但尚未收到。"
+   ],
+   "tgt": [
+    "We have identified a potential shortfall in...",
+    "The inventory valuation does not fully reflect...",
+    "Pending your further explanation, we would like to..."
+   ],
+   "traps": [
+    "不要用 'You missed the provision'，应改用 'There is a potential shortfall in the provision'。",
+    "避免使用 'I think your price is too high'，应改为 'The valuation appears to deviate from market trends'。",
+    "不要写 'Why did you do this?'，应改为 'Could you provide the rationale behind this approach?'。"
+   ]
+  },
+  {
+   "id": "mail_government_grant_repayment",
+   "t": "政府补助退回说明函询",
+   "lvl": "★★★",
+   "brief": "发给客户财务经理，询问部分政府补助被收回的原因。用于报告营业外收入章节。",
+   "facts": [
+    "管理层声称该项补助为无条件获得的经常性收入。",
+    "银行流水显示FY26 Q3有200万元款项被政府机构扣划。",
+    "我们调阅了补助批文，发现该项补助附带了严格的环保达标条款。",
+    "关于补助被扣划的正式通知函，目前尚未见披露。"
+   ],
+   "tgt": [
+    "We noted an outflow of funds relating to government grants...",
+    "This event suggests that the conditions were not fully satisfied...",
+    "We are waiting for the formal communication regarding..."
+   ],
+   "traps": [
+    "不要用 'The government took your money back'，应改用 'We noted an outflow of funds'。",
+    "不要写 'You lied about the grant'，应改用 'The nature of the grant warrants clarification'。",
+    "避免使用 'I'm waiting for your email'，应改为 'We look forward to your prompt response regarding this matter'。"
+   ]
+  },
+  {
+   "id": "mail_construction_progress_validation",
+   "t": "在建工程进度确认函",
+   "lvl": "★★★",
+   "brief": "发给项目主管，核实工程进度与付款比例是否匹配。用于报告非流动资产章节。",
+   "facts": [
+    "管理层确认项目进度已达到80%，因此支付了80%工程款。",
+    "我们现场查看，主体结构刚封顶，按行业标准测算进度约为50%。",
+    "审计项目组多次要求查看监理日志，至今未收到。",
+    "银行流水确认该笔大额款项已于上月全额支付给总包商。"
+   ],
+   "tgt": [
+    "There is a discrepancy between the project progress and...",
+    "We are concerned about the alignment of cash outflow with...",
+    "Your further explanation regarding this variance would be appreciated."
+   ],
+   "traps": [
+    "不要用 'You paid too much'，应改用 'The cash outflow seems to outpace the project progress'。",
+    "不要写 'It looks like a fake payment'，应改用 'This variance warrants further explanation'。",
+    "不要写 'I don't believe your management'，应改用 'The information provided requires additional verification'。"
+   ]
+  },
+  {
+   "id": "mail_lease_discrepancy",
+   "t": "租赁负债利息支出核对",
+   "lvl": "★☆☆",
+   "brief": "发邮件给财务经理，询问本年度租赁负债利息计算差异。属于负债项目审计底稿的跟进事项。",
+   "facts": [
+    "管理层称FY25租赁利息采用4.5%的折现率计算",
+    "我们根据合同重新测算，应为4.8%",
+    "管理层解释称差异源于合同变更，但尚未提供补充协议",
+    "截至发稿，我们仍未收到该租赁合同的修订附件"
+   ],
+   "tgt": [
+    "We noted a discrepancy in...",
+    "Could you please clarify the rationale behind...",
+    "Pending your receipt of the updated documentation..."
+   ],
+   "traps": [
+    "不要用 'You are wrong'，用 'We noted a discrepancy' 更客观礼貌",
+    "不要用 'Give me the contract'，用 'Could you please provide' 更符合商务礼仪",
+    "不要用 'I think'，在正式审计中要用 'Our re-calculation suggests' 以体现专业依据"
+   ]
+  },
+  {
+   "id": "mail_intangible_amortization",
+   "t": "无形资产摊销年限确认",
+   "lvl": "★☆☆",
+   "brief": "发邮件给目标公司财务，就非专利技术的摊销期限进行确认。属于无形资产审计部分。",
+   "facts": [
+    "管理层称该专利技术预计使用年限为10年",
+    "我们在访谈中了解到，行业同类技术平均寿命仅为5年",
+    "财务账册显示该资产于FY24年中期入账",
+    "截至目前，管理层尚未提供支持其10年寿命的技术可行性报告"
+   ],
+   "tgt": [
+    "We are currently reviewing the amortization policy...",
+    "Regarding the variance between...",
+    "Could you please share the supporting documentation for..."
+   ],
+   "traps": [
+    "不要用 'It is too long'，用 'We have concerns regarding the appropriateness of the 10-year term'",
+    "不要用 'We heard from you'，用 'Based on our discussion with management' 显得更严谨",
+    "不要用 'You didn't give us'，用 'We have yet to receive' 委婉表达缺失"
+   ]
+  },
+  {
+   "id": "mail_equity_investment_val",
+   "t": "长期股权投资减值测试说明",
+   "lvl": "★☆☆",
+   "brief": "发邮件给同事，要求客户提供被投资单位的减值测试底稿。属于长期股权投资审计。",
+   "facts": [
+    "管理层口头表示该长期股权投资不存在减值迹象",
+    "被投资方9M26财务报表显示净利润同比下滑40%",
+    "我们抽查了被投资方投资协议，无保底条款",
+    "目前尚未收到管理层针对该投资的减值测试测算表"
+   ],
+   "tgt": [
+    "In light of the decline in net profit...",
+    "We kindly request the impairment test model for...",
+    "To facilitate our assessment of..."
+   ],
+   "traps": [
+    "不要用 'I want to see'，用 'We kindly request' 更有职业感",
+    "不要用 'Because of the bad profit'，用 'In light of the decline in performance' 更书面",
+    "不要用 'I think it is impaired'，用 'We are assessing the potential impairment' 保持审计中立"
+   ]
+  },
+  {
+   "id": "mail_bank_reconciliation",
+   "t": "银行账户未达账项说明",
+   "lvl": "★☆☆",
+   "brief": "发邮件给客户，核实银行对账单上的大额未达账项。属于货币资金审计。",
+   "facts": [
+    "管理层称该笔50万元款项为往来款项收回",
+    "我们核对银行流水，发现摘要显示为'保证金退回'",
+    "财务系统显示该金额在期末仍挂在预收账款中",
+    "截至发稿，尚未收到该笔款项对应的银行回单复印件"
+   ],
+   "tgt": [
+    "Regarding the outstanding item on the bank reconciliation...",
+    "Our review of the bank statement contradicts...",
+    "Please provide the supporting evidence for..."
+   ],
+   "traps": [
+    "不要用 'You said it is A, but bank says B'，用 'The transaction description contradicts...' 更客观",
+    "不要用 'It is still wrong'，用 'This requires further reconciliation' 更专业",
+    "不要用 'Why is it in the wrong account?'，用 'Could you clarify the accounting treatment for...' "
+   ]
+  },
+  {
+   "id": "mail_deferred_tax_assets",
+   "t": "递延所得税资产确认差异",
+   "lvl": "★☆☆",
+   "brief": "发邮件给客户财务负责人，确认递延所得税资产的计算基础。属于所得税审计。",
+   "facts": [
+    "管理层称该项资产已抵扣，无需确认递延所得税资产",
+    "我们检查税务筹划方案，该抵扣额度仅限于FY26F",
+    "财务系统显示账面已累计确认300万元递延税资产",
+    "我们尚未收到该项资产的税务备案申请表"
+   ],
+   "tgt": [
+    "We are evaluating the recoverability of...",
+    "Could you please provide the underlying tax calculations for...",
+    "The current treatment appears inconsistent with..."
+   ],
+   "traps": [
+    "不要用 'Your tax calculation is wrong'，用 'The treatment appears inconsistent with...' ",
+    "不要用 'Give me the papers'，用 'Could you please provide the underlying calculations' ",
+    "不要用 'You don't have the proof'，用 'We have not yet received the relevant tax filings' "
+   ]
+  },
+  {
+   "id": "mail_construction_progress",
+   "t": "在建工程完工进度确认",
+   "lvl": "★☆☆",
+   "brief": "发邮件给项目经理，核实资本化在建工程的进度。属于在建工程审计。",
+   "facts": [
+    "管理层称工厂工程完工进度为80%",
+    "我们实地勘察发现主体结构仅完成60%",
+    "施工合同显示FY25Q4应完成主体结构",
+    "截至目前，我们未收到工程进度确认单或监理报告"
+   ],
+   "tgt": [
+    "Based on our site visit, we noted a variance in...",
+    "Could you please clarify the status of the construction project?",
+    "Pending the receipt of the progress report..."
+   ],
+   "traps": [
+    "不要用 'You lied'，用 'We noted a variance' ",
+    "不要用 'The progress is not 80%'，用 'Our observation suggests a lower completion percentage' ",
+    "不要用 'We need the reports'，用 'We would appreciate it if you could provide...' "
+   ]
+  },
+  {
+   "id": "mail_prepaid_expense_amortization",
+   "t": "长期待摊费用摊销核实",
+   "lvl": "★☆☆",
+   "brief": "发邮件给财务部，核实软件许可费的摊销逻辑。属于长期待摊费用审计。",
+   "facts": [
+    "管理层称软件许可费按3年摊销",
+    "我们抽查的软件合同显示该许可仅授权1年",
+    "账面显示已摊销2年，余额为零",
+    "截至发稿，我们尚未收到延期协议或补充说明"
+   ],
+   "tgt": [
+    "We noted an inconsistency in the amortization period of...",
+    "According to the software agreement, the license is valid for...",
+    "Should you have any supporting documents for the renewal..."
+   ],
+   "traps": [
+    "不要用 'The software is only for one year'，用 'The license is valid for one year per the agreement' ",
+    "不要用 'You are wrong about the time'，用 'We noted an inconsistency in the amortization period' ",
+    "不要用 'Send me the extension'，用 'Should you have any supporting documents...' "
+   ]
+  },
+  {
+   "id": "mail_sales_rebate_accrual",
+   "t": "销售返利计提不足沟通",
+   "lvl": "★★★",
+   "brief": "发给目标公司CFO，沟通年度销售返利计提金额与实际执行的差异，并要求补充未归档的补充协议。用于审计报告‘收入与应付账款’章节。",
+   "facts": [
+    "管理层口头表示，FY25返利计提比例统一设定为销售额的3%，无需单独核对。",
+    "我们抽查了5份主要经销商合同，其中2份明确约定返利为阶梯式，最高可达5%。",
+    "公司财务报表显示FY25计提金额为850万元，但基于抽查样本估算应为1,100万元。",
+    "截至现场审计结束，公司仍未提供剩余经销商的最终结算补充协议。"
+   ],
+   "tgt": [
+    "There is a material discrepancy between...",
+    "While management maintains that..., our testing suggests...",
+    "Pending receipt of the outstanding agreements..."
+   ],
+   "traps": [
+    "使用 'I think' 或 'I believe'：过于主观。应改为 'Based on our audit procedures, we identified...'",
+    "使用 'Your number is wrong'：过于直接且对抗性。应改为 'There appears to be a reconciliation variance regarding...'",
+    "混淆 'accrued' 和 'estimated'：accrued是已计提，estimated是预计。在提及差异时应说 'The accrual is insufficient compared to the estimated liability'。"
+   ]
+  },
+  {
+   "id": "mail_marketing_expense_capitalization",
+   "t": "营销费用资本化性质质疑",
+   "lvl": "★★★",
+   "brief": "发给目标公司财务总监，质疑将大规模品牌推广费归集为长期待摊费用的做法，要求提供资本化依据。用于审计报告‘期间费用’章节。",
+   "facts": [
+    "管理层称该笔支出属于长期的品牌建设投入，具有跨年度获益性质。",
+    "我们抽查了30张费用报销凭证，发现约40%为短期节假日促销活动费。",
+    "总账显示9M26资本化金额为1,200万元，而去年同期仅为200万元。",
+    "至今未收到管理层承诺提供的费用明细分类账及其资本化测算表。"
+   ],
+   "tgt": [
+    "We are concerned about the accounting treatment of...",
+    "In contrast to management’s view that..., our observation indicates...",
+    "We have yet to receive the requested breakdown..."
+   ],
+   "traps": [
+    "使用 'You should not capitalize'：语气过于命令式。应改为 'We invite your comments on why this treatment is deemed appropriate'。",
+    "使用 'The money was spent for...'：用词不专业。应改为 'The expenditure was incurred for...'",
+    "滥用 'It seems like'：显得不够专业。应改为 'The evidence collected suggests that...'"
+   ]
+  },
+  {
+   "id": "mail_r_d_personnel_cost",
+   "t": "研发人员薪酬归集差异沟通",
+   "lvl": "★★★",
+   "brief": "发给目标公司HR及财务负责人，说明研发人员薪酬核算与实际职能不符，要求澄清。用于审计报告‘研发费用’章节。",
+   "facts": [
+    "管理层声称研发部门所有人员均全职从事创新项目研发工作。",
+    "我们实地观察发现，研发部办公室约30%人员主要负责生产线日常运维。",
+    "抽查FY25工资单发现，研发部门人均薪酬高出生产部门45%。",
+    "目前尚未收到员工岗位职责说明书（JD）及考勤原始记录。"
+   ],
+   "tgt": [
+    "The allocation of personnel costs appears to deviate from...",
+    "Although management represents that..., our physical observation reveals...",
+    "Regarding the missing documentation, we would appreciate it if..."
+   ],
+   "traps": [
+    "使用 'You lied to us'：极度不妥且缺乏职业怀疑精神。应改为 'There is a potential inconsistency between management's representation and our findings'。",
+    "使用 '研发部薪酬太高'（Salary is too high）：缺乏量化对比。应改为 'The compensation level significantly exceeds the benchmark for...'",
+    "使用 'Please give us the files'：过于随意。应改为 'We would appreciate it if you could provide the documentation as soon as possible'。"
+   ]
+  },
+  {
+   "id": "mail_construction_progress_reconciliation",
+   "t": "在建工程完工进度核实",
+   "lvl": "★★★",
+   "brief": "发给目标公司工程部主管，询问报表在建工程进度与实际施工进度不符的原因。用于审计报告‘资产真实性’章节。",
+   "facts": [
+    "管理层称FY26上半年在建工程完工进度已达85%。",
+    "我们现场检查发现主体结构仅完成60%，且部分设备尚未进场安装。",
+    "供应商合同显示设备付款进度仅为40%。",
+    "截至审计截止日，尚未收到监理方签署的进度确认函。"
+   ],
+   "tgt": [
+    "There is a notable variance between...",
+    "Notwithstanding management’s assertion that..., our site visit suggests...",
+    "We are still awaiting the confirmation from..."
+   ],
+   "traps": [
+    "使用 'Your report is fake'：严重指责。应改为 'The reported progress seems to conflict with the site inspection results'。",
+    "使用 'They didn't tell us'：推卸责任的口吻。应改为 'The information has not been made available to us to date'。",
+    "使用 'Look at the contract'：态度傲慢。应改为 'Based on the terms stipulated in the contract, we have noted that...'"
+   ]
+  },
+  {
+   "id": "mail_gov_grant_compliance",
+   "t": "政府补助合规性差异沟通",
+   "lvl": "★★★",
+   "brief": "发给目标公司财务部门，质疑某项政府补助确认为收益性而非递延收益，要求提供文件。用于审计报告‘非经常性损益’章节。",
+   "facts": [
+    "管理层坚称该笔500万元补助为日常经营补贴，可直接计入当期损益。",
+    "政府批文显示该资金专用于购买特定环保设备，且附带5年持有限制。",
+    "我们已核对银行流水，资金确实于9M26到账。",
+    "目前仍未收到该笔补助对应的专项管理制度或合规性自查报告。"
+   ],
+   "tgt": [
+    "We question the classification of...",
+    "Contrary to management’s view that..., the terms of the grant indicate...",
+    "Regarding the lack of documentation, please clarify..."
+   ],
+   "traps": [
+    "使用 'You are wrong about the grant'：简单否定。应改为 'We have a different interpretation regarding the accounting treatment of...'",
+    "使用 'The money is for buying machines'：过于口语。应改为 'The proceeds are restricted for the acquisition of fixed assets'。",
+    "使用 'We need to talk'：太模糊。应改为 'We would like to schedule a brief discussion to resolve this accounting matter'。"
+   ]
+  },
+  {
+   "id": "mail_long_term_investment_impairment",
+   "t": "长期股权投资减值测试质疑",
+   "lvl": "★★★",
+   "brief": "发给投资部门，指出被投资公司亏损严重但未计提减值，要求补充测试资料。用于审计报告‘长期资产减值’章节。",
+   "facts": [
+    "管理层称该被投资子公司未来业务前景广阔，无需计提减值。",
+    "被投资方FY25亏损2,000万元，且连续三个季度现金流为负。",
+    "我们查询公开信息发现该被投资方主要客户已于FY26退市。",
+    "至今未收到管理层基于FY26数据更新的减值测试模型。"
+   ],
+   "tgt": [
+    "The current carrying value may be overstated due to...",
+    "While management is optimistic about..., our analysis of the financial position shows...",
+    "Please provide the updated impairment model to support your position."
+   ],
+   "traps": [
+    "使用 'I am worried'：不够专业。应改为 'We are concerned about the recoverability of...'",
+    "使用 'Nobody told us about the customer'：显得不专业。应改为 'We noted that the major customer has delisted, which may indicate...'",
+    "使用 'Your test is bad'：缺乏建设性。应改为 'The assumptions used in the impairment model appear to be overly aggressive'。"
+   ]
+  },
+  {
+   "id": "mail_inventory_shrinkage_explanation",
+   "t": "存货盘亏性质说明函询",
+   "lvl": "★★★",
+   "brief": "发给目标公司仓储主管，询问盘点差异原因，要求书面解释。用于审计报告‘存货’章节。",
+   "facts": [
+    "管理层口头解释盘亏系系统录入错误，已安排更正。",
+    "我们抽盘发现，盘亏的原材料多为易腐蚀且有效期临近的化学品。",
+    "存货账面金额比实物库存高出150万元。",
+    "尚未收到相关责任部门出具的盘点差异调查报告。"
+   ],
+   "tgt": [
+    "The physical inventory count revealed a discrepancy of...",
+    "Although management attributes this to a system error, our observation suggests...",
+    "We are currently waiting for the formal investigation report."
+   ],
+   "traps": [
+    "使用 'Why did you lose the items?'：质问口吻。应改为 'Could you please clarify the root cause of the inventory discrepancy?'",
+    "使用 'It's a big mess'：情绪化用词。应改为 'The inventory management system appears to have significant internal control weaknesses'。",
+    "使用 'I think it's theft'：过早定性。应改为 'We cannot rule out the possibility of material loss or obsolescence'。"
+   ]
+  },
+  {
+   "id": "mail_equity_method_investment",
+   "t": "权益法核算调整沟通",
+   "lvl": "★☆☆",
+   "brief": "发给目标公司财务部，要求核对联营企业投资收益的会计处理差异。属于审计报告‘长期股权投资’章节。",
+   "facts": [
+    "管理层口头表示，对A公司的持股比例为30%，采用权益法核算。",
+    "我们计算发现，FY25投资收益多计了200万元。",
+    "我们查阅了投资协议，显示表决权比例为25%。",
+    "截至发稿日，尚未收到关于为何按30%比例核算的详细说明。"
+   ],
+   "tgt": [
+    "Please clarify the discrepancy regarding...",
+    "Could you provide the reconciliation for...",
+    "We have noted a variance of..."
+   ],
+   "traps": [
+    "使用 'I think'。这是正式邮件，应使用 'We have noted' 或 'It appears that'。",
+    "使用 'Make it right'。应使用 'Please adjust the figures to reflect...'。",
+    "句式杂糅 'Due to A company is not 30%, so...'。应使用 'As the shareholding is 25%, the equity pick-up should be adjusted accordingly.'"
+   ]
+  },
+  {
+   "id": "mail_lease_payment_inconsistency",
+   "t": "租赁付款额核对函询",
+   "lvl": "★☆☆",
+   "brief": "发给目标公司，沟通租赁合同与实际支付金额的差异。属于审计报告‘租赁负债’章节。",
+   "facts": [
+    "管理层称，所有租赁支出均已按合同约定支付。",
+    "我们抽查了12份租赁合同，月租金合计50万元。",
+    "银行流水显示，FY26前9个月实际支付租赁费合计480万元。",
+    "尚未收到关于差额20万元的解释说明。"
+   ],
+   "tgt": [
+    "There is a discrepancy between...",
+    "Kindly reconcile the variance in...",
+    "We are still awaiting your response regarding..."
+   ],
+   "traps": [
+    "使用 'You are wrong about the payment'。显得攻击性太强，应使用 'There appears to be a discrepancy'。",
+    "使用 'The money is missing'。审计用语应精确，应使用 'The variance remains unexplained'。",
+    "使用 'Why you didn't pay?'。应使用 'Could you please clarify the reason for this variance?'"
+   ]
+  },
+  {
+   "id": "mail_intangible_asset_amortization",
+   "t": "无形资产摊销差异确认",
+   "lvl": "★☆☆",
+   "brief": "发给财务负责人，针对无形资产摊销年限与实际使用情况的差异。属于审计报告‘无形资产’章节。",
+   "facts": [
+    "管理层声称软件系统预计使用寿命为10年。",
+    "我们检查了资产清单，该软件合同期限仅为5年。",
+    "9M26的摊销明细表显示，月度摊销额为10万元。",
+    "尚未收到关于资产预计寿命与合同期限不一致的补充说明。"
+   ],
+   "tgt": [
+    "Regarding the useful life of...",
+    "Please justify the basis for the estimation...",
+    "We have identified a difference in..."
+   ],
+   "traps": [
+    "使用 'You said 10 years, but 5 years is right'。应使用 'While management estimates a 10-year life, the contract states 5 years'。",
+    "使用 'It is very weird'。报告中不应使用感情色彩词，应使用 'This discrepancy requires further clarification'。",
+    "使用 'Please change your number'。应使用 'Please confirm if an adjustment is required'。"
+   ]
+  },
+  {
+   "id": "mail_warranties_provision",
+   "t": "质保金计提基数核实",
+   "lvl": "★☆☆",
+   "brief": "发给销售部门负责人，核实质保金计提的收入基数是否包含增值税。属于审计报告‘预计负债’章节。",
+   "facts": [
+    "管理层口头表示，质保金是按含税销售额的3%计提。",
+    "我们重新计算发现，FY25计提金额为600万元。",
+    "根据销售明细表，FY25不含税销售额为2亿元。",
+    "尚未收到计提基数是否包含增值税的正式书面确认。"
+   ],
+   "tgt": [
+    "We are currently reviewing the basis for...",
+    "Could you verify whether the provision is calculated based on...",
+    "We look forward to your prompt response."
+   ],
+   "traps": [
+    "使用 'You calculated wrongly'。应使用 'We are reviewing the calculation methodology'。",
+    "使用 'Is the tax included?'。应使用 'Please clarify if the provision base is inclusive or exclusive of VAT'。",
+    "使用 'I need you to answer me soon'。应使用 'We would appreciate it if you could clarify this by [Date]'"
+   ]
+  },
+  {
+   "id": "mail_deferred_tax_adjustment",
+   "t": "递延所得税资产差异函询",
+   "lvl": "★☆☆",
+   "brief": "发给税务经理，沟通递延所得税资产的确认差异。属于审计报告‘所得税’章节。",
+   "facts": [
+    "管理层认为计提的存货跌价准备可全额确认递延所得税资产。",
+    "我们测算显示，部分项目超出了预计抵扣期限。",
+    "FY25报表显示递延所得税资产余额为500万元。",
+    "我们尚未收到关于未来期间应纳税所得额预测的详细依据。"
+   ],
+   "tgt": [
+    "In relation to the deferred tax asset...",
+    "Please provide supporting documentation for...",
+    "We have identified a potential adjustment regarding..."
+   ],
+   "traps": [
+    "使用 'It's impossible to confirm'。应使用 'We have concerns regarding the recoverability'。",
+    "使用 'Tell me why you did this'。应使用 'Could you explain the rationale behind...'。",
+    "使用 'You didn't give me the data'。应使用 'The supporting documentation for the forecast is still pending'。"
+   ]
+  },
+  {
+   "id": "mail_related_party_pricing",
+   "t": "关联方交易定价公允性问询",
+   "lvl": "★★★",
+   "brief": "发给目标公司财务经理，质疑其对关联方销售价格低于市场水平的合理性。涉及尽调报告的“交易关联性与公允性”部分。",
+   "facts": [
+    "管理层称关联方定价采取了成本加成法，符合市场惯例。",
+    "我们对比了 FY25 销售明细，关联方平均售价比非关联方低 22%。",
+    "关联方交易合同中未明确约定付款账期。",
+    "财务总监承诺提供的同期可比交易定价分析报告目前尚未收到。"
+   ],
+   "tgt": [
+    "There is a notable price gap between related and third-party sales.",
+    "We are seeking further justification regarding the pricing strategy.",
+    "Pending your feedback on the comparable transaction analysis, we..."
+   ],
+   "traps": [
+    "大量使用 'I think'，在尽调邮件中显得不够权威，应使用 'Our analysis indicates'。",
+    "使用 'Don't you think it's wrong?' 这种反问句，显得带有攻击性，应使用 'Could you please clarify the rationale behind'。",
+    "混淆 'rational' (理性的) 和 'rationale' (根本原因)，应使用 'the rationale behind the pricing'。"
+   ]
+  },
+  {
+   "id": "fdd_unrecorded_warranty_provision",
+   "t": "产品质量保证金计提不足风险",
+   "lvl": "★★☆",
+   "brief": "针对目标公司历史售后维修费用上升但未充分计提预计负债的发现。读者是买方 Deal Team，放置于 FDD 运营及财务风险章节。",
+   "facts": [
+    "管理层口头声称：产品质量稳定，按历史 1% 的标准计提质保金完全足够覆盖未来支出。",
+    "我们抽查了 FY25 维修日志，发现由于某核心组件批次缺陷，实际售后维修率在 9M26 上升至 3.5%。",
+    "财务账面显示，FY25 末及 9M26 末的质保金计提比例仍固定在 1%，未随实际赔付率上升作相应调整。",
+    "我们向技术负责人询问未来组件更换成本，截至发稿日仍未收到包含成本测算模型的书面回复。",
+    "我们计算了若按 3.5% 实际赔付率补提，将对 9M26 净利润产生约 320 万元的负面影响。"
+   ],
+   "tgt": [
+    "based on the limited data available to date",
+    "indicate a potential under-provision",
+    "we are not in a position to quantify the exact financial impact without..."
+   ],
+   "traps": [
+    "写成 'Management underestimated the warranty on purpose.'，主观臆断管理层动机，应改为 'the historical provision rate appears inadequate relative to recent empirical defect trends'",
+    "直接下定论说 'The company must pay 3.2 million for warranty.'，忽略了模型未最终确认的事实，应使用 'preliminary recalculation suggests a potential downward adjustment of approximately... pending final technical input'",
+    "把管理层的解释直接翻译为 'Management's claim is false.'，措辞过于粗鲁，应使用 'Management attributed this to... which, however, is not supported by the increasing trend observed in the maintenance logs'"
+   ]
+  },
+  {
+   "id": "fdd_tax_non_compliance_exposure",
+   "t": "地方税收优惠及潜在补缴风险",
+   "lvl": "★★☆",
+   "brief": "针对目标公司享受的高新技术企业税收优惠及部分无票收入引发的税务合规风险。读者是买方 Tax & Legal 团队，用于 FDD 税务合规章节。",
+   "facts": [
+    "管理层口头声称：所有享受地方财政返还及 15% 优惠税率的业务均具备完整的合规批复。",
+    "我们查阅了地方税务局批文，发现其中一笔大额增值税优惠需以当地实体雇员达到 100 人为前提。",
+    "我们核对社保缴纳人数，9M26 在册缴纳社保员工平均仅为 78 人，不满足上述优惠前置条件。",
+    "我们向财务总监索取了与当地税务主管机关的沟通备忘录，截至定稿日前仍未收到任何豁免确认函。",
+    "我们抽查了 FY25 销售明细，发现约有 8% 的收入为无票现金收款且未申报纳税。"
+   ],
+   "tgt": [
+    "exposes the target to potential retroactive tax liabilities",
+    "we cannot rule out the possibility of...",
+    "absent formal clearance from the tax authority"
+   ],
+   "traps": [
+    "写成 'The company will definitely be fined by tax bureau.'，替税务局做了裁决，正确写法应为 'creates a non-compliance exposure that may trigger retrospective adjustments'",
+    "直接用 'Management avoided tax illegally.'，用词过于情绪化，应采用 'the unreported cash sales and headcount shortfall indicate potential tax exposure'",
+    "忽略尚未收到豁免函这一事实，写成 'Tax authorities rejected the exemption.'，属于虚构未证实的信息，应写为 'pending formal written confirmation from local tax authorities, the ultimate tax outcome remains uncertain'"
+   ]
+  },
+  {
+   "id": "fdd_inventory_obsolescence_slow_moving",
+   "t": "长库龄及呆滞备件跌价准备不足",
+   "lvl": "★★☆",
+   "brief": "评估目标公司对定制化专用设备备件的库龄分析及跌价计提充分性。读者是买方运营与财务团队，用于资产质量分析小节。",
+   "facts": [
+    "管理层口头声称：所有库龄超过 2 年的备件均有对应的特定海外老旧设备维护需求，不会发生彻底报废。",
+    "我们提取了 ERP 库龄报表，显示库龄超过 2 年的备件账面余值达 1,200 万元，占总库存比例达 28%。",
+    "我们抽查了上述长库龄备件近 12 个月的出库记录，其中 70% 的备件在这期间没有任何领用记录。",
+    "我们向设备工程部主管访谈其未来耗用计划，截至外勤结束仍未收到书面的备件消耗预测表。",
+    "财务账面仅按统一 3% 的低比例计提了存货跌价准备，未对上述呆滞类别单独测算可变现净值。"
+   ],
+   "tgt": [
+    "suggests a heightened risk of unprovided inventory write-downs",
+    "while management asserted that... we note a lack of recent consumption records",
+    "cannot be independently substantiated without..."
+   ],
+   "traps": [
+    "写成 'Management is hiding dead inventory.'，带有攻击性，应改为 'the current provisioning policy may not fully reflect the realization risks associated with slow-moving stock'",
+    "直接在报告里写 'The inventory is worthless and must be written off completely.'，越俎代庖替买方做商业决策，应使用 'may require additional impairment provisions, subject to a detailed net realizable value assessment'",
+    "漏掉未收到消耗预测这一限制条件，写成 'There is no demand for these parts.'，事实是没拿到表而不是没有需求，应写为 'in the absence of documented future consumption plans, we are unable to validate management's assumptions'"
+   ]
+  },
+  {
+   "id": "fdd_construction_in_progress_stalled",
+   "t": "在建工程长期停工及减值迹象",
+   "lvl": "★★☆",
+   "brief": "评估目标公司某核心生产线在建工程长期无显著进展但未计提减值的合理性。读者是买方 Deal Team，用于固定资产与资本开支章节。",
+   "facts": [
+    "管理层口头声称：生产线建设近期因供应商技术升级图纸调整而暂时放缓，主体结构安全有效。",
+    "我们实地察看该在建工程现场，发现现场无施工人员，主要设备组件露天存放且表面出现轻微锈蚀。",
+    "我们向工程监理方发送了施工进度确认函，截至现场工作结束仍未收到任何回函或进度证明。",
+    "财务账面显示，该项目自 FY24 下半年起资本化金额基本归零，但累计账面余额仍维持在 4,500 万元高位。",
+    "我们抽查了最近 6 个月的工程付款凭证，发现仅有少量日常零星维护费，无实质性建设投入。"
+   ],
+   "tgt": [
+    "exhibits notable indicators of impairment",
+    "while management attributed the delay to... visual observations and lack of activity suggest otherwise",
+    "in the absence of external confirmation from the engineering supervisor"
+   ],
+   "traps": [
+    "写成 'The construction project has been abandoned and is completely useless.'，过于绝对且超出财务尽调专业边界，应改为 'the prolonged inactivity and absence of verifiable progress point to a potential impairment risk'",
+    "直接写 'Management lied about the technical upgrade.'，语气不专业，应表达为 'management's explanation regarding design modifications could not be corroborated by physical inspection or supervisory feedback'",
+    "忽略未收到监理回函的限定，直接说 'The supervisor confirmed the project is stalled.'，属于捏造外部证据，应写为 'pending receipt of the supervisor's confirmation, we cannot definitively conclude on the physical status'"
+   ]
+  },
+  {
+   "id": "fdd_unbilled_revenue_realizability",
+   "t": "大额未开票收入期后回款风险",
+   "lvl": "★★☆",
+   "brief": "针对目标公司年末确认的大额未开票系统集成收入期后回款缓慢的发现。读者是买方 Deal Team，用于营运资金与收入确认章节。",
+   "facts": [
+    "管理层口头声称：这笔未开票收入对应的系统集成项目已于 FY25 年底通过客户初步验收，款项将在 9M26 陆续收回。",
+    "我们查阅了对应客户的期后银行回款流水，截至外勤结束，该笔未开票金额的期后回款率仅为 12%。",
+    "我们向项目经理索取了客户签署的正式初验报告原件，截至定稿日仍未收到该文件的电子版或纸质版。",
+    "财务账面在 FY25 末确认了该笔收入并挂在合同资产科目，但账龄已超过 9 个月。",
+    "我们抽查了同类其他项目的收款周期，通常平均回款期不超过 90 天。"
+   ],
+   "tgt": [
+    "raises significant doubts regarding the collectability of unbilled revenue",
+    "exceeds the historical collection cycle, yet lacks the corresponding primary acceptance documentation",
+    "while management asserted that... realization remains subject to heightened credit risk"
+   ],
+   "traps": [
+    "写成 'The revenue was fake and will never be collected.'，过于口语化且带有绝对化主观色彩，应改为 'the prolonged collection period coupled with missing acceptance evidence indicates a heightened collectability risk'",
+    "直接用 'Management fabricated the milestone.'，不符合审计报告专业用语，应写为 'in the absence of the signed preliminary acceptance report, the timing of revenue recognition cannot be fully validated'",
+    "漏掉期后回款率低这一事实，只写管理层解释，应写为 'although management claimed that... actual post-period cash collections to date have been minimal'"
+   ]
+  },
+  {
+   "id": "fdd_deferred_revenue_breakdown",
+   "t": "递延收益与客户履约风险",
+   "lvl": "★★★",
+   "brief": "写一段关于大额预收货款/递延收益无法匹配实际履约进度的发现，读者为买方Deal Team，放在FDD报告的运营负债与营运资金章节。",
+   "facts": [
+    "管理层口头声称：FY25末高达1,200万元的递延收益主要对应将在FY26F前三季度交付的定制化软件实施服务。",
+    "我们抽查了15笔大额递延收益合同，其中4笔合同对应的项目已于FY25年中期验收完毕，但仍全额挂账在负债端未转入收入。",
+    "系统日志与交付确认单显示，上述4笔已完工项目的对应成本已在FY25全部结转，但财务账面未做相应的收入确认调整。",
+    "我们向财务总监索取剩余未完工项目的最新工时表与第三方监理报告，截至外勤现场撤离日（2026年4月15日）仍未收到。",
+    "银行流水显示，上述客户在FY25第四季度曾要求退还其中2笔已逾期项目的预付款合计350万元，但管理层未予同意并记为不可退定金。"
+   ],
+   "tgt": [
+    "Management contends that...",
+    "However, our substantive testing reveals discrepancy...",
+    "Pending receipt of outstanding project schedules, we are unable to verify..."
+   ],
+   "traps": [
+    "错误写法：'Management said that, but we found it is wrong.' 评价：过于口语化且缺乏客观专业的批判性，报告中应使用 'Management contends that... however, our analytical review indicates...'。",
+    "错误写法：'We still have no time to get the report.' 评价：语法错误且表达不够正式，应写为 'Pending the receipt of documentation... we were unable to substantiate...'。",
+    "错误写法：'The company didn't do revenue recognition.' 评价：用词不够精确，审计报告中应指明 'The entity failed to recognize revenue upon the satisfaction of performance obligations'。"
+   ]
+  },
+  {
+   "id": "fdd_capitalized_rd_costs",
+   "t": "研发费用资本化合规性瑕疵",
+   "lvl": "★★★",
+   "brief": "写一段关于研发支出资本化条件不满足但仍被计入无形资产的发现，读者为买方Deal Team，放在FDD报告的资产质量章节。",
+   "facts": [
+    "管理层口头解释：FY25资本化的500万元研发人员薪酬完全符合高新技术企业认定标准，且项目已进入开发阶段并具备技术可行性。",
+    "我们抽查了该项目组研发人员的考勤记录与工时分配表，发现其中30%的工时实际上耗用于已量产老产品的日常维护与缺陷修复。",
+    "项目立项评审记录显示，核心技术方案在FY25年底前并未通过内部专家委员会的正式技术可行性审批，立项文件存在后补嫌疑。",
+    "我们向研发负责人要求提供FY25期间各研发人员的具体工作日志及阶段性测试报告，截至FDD初稿完成时尚未收到。",
+    "访谈纪要显示，负责该资本化项目的两名核心架构师已于2026年1月离职，相关技术文档的完整性无法得到内部复核。"
+   ],
+   "tgt": [
+    "Management asserted that...",
+    "Nevertheless, our sample testing demonstrated that...",
+    "In the absence of requested logs, we cannot ascertain..."
+   ],
+   "traps": [
+    "错误写法：'Management lied about the capitalization.' 评价：‘lied’带有主观恶意指控，审计报告中应使用中性且专业的表述如 'Management asserted... however, our testing demonstrated otherwise'。",
+    "错误写法：'We didn't get the logs so we guess it is wrong.' 评价：‘guess’显得极不专业，应使用 'In the absence of corroborating evidence, we are unable to substantiate...'。",
+    "错误写法：'The R&D cost is fake.' 评价：‘fake’用词过激，应表述为 'Certain maintenance expenditures were inappropriately capitalized rather than expensed as incurred'。"
+   ]
+  },
+  {
+   "id": "fdd_fluctuation_in_warranty_provision",
+   "t": "产品质量索赔及质保金低估",
+   "lvl": "★★★",
+   "brief": "写一段关于历史质量索赔率上升但质保金计提比例保持不变的发现，读者为买方Deal Team，放在FDD报告的预计负债与或有事项章节。",
+   "facts": [
+    "管理层口头表示：FY25质保金计提比例一直维持在营业收入的2%，该比例足以覆盖历史平均索赔水平。",
+    "我们统计了9M26的售后维修日志，发现由于某核心零部件供应商变更，FY25出货产品的实际返修率较FY24上升了45%。",
+    "财务账面明细显示，9M26实际发生的质量索赔现金流出已达380万元，超过了同期计提的质保准备总额250万元。",
+    "我们向质量控制部索取了FY25至9M26所有重大客户质量索赔的最终赔偿协议及技术鉴定书，截至外勤结束仍有大半未提供。",
+    "销售总监在访谈中承认，部分大客户已因产品故障威胁在FY26F扣减后续订单货款，但财务部未在FY25末计提相关预计负债。"
+   ],
+   "tgt": [
+    "Management maintains that...",
+    "Conversely, our audit procedures indicate an upward trend in...",
+    "Subject to the receipt of outstanding claim agreements..."
+   ],
+   "traps": [
+    "错误写法：'Management's policy is wrong and too low.' 评价：主观评判语气不适合FDD报告，应客观指出 'Management maintains... whereas our empirical analysis highlights a potential under-provision'。",
+    "错误写法：'We haven't received papers, so it must be understated.' 评价：逻辑跳跃且带有推测性，应写为 'Pending receipt of the final settlement agreements, the adequacy of the provision cannot be conclusively determined'。",
+    "错误写法：'The company didn't care about product quality.' 评价：属于主观商业评论而非财务事实，应表述为 'The historical warranty provision rate fails to reflect the recent surge in actual claims'。"
+   ]
+  },
+  {
+   "id": "fdd_suspicious_other_receivables",
+   "t": "大额其他应收款的可收回性风险",
+   "lvl": "★★★",
+   "brief": "写一段关于长期挂账且缺乏商业实质的其他应收款项减值风险，读者为买方Deal Team，放在FDD报告的营运资本与资产质量章节。",
+   "facts": [
+    "管理层口头解释：FY25末账面余额800万元的其他应收款（性质为向某供应商支付的履约保证金）将在FY26F第一季度全额退回。",
+    "我们通过公开企业信息查询发现，该收款供应商早在FY24已被吊销营业执照，且与目标公司无直接业务往来背景。",
+    "银行流水穿行测试显示，该笔800万元资金在FY24划出后，最终经由两层中间账户流向了目标公司某前高管的个人亲属账户。",
+    "我们向财务部索取了对应保证金项目的原始业务合同及催收记录函，截至现场工作结束未收到任何催收证明文件。",
+    "内部审计底稿显示，财务总监曾在FY25年底建议对该笔款项全额计提坏账准备，但被董事会以影响当期利润为由否决。"
+   ],
+   "tgt": [
+    "Management asserts that...",
+    "In contrast, our background check and cash tracing reveal that...",
+    "Absent supporting documentation and given the counterparty's status, recoverability is highly questionable..."
+   ],
+   "traps": [
+    "错误写法：'Management is lying about this receivable because it went to a personal account.' 评价：用词带有强烈主观指控色彩，应客观表述为 'Management asserts... whereas our cash tracing indicates funds were directed towards a related individual'。",
+    "错误写法：'We cannot find any paper so it is a bad debt.' 评价：结论下得过早，应写为 'In the absence of collection efforts and valid contracts, the recoverability of these receivables is subject to significant uncertainty'。",
+    "错误写法：'The board stopped the bad debt provision to make profit look better.' 评价：属于揣测管理层动机，应表述为 'While internal recommendations suggested impairment, no bad debt provision was recognized'。"
+   ]
+  },
+  {
+   "id": "fdd_unbilled_revenue_recognition_risk",
+   "t": "大额未开票收入确认的依据不足",
+   "lvl": "★★★",
+   "brief": "写一段关于FY25末突击确认大额未开票收入但缺乏客户签收证据的发现，读者为买方Deal Team，放在FDD报告的收入确认与毛利分析章节。",
+   "facts": [
+    "管理层口头解释：FY25末确认的600万元未开票收入对应已向电信运营商发货并完成安装调试的项目，完全符合合同约定的验收条款。",
+    "我们抽查了该批未开票收入对应的5笔大额订单，发现其中2笔订单的客户签收单上的签字日期为FY26年1月上旬，即资产负债表日之后。",
+    "物流单据显示，这批货物在FY2512月31日当天仍在途运输，并未送达客户指定的最终项目现场。",
+    "我们向销售部门索取了针对上述2笔订单的客户最终验收确认函及邮件沟通记录，截至现场外勤结束时仍未取得客户的正式盖章确认。",
+    "期后收款测试显示，截至2026年4月初，这600万元未开票收入对应的期后回款率为零，远低于公司平均期后回款水平。"
+   ],
+   "tgt": [
+    "Management asserts that...",
+    "Nevertheless, our inspection of shipping logs and customer sign-off dates indicates premature recognition...",
+    "Pending receipt of customer acceptance confirmations, the timing of revenue recognition remains unsupported..."
+   ],
+   "traps": [
+    "错误写法：'Management made up fake revenue at year end.' 评价：指控性词汇过强，应客观表述为 'Management asserts... however, our testing of shipping documents indicates premature revenue recognition'。",
+    "错误写法：'We haven't received customer confirmation, so it is definitely fake.' 评价：带有武断色彩，应写为 'In the absence of customer sign-offs prior to the balance sheet date, the appropriate timing of recognition is questionable'。",
+    "错误写法：'The company did not collect money, which is terrible.' 评价：过于口语化且带有情绪化贬义，应表述为 'Subsequent collection for these unbilled amounts remains nil as of the report date'。"
+   ]
+  },
+  {
+   "id": "mail_warranty_provision_gap",
+   "t": "产品质保金计提不足沟通",
+   "lvl": "★★☆",
+   "brief": "写给目标公司财务负责人的邮件，探讨历史质保金计提比例与实际赔付率存在背离的问题。放在尽职调查报告财务分析附表的相关段落。",
+   "facts": [
+    "管理层声称，FY25的产品质保费用率一直稳定维持在营业收入的2.5%左右，因此无需调增期末质保金计提比例。",
+    "我们检查了FY24至FY25的实际售后维修明细账，发现实际发生的售后赔付支出占同期营业收入的比例实际已达到4.2%。",
+    "管理层未能提供支持其2.5%预计负债计提比例的行业对标数据或历史赔付率测算模型。",
+    "截至外勤工作结束日，技术部门关于未来三年产品故障率预测的专项分析报告仍未编制完成并提供给我们。"
+   ],
+   "tgt": [
+    "appears to be understated",
+    "pending the receipt of / subject to the finalization of",
+    "differs significantly from historical actuals"
+   ],
+   "traps": [
+    "直接指责对方隐瞒时常写『Your provision is wrong』，不符合专业礼仪；应写『Our analysis indicates a potential understatement in...』",
+    "描述资料缺失时常写『You didn't give us the report』，口语化严重；应用『As the technical report has not yet been finalized, we are currently unable to...』",
+    "对比历史数据时常写『The actual number is bigger』，词汇匮乏；应用『Actual claims experience demonstrates a noticeable divergence from...』"
+   ]
+  },
+  {
+   "id": "mail_long_term_equity_impairment",
+   "t": "长期股权投资减值测试复核",
+   "lvl": "★★☆",
+   "brief": "写给资产评估师和目标公司财务总监的邮件，就对某重要联营企业长期股权投资的可收回金额测算进行沟通。放在长期资产减值复核章节中。",
+   "facts": [
+    "管理层表示，联营企业A公司虽然在FY25出现了阶段性经营亏损，但由于其核心技术即将突破，未来五年现金流预测无需下调。",
+    "我们查阅了A公司FY25的未经审计财务报表，显示其核心产品销量同比下滑40%，且主要大客户已流失两家。",
+    "管理层提供的减值测试模型中，采用的折现率（WACC）较上年显著调低，但测算底稿中未见支持该WACC参数变动的宏观经济及行业风险溢价依据。",
+    "截至目前，我们尚未收到外部独立评估机构出具的最终资产评估报告。"
+   ],
+   "tgt": [
+    "appear to be overly optimistic",
+    "pending receipt of the final valuation report",
+    "warrants a more conservative set of assumptions"
+   ],
+   "traps": [
+    "批评对方预测太乐观常写『Your forecast is too good to be true』，过于口语；应写『Certain key assumptions embedded in the cash flow projections appear optimistic in light of...』",
+    "提及评估报告未出时常写『The valuation report is not ready』，不够专业；应用『As the final valuation report remains pending, our review of the recoverable amount is currently limited to...』",
+    "指出参数不对时常写『Your discount rate is wrong』，缺乏职业审慎；应用『The rationale for the adjustment to the discount rate requires further clarification』"
+   ]
+  },
+  {
+   "id": "mail_inventory_scrap_loss_cut",
+   "t": "存货盘亏及报废损益截止性核实",
+   "lvl": "★★☆",
+   "brief": "写给目标公司仓库主管及财务经理的邮件，核实大批呆滞存货盘亏损益在FY25与FY26期间的归属准确性。放在存货监盘及期末截止测试报告中。",
+   "facts": [
+    "仓库负责人说明，FY25年末盘点发现的价值300万元毁损原材料已在FY26年1月集中进行了系统出库与报废处理。",
+    "我们抽查了FY25年12月最后一周的出库单据与仓库监控记录，发现部分毁损实物在FY25年12月中旬就已经实质移出正常存储区。",
+    "财务部在编制FY25年报时，未对这部分已实质毁损的存货计提相应的跌价准备或直接做损益处理。",
+    "截至现场审计结束，关于这批毁损存货的具体责任认定及管理层审批文件仍未完整归档。"
+   ],
+   "tgt": [
+    "may have a cut-off implication",
+    "in the absence of finalized approval documentation",
+    "indicates a potential period-end attribution issue"
+   ],
+   "traps": [
+    "指责跨期处理常写『You put it in the wrong year』，太随意；应写『The current evidence suggests a potential cut-off discrepancy regarding the recognition of...』",
+    "表达审批文件缺失常写『No one signed the approval』，不够严谨；应用『Pending the retrieval of the formal management approval documentation, the exact timing of... remains subject to further verification』",
+    "谈到存货毁损时常写『The goods are broken』，不够书面；应用『The physical deterioration of the inventory items appears to have occurred prior to...』"
+   ]
+  },
+  {
+   "id": "mail_government_grant_conditions",
+   "t": "政府补助与日常活动相关性确认",
+   "lvl": "★★☆",
+   "brief": "写给目标公司税务总监的邮件，核实一项大额专项财政补贴是应当计入其他收益还是冲减相关研发成本。放在政府补助合规性复核备忘录中。",
+   "facts": [
+    "管理层解释称，FY25收到的500万元科技创新专项补贴与日常经营活动紧密相关，已全额计入FY25的『其他收益』科目。",
+    "我们审阅了地方政府下发的文件原件，发现该补助资金明确限定用于购买特定的高端实验设备，并要求形成固定资产。",
+    "我们比对了同行业其他可比公司的类似补助会计处理，发现多数同行将其作为与资产相关的政府补助并分期计入损益。",
+    "截至目前，地方主管部门关于该项补助的最终验收标准及后续合规检查要求尚未正式下发。"
+   ],
+   "tgt": [
+    "tends to indicate a different accounting treatment",
+    "pending the issuance of final regulatory guidelines",
+    "requires careful evaluation of the underlying terms"
+   ],
+   "traps": [
+    "说对方科目记错常写『You recorded it in the wrong account』，语气生硬；应写『The classification of the government grant warrants further evaluation in light of...』",
+    "谈到文件没下发时常写『The government hasn't given us the rule』，很不专业；应用『As the final regulatory guidelines from the local authority are still pending, our assessment of... remains provisional』",
+    "引用补助条款时常写『The official letter says so』，不够具体；应用『The specific stipulations set forth in the governmental directive suggest that...』"
+   ]
+  },
+  {
+   "id": "fdd_unrecorded_customer_complaint",
+   "t": "大额客户产品质量索赔潜在负债",
+   "lvl": "★☆☆",
+   "brief": "在FDD销售与营运风险审阅章节中，向买方deal team报告客户因产品质量问题提出巨额索赔但未做会计处理的情况。读者可直接引用。",
+   "facts": [
+    "客户服务部经理口头透露，公司主打产品近期因批次质量问题收到某核心大客户的正式律师函",
+    "我们查阅了该封律师函原件及双方往来邮件，发现客户要求目标公司就FY25交付的缺陷产品赔偿经济损失共计400万元",
+    "财务总监表示该索赔尚在法务沟通阶段，因此未在FY25财务报表中计提任何预计负债",
+    "截至发稿日（2026年3月28日），公司聘请的外部法律顾问尚未出具关于该案件败诉可能性的书面法律意见书"
+   ],
+   "tgt": [
+    "formal demand letter claiming damages of...",
+    "Management has not recognized any provision for...",
+    "External legal counsel has not yet issued a formal legal opinion regarding...",
+    "contingent liability arising from product defects"
+   ],
+   "traps": [
+    "把收到律师函写成 \"got a lawyer letter\"，商务英文必须写成 \"received a formal demand letter / lawyers' letter\" 并用过去时",
+    "表达没有做会计计提写成 \"didn't make provision\"，专业表述为 \"has not recognized any provision for pending litigation/claims\"",
+    "提及外部律师没有出具意见时写成 \"lawyer didn't write opinion\"，规范表述应为 \"external legal counsel has not yet issued a formal legal opinion\""
+   ]
+  },
+  {
+   "id": "fdd_pledged_time_deposit_omission",
+   "t": "大额定期存款受限未披露风险",
+   "lvl": "★☆☆",
+   "brief": "在FDD现金及现金等价物审阅章节中，向买方deal team报告目标公司大额定期存款因开具银行承兑汇票而被质押但未在附注中披露的情况。读者可直接引用。",
+   "facts": [
+    "财务经理在访谈中确认，为获取供应链融资便利，公司近期将一笔5000万元的定期存款做质押担保",
+    "我们向合作银行发出了银行询证函，回函显示该笔5000万元的定期存款已被银行冻结并设定了质押权",
+    "目标公司在FY25年末财务报表草案中，仍将该笔资金作为“现金及现金等价物”列报，未在报表附注中披露其受限情况",
+    "截至外勤工作结束，我们尚未收到管理层针对该质押事项补充披露的修订后报表附注"
+   ],
+   "tgt": [
+    "pledged time deposits restricted from use",
+    "categorized as cash and cash equivalents instead of restricted cash",
+    "Bank confirmation returned with exceptions indicating...",
+    "Management has not yet provided the revised financial statement disclosures reflecting..."
+   ],
+   "traps": [
+    "把“受限资金”翻译成 \"limited money\" 或 \"locked cash\"，专业财务词汇必须用 \"restricted cash\" 或 \"pledged deposits\"",
+    "写银行回函有差异不要用 \"bank letter said different\"，而应使用 \"Bank confirmation returned with exceptions\"",
+    "指代未在附注中披露时写成 \"didn't write in notes\"，规范写为 \"omitted from the financial statement note disclosures\""
+   ]
+  },
+  {
+   "id": "aud_lease_liability_discount_rate",
+   "t": "租赁负债折现率选用差异说明",
+   "lvl": "★☆☆",
+   "brief": "说明公司在计量某项长期租赁负债时所采用的折现率与审计评估值存在差异。该说明供财务总监及审计合伙人审阅，拟列入致管理层函（Management Letter）的会计估计章节。",
+   "facts": [
+    "管理层口头解释称，FY25新增的物流中心长期租赁采用的是公司自身的平均借款利率（4.2%）作为折现率。",
+    "我们抽查了该租赁合同及相关借款协议，其中明确约定该租赁期为10年，属于重大租赁合同。",
+    "我们向管理层获取并核对了市场上同期同类信用级别企业的无风险加信用利差，独立测算得出恰当的增量借款利率应为5.5%。",
+    "截至外勤结束日，管理层尚未提供关于为何不采用集团整体加权平均资本成本（WACC）作为替代折现率的正式书面测算底稿。"
+   ],
+   "tgt": [
+    "Management represented that...",
+    "We performed a recalculation and noted a variance of...",
+    "As of the date of this letter, management has not provided..."
+   ],
+   "traps": [
+    "把 management represented 写成 management said。Management represented 是审计专业用语，表示正式口头陈述，而 said 过于口语化。",
+    "把抽查结果写成 we checked 20 vouchers。应写成 we inspected the lease agreement and relevant borrowing documentation，保持专业严谨。",
+    "把截至外勤结束日还没拿到写成 we still not get。应写成 As of the date of this letter, we have not yet obtained..."
+   ]
+  },
+  {
+   "id": "aud_goodwill_impairment_indicators",
+   "t": "商誉减值测试关键参数偏离",
+   "lvl": "★☆☆",
+   "brief": "说明资产组商誉减值测试中采用的未来现金流预测增长率过于乐观。该报告段落提交给审计合伙人及客户管理层。",
+   "facts": [
+    "管理层口头表示，FY25收购子公司的未来五年营业收入年复合增长率设定为15%是基于行业宏观利好政策。",
+    "我们复核了该子公司过去三年的历史实际业绩，发现其历史实际复合增长率仅为4%，且行业整体处于平稳期。",
+    "我们协同估值专家对同行业可比上市公司的公开市场预测数据进行了交叉比对，发现市场平均预期增长率不超过7%。",
+    "截至外勤结束日，管理层尚未提供能够支撑该15%高增长假设的独立第三方市场研究报告或董事会决议。"
+   ],
+   "tgt": [
+    "Management asserted that...",
+    "We noted a significant discrepancy between...",
+    "Management has not yet provided..."
+   ],
+   "traps": [
+    "把管理层声称写成 management said。专业审计信件中通常使用 management asserted, management contended 或 management represented。",
+    "把偏离或差异写成 different。审计英语中更倾向于使用 variance, discrepancy 或 deviation。",
+    "把尚未提供写成 they haven't given us yet。应当写成 management has not yet furnished 或 management has not yet provided。"
+   ]
+  },
+  {
+   "id": "aud_prepaid_expenses_cut_off",
+   "t": "预付跨期服务费截止性测试异常",
+   "lvl": "★☆☆",
+   "brief": "说明公司在FY25年末将尚未接受的服务一次性计入预付账款并在当期全额摊销的违规操作。该邮件发送给财务经理。",
+   "facts": [
+    "管理层口头说明称，该笔200万元的年度IT运维服务费已在FY25全部支付并全额计入当期损益，属于正常费用支出。",
+    "我们抽查了该服务协议的原件，合同明确约定服务期限横跨FY25与FY26，其中70%的服务量将在FY26提供。",
+    "我们重新进行了权责发生制下的截止性测试，计算得出应将属于FY26的140万元调整至长期待摊或预付账款。",
+    "截至现场审计工作基本完成时，管理层尚未提供同意将该笔费用进行跨期调整的记账凭证草稿。"
+   ],
+   "tgt": [
+    "Management represented that...",
+    "Our sample testing of the service agreement indicated that...",
+    "Management has not yet provided..."
+   ],
+   "traps": [
+    "把一次性计入当期损益写成 put into cost directly。应使用 charge to profit or loss for the current period。",
+    "把权责发生制写成 accural base。正确的财务英文是 accrual basis (of accounting)。",
+    "把尚未提供写成 they haven't given us。应当使用 management has not yet provided 或 management has not yet made available。"
+   ]
+  },
+  {
+   "id": "aud_contract_asset_impairment",
+   "t": "合同资产减值评估差异",
+   "lvl": "★★☆",
+   "brief": "关于建造合同未到期质保金减值准备计提不足的审计发现，写给项目总监，放在审计底稿的总结段落中。",
+   "facts": [
+    "管理层口头表示：合同资产的预期信用损失已按集团统一政策充分计提。",
+    "我们抽查了8个大额长期合同资产项目，发现2个项目对应的主要客户在FY25年内出现严重财务困难。",
+    "公开市场信息显示：上述2个客户的银行授信已于2026年1月被冻结。",
+    "我们向管理层索取对应客户的最新财务报表以评估违约概率，但截至现场工作结束尚未取得。",
+    "截至审阅报告日，未收到管理层针对该两笔合同资产可收回性的专项评估说明。"
+   ],
+   "tgt": [
+    "Pending the receipt of...",
+    "Indication of potential impairment",
+    "Based on the procedures performed to date"
+   ],
+   "traps": [
+    "写成 'The company failed to impair the contract assets.' 未确认最终减值前，应用 'potential impairment' 而非直接定性 failure。",
+    "写成 'We checked everything and found bad debts.' 表达不严谨，审计中应写 'Based on the procedures performed to date...'。",
+    "写成 'Because they didn't give us financials, we suspect fraud.' 把未提供资料直接跳跃到怀疑舞弊，逻辑不符合审计准则。"
+   ]
+  },
+  {
+   "id": "aud_r_and_d_expense_cap",
+   "t": "研发人员薪酬资本化合规性",
+   "lvl": "★★☆",
+   "brief": "针对研发项目人员工时分配及资本化比例偏高的审计说明，写给研发总监及合伙人，放在致管理层函研发费用章节。",
+   "facts": [
+    "研发总监口头确认：所有研发人员均按项目实际耗时准确归集薪酬。",
+    "我们抽查了FY25年50名研发人员的工时记录，发现12名员工的考勤打卡记录与研发工时系统填报时间严重冲突。",
+    "财务系统显示：上述12人的薪酬全部计入了资本化开发支出，占当期资本化总额的35%。",
+    "我们要求查阅这12名员工的具体工作成果及项目产出凭证，财务部称正整理但尚未归档。",
+    "截至2026年3月底，管理层仍未提供上述人员的有效工时分配复核证据。"
+   ],
+   "tgt": [
+    "In the absence of supporting documentation",
+    "Appear to be inconsistent with",
+    "Warrants further review by management"
+   ],
+   "traps": [
+    "写成 'The attendance records are fake.' 没有直接证据证明伪造时，不能用 fake，应说 'appear to be inconsistent with'。",
+    "写成 'We didn't get the documents, so capitalization is wrong.' 未收到文件不能直接推断会计处理错误，应用 'In the absence of supporting documentation...'。",
+    "写成 'Management's explanation is unbelievable.' 商务英语中不能用 unbelievable 等主观词，应表达为 'cannot be substantiated without further evidence'。"
+   ]
+  },
+  {
+   "id": "aud_customer_loyalty_liability",
+   "t": "客户忠诚度计划负债确认",
+   "lvl": "★★☆",
+   "brief": "关于积分兑换计划递延收入及未来履约义务计量的审计发现，写给运营总监，放在香港IFRS 15执行情况备忘录中。",
+   "facts": [
+    "市场部经理口头说明：客户积分的平均兑换率历史稳定在15%左右，无需额外计提合同负债。",
+    "我们抽查了FY25年积分兑换明细，发现实际兑换率已上升至28%，且大客户大额积分集中在FY25Q4兑换。",
+    "财务系统数据显示：递延收入余额未随兑换率上升进行相应调整。",
+    "我们向管理层索取最新的第三方精算报告或内部测算模型，管理层表示正在外包重新测算。",
+    "截至外勤结束，我们尚未收到更新后的精算模型及相关参数复核表。"
+   ],
+   "tgt": [
+    "Subject to final verification",
+    "Indicates a need for reassessment",
+    "Pending completion of the actuarial update"
+   ],
+   "traps": [
+    "写成 'Management's estimate is totally wrong.' 批评过于绝对，应使用 'indicates a need for reassessment'。",
+    "写成 'We are waiting for their report so we can finish.' 过于口语化，报告中应写 'Pending completion of the actuarial update'。",
+    "写成 'The company must increase the liability immediately.' 审计师不应直接下达行政指令式要求，而应说 'may need to adjust' 或 'warrants management's attention'。"
+   ]
+  },
+  {
+   "id": "aud_provision_site_restoration",
+   "t": "弃置费用与资产退还预计负债",
+   "lvl": "★★☆",
+   "brief": "关于租赁场地产房恢复原状义务预计负债计提的审计发现，写给财务经理，放在审计底稿负债章节。",
+   "facts": [
+    "资产管理部主管口头声明：租赁期满后的厂房恢复原状义务金额较小，无需确认预计负债。",
+    "我们查阅了5份主要厂房的租赁合同，其中3份明确规定租约到期后必须拆除所有定制化装修并恢复原状。",
+    "工程部门出具的初步预估显示，单个厂房的恢复成本可能达到数百万港币。",
+    "财务部承认前期未将此项义务纳入财务报表预计负债计算范围。",
+    "截至2026年2月底，管理层尚未聘请独立第三方机构出具正式的弃置成本评估报告。"
+   ],
+   "tgt": [
+    "Based on our review of the lease terms",
+    "Not yet been formally quantified",
+    "Prudent to establish a reliable estimate"
+   ],
+   "traps": [
+    "写成 'The company ignored the asset retirement obligation.' ignored 带有主观故意色彩，宜用 'have not yet been incorporated into...'。",
+    "写成 'They must hire an expert to calculate it now.' 语气带有强迫性，应改写为 'It would be prudent for management to obtain an independent valuation'。",
+    "写成 'The cost is millions of dollars.' 描述应严谨，需注明是 'preliminary estimates' 而非确定金额。"
+   ]
+  },
+  {
+   "id": "aud_software_dev_cost_cutoff",
+   "t": "外购定制软件开发费用截止性",
+   "lvl": "★★☆",
+   "brief": "关于FY25年末无形资产（在建软件）开发支出截止性测试的审计发现，写给IT总监与审计合伙人。",
+   "facts": [
+    "IT项目经理口头表示：所有在FY25年12月31日前完成验收的代码模块均已正确计入无形资产。",
+    "我们抽查了10笔大额软件开发外包合同，其中2笔合同对应的开发服务商验收报告签署日期为2026年1月10日。",
+    "财务系统显示：上述两笔合同的全额款项及资本化金额均记在FY25年度。",
+    "IT部门负责人称由于跨年验收流程复杂，部分文档仍在补签中。",
+    "截至2026年3月10日，我们尚未取得能够证明项目实质性验收节点在FY25年内的外部第三方确认函。"
+   ],
+   "tgt": [
+    "Pending receipt of external validation",
+    "Timing of capitalization warrants careful evaluation",
+    "Might require adjustment between FY25 and FY26"
+   ],
+   "traps": [
+    "写成 'The company deliberately manipulated the cut-off.' 恶意揣测管理层意图，审计报告应客观描述为 'timing differences noted during testing'。",
+    "写成 'The software is definitely not capitalized correctly.' 在没有最终外部确认前，不能用 definitely。",
+    "写成 'Because they signed late, it is wrong.' 解释过于简单，应详细表述为 'Pending receipt of external validation regarding the actual completion date...'。"
+   ]
+  },
+  {
+   "id": "aud_share_based_payment_vesting",
+   "t": "股份支付分摊期调整差异",
+   "lvl": "★★★",
+   "brief": "说明管理层对高管股权激励加速行权期的会计处理与审计准则要求的偏离。发给财务总监并在管理层建议书中作为内部控制缺陷披露。",
+   "facts": [
+    "管理层口头说：相关股份支付计划的加速行权已在FY25董事会通过，因此在FY25全额摊销合理。",
+    "我们抽查了5份授予协议，其中3份显示服务期尚未满，根据HKFRS 2应在剩余服务期内继续确认。",
+    "我们重新计算发现，若按正确的剩余期限分摊，FY25归属于母公司净利润将减少约HK$4.2百万。",
+    "截至外勤结束日，管理层仍未提供薪酬委员会关于加速行权的正式会议纪要原件。",
+    "银行流水显示，行权相关的手续费已在FY25第四季度全部扣款并计入管理费用。"
+   ],
+   "tgt": [
+    "management asserts that...",
+    "upon recalculation, we noted a variance of...",
+    "in the absence of supporting documentation..."
+   ],
+   "traps": [
+    "写成 'management said that' 显得太口语，应用 'management asserts that' 或 'management contends that' 匹配审计报告的严谨语气。",
+    "写成 'we found a mistake' 语气过于对立和武断，审计报告中应使用客观的 'upon recalculation, we noted a variance'。",
+    "写成 'we cannot see the minutes' 不够专业，标准商务表达应为 'in the absence of supporting documentation'。"
+   ]
+  },
+  {
+   "id": "aud_lease_modification_accounting",
+   "t": "租赁变更后续计量审计差异",
+   "lvl": "★★★",
+   "brief": "向公司CFO及审计委员会提交关于租金减免及租赁期变更账务处理的合规性说明，作为审计发现底稿的核心段落。",
+   "facts": [
+    "管理层口头说：由于FY25下半年重新谈判了租约，使用权资产和租赁负债无需按HKFRS 16重新计量。",
+    "我们查阅了补充协议，其中明确约定租赁期延长2年且年租金下调10%，属于重大租赁变更。",
+    "我们重新测算表明，未对该变更进行重新折现导致FY25年末租赁负债少计约HK$6.3百万。",
+    "截至审计报告出具日前，管理层仍未提供外部估值师对变更日折现率出具的专业意见。",
+    "固定资产台账显示，与该租赁相关的改良支出摊销年限未同步进行相应调整。"
+   ],
+   "tgt": [
+    "management takes the view that...",
+    "in contrast, our analysis indicates that...",
+    "subject to the final determination of..."
+   ],
+   "traps": [
+    "用 'management believes' 偏主观，在财报沟通中应用 'management takes the view that' 或 'management's position is that' 表达其立场。",
+    "转折时用 'but we found' 显得像口语对话，应使用高级转折连接词如 'in contrast, our analysis indicates that'。",
+    "表达“视……而定”时写成 'depends on'，专业财务英语中更倾向于使用 'subject to the final determination of'。"
+   ]
+  },
+  {
+   "id": "aud_provision_for_warranty",
+   "t": "产品质保金计提比例偏低",
+   "lvl": "★★★",
+   "brief": "针对境外新能源设备销售合同的质保金准备金不足问题，向营运总监发送专项审计沟通邮件。",
+   "facts": [
+    "管理层口头说：FY25按营业收入的1%计提质保金完全足够覆盖历史索赔水平。",
+    "我们抽查了FY25发生的售后维修单，实际维修及更换零部件成本占同期收入的3.8%。",
+    "我们发现管理层在计算时未将FY26新推出的高故障率海外产品线纳入历史赔付率基数。",
+    "截至现场审计结束，技术部门仍未提供关于海外特定批次产品缺陷率的工程评估报告。",
+    "银行流水显示，9M26实际支付的海外客户索赔金额已超出期初质保准备金余额。"
+   ],
+   "tgt": [
+    "management's estimation is based on...",
+    "however, empirical evidence suggests...",
+    "in the absence of..."
+   ],
+   "traps": [
+    "直接写 'management guessed' 涉嫌人身攻击，应用 'management's estimation is based on' 来客观描述其测算依据。",
+    "用 'but facts show' 显得太情绪化，商务写作中应用 'however, empirical evidence suggests' 或 'our testing demonstrates'。",
+    "写 'because we don't have' 会把责任推给审计方，应写成客观的 'in the absence of technical reports'。"
+   ]
+  },
+  {
+   "id": "aud_rd_expense_capitalization",
+   "t": "研发费用资本化时点违规",
+   "lvl": "★★★",
+   "brief": "针对无形资产开发支出资本化起始时点不合规的问题，向首席技术官及财务负责人出具的审计沟通函。",
+   "facts": [
+    "管理层口头说：相关软件开发项目在FY25上半年即已满足技术可行性条件，故全额予以资本化。",
+    "我们检查了研发日志及专利局受理通知书，显示技术可行性及立项审批在FY25下半年才正式完成。",
+    "我们重新分类发现，将前期研究阶段费用资本化导致FY25研发费用被严重低估约HK$3.9百万。",
+    "截至审计外勤结束，管理层仍未提供能够证明上半年已具备经济效益的内部财务测算模型。",
+    "项目组考勤记录显示，多名核心研发人员在上半年主要从事日常运维而非开发工作。"
+   ],
+   "tgt": [
+    "management is of the opinion that...",
+    "contrary to management's assertion...",
+    "subject to further verification of..."
+   ],
+   "traps": [
+    "用 'management thinks' 显得太口语，财报沟通应用 'management is of the opinion that'。",
+    "直接说 'management is wrong' 非常不专业且激进，应用 'contrary to management's assertion' 或 'differing from management's view'。",
+    "写 'we need to check more' 显得办事效率低，应用 'subject to further verification of timesheets'。"
+   ]
+  },
+  {
+   "id": "aud_government_grant_recognition_103",
+   "t": "政府补助总额法与净额法差异",
+   "lvl": "★★★",
+   "brief": "向集团财务总监汇报一笔大额产业扶持资金会计处理分类不当的审计调整意见。",
+   "facts": [
+    "管理层口头说：该笔政府补助直接用于补偿前期已发生的研发费用，故作为营业外收入一次性全额确认。",
+    "我们查阅了地方政府下发的文件，明确规定该补助用于未来三年的特定技术改造项目支出。",
+    "我们根据HKAS 20复核发现，该补助属于与资产相关的政府补助，应作为递延收益并在以后期间分摊。",
+    "截至现场工作结束，当地经信局尚未对该项目出具最终的验收合格证明书。",
+    "银行进账单显示，该资金已于FY25年末全额到账并存放于集团一般账户中。"
+   ],
+   "tgt": [
+    "management accounts for the grant as...",
+    "our review of the grant agreement indicates that...",
+    "pending the final completion certificate..."
+   ],
+   "traps": [
+    "用 'management booked this as' 显得非常不正式，专业表达应为 'management accounts for the grant as'。",
+    "用 'we read the paper and found' 毫无专业度，应替换为 'our review of the grant agreement indicates that'。",
+    "写 'waiting for the certificate' 过于口语化，标准公文用语为 'pending the final completion certificate'。"
+   ]
+  },
+  {
+   "id": "mail_accrued_expenses_cutoff",
+   "t": "预提费用截止性测试核查",
+   "lvl": "★☆☆",
+   "brief": "致目标公司财务总监，就FY25末预提费用跨期情况进行函询，要求对方提供期后发票及合同支撑。放在审计工作底稿与管理层沟通函部分。",
+   "facts": [
+    "管理层口头说，FY25末预提的50万元咨询费已在FY26年1月取得发票并付款。",
+    "我们抽查了3张FY25年末预提费用凭证，其中金额为20万元的法律服务费对应的服务期跨越了FY25与FY26。",
+    "银行流水显示，该笔20万元的法律服务费实际于2026年2月10日完成支付。",
+    "截至外勤结束日，我们仍未收到该法律服务合同中关于服务成果验收时间节点的书面确认依据。"
+   ],
+   "tgt": [
+    "Please provide the supporting invoices and service agreements",
+    "Kindly clarify the exact service period",
+    "We would appreciate it if you could reconcile this discrepancy by..."
+   ],
+   "traps": [
+    "误用 'Please give me' 索要资料，显得过于生硬和命令化，商务邮件中应用 'Please kindly provide' 或 'We would appreciate it if you could provide'。",
+    "把截止性测试错写成 'cut-off test of accrued expenses is wrong'，正确的商务表述为 'potential cut-off misstatement regarding accrued expenses'。",
+    "结尾催办时使用 'You must reply soon'，语气不礼貌，应使用 'We look forward to receiving your prompt clarification'。"
+   ]
+  },
+  {
+   "id": "mail_customer_deposit_balance",
+   "t": "预收款项期末余额核对",
+   "lvl": "★☆☆",
+   "brief": "致客户方财务负责人，确认大额预收账款在FY25末未结转为收入的原因，作为销售循环底稿的附件。",
+   "facts": [
+    "管理层口头说，预收款项中包含的大客户A预付款80万元因合同延期交付而暂未确认收入。",
+    "我们抽查了与客户A签订的销售合同原件，约定交付节点为FY25年11月。",
+    "内部ERP系统截图显示，截至FY25年末，该笔80万元预收款项状态仍显示为未发货。",
+    "截至发稿日，我们仍未收到该合同变更补充协议的最终签字盖章版。"
+   ],
+   "tgt": [
+    "We are writing to reconcile the balance of customer deposits",
+    "Please verify whether the delivery schedule has been extended",
+    "Looking forward to your clarification on this matter"
+   ],
+   "traps": [
+    "把预收账款写成 'advance money from customers'，虽然能懂但不够专业，应使用 'advances from customers' 或 'customer deposits'。",
+    "描述合同延期时用 'the contract is delayed' 过于口语化，应使用 'the delivery schedule has been postponed' 或 'underwent a schedule extension'。",
+    "称呼对方直接用 'Hey Manager Li'，商务邮件必须用正式称呼如 'Dear Mr. Li' 或 'Dear Director Li'。"
+   ]
+  },
+  {
+   "id": "fdd_customer_concentration_risk",
+   "t": "大额客户集中度及依赖风险",
+   "lvl": "★★☆",
+   "brief": "写一段关于目标公司前五大客户销售占比过高且部分新客户背景存疑的发现。读者为买方 Deal Team，放在 FDD 报告的客户与收入分析章节。",
+   "facts": [
+    "管理层口头表示，FY25 前五大客户销售占比下降至 45%，主要是因为公司主动优化了客户结构。",
+    "我们抽查了 FY25 销售合同及出库单，前五大客户实际销售占比达 68%，与管理层说法存在差异。",
+    "银行流水显示，前两大客户（贡献 FY25 收入的 35%）的付款账户与合同签约主体名称不一致。",
+    "我们向管理层索取上述两家大客户的最终终端销售实现情况说明及穿行测试资料，截至外勤结束日尚未收到。",
+    "访谈记录显示，销售总监承认该两家大客户系通过中间渠道引入，但拒绝提供具体渠道商信息。"
+   ],
+   "tgt": [
+    "preliminarily indicate that",
+    "warrant further verification regarding",
+    "pending the receipt of requested documentation"
+   ],
+   "traps": [
+    "写成 'Management lied about customer concentration.'，语气过于绝对且带有情绪化指控，应改为客观陈述差异 'Management's representation diverges from our sample test results.'",
+    "写成 'The two major customers are fake.'，超出了财务尽调的证据范围，应表述为 'The ultimate beneficial ownership and fund flows of the two key customers remain unverified pending requested documents.'",
+    "漏掉了对证据缺失的限定，写成 'Customer concentration is definitely high.'，忽略了部分数据因管理层未提供支持文件而尚待进一步确认的事实。"
+   ]
+  },
+  {
+   "id": "fdd_sales_commission_accrual",
+   "t": "销售佣金计提不完整风险",
+   "lvl": "★★☆",
+   "brief": "写一段关于目标公司期末销售佣金计提可能存在缺口的发现。读者为买方 Deal Team，放在 FDD 报告的营运资金与负债审阅章节。",
+   "facts": [
+    "管理层口头表示，FY25 年末已按照与渠道商签署的框架协议全额计提了应付销售佣金 320 万元。",
+    "我们抽查了 15 份销售佣金结算单，发现其中 4 份的计算基数与经审计的营业收入存在不一致。",
+    "期后银行流水显示，FY26 年 1 月实际支付给渠道商的 FY25 佣金金额为 410 万元，高于账面计提数 90 万元。",
+    "我们向管理层索取补充佣金协议或特殊返点批复文件，截至外勤结束日管理层尚未提供。",
+    "访谈记录显示，销售经理承认部分大客户的佣金存在口头额外承诺，但未纳入财务账套。"
+   ],
+   "tgt": [
+    "suggests a potential understatement of",
+    "pending further reconciliation against",
+    "indicates that liabilities may be understated"
+   ],
+   "traps": [
+    "写成 'Management intentionally hid sales commissions.'，指责管理层故意隐瞒，应客观描述为 'Unrecorded oral commitments indicate a risk of unrecorded liabilities.'",
+    "写成 'The accrued commission is wrong by 90k.'，语气过于绝对，应写为 'Our sample testing indicates a potential variance of RMB 0.9 million, which requires further confirmation.'",
+    "忽略了未收到文件的限制，直接写成 'The actual commission is definitely 4.1 million.'，应加上限定条件 'Based on available post-period disbursement records...'"
+   ]
+  },
+  {
+   "id": "fdd_lease_liability_understatement",
+   "t": "租赁负债低估与使用权资产核查",
+   "lvl": "★★★",
+   "brief": "写一段关于目标公司未全额确认租赁负债的发现。读者是买方 deal team，用于 FDD 报告的财务状况章节。",
+   "facts": [
+    "管理层口头表示，数份仓库租赁合同系短期租赁豁免范围，故未纳入租赁负债核算。",
+    "我们查阅了相关仓库租赁合同原件，发现多份合同期限长达3年且包含续签选择权。",
+    "我们重新测算显示，FY25 末租赁负债低估金额约人民币 12.5 百万元。",
+    "财务团队在访谈中未能提供管理层对该豁免政策的正式评估备忘录。",
+    "截至外勤结束日，目标公司尚未对上述租赁调整进行账务处理。"
+   ],
+   "tgt": [
+    "Management contends that...",
+    "Our substantive testing indicates that...",
+    "As of the date of this report, management has not yet adjusted..."
+   ],
+   "traps": [
+    "滥用 'The management said'。正确的商务英文应当使用更客观的 'Management contends that' 或 'Management represents that'。",
+    "直接翻译为 'We found that the lease liability is wrong'。应该用更专业的会计英语 'Our substantive testing indicates an understatement of lease liabilities'。",
+    "在写尚未调整时用 'till now'。正式报告中应使用书面语 'To date' 或 'As of the date of this report'。"
+   ]
+  },
+  {
+   "id": "fdd_capitalized_software_dev_costs",
+   "t": "软件开发费用资本化合规性",
+   "lvl": "★★★",
+   "brief": "写一段关于内部研发软件开发支出资本化条件不满足的发现。读者是买方 deal team，用于 FDD 报告的无形资产章节。",
+   "facts": [
+    "管理层口头解释称，FY25 资本化的 8.2 百万元软件研发支出完全符合会计准则要求。",
+    "我们抽查了相关研发项目的工时记录，发现核心开发人员同时参与多项日常运维工作，工时分配比例缺乏支持性证据。",
+    "我们向技术负责人发函了解项目进展，截至外勤结束日未收到针对商业可行性评估的书面回复。",
+    "我们重新评估发现，其中约 5.0 百万元支出应费用化处理。"
+   ],
+   "tgt": [
+    "Management asserts that...",
+    "Our review of project timesheets reveals that...",
+    "Pending receipt of requested evidence, we noted..."
+   ],
+   "traps": [
+    "用 'Boss said' 或 'The company told us' 来指代管理层口径，应该用 'Management asserts'。",
+    "把抽查发现写成 'We checked and saw no evidence'。高级的审计措辞是 'Lack of supporting documentation for labor allocation'。",
+    "表示还没收到回复时用 'We haven't received anything yet'。正式财报应写为 'As of the date of this report, no such evidence has been provided'。"
+   ]
+  },
+  {
+   "id": "fdd_government_grant_clawback_risk",
+   "t": "政府补助违规与潜在退回风险",
+   "lvl": "★★★",
+   "brief": "写一段关于已收到的产业扶持资金可能因未达考核指标而被追缴的发现。读者是买方 deal team，用于 FDD 报告的非经常性损益章节。",
+   "facts": [
+    "管理层表示，FY24 收到的 15.0 百万元地方产业扶持资金属于无条件补助，无需退回。",
+    "我们查阅了该补助对应的政府批文及补充协议，发现其附带明确的年度纳税额及本地研发投入考核指标。",
+    "我们测算发现，FY25 目标公司实际纳税额较协议指标低 20%，未达考核标准。",
+    "截至外勤结束日，当地主管部门尚未下达正式的补助资金追回通知书。"
+   ],
+   "tgt": [
+    "Management represents that...",
+    "Our examination of the grant approval documents reveals that...",
+    "While no formal clawback notice has been issued to date..."
+   ],
+   "traps": [
+    "直接使用 'Management said'，财务英语尽调报告中应当统一升级为 'Management represents that'。",
+    "描述指标未达成时用 'They failed to reach the target'。更妥当的表述是 'The actual performance falls short of the contractual milestones'。",
+    "写‘虽然还没收到通知’用 'Although they didn't get the letter yet'。正确的商务表述为 'While no formal notice has been issued to date'。"
+   ]
+  },
+  {
+   "id": "fdd_product_recall_potential_liability",
+   "t": "潜在产品召回与质量索赔负债",
+   "lvl": "★★★",
+   "brief": "写一段关于某批次产品存在缺陷可能引发大面积召回及未决索赔的发现。读者是买方 deal team，用于 FDD 报告的或有事项章节。",
+   "facts": [
+    "管理层口头声称，近期发生的几起客户退货仅属偶发质量波动，已通过日常售后质保金完全覆盖。",
+    "我们查阅了 9M26 客户质量投诉日志，发现涉及某核心型号的故障客诉量较去年同期激增 150%。",
+    "我们访谈了外部法律顾问，其表示若启动召回程序，潜在赔偿总额可能达到 20.0 百万元至 35.0 百万元之间。",
+    "截至外勤结束日，目标公司尚未就该潜在召回事件在财务报表中计提任何专项预计负债。"
+   ],
+   "tgt": [
+    "Management contends that...",
+    "Our review of customer complaint logs indicates that...",
+    "To date, no specific provision has been recognized by management for..."
+   ],
+   "traps": [
+    "用 'Management thinks' 显得口语化。FDD 报告应当使用 'Management contends that' 或 'Management asserts that'。",
+    "把客诉增多写成 'Customers are complaining much more'。专业表述应为 'We noted a sharp surge in customer complaints regarding...'。",
+    "表述尚未计提时用 'They didn't provision for this'。规范写法是 'No specific provision has been recognized to date'。"
+   ]
+  },
+  {
+   "id": "fdd_environmental_remediation_cost_omission",
+   "t": "历史环保整改义务与费用遗漏",
+   "lvl": "★★★",
+   "brief": "写一段关于旧厂区土壤污染环保整改义务未在账面确认预计负债的发现。读者是买方 deal team，用于 FDD 报告的 ESG 与合规风险章节。",
+   "facts": [
+    "管理层在访谈中表示，旧厂区搬迁后的土壤净化责任已由当地政府承接，公司无需承担环保治理支出。",
+    "我们查阅了原环保局签署的土地收储协议，其中明确要求原土地使用权人须完成土壤污染治理并承担相应费用。",
+    "我们参考独立第三方环保机构出具的初步评估意见，预计整改支出区间在 10.0 百万元至 18.0 百万元之间。",
+    "截至外勤结束日，目标公司财务部门尚未建立相关的环境负债会计账目。"
+   ],
+   "tgt": [
+    "Management asserts that...",
+    "Our review of the land-use handover agreement indicates that...",
+    "Pending further environmental assessments, no liability has been recorded for..."
+   ],
+   "traps": [
+    "把管理层的话引述为 'Management said'。正规报告应写为 'Management asserts that' 或 'Management claims that'。",
+    "谈及环保协议时用 'We saw the agreement says'。应当使用财务尽调常用句型 'Our review of the agreement indicates that'。",
+    "写‘还没记账’用 'They haven't booked it'。标准专业术语为 'No liability has been recorded to date'。"
+   ]
+  },
+  {
+   "id": "mail_warranty_provision_basis",
+   "t": "售后质保金计提基数函询",
+   "lvl": "★★☆",
+   "brief": "写给目标公司财务经理的邮件，针对FY25产品质量保证金计提基数的口径差异进行函询。放在尽调报告的销售与毛利率分析章节。",
+   "facts": [
+    "管理层声称质保金一直按含税营业收入的一定比例计提，且该政策在FY24和FY25保持一贯性。",
+    "我们抽查了FY25的计提明细表，发现计提分录所乘的基数既不是含税总收入，也与经审计的扣除特定大客户后的收入不匹配。",
+    "管理层未能提供支持该特定计提基数测算逻辑的期初计算底稿。",
+    "截至目前，我们尚未收到管理层针对计提基数口径差异的书面合理解释。"
+   ],
+   "tgt": [
+    "The working papers provided thus far do not fully explain",
+    "Without further corroborating documents",
+    "We are currently unable to reconcile"
+   ],
+   "traps": [
+    "用 'you didn't give us' 显得太生硬。不合适，应写 'we have not yet received the supporting calculation'。",
+    "用 'totally wrong' 形容差异。不合适，应使用 'appears to deviate from the stated policy'。",
+    "滥用 'must' 催促对方。不应写 'you must provide this tomorrow'，而应用 'it would be helpful if you could clarify'。"
+   ]
+  },
+  {
+   "id": "mail_inventory_obsolescence_provision_114",
+   "t": "呆滞存货库龄划分与减值沟通",
+   "lvl": "★★☆",
+   "brief": "写给目标公司供应链及财务负责人的邮件，就9M26末部分特定原材料库龄划分及减值准备计提充分性提出疑问。放在存货循环尽调报告中。",
+   "facts": [
+    "管理层表示9M26末库龄超过1年的原材料已按公司政策全额计提了跌价准备。",
+    "我们对9M26末仓库进行了盘点，并抽取了20款大额呆滞料，其中5款原材料的条形码标签显示其入库时间早于管理层台账记录的采购时间。",
+    "财务系统中的库龄自动计算模块在9M26进行了人为的手动调整，抹去了部分批次的原始入库批次号。",
+    "截至现场审计结束，我们尚未能获取被调整批次的原始入库单据及管理层调整授权审批表。"
+   ],
+   "tgt": [
+    "There appears to be a discrepancy between",
+    "Absent explicit documentation regarding",
+    "We would like to seek further clarification on"
+   ],
+   "traps": [
+    "用 'you falsified the system' 指责对方。不合适，应写 'the manual adjustment observed in the system requires further explanation'。",
+    "用 'surely insufficient' 过于武断。应使用 'may not be fully adequate given the current evidence'。",
+    "把疑问句写成祈使句。不要写 'explain the adjustment'，应写 'could you please help clarify the rationale behind this adjustment'。"
+   ]
+  },
+  {
+   "id": "mail_construction_in_progress_stalled",
+   "t": "在建工程长期停工减值测试问询",
+   "lvl": "★★☆",
+   "brief": "写给目标公司工程部及财务部负责人的邮件，就9M26末某大型自动化生产线在建工程长期停工状态下未计提减值准备的情况进行函询。放在在建工程核查章节。",
+   "facts": [
+    "管理层口头表示该生产线在9M26暂停施工主要是为了等待新型零配件的迭代，项目并未实质性废弃。",
+    "我们实地察看发现现场处于完全无施工人员状态且设备表面已有积尘，工程进度连续三个季度停滞在65%。",
+    "我们查阅了9M26的预算执行报告，该项目的后续资金预算已被大幅削减并调剂至其他短期流动资金项目。",
+    "截至发稿日，我们尚未取得管理层针对该项目未来恢复施工的正式时间表及可行性论证报告。"
+   ],
+   "tgt": [
+    "While management indicated that",
+    "The physical inspection coupled with the lack of subsequent expenditure suggests",
+    "We are currently assessing whether a formal impairment test is warranted"
+   ],
+   "traps": [
+    "用 'you should impair it' 指导对方账务处理。不合适，应表达为 'we are discussing whether an impairment provision needs to be considered'。",
+    "用 'obviously abandoned' 形容工程状态。不合适，应写 'the current stagnation observed on-site warrants a formal reassessment'。",
+    "忽略语气缓和，直接问 'why did you stop construction'。不合适，应用 'could you please provide an update on the current status and future plan for'。"
+   ]
+  },
+  {
+   "id": "mail_sales_rebate_accrual_completeness",
+   "t": "销售返利计提完整性核对",
+   "lvl": "★★☆",
+   "brief": "写给目标公司销售运营负责人的邮件，关于FY25年末销售返利预计负债计提完整性的核对。放在营业收入与销售费用核查章节。",
+   "facts": [
+    "管理层表示FY25末已根据所有现行经销商年度销售协议，足额预计了应当兑现的销售返利金额。",
+    "我们随机抽查了15份核心经销商的框架协议，其中3份协议包含涉及阶梯式超额返利的口头补充条款或微信沟通记录。",
+    "财务系统中的预计负债备查簿仅记录了基础档位的返利金额，未将会话记录中提及的超额奖励纳入计提范围。",
+    "截至目前，我们尚未取得管理层针对所有经销商最终返利结算金额的完整确认函或最终结算对账单。"
+   ],
+   "tgt": [
+    "Given the additional terms noted in the correspondence",
+    "It is not yet entirely certain whether",
+    "We would appreciate your assistance in reconciling"
+   ],
+   "traps": [
+    "用 'you hid the rebate' 表达怀疑。不合适，应写 'certain informal terms identified during our review warrant a more thorough reconciliation'。",
+    "直接说 'the provision is definitely understated'。不合适，应写 'we are currently evaluating whether the provision is fully inclusive of all commitments'。",
+    "用词过于绝对，如 'all your calculations are wrong'。不合适，应写 'we have identified potential gaps in the current accrual base'。"
+   ]
+  },
+  {
+   "id": "fdd_customer_complaint_provision",
+   "t": "大额客户客诉罚款未计提",
+   "lvl": "★☆☆",
+   "brief": "在 FDD 报告的营运资本或负债章节中，向买方 deal team 披露目标公司因交付延期面临大额客户罚款但未在账面计提预计负债的情况。",
+   "facts": [
+    "管理层口头表示，由于供应链短缺导致 FY25 部分产品交付延期，客户可能不会真正执行罚款",
+    "我们查阅了与核心客户 A 的销售合同，其中明确规定延期交付按周扣除 1% 的货款作为违约金",
+    "我们抽查了 15 封客户发出的交货催收函，其中 3 封明确提出了索赔意向",
+    "财务账面显示，截至 FY25 年末，针对上述潜在索赔未计提任何预计负债",
+    "截至外场审计结束日，管理层仍未提供与客户 A 最终达成豁免罚款的正式书面协议"
+   ],
+   "tgt": [
+    "potential exposure to liquidated damages",
+    "management contends that",
+    "lack of provision for accrued liabilities",
+    "as of the report date"
+   ],
+   "traps": [
+    "误用 'management said' 代替 'management contends that' 或 'according to management'，显得太口语化不够专业",
+    "把未计提写成 'no provision has been made' 时漏掉了 'potential' 或 'pending'，导致语气过于绝对像在下定论而不是做尽调发现",
+    "描述客户索赔时使用 'customer wants money' 这样的小学英文，应替换为 'potential financial claims from customers'"
+   ]
+  },
+  {
+   "id": "fdd_fixed_assets_idle",
+   "t": "部分固定资产长期闲置未减值",
+   "lvl": "★☆☆",
+   "brief": "在 FDD 报告的资产质量章节中，向买方 deal team 说明目标公司部分生产设备长期闲置但未计提固定资产减值准备的事实。",
+   "facts": [
+    "管理层口头声称，这些闲置设备计划在 FY26 重新启用，因此无需计提减值",
+    "我们实地盘点了生产车间，发现 12 台大型数控机床表面积尘、电源被切断，处于长期未运转状态",
+    "我们查阅了设备运行日志，显示上述 12 台设备在整个 FY25 期间的开机率为 0%",
+    "财务账面显示，该批设备的账面净值为 1,200 万元人民币，未计提任何固定资产减值准备",
+    "截至发稿日，管理层仍未提供支持该批设备在 FY26 将重新投产的可行性商业计划书"
+   ],
+   "tgt": [
+    "idle production equipment",
+    "absence of impairment provision",
+    "management asserts that",
+    "pending the provision of"
+   ],
+   "traps": [
+    "形容设备没用时写成 'not working machines'，在商务报告中应规范使用 'idle equipment' 或 'inactive machinery'",
+    "写管理层解释时用 'management thinks'，在财务报告中应严谨使用 'management asserts' 或 'management represents'",
+    "表达‘未提供计划’时写成 'they didn't give us the plan'，应使用被动语态 'no business plan has been provided'"
+   ]
+  },
+  {
+   "id": "fdd_tax_invoices_gap",
+   "t": "大额销项税发票与收入存在差异",
+   "lvl": "★☆☆",
+   "brief": "在 FDD 报告的税务合规章节中，向买方 deal team 披露目标公司 FY25 营业收入与增值税申报表开票金额存在大口径差异的情况。",
+   "facts": [
+    "管理层口头解释称，该差异主要是由于部分客户延迟索取发票以及部分视同销售业务导致的",
+    "我们核对并交叉比对了 FY25 经审计财务报表收入与全年增值税纳税申报表，发现两者存在 680 万元的差异",
+    "我们抽查了 10 笔大额无票收入样本，发现其中 4 笔在确认收入后超过 180 天仍未开具发票",
+    "税务记录显示，目标公司因发票开具滞后已收到主管税务机关的口头问询提醒",
+    "截至审计底稿完成日，管理层仍未提供详细的收入与开票差异 reconciliation（调节表）"
+   ],
+   "tgt": [
+    "variance between revenue and tax returns",
+    "delayed invoicing",
+    "lack of reconciliation",
+    "tax compliance exposure"
+   ],
+   "traps": [
+    "把两者的差异写成 'difference between A and B'，虽然没错但略显单薄，在财务英语中用 'variance' 或 'reconciling difference' 更专业",
+    "翻译调节表时自造词写成 'adjusting table'，应统一使用标准的财务专业术语 'reconciliation schedule'",
+    "描述税务风险时用 'tax danger'，属于严重中式英语，必须使用 'tax exposure' 或 'tax non-compliance risk'"
+   ]
+  },
+  {
+   "id": "fdd_expired_inventory_risk",
+   "t": "近效期原材料呆滞及跌价风险",
+   "lvl": "★☆☆",
+   "brief": "在 FDD 报告的资产质量章节中，向买方 deal team 报告目标公司部分特种原材料临近保质期且未足额计提跌价准备的事实。",
+   "facts": [
+    "管理层口头表示，这批临期原材料可以通过掺混方式在 FY26 逐渐消耗，不会产生实际损失",
+    "我们查阅了仓储管理系统，发现仓库中存有价值 420 万元人民币的特种添加剂，其剩余保质期已不足 3 个月",
+    "我们盘点抽样显示，该批原材料在过去 6 个月内的出库领用记录几乎为零",
+    "财务账面显示，针对该批近效期原材料仅按标准政策计提了 5% 的基础跌价准备",
+    "截至现场工作结束日，管理层未提供任何证明该批材料可在短期内顺利掺混消耗的第三方技术鉴定报告"
+   ],
+   "tgt": [
+    "near-expiry raw materials",
+    "insufficient inventory write-down",
+    "slow-moving inventory",
+    "absent of third-party verification"
+   ],
+   "traps": [
+    "把临期原材料直译为 'coming soon expiration materials'，地道的商务表达是 'near-expiry inventory' 或 'materials approaching expiration'",
+    "写跌价准备计提不足时用 'provision is too low'，应当使用高级商务词汇 'insufficient inventory write-down' 或 'inadequate inventory provision'",
+    "表达缺乏证明文件时写成 'they didn't show us any report'，应当使用 'no supporting documentation was provided by management'"
+   ]
+  },
+  {
+   "id": "fdd_deferred_revenue_breakdown_121",
+   "t": "大额预收服务费长期未确认收入",
+   "lvl": "★☆☆",
+   "brief": "在 FDD 报告的营运资本与负债章节中，向买方 deal team 提示目标公司大额递延收益长期挂账且未按履约进度确认收入的风险。",
+   "facts": [
+    "管理层口头解释称，由于客户项目实施周期较长，相关技术服务尚未完全终验，因此暂不将预收款转入收入",
+    "我们抽查了 8 笔大额合同，发现对应的系统软件部署与基础技术服务已于 FY25 年内分别完成并投入线上运行",
+    "我们查阅了客户签署的阶段性验收签收单，确认相关履约义务在 FY25 已实质性履行完毕",
+    "财务账面显示，截至 FY25 年末，负债端“合同负债”科目下仍有 1,500 万元相关款项长期挂账",
+    "截至外场审计结束，管理层未能提供支持该部分合同服务仍未满足收入确认条件的充分项目管理日志"
+   ],
+   "tgt": [
+    "deferred revenue balance",
+    "fulfillment of performance obligations",
+    "premature deferral of income",
+    "absence of project tracking logs"
+   ],
+   "traps": [
+    "把履约义务写成 'things they need to do'，是非常口语化的错误，专业术语必须是 'performance obligations'",
+    "表达预收款长期挂账时用 'money staying in account for a long time'，应使用 'long-standing contract liabilities'",
+    "说未能提供日志时用 'failed to provide logs'，语气过于生硬指责，报告中宜用 'management failed to provide sufficient project tracking logs'"
+   ]
+  },
+  {
+   "id": "fdd_accrued_bonus_understatement",
+   "t": "高管年终奖金计提不完整风险",
+   "lvl": "★☆☆",
+   "brief": "在 FDD 报告的损益表分析与营运资本章节中，向买方 deal team 披露目标公司 FY25 未足额计提核心高管业绩奖金的情况。",
+   "facts": [
+    "管理层口头声称，高管绩效奖金方案尚未最终敲定，因此 FY25 财务报表中暂按固定基础工资进行费用计提",
+    "我们查阅了薪酬委员会会议纪要草案，发现 FY25 考核目标已实际达成，高管将按税前净利润的 5% 获得年度分红奖金",
+    "我们根据已达成的业绩指标测算，FY25 实际应发放的高管奖金总额约为 380 万元人民币",
+    "财务账面显示，截至 FY25 年末，相关薪酬费用科目仅累计计提了常规固定年薪，未包含上述业绩奖金",
+    "截至外场工作收尾日，管理层仍未提供薪酬委员会关于推迟或调整该笔奖金发放的正式决议文件"
+   ],
+   "tgt": [
+    "understated accrued bonuses",
+    "absence of performance-based accrual",
+    "compensation committee minutes",
+    "unrecorded operating expenses"
+   ],
+   "traps": [
+    "把奖金计提不足写成 'bonus is not enough'，不够严谨，应使用 'understated accrued bonuses' 或 'inadequate accrual for executive bonuses'",
+    "描述会议纪要时写成 'meeting notes'，虽然意思能懂但不够正式，标准的大所专业词汇是 'meeting minutes'",
+    "表达未记录的费用时写成 'forgotten expenses'，在财报语境中必须使用 'unrecorded expenses' 或 'omitted liabilities'"
+   ]
+  },
+  {
+   "id": "aud_lease_concession_accounting",
+   "t": "租金减免会计处理异议",
+   "lvl": "★☆☆",
+   "brief": "针对客户将FY25获得的疫情租金减免直接计入当期损益而非作为租赁变更处理的审计发现。写给公司CFO及审计合伙人，放在致管理层函的租赁板块。",
+   "facts": [
+    "管理层口头表示，FY25年收到的业主租金减免120万港元属于一次性纾困补助，故直接计入其他收益。",
+    "我们检查了FY25-03期主租赁合同及补充协议，显示该减免直接对应未来6个月的租金扣减。",
+    "香港财务报告准则第16号（HKFRS 16）相关指引明确，此类减免一般需作为负租赁变更处理并调整使用权资产。",
+    "我们抽查了5笔同类减免凭证，其中2笔未取得业主正式签章的变更确认函。",
+    "截至外勤结束日，管理层尚未提供该减免符合直接计入损益豁免条件的法律意见书。"
+   ],
+   "tgt": [
+    "account for as a lease modification",
+    "in accordance with HKFRS 16",
+    "pending the receipt of"
+   ],
+   "traps": [
+    "不能写 'Management said the rent reduction is income'，应写 'Management represented that the rent concession should be recognized as income'，避免口语化表达",
+    "不能写 'We checked the contract and found error'，应写 'Our inspection of the supplemental agreement revealed a discrepancy'，用词更专业规范",
+    "不能写 'We didn't receive the legal opinion yet'，应写 'As of the date of this letter, we have yet to receive the formal legal opinion'，符合审计函件正式语态"
+   ]
+  },
+  {
+   "id": "aud_warranty_provision_recalculation",
+   "t": "产品质保准备金测算差异",
+   "lvl": "★☆☆",
+   "brief": "针对客户FY25产品质量保证金计提比例偏低、未充分反映近期质量投诉上升的审计差异。写给财务总监，放在审计底稿的负债板块。",
+   "facts": [
+    "管理层口头解释称，FY25质保金计提比例维持3%不变是因为历史赔付率一直保持稳定。",
+    "我们抽查了FY25全年销售发票及售后服务记录，显示FY25下半年质量投诉率环比上升了25%。",
+    "我们重新测算发现，若按FY25实际赔付趋势调整，期末质保准备金存在85万港元的低估。",
+    "我们向销售部门索取FY26最新退货率预测数据，但截至底稿归档前尚未获得答复。",
+    "香港审计准则要求对管理层估计的合理性保持职业怀疑，特别是外部市场环境发生变化时。"
+   ],
+   "tgt": [
+    "maintain a professional skepticism",
+    "understated by approximately",
+    "based on historical claims experience"
+   ],
+   "traps": [
+    "不能写 'Management thinks the 3% rate is ok'，应写 'Management maintains that the current provisioning rate remains appropriate'，凸显专业判断",
+    "不能写 'We recalculated and found a difference of 850k'，应写 'Our recalculation indicates an understatement of approximately HKD 850k'，更加客观严谨",
+    "不能写 'We asked sales for data but got nothing'，应写 'We have requested the latest return rate projections from the sales department, which remain outstanding as of the report date'"
+   ]
+  },
+  {
+   "id": "aud_borrowing_costs_capitalisation",
+   "t": "借款费用资本化暂停说明",
+   "lvl": "★☆☆",
+   "brief": "针对客户在建工程长期停工期间仍继续资本化借款费用的审计发现。写给财务负责人，放在致管理层函的借款费用板块。",
+   "facts": [
+    "管理层口头表示，FY25工厂扩建项目因供应链延迟暂停3个月，但属于正常施工周期波动，故未暂停利息资本化。",
+    "我们检查了FY25工程监理日志及水电费记录，确认该项目在25年第三季度实际处于连续停工状态超90天。",
+    "根据HKAS 23要求，符合资本化条件的资产在购建活动发生非正常中断且持续时间超过3个月时，应暂停资本化。",
+    "我们重新计算了应转入当期财务费用的利息金额共计42万港元。",
+    "截至现场审计结束，公司工程部未提供导致停工的不可抗力书面证明文件。"
+   ],
+   "tgt": [
+    "suspension of capitalization",
+    "ineligible for capitalization",
+    "barring receipt of further evidence"
+   ],
+   "traps": [
+    "不能写 'The project stopped for 3 months so interest should be expensed'，应写 'The construction was suspended for an extended period, rendering the related borrowing costs ineligible for capitalization'",
+    "不能写 'Management told us it is a normal delay'，应写 'Management contended that the disruption constitutes a normal part of the construction cycle'",
+    "不能写 'We haven't received the proof letter'，应写 'No official documentation substantiating the force majeure has been furnished to us to date'"
+   ]
+  },
+  {
+   "id": "aud_government_grants_recognition",
+   "t": "政府补助总额法确认时点差异",
+   "lvl": "★☆☆",
+   "brief": "针对客户将收到但未达到验收条件的科研补助全额确认为当期收益的审计发现。写给财务经理，放在致管理层函的收益确认章节。",
+   "facts": [
+    "管理层口头表示，只要政府现金补贴已到账（FY25年11月），即满足收益确认条件，无需等待项目最终验收。",
+    "我们检查了FY25政府补助批文及银行进账单，显示该款项为专项科研扶持资金，明确附带项目验收条款。",
+    "根据HKAS 20规定，与收益相关的政府补助在满足补助所附条件且能够收到时方可确认为收益，否则应计入递延收益。",
+    "我们抽查了同类历史项目的结项档案，平均验收周期为收到资金后12至18个月。",
+    "截至审计底稿定稿日，我们尚未取得负责该项目的科技局出具的阶段性验收合格证明。"
+   ],
+   "tgt": [
+    "conditions attaching to the grants",
+    "recognize as deferred income",
+    "awaiting the issuance of"
+   ],
+   "traps": [
+    "不能写 'Money is received so we should record revenue'，应写 'The cash inflow alone does not warrant immediate revenue recognition prior to fulfilling all attached conditions'",
+    "不能写 'Management said inspection is not important'，应写 'Management was of the view that the milestone inspection is merely a procedural formality'",
+    "不能写 'We are still waiting for the certificate'，应写 'Pending the issuance of the interim acceptance certificate by the authority, the amount should remain in deferred income'"
+   ]
+  },
+  {
+   "id": "aud_software_development_costs",
+   "t": "外购定制软件资本化条件不符",
+   "lvl": "★☆☆",
+   "brief": "针对客户将外购定制软件开发前期费用全部计入无形资产的审计发现。写给财务总监，放在无形资产审计底稿中。",
+   "facts": [
+    "管理层口头表示，该项向第三方软件供应商支付的150万港元属于核心业务系统研发支出，故应全部资本化。",
+    "我们检查了FY25软件开发合同及阶段性成果交付报告，显示当前阶段仍处于需求分析与可行性研究阶段。",
+    "根据HKAS 38要求，研发项目在研究阶段的支出应当在发生时确认为费用，只有开发阶段满足特定条件时方可资本化。",
+    "我们抽查了供应商开具的3张发票及技术评审纪要，确认技术可行性尚未在FY25末通过内部评审。",
+    "截至审计外勤结束，管理层未能提供证明该项目已进入开发阶段的技术立项审批文件。"
+   ],
+   "tgt": [
+    "research phase versus development phase",
+    "expense as incurred",
+    "lack of technical feasibility demonstration"
+   ],
+   "traps": [
+    "不能写 'Management recorded software cost into asset'，应写 'Management capitalized the external software development expenditures prematurely'",
+    "不能写 'The contract is in research phase so it cannot be capitalized'，应写 'As the project was still in the research phase at the balance sheet date, expenditures should be expensed as incurred'",
+    "不能写 'We have no paper to prove technical feasibility'，应写 'There is a lack of documentation demonstrating technical feasibility as required by HKAS 38'"
+   ]
+  },
+  {
+   "id": "aud_government_grant_timing",
+   "t": "政府补助确认时点差异",
+   "lvl": "★★☆",
+   "brief": "写给管理层的审计沟通函。指出某笔研发大额政府补助的收益确认时点存在跨期争议，相关先决条件落实情况尚待最终确认。",
+   "facts": [
+    "管理层口头表示，香港创新科技署于FY25年12月批准了一笔2,000,000港元的研发补贴，并已全额计入FY25其他收益",
+    "我们查阅了政府批文原件，批文明确规定该补贴须以企业在FY26成功交付第一阶段中期研发报告为先决条件",
+    "截至审计外勤结束（2026年3月18日），第一阶段中期研发报告仍处于编写中，尚未提交给创新科技署",
+    "管理层认为既然资金已于FY25收到并存入银行，根据收付实现制应在FY25确认",
+    "我们向项目负责人了解情况，其承认中期报告能否顺利通过评审尚存在不确定性"
+   ],
+   "tgt": [
+    "does not fully meet the recognition criteria under HKAS 20",
+    "recognition should be deferred until the attached conditions are fulfilled",
+    "pending formal clearance of the interim report"
+   ],
+   "traps": [
+    "用税务概念混淆会计准则，如写成 'because cash is received in FY25, it must be recognized'。不合适，审计报告必须基于香港会计准则（HKAS 20）讨论，应写成 'compliance with HKAS 20 requires fulfillment of attaching conditions'",
+    "武断否定对方合规性，如写成 'management made a wrong accounting entry'。不合适，应用 'there is a difference in interpretation regarding the timing of compliance'",
+    "忽略证据链断裂点，如写成 'the grant is completely invalid'。不合适，应准确指出 'the uncertainty surrounding the condition fulfillment precludes immediate recognition in FY25'"
+   ]
+  },
+  {
+   "id": "aud_equity_investment_valuation",
+   "t": "非上市股权投资估值差异",
+   "lvl": "★★☆",
+   "brief": "写给审计合伙人的审计工作底稿小结。评估管理层对持有的某家非上市公司股权公允价值计量结果，指出部分关键输入值缺乏独立外部证据。",
+   "facts": [
+    "管理层口头确认，FY25年末对非上市持股公司A公司的公允价值估值为15,000,000港元，采用市场法评估",
+    "我们审阅了管理层聘请的外部估值师出具的报告草稿，发现其选取的3家可比上市公司中有2家主营业务与A公司存在显著差异",
+    "管理层解释称，由于市场上完全同类标的较少，估值师已做出了最大程度的专业调整",
+    "截至外勤结束日（2026年3月14日），审计部内部估值专家对该可比公司的调整系数复核工作尚未最终完成",
+    "A公司向管理层提供的最新未经审计管理报表显示，其FY25净利润较上年同期下滑了35%"
+   ],
+   "tgt": [
+    "subject to final review by our internal valuation specialists",
+    "based on the preliminary valuation report provided by management's expert",
+    "creates potential valuation variance due to adjustments in comparable multiples"
+   ],
+   "traps": [
+    "直接判定估值无效，如写成 'the valuation is totally wrong and overvalued'。不合适，应表述为 'the appropriateness of the valuation inputs remains subject to further audit procedures'",
+    "把专家意见当成审计定论，如写成 'the valuation expert confirmed the price'。不合适，必须强调这是 'preliminary draft report subject to change'",
+    "忽视标的公司基本面恶化，如只谈模型不谈数据。不合适，应在措辞中体现 'in light of the 35% decline in net profit, further scrutiny is warranted'"
+   ]
+  },
+  {
+   "id": "aud_customer_loyalty_program_provision",
+   "t": "客户忠诚度积分负债评估差异",
+   "lvl": "★★★",
+   "brief": "致管理层函中关于客户忠诚度计划递延收入及履约义务计提的审计差异说明。我们需要向管理层指出其测算未充分考虑未来积分兑换率变化，并要求调增期末合同负债。",
+   "facts": [
+    "管理层口头表示，FY25期末客户忠诚度计划的合同负债已根据历史平均兑换率全额计提，金额为人民币1,200万元",
+    "我们抽查了FY25积分兑换明细，发现实际兑换率较历史平均水平上升了15%，管理层未在测算模型中进行前瞻性调整",
+    "截至发稿日，管理层尚未提供支持其积分失效假设的第三方行业数据及相关 actuarial report（精算报告）",
+    "我们重新测算显示，按最新兑换率及未来公允价值分摊，FY25期末合同负债应调增约人民币350万元",
+    "管理层认为积分逾期未用率将持续走高，坚持无需补提准备金"
+   ],
+   "tgt": [
+    "Notwithstanding management's assertion that...",
+    "Our substantive testing revealed that...",
+    "We recommend adjusting the contract liability upward by..."
+   ],
+   "traps": [
+    "写成 'Management said... but we found...' 太口语化，报告应使用 'Notwithstanding management's assertion' 或 'While management maintains that' 来体现审计专业客观性",
+    "把差异原因写成 'their calculation was wrong'，太绝对，应使用 'did not fully account for prospective changes in...' 等中性且具建设性的措辞",
+    "表达‘尚未收到’时用 'we still have not received'，不够正式，应替换为 'Pending receipt of the actuarial report' 或 'As of the report date, we have not yet obtained...'"
+   ]
+  },
+  {
+   "id": "aud_share_based_payment_vesting_period",
+   "t": "股份支付分摊期调整差异说明",
+   "lvl": "★★★",
+   "brief": "审计底稿中关于高管限制性股票激励计划等待期及公允价值分摊的核查说明。需向合伙人汇报管理层加速行权条件判断与我方复核结果的不一致。",
+   "facts": [
+    "管理层口头说明，FY25授予核心员工的股份支付已按3年等待期直线法分摊确认管理费用人民币600万元",
+    "我们查阅了董事会决议及期权授予协议，发现其中包含一项取决于FY26业绩目标的加速行权条款，管理层未在摊销模型中体现",
+    "截至发稿日，薪酬委员会仍未就该业绩指标是否极可能达成出具书面评估意见",
+    "我们重新测算表明，若考虑业绩目标达成的可能性并调整等待期，FY25当期费用应调减约人民币140万元",
+    "管理层坚称基于谨慎性原则，不应在业绩达成前提前调整分摊期"
+   ],
+   "tgt": [
+    "Our review of the share-based payment agreements identified a divergence in...",
+    "The vesting period applied by management does not fully reflect...",
+    "Pending final assessment by the remuneration committee, we estimate an overstatement of..."
+   ],
+   "traps": [
+    "把‘等待期’简单直译成 'waiting period'，属于中式英语，专业术语必须是 'vesting period'",
+    "表达‘管理层坚称’用 'management insisted'，带有一种情绪化贬义，应使用 'management maintains that' 或 'management asserts that for prudence...'",
+    "写成 'the expense is too high'，不够精准，应写为 'the current period expense is overstated by approximately...'"
+   ]
+  },
+  {
+   "id": "aud_lease_modification_subsequent_measuremen",
+   "t": "租赁变更后续计量审计差异说明",
+   "lvl": "★★★",
+   "brief": "致管理层函中关于办公室租赁合同变更后使用权资产及租赁负债重新计量的审计发现。需向管理层指出其未按准则要求在变更日重新折现。",
+   "facts": [
+    "管理层口头表示，FY25总部办公室部分退租属于原租赁合同的延续，无需对剩余租赁负债进行重新计量",
+    "我们检查了FY25补充租赁协议，确认退租面积达原总面积的30%并伴随租金总额下调，构成实质上的租赁范围缩小变更",
+    "截至发稿日，管理层未提供计算该变更日增量借款利率的内部备忘录",
+    "我们测试发现，管理层继续按原折现率和原现金流摊销使用权资产，导致FY25末租赁负债高估人民币450万元、使用权资产多摊销人民币80万元",
+    "管理层辩称由于变更期限较短，对财务报表整体影响轻微，无需调整"
+   ],
+   "tgt": [
+    "Management treated the lease modification as ..., whereas our analysis indicates...",
+    "In the absence of internal documentation regarding..., we performed an independent recalculation",
+    "We recommend that management remeasure the lease liability as of the modification date"
+   ],
+   "traps": [
+    "写成 'Management made a mistake in lease change'，极其外行，标准财务英语为 'lease modification' 且应用 'remeasurement of lease liabilities'",
+    "表达‘没有提供备忘录’写成 'They didn't give us the memo'，过于白话，应写为 'In the absence of internal working papers supporting...'",
+    "把‘影响轻微’直接写成 'influence is small'，应使用标准审计术语 'the impact on the financial statements is immaterial' 并评估其累积效应"
+   ]
+  },
+  {
+   "id": "aud_borrowing_cost_capitalization_suspension",
+   "t": "借款费用资本化暂停条件核查",
+   "lvl": "★★★",
+   "brief": "审计底稿中关于重大生产线扩建项目借款利息资本化暂停期间认定的审计发现。需向合伙人及管理层指出在非正常中断期间继续资本化利息不合规。",
+   "facts": [
+    "管理层口头表示，FY25内华达工厂扩建项目的专项借款利息已全额资本化，金额为人民币600万元",
+    "我们实地盘点及查阅施工日志时发现，由于当地环保审批未通过，该扩建工程在FY25第三季度发生了连续超过3个月的实质性停工",
+    "截至发稿日，项目总承包商仍未提供复工日期的官方确认函",
+    "我们测算认为，根据准则要求，该非正常中断期间（3个月）对应的借款利息人民币150万元应暂停资本化并计入当期财务费用",
+    "管理层辩称停工属于行政审批常规流程，不属于准则定义的‘非正常中断’，因此不应暂停资本化"
+   ],
+   "tgt": [
+    "Audit procedures identified that the capitalization of borrowing costs was inappropriately continued during...",
+    "Given the prolonged interruption exceeding three consecutive months, we take the position that...",
+    "We propose an adjustment to reclassify capitalized interest into finance expenses."
+   ],
+   "traps": [
+    "把‘非正常中断’写成 'abnormal stop'，非标准会计用语，标准表述应为 'abnormal interruption' 或 'suspension of qualifying activities'",
+    "写成 'They shouldn't capitalize interest'，过于简单，应使用 'borrowing costs should have been suspended from capitalization and expensed as incurred'",
+    "表达‘连续超过3个月’写成 'more than 3 months continuously'，应写为 'exceeding three consecutive months' 更加符合审计报告文风"
+   ]
+  },
+  {
+   "id": "mail_lease_mod",
+   "t": "租赁合同变更账务处理函询",
+   "lvl": "★☆☆",
+   "brief": "写给目标公司财务总监的邮件，就FY25新增办公室租赁合同变更的会计处理进行确认，放在尽职调查报告租赁负债章节。",
+   "facts": [
+    "管理层口头说FY25办公室租赁合同发生变更且已按追溯调整法处理。",
+    "我们抽查了15份租赁合同变更补充协议，其中3份未见双方正式签章。",
+    "租赁台账显示FY25租赁负债增加额为人民币5,000,000元。",
+    "截至外勤结束日，仍未收到管理层提供的关于租赁变更评估的专家意见书。"
+   ],
+   "tgt": [
+    "Please clarify whether...",
+    "We note that...",
+    "Could you please provide..."
+   ],
+   "traps": [
+    "误用 'We think you are wrong'，显得过于直接和具有攻击性，商务邮件中应改用 'We would appreciate further clarification on...'",
+    "把未盖章协议说成 'no stamps'，专业英语中合同签章通常用 'execution' 或 'signing'，应写为 'lack formal execution'",
+    "催要文件时用 'Give us the report'，语气太粗鲁，正确表达为 'Please provide us with the relevant documentation at your earliest convenience'"
+   ]
+  },
+  {
+   "id": "mail_warranty_util",
+   "t": "产品质保费实际使用核对",
+   "lvl": "★☆☆",
+   "brief": "写给目标公司财务经理的邮件，核实FY25产品质量保证金实际冲销与计提的匹配情况，放在审计工作底稿质保金部分。",
+   "facts": [
+    "管理层口头说FY25实际发生的质保金赔付金额与预计负债冲销完全一致。",
+    "我们抽查了20笔质保金赔付凭证，其中2笔缺少客户签收的维修验收单。",
+    "财务系统流水显示FY25实际支付质保金人民币2,800,000元。",
+    "截至审计报告出具日前，我们尚未收到目标公司对上述2笔无验收单凭证的合理解释。"
+   ],
+   "tgt": [
+    "We would like to reconcile...",
+    "According to our sample testing...",
+    "Please help to verify..."
+   ],
+   "traps": [
+    "把缺少验收单写成 'no paper'，太口语化，标准说法是 'lack supporting documentation'",
+    "询问时直接用 'Why is this wrong?'，缺乏专业礼貌，应使用 'Could you please explain the discrepancy between...'",
+    "表示尚未收到回复时用 'We haven't received anything yet'，不够正式，应写为 'As of the date of this letter, we have not received...'"
+   ]
+  },
+  {
+   "id": "mail_deferred_income",
+   "t": "递延收益摊销期限确认",
+   "lvl": "★☆☆",
+   "brief": "写给审计项目组同事的邮件，核对关于资产相关政府补助递延收益摊销年限的依据，放在审计底稿递延收益小结中。",
+   "facts": [
+    "管理层口头说FY25新增的设备补助递延收益按10年直线法摊销。",
+    "我们检查了相关专项资金批文，其明确规定该设备折旧期为8年。",
+    "明细账显示FY25实际摊销金额为人民币1,200,000元。",
+    "截至现场审计结束日，仍未得到财务部关于摊销年限与批文不一致的书面合理解释。"
+   ],
+   "tgt": [
+    "We have noticed an inconsistency...",
+    "Could you double-check...",
+    "Please advise on the appropriate..."
+   ],
+   "traps": [
+    "把不一致写成 'you made a mistake'，容易引起对立，应用 'There appears to be an inconsistency between...'",
+    "表达按照批文时用 'according to the paper'，不够严谨，应使用 'pursuant to the government approval document'",
+    "要求确认时用 'tell me if it is correct'，过于随意，应写为 'Please confirm whether our understanding is correct'"
+   ]
+  },
+  {
+   "id": "mail_loss_on_disposal",
+   "t": "固定资产报废损益确认函询",
+   "lvl": "★☆☆",
+   "brief": "写给目标公司财务主管的邮件，确认FY25生产线报废处置损益的会计分录，放在尽职调查报告非经常性损益章节。",
+   "facts": [
+    "管理层口头说FY25生产线报废净损失已全额计入营业外支出。",
+    "我们盘点发现FY25实际报废的设备原值共计人民币8,500,000元，但账面清理损益未扣除残值变价收入。",
+    "资产处置凭证显示残值变价收入人民币350,000元已计入其他应付款。",
+    "截至目前，我们尚未收到关于将变价收入挂账在其他应付款原因的合理解释。"
+   ],
+   "tgt": [
+    "We note that the disposal loss...",
+    "It appears that...",
+    "Please provide the rationale for..."
+   ],
+   "traps": [
+    "把挂在其他应付款写成 'put money in other payables'，动词用词不当，应为 'credited to other payables'",
+    "质疑损益不准时用 'your loss number is wrong'，应该用 'The accounting treatment regarding the disposal loss warrants further review'",
+    "催要解释时用 'Give us a reason'，毫无商务礼貌，应写为 'We would appreciate it if you could provide the underlying rationale'"
+   ]
+  },
+  {
+   "id": "mail_staff_welfare",
+   "t": "职工福利费列支口径核实",
+   "lvl": "★☆☆",
+   "brief": "写给目标公司薪酬经理的邮件，就FY25管理人员体检费及商业保险的列支科目进行核对，放在尽职调查报告人力成本章节。",
+   "facts": [
+    "管理层口头说FY25高管商业保险已全部作为福利费在应付职工薪酬中列支。",
+    "我们抽查了10笔高管商业保险报销单，其中4笔直接计入了销售费用中的差旅费。",
+    "总账显示FY25销售费用中归集的福利相关支出共计人民币1,500,000元。",
+    "截至发稿日，财务部门仍未提供上述4笔费用调整至应付职工薪酬的调整分录。"
+   ],
+   "tgt": [
+    "We observed that certain expenses...",
+    "Could you please confirm whether...",
+    "In this regard, we would like to..."
+   ],
+   "traps": [
+    "把费用记错科目说成 'put in the wrong box'，完全不符合专业表达，应使用 'misclassified into...'",
+    "要求确认时用 'Are you sure about this?'，显得很不专业，应写为 'Please verify whether the classification is appropriate'",
+    "提及调整分录时用 'change entry'，正确专业词汇是 'adjusting journal entry'"
+   ]
+  },
+  {
+   "id": "mail_inventory_scrap",
+   "t": "呆滞存货报废审批程序核查",
+   "lvl": "★☆☆",
+   "brief": "写给目标公司内控主管的邮件，核实FY25库龄超过3年呆滞存货报废的内部审批文件，放在审计底稿存货章节。",
+   "facts": [
+    "管理层口头说FY25呆滞存货报废已经过总经理办公会正式审批。",
+    "我们检查了FY25存货报废清单，涉及账面金额共计人民币4,200,000元。",
+    "抽查内部审批文件发现，其中2笔大额报废仅有生产总监签字，缺少总经理审批签章。",
+    "截至现场审计结束，我们尚未收到补充的总经理授权审批文件。"
+   ],
+   "tgt": [
+    "We have reviewed the inventory scrapping...",
+    "Our review indicates that...",
+    "Please provide the missing approval..."
+   ],
+   "traps": [
+    "把缺少签字说成 'nobody signed'，太口语化，应写为 'lack the required signature of...'",
+    "催要审批文件时用 'We need the paper now'，语气生硬，应写为 'Kindly provide the duly authorized approval at your earliest convenience'",
+    "描述总经理审批时用 'big boss sign'，属于中式英语俚语，应使用 'approval by the General Manager'"
+   ]
+  },
+  {
+   "id": "mail_interest_income",
+   "t": "大额银行存款利息收入核对",
+   "lvl": "★☆☆",
+   "brief": "写给目标公司出纳的邮件，就FY25大额定期存款利息收入与银行回单进行比对，放在审计底稿货币资金部分。",
+   "facts": [
+    "管理层口头说FY25定期存款利息已按实际利率法全额确认收入。",
+    "我们核对银行对账单显示，FY25收到定期存款利息共计人民币850,000元。",
+    "财务明细账记录的利息收入金额为人民币800,000元，存在人民币50,000元的差额。",
+    "截至目前，我们尚未收到出纳编制的关于该利息差额的调节表。"
+   ],
+   "tgt": [
+    "We have reconciled the interest income...",
+    "There is a variance of...",
+    "Could you please share the reconciliation..."
+   ],
+   "traps": [
+    "把差额说成 'there is a gap'，审计专业术语一般用 'variance' 或 'difference'，不建议用 gap",
+    "催要调节表时用 'Give me the bank reconciliation table'，语气不够礼貌，应写为 'Could you please provide the bank interest reconciliation schedule?'",
+    "核对利息时用 'check the money'，太粗糙，应写为 'reconcile the interest income against the bank statements'"
+   ]
+  },
+  {
+   "id": "mail_software_amortization",
+   "t": "外购软件无形资产摊销核对",
+   "lvl": "★☆☆",
+   "brief": "写给目标公司财务经理的邮件，核对FY25新增ERP软件无形资产的摊销起算时间，放在尽职调查报告无形资产章节。",
+   "facts": [
+    "管理层口头说FY25新购ERP软件自达到预定用途的当月起开始摊销。",
+    "我们查阅了该软件系统的验收报告，其载明的验收合格日期为FY25年3月15日。",
+    "固定资产及无形资产明细账显示，该软件自FY25年1月起即开始计提摊销。",
+    "截至外勤结束日，仍未收到管理层对提前2个月计提摊销原因的合理解释。"
+   ],
+   "tgt": [
+    "We noted that the amortization commenced...",
+    "According to the acceptance report...",
+    "Please clarify the rationale for..."
+   ],
+   "traps": [
+    "把提前计提摊销说成 'amortized too early'，不够书面化，应写为 'commenced amortization prematurely'",
+    "查阅验收报告说成 'read the check paper'，不符合专业表达，应为 'inspected the system acceptance report'",
+    "催要合理解释时用 'Give us a good reason'，属于职场大忌，应使用 'We would appreciate your clarification on this matter'"
+   ]
+  },
+  {
+   "id": "mail_goodwill_impairment_test",
+   "t": "商誉减值测试口径差异",
+   "lvl": "★★★",
+   "brief": "写给目标公司CFO的邮件，针对FY25商誉减值测试中预测增长率偏高的问题。放在尽调报告商誉减值章节。",
+   "facts": [
+    "管理层口头表示，FY25-FY29业绩预测采用12%的复合增长率，主要基于海外新市场拓展。",
+    "我们获取并复核了目标公司历史3年海外业务实际增速，发现实际复合增长率仅为4.5%。",
+    "我们抽查了同行业3家可比公司的公开预测数据，其海外业务平均增速约为6%。",
+    "截至发稿日，管理层尚未提供海外新市场开拓的具体可行性研究报告及订单支持。"
+   ],
+   "tgt": [
+    "While management asserts that...",
+    "Our substantive testing indicates that...",
+    "Pending receipt of supporting documentation..."
+   ],
+   "traps": [
+    "写成了「Management say they are very confident...」，不够正式专业，应改为「Management asserts that...」。",
+    "用了「We found that your number is wrong」，语气过于直接带攻击性，应改为「Our substantive testing indicates a variance...」。",
+    "漏掉了对未来的假设性语气，错用过去式「Management said」，预测分析应用一般现在时「asserts」或现在完成时「has projected」。"
+   ]
+  },
+  {
+   "id": "mail_provision_for_slow_moving_inventory",
+   "t": "呆滞存货减值准备计提",
+   "lvl": "★★★",
+   "brief": "写给目标公司运营总监的邮件，指出库龄超过2年的呆滞存货未全额计提跌价准备。放在存货尽调报告中。",
+   "facts": [
+    "运营总监口头解释称，库龄超过2年的呆滞电子元器件仍可通过后续定制化改造实现变现，故无需大幅计提跌价。",
+    "我们盘点发现库龄超2年的呆滞存货账面余额达800万元，且连续12个月无领用出库记录。",
+    "我们抽查了近期3笔同类旧料的处置变现价格，平均变现率仅为账面成本的15%。",
+    "截至目前，管理层仍未提供未来12个月内消耗该批呆滞库存的具体生产订单或销售合同。"
+   ],
+   "tgt": [
+    "Management holds the view that...",
+    "Conversely, our physical observation and historical realization tests show...",
+    "Without binding sales contracts for..."
+   ],
+   "traps": [
+    "把管理层的观点写成「Management thinks that...」，口语化严重，应改为「Management holds the view that...」。",
+    "形容存货卖不掉用了「The goods are totally dead」，不够商务，应采用「slow-moving inventory with negligible subsequent realization」。",
+    "在提建议时用了「You must write down the inventory」，语气生硬命令式，应改为「We recommend assessing the net realizable value...」。"
+   ]
+  },
+  {
+   "id": "mail_government_grant_recognition",
+   "t": "政府补助与日常活动相关性",
+   "lvl": "★★★",
+   "brief": "写给目标公司财务经理的邮件，关于大额政府补助计入其他收益还是营业外收入的口径分歧。放在尽调报告政府补助章节。",
+   "facts": [
+    "财务经理主张，该笔500万元财政补贴与日常经营活动无关，应直接计入营业外收入以增厚利润。",
+    "我们查阅了补助拨付文件，明确指出该补贴系对公司日常开展核心技术研发的专项财政贴息与奖励。",
+    "我们对照了企业会计准则相关规定，实质上该补贴伴随日常经营消耗并具有可持续性。",
+    "截至外勤结束，公司未提供证明该补贴属于非日常活动的专项豁免法律依据。"
+   ],
+   "tgt": [
+    "Management classifies the subsidy as...",
+    "Our technical interpretation of the relevant accounting standard suggests...",
+    "Should this classification discrepancy remain unresolved..."
+   ],
+   "traps": [
+    "把对方的会计处理看法写成「You guys want to put the grant in...」，极度口语且不尊重，应写为「Management classifies the subsidy under...」。",
+    "表述标准符合性时用了「We think your accounting is wrong」，不够客观，应改为「Our technical evaluation indicates a potential divergence from...」。",
+    "在表达若不调整可能产生的影响时，误用「If you don't fix this」，应用「Should this classification issue remain unadjusted...」。"
+   ]
+  },
+  {
+   "id": "fdd_rd_expense_capitalization_risk",
+   "t": "研发费用资本化合规风险",
+   "lvl": "★★☆",
+   "brief": "在FDD报告中披露研发人员工时记录不全导致的资本化合规风险，供买方并购团队评估。目标读者为买方管理层。",
+   "facts": [
+    "管理层宣称FY25和9M26资本化研发人员薪酬均严格对应特定开发项目",
+    "我们抽查了15名核心研发人员的考勤记录，其中6名人员在多个研发项目间交叉工时无法核实",
+    "IT部门未能提供完整的研发项目任务跟踪系统（Jira）历史日志供我们核对",
+    "截至外勤结束，我们多次催要但仍未取得关于这部分资本化薪酬分配比例的内部审批文件"
+   ],
+   "tgt": [
+    "Management represents that",
+    "we noted certain discrepancies",
+    "unable to independently verify",
+    "compliance risk regarding capitalization"
+   ],
+   "traps": [
+    "使用 'Management lied about the working hours'，带有情绪化色彩且涉嫌违背职业谨慎，应替换为 'we were unable to independently verify the allocation of time'",
+    "写成 'They didn't give us the Jira log yet.'，不够正式，应用 'We have not yet received the complete tracking logs as of the date of this report'",
+    "直接下结论 'These capitalized costs are non-compliant'，不符合尽调报告措辞惯例，应为 'may represent a potential non-compliance risk'"
+   ]
+  },
+  {
+   "id": "fdd_other_receivables_collectibility",
+   "t": "大额其他应收款可收回性",
+   "lvl": "★★☆",
+   "brief": "撰写FDD报告中关于大额押金及备用金长期挂账的减值风险段落，供买方投资团队审阅。",
+   "facts": [
+    "管理层声称账龄超过3年的其他应收款（押金及员工借款）均能全部收回",
+    "我们抽查了金额最大的前5笔其他应收款，其中3笔对应已搬迁供应商的租赁押金，长达4年未变动",
+    "财务负责人无法出示针对上述长期未结押金的催收记录或对方确认函",
+    "截至本报告出具日，管理层承诺提供的关于该款项可收回性的书面说明及催收计划仍未提供"
+   ],
+   "tgt": [
+    "Management indicated that",
+    "lack of documented collection efforts",
+    "presents recoverability risk",
+    "awaiting management's written confirmation"
+   ],
+   "traps": [
+    "写成 'These deposits are bad debts and cannot be collected.'，判断过于绝对，应写为 'may pose collectibility risks due to the lack of documented collection efforts'",
+    "把未拿到文件写成 'They failed to provide the letter.'，应该客观表述为 'As of the draft date, we have not yet received the requested written explanation from management'",
+    "直接建议坏账核销 'We suggest writing off these receivables'，超越了FDD报告发现的职责范围，应表达为 'highlighting a potential need for additional bad debt provisions'"
+   ]
+  },
+  {
+   "id": "fdd_customer_claims_liability",
+   "t": "大额客户潜在质量索赔",
+   "lvl": "★★☆",
+   "brief": "在FDD运营与财务发现章节中，提示标的公司面临大额客户产品质量客诉及潜在索赔负债，供买方并购谈判参考。",
+   "facts": [
+    "管理层口头解释称，FY25发生的客户批量退货已通过换货解决，不涉及额外赔偿金",
+    "我们抽查了9M26的客户往来邮件及售后记录，发现TOP2客户曾就批量产品瑕疵提出正式经济索赔要求",
+    "财务账面上未针对上述邮件中提及的索赔金额计提任何预计负债",
+    "截至定稿日，我们尚未收到管理层承诺提供的关于该索赔案最新法律评估意见或律师函"
+   ],
+   "tgt": [
+    "Management asserts that",
+    "our review of customer correspondence indicates",
+    "potential unrecorded liabilities",
+    "pending further legal assessment"
+   ],
+   "traps": [
+    "使用 'Management tried to hide the customer claim.'，恶意揣测管理层意图，英文专业报告严禁主观臆断，应写为 'management asserts... while our review indicates...'",
+    "写成 'The company has a big lawsuit liability.'，属于事实定性错误，因为尚未最终确定，应表述为 'potential unrecorded liabilities'",
+    "写成 'We didn't get the lawyer's letter.'，口语化，应为 'As of the report date, no legal opinion or related documentation has been provided for our review'"
+   ]
+  },
+  {
+   "id": "fdd_government_grant_repayment",
+   "t": "政府补助违规与退回风险",
+   "lvl": "★★☆",
+   "brief": "撰写FDD报告中关于政府补助合规性及潜在退回风险的发现，供买方管理层在并购协议中设置保护条款。",
+   "facts": [
+    "管理层表示FY24收到的地方产业扶持资金已全部达到考核指标，无需退回",
+    "我们查阅了相关补助协议，发现其中明确规定需在FY25结束前达成特定的本地研发人员数量指标",
+    "我们抽查了FY25末社保缴纳名单，发现实际研发人员数较协议要求低20%",
+    "截至现场工作结束，我们尚未取得当地政府部门出具的关于该项目最终验收合格文件"
+   ],
+   "tgt": [
+    "Management represents that",
+    "fails to meet the stipulated threshold",
+    "may trigger a clawback risk",
+    "pending final governmental clearance"
+   ],
+   "traps": [
+    "写成 'The government will definitely take the money back.'，语气过于确定，应使用 'may trigger a potential clawback risk'",
+    "写成 'Management lied about the headcount target.'，不符合专业商务文体，应写为 'while our comparison with social insurance records indicates a shortfall'",
+    "写成 'We didn't see the final approval letter.'，应正式表述为 'As of the report date, final governmental clearance or acceptance documentation remains unavailable'"
+   ]
+  },
+  {
+   "id": "fdd_inventory_slow_moving_reserve",
+   "t": "长库龄及呆滞备件跌价风险",
+   "lvl": "★★☆",
+   "brief": "撰写FDD报告中关于生产备品备件库龄偏长且计提准备不足的发现，供买方估值团队参考。",
+   "facts": [
+    "管理层表示现有的备件跌价准备计提政策已充分覆盖所有呆滞库存",
+    "我们分析了9M26仓储系统数据，发现库龄超过3年的专用生产设备备件账面金额占比达到35%",
+    "生产主管口头承认这批备件对应的老旧设备已处于半停用状态",
+    "截至外勤结束，管理层承诺提供的针对该批备件的可变现净值测试表仍未提供"
+   ],
+   "tgt": [
+    "Management maintains that",
+    "a significant portion of aged items",
+    "potential inadequate provision",
+    "pending receipt of management's valuation analysis"
+   ],
+   "traps": [
+    "写成 'The management's provision policy is useless.'，贬损管理层，不符合专业调性，应为 'appears potentially inadequate given the proportion of aged items'",
+    "写成 'They haven't given us the net realizable value calculation.'，口语化，应为 'As of the report date, the requested net realizable value analysis has not been provided'",
+    "直接写 'Inventory is overstated by X millions.'，在缺乏完整估值证据时不能直接给具体金额，应写为 'suggesting a potential risk of inventory overstatement'"
+   ]
+  },
+  {
+   "id": "fdd_executive_bonus_accrual",
+   "t": "高管年终奖金计提不完整",
+   "lvl": "★★☆",
+   "brief": "在FDD报告的人事及运营成本章节中，提示高管薪酬中存在未完整计提的或有奖金风险，供买方评估EBITDA调整项。",
+   "facts": [
+    "管理层表示9M26财务报表中已全额计提了各管理层人员的年度固定及浮动奖金",
+    "我们查阅了薪酬委员会会议纪要，发现其中提及一项与FY25/FY26战略里程碑挂钩的特别酌情奖金方案",
+    "财务账面上未针对该特别奖金方案预提任何费用",
+    "截至本报告出具日，我们尚未取得管理层关于该特别奖金最终发放金额的正式确认或测算依据"
+   ],
+   "tgt": [
+    "Management asserts that",
+    "board-approved incentive schemes",
+    "unrecorded bonus obligations",
+    "awaiting final determination by the board"
+   ],
+   "traps": [
+    "写成 'Management intentionally omitted the bonus to inflate EBITDA.'，带有恶意指控色彩，应写为 'may result in unrecorded bonus obligations affecting normalized EBITDA'",
+    "写成 'We didn't get the board's final calculation.'，应用规范书面语 'As of the report date, no final calculation or determination has been made available to us'",
+    "写成 'EBITDA must be adjusted downwards immediately.'，语气过硬，应用 'may require normalization adjustments by the deal team'"
+   ]
+  }
+ ]
+}
