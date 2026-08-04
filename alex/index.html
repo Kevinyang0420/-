@@ -474,7 +474,15 @@ html.booting{background:#000}
 
   <div id="setup" hidden>
     <div class="warn">
-      <b>key 只存在这台手机的浏览器里</b>，不会上传，页面本身没有内置任何凭证。
+      <b>推荐：填后端地址</b>——填一次就不用任何 key，也不会再有「今天额度用完了」。
+      没有后端时才需要下面的 key（key 只存在这台手机的浏览器里，不会上传）。
+      <div style="margin:10px 0">
+        <input id="apiurl" type="url" placeholder="后端地址 https://…（有就填这个）"
+               autocomplete="off" style="margin-bottom:6px">
+        <input id="apipass" type="password" placeholder="后端口令（没设就留空）"
+               autocomplete="off">
+        <button id="apisave" style="margin-top:8px">连后端</button>
+      </div>
       <div id="probe" style="margin:10px 0;padding:9px 11px;border-radius:8px;
            background:var(--soft);font-size:12.5px">正在探测网络…</div>
       <div id="hintG" hidden>
@@ -545,7 +553,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
       跟主屏图标同一个病、同一个药：URL 上挂**按内容算的版本号**，
       内容一变 URL 就变，缓存自然失效；内容没变则不变，不会白刷。
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
-const BANKV = '3c42e74e';
+const BANKV = '252fd7af';
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
 /* 🚨 Gemini 免费额度是 **每天 × 每个模型** 分开算的
@@ -1331,7 +1339,51 @@ function saveKeys(o){
       （两个都是推理模型，思考 token 占了七八成）。差 4~9 倍，等太久没法练。
       所以 DeepSeek 的位置是**额度兜底**：Gemini 六个模型全撞光时接上，
       正好解决 Kevin 抱怨的「Gemini 总没额度」，而平时不牺牲速度。 */
+/* ═══ 后端：唯一的模型出口 ═══
+   Kevin 2026-08-04：「额度太少了，今天还没怎么用就用完了」「直接做成一个后端吧」。
+   配好后端之后，**前端一把 key 都不持有** —— 额度问题从根上没了
+   （后端走的是付费的豆包，实测 0.7 秒）。
+   没配后端时还留着原来两条直连路，免得他还没来得及配就全瘫。 */
+const LSB = 'alex_backend_cfg';
+function loadApi(){
+  try { return JSON.parse(localStorage.getItem(LSB) || '{}') || {}; }
+  catch(_){ return {}; }
+}
+function saveApi(o){
+  try { localStorage.setItem(LSB, JSON.stringify(o)); } catch(_){}
+  S.api = o;
+}
+function apiOn(){ return !!(S.api && S.api.url); }
+
+async function backend(prompt, temp, wantJson){
+  const cfg = S.api || {};
+  const url = String(cfg.url || '').replace(/\/+$/, '') + '/api/llm';
+  let r;
+  try {
+    r = await fetch(url, {method:'POST',
+      headers: Object.assign({'Content-Type':'application/json'},
+                             cfg.pass ? {'X-Alex-Pass': cfg.pass} : {}),
+      body: JSON.stringify({
+        messages: [{role:'system',
+                    content:'严格输出一个 JSON 对象，不要解释、不要围栏。'},
+                   {role:'user', content: prompt}],
+        temperature: temp, json: wantJson !== false, max_tokens: 8000})});
+  } catch(e){
+    throw new Error('连不上后端（' + (cfg.url || '没填地址') + '）—— ' +
+                    '检查地址对不对、后端是不是开着');
+  }
+  if (r.status === 401) throw new Error('后端口令不对，去「我的 → 后端」改一下');
+  if (!r.ok){
+    const t = await r.text().catch(()=> '');
+    throw new Error('后端 ' + r.status + ' ' + t.slice(0, 120));
+  }
+  const j = await r.json();
+  if (!j.text) throw new Error('后端返回空');
+  return j.text;
+}
+
 function pick(need){
+  if (apiOn()) return 'backend';
   if (need === 'audio') return S.keys.gemini ? 'gemini' : null;
   if (S.keys.gemini) return 'gemini';
   return S.keys.deepseek ? 'deepseek' : null;
@@ -1339,6 +1391,8 @@ function pick(need){
 /* 文字活统一走这里：Gemini 优先，**只有在额度真的全撞光时**才落到 DeepSeek。
    其它错误（key 不对、网络）不触发兜底 —— 换一家也一样会错，白等一分钟。 */
 async function textCall(prompt, temp){
+  // 配了后端就只走后端 —— 它自己会在豆包和 DeepSeek 之间兜底，前端不用管
+  if (apiOn()) return await backend(prompt, temp);
   if (S.keys.gemini){
     try { return await gemini([{text:prompt}], temp); }
     catch(e){
@@ -2150,6 +2204,20 @@ async function getRec(){
 async function down(e){
   e.preventDefault();
   if (busy || !S.scn) return false;
+  /* 🚨 配了后端之后，说话这条路**不再需要能收音频的模型**：
+     用手机自带的识别转成文字，再把文字交给后端判官。
+     这是把「Gemini 额度」这件事连根拔掉的关键一步 —— 原来只有 Gemini
+     能一次做完转写+判断，所以额度一断整个陪练就废了。 */
+  if (apiOn()){
+    unlockTTS();
+    $('#err').textContent = '';
+    $('#mic').classList.add('rec');
+    $('#mic').innerHTML = '停止<br>并发送';
+    $('#hint').textContent = '在听…说完点一下停止';
+    try { S.srPromise = listenOnce(); }
+    catch(err){ $('#err').textContent = err.message; resetMic(); return false; }
+    return true;
+  }
   // 🚨 DeepSeek 收不了音频。只有 DeepSeek key 时别让他按了没反应，直接说清楚
   if (!pick('audio')){
     $('#err').innerHTML = '说话需要一把 Gemini key（DeepSeek 收不了录音）。'
@@ -2209,7 +2277,7 @@ function resetMic(){
 function up(e){
   e.preventDefault();
   resetMic();
-  if (S.backend === 'deepseek'){
+  if (apiOn() || S.backend === 'deepseek'){
     try { window.__sr && window.__sr.stop(); } catch(_) {}
     if (S.srPromise) sendText(S.srPromise);
     return;
@@ -4118,7 +4186,27 @@ function showMe(){
   row('🕘','历史','翻回以前练过的每一场', () => go(showHistory,'历史'));
   row('🔈','陪练的声音','换一个好听点的嗓子；iOS 要先下载增强语音', () => go(showVoice,'声音'));
   row('💾','备份与恢复','数据只存在这台设备，导出一份存自己那儿', () => go(showBackup,'备份'));
-  row('🔑','换 / 加 API key','两把 key 可以同时存着，各干各的', () => {
+  row('🛰','后端（推荐）',
+      S.api && S.api.url ? '已连 ' + S.api.url : '填一次地址，从此不用任何 key、不占额度',
+      () => {
+    const u = prompt('后端地址（例如 https://xxx.faas.volces.com）\n' +
+                     '留空则清掉、退回用 key 的老路', (S.api && S.api.url) || '');
+    if (u === null) return;
+    if (!u.trim()){ saveApi({}); toast('已清掉后端设置'); return goTab('me'); }
+    const p = prompt('口令（后端 ALEX_PASS 那个；没设就留空）',
+                     (S.api && S.api.pass) || '');
+    if (p === null) return;
+    saveApi({url: u.trim().replace(/\/+$/, ''), pass: (p || '').trim()});
+    toast('正在连…');
+    // 🚨 存完立刻探一次 —— 不探的话地址填错要等他真去练一句才发现
+    fetch(S.api.url + '/api/health', {cache:'no-store'})
+      .then(r => r.json())
+      .then(d => { toast(d && d.ok ? '连上了：' + (d.providers || []).join('/')
+                                   : '连上了，但后端说没有可用的 key');
+                   goTab('me'); })
+      .catch(() => { toast('连不上，地址再检查一下'); goTab('me'); });
+  });
+  row('🔑','换 / 加 API key（老路）','没配后端时才用得上；配了后端这里可以留空', () => {
     $('#feed').innerHTML = ''; $('#setup').hidden = false; $('#sub').textContent = '设置 key';
   });
 }
@@ -4191,6 +4279,7 @@ SCENARIOS.push(...customScns());     // 宝石点播出来的专属场景
 loadModel();
 try { const d = localStorage.getItem('alex_dens');
       if (d !== null) S.density = +d; } catch(_){}                    // 恢复今天走通的那个模型，别重撞已用尽的
+S.api = loadApi();               // 后端地址 + 口令（配了它就不用任何 key）
 S.keys = loadKeys();
 S.key = S.keys.gemini || S.keys.deepseek || '';
 S.backend = localStorage.getItem(LS.be) ||
@@ -4201,16 +4290,27 @@ S.backend = localStorage.getItem(LS.be) ||
    Kevin 手快，key 存下时探测还没回来，backend 被写成空字符串，
    下次打开又弹设置页 —— 他反馈「每次都要输 key」就是这个竞态。
    现在：有 key 就用，backend 缺了就在后台补探，探完自动切。 */
-if (S.key){
+if (S.key || apiOn()){
   if (!S.backend) S.backend = 'gemini';        // 先按最常见的走
   goTab('home');
   $('#sub').textContent =
-    (S.keys.gemini && S.keys.deepseek) ? '说话走 Gemini，听力和打字走 DeepSeek'
+    apiOn() ? '已连后端 · 不占任何免费额度'
+    : (S.keys.gemini && S.keys.deepseek) ? '说话走 Gemini，听力和打字走 DeepSeek'
     : S.keys.gemini ? '点一下说英语（Gemini 直接听录音）'
     : '听力和打字可用；说话需要再加一把 Gemini key';
   if (!localStorage.getItem(LS.be)) detectBackend().catch(()=>{});
 } else {
   $('#setup').hidden = false;
+  const ab = $('#apisave');
+  if (ab) ab.onclick = () => {
+    const u = ($('#apiurl').value || '').trim().replace(/\/+$/, '');
+    if (!u) return alert('先填后端地址');
+    saveApi({url: u, pass: ($('#apipass').value || '').trim()});
+    fetch(u + '/api/health', {cache:'no-store'}).then(r => r.json()).then(d => {
+      if (d && d.ok){ $('#setup').hidden = true; goTab('home'); }
+      else alert('连上了，但后端说没有可用的 key');
+    }).catch(() => alert('连不上这个地址，检查一下'));
+  };
   detectBackend().catch(()=>{});
 }
 

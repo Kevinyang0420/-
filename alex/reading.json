@@ -28354,6 +28354,167 @@
    "src": "SEC 10-K",
    "srcen": "SEC 10-K filing",
    "url": "https://www.sec.gov/Archives/edgar/data/78814/000162828026009921/pbi-20251231.htm"
+  },
+  {
+   "id": "ph_approximately_3_4_percent_of_sales",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "Approximately 3.4% of our sales in fiscal year 2025 were denominated in foreign currencies.",
+   "why": "中文常直接写“大概有3.4%”，此处用正式财报用语Approximately，精准且符合SEC公开报告规范，避免口语化；中国人易写About或模糊的“大概”，专业性不足。",
+   "when": "公开财报中披露特定项目占比的场合。",
+   "slot": "Approximately […]% of our sales in fiscal year […] were denominated in foreign currencies.",
+   "swap": [
+    "Roughly 3.4% of our sales in fiscal year 2025 were denominated in foreign currencies.（Roughly更口语化，适合内部报告而非公开SEC财报）",
+    "Approximately 3.4% of our fiscal 2025 sales were denominated in foreign currencies.（更简洁，适合篇幅受限的报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1275187/000127518725000014/ango-20250531.htm"
+  },
+  {
+   "id": "ph_significant_non_functional_balances_incl",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "Significant non-functional balances include accounts receivable due from some of our international customers.",
+   "why": "中文常写“重要的非功能性余额包括…”，此处用Significant是SEC财报列举重要项目的标准术语，比普通Important更贴合美国会计准则正式表述；中国人易用Important，不够适配财报语境。",
+   "when": "财报中列举重要账户或余额的场合。",
+   "slot": "Significant non-functional balances include […] due from some of our international customers.",
+   "swap": [
+    "Material non-functional balances include accounts receivable due from some of our international customers.（Material是财报中更常用的“重要”术语，侧重对决策的影响，Significant侧重规模）",
+    "Key non-functional balances include accounts receivable due from some of our international customers.（Key更口语化，适合内部报告而非公开SEC财报）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1275187/000127518725000014/ango-20250531.htm"
+  },
+  {
+   "id": "ph_similar_range_services",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "Our FSS International segment provides a similar range of services as those provided to our FSS United States segment clients",
+   "why": "这个写法用「similar range of services as those provided to」清晰对比两个业务线的服务范围，中国人常写「provides similar services as」过于简略，缺少指代避免歧义，更符合正式报告的严谨性",
+   "when": "用于正式报告中对比两个业务单元的服务内容时套用",
+   "slot": "Our FSS […] segment provides a similar range of services as those provided to our FSS […] segment clients",
+   "swap": [
+    "offers a comparable suite of services to those delivered to our FSS […] segment clients（用comparable替代similar，suite替代range，delivered替代provided，更偏向服务套餐的表述，语气稍正式）",
+    "delivers a similar set of services as those offered to our FSS […] segment clients（用delivers替代provides，set替代range，更偏向业务交付的表述，语气稍口语化）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1584509/000158450925000219/cik0-20251003.htm"
+  },
+  {
+   "id": "ph_ops_15_countries",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "operations in 15 countries outside the United States",
+   "why": "这个写法用具体数字加限定范围清晰说明国际运营的规模，中国人常写「many countries outside the US」表述模糊，缺少量化信息，不符合SEC报告的严谨要求",
+   "when": "用于正式报告中说明业务覆盖的国家数量时套用",
+   "slot": "operations in […] countries outside the United States",
+   "swap": [
+    "operations in fifteen countries beyond the United States（用fifteen替代15，beyond替代outside，更偏向书面化表述）",
+    "operations in a total of 15 countries outside the United States（加「a total of」强调总数，适合需要突出总规模的场景）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1584509/000158450925000219/cik0-20251003.htm"
+  },
+  {
+   "id": "ph_keep_users_engaged_via",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "keep them highly engaged through our mobile app",
+   "why": "用keep+宾语+形容词+介词短语的结构，清晰表达提升用户活跃度的方式，中国人常写make them active through app，表达不够精准。",
+   "when": "描述提升平台用户粘性的措施时套用。",
+   "slot": "keep them highly engaged through our […]",
+   "swap": [
+    "maintain their high engagement via our […]（更正式，适合书面报告）",
+    "ensure their strong engagement through our […]（更强调主动保障）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1736946/000173694626000031/arlo-20251231.htm"
+  },
+  {
+   "id": "ph_generate_incremental_revenue",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "generate incremental recurring revenue by offering them paid subscription services",
+   "why": "用incremental和recurring明确收入的增量性和持续性，中国人常只写generate revenue，缺乏对收入性质的精准描述。",
+   "when": "描述业务带来的新增持续性收入时套用。",
+   "slot": "generate incremental recurring revenue by offering them […]",
+   "swap": [
+    "produce additional recurring revenue by providing them […]（produce侧重产出，语气稍弱）",
+    "drive incremental recurring revenue by offering them […]（drive更强调推动增长，适合业务计划）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1736946/000173694626000031/arlo-20251231.htm"
+  },
+  {
+   "id": "ph_june_entered_into_partnership",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "In June 2025, we entered into a partnership agreement with ADT",
+   "why": "用正式商务表述\"entered into a partnership agreement\"替代中文常直译的\"签了合作协议\"，更符合SEC报告的正式性，主语明确且符合财报写作规范，避免口语化",
+   "when": "正式商务合作的公告或财报披露场合",
+   "slot": "In […] [日期], we entered into a partnership agreement with [合作方名称]",
+   "swap": [
+    "signed a partnership agreement with [合作方名称]（语气更直接，适合非监管报告）",
+    "concluded a partnership arrangement with [合作方名称]（语气更侧重达成结果，适合正式报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1736946/000173694626000031/arlo-20251231.htm"
+  },
+  {
+   "id": "ph_quant_significant_portion",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "A significant portion of our revenue depends upon",
+   "why": "使用精准量化术语「significant portion」替代模糊的「a lot of」，符合财务报告的精准要求，中国人常使用模糊词汇，缺乏专业严谨性",
+   "when": "财务报告中描述收入等核心指标的占比时套用",
+   "slot": "A significant portion of […] depends upon […]",
+   "swap": [
+    "A substantial part of our revenue relies on（同义替换，更正式）",
+    "A notable share of our revenue is dependent on（稍正式，适合披露关键部分）",
+    "A large segment of our revenue depends on（范围稍宽，适合非核心部分）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/78814/000162828026009650/pbi-20251231.htm"
+  },
+  {
+   "id": "ph_38_percent_sales_denom",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "Approximately 3.8% of our sales in fiscal year 2026 were denominated in foreign currencies.",
+   "why": "中文写正式财报时常用主动语态“我们2026财年约3.8%的销售额为外币计价”，原句用被动语态“were denominated”更符合SEC报告的客观中立要求，避免主观主体，增强权威性。",
+   "when": "用于正式财务报告中披露涉及外币计价的销售比例数据时。",
+   "slot": "Approximately […]% of our sales in fiscal year […] were denominated in foreign currencies.",
+   "swap": [
+    "Roughly 3.8% of our sales in fiscal 2026 were priced in foreign currencies. 语气较随意，适合内部报告，正式度不足",
+    "About 3.8% of our sales for FY2026 are denominated in foreign currencies. 用缩写FY更简洁，但正式度略低，不符合SEC filings规范"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1275187/000162828026048138/ango-20260531.htm"
+  },
+  {
+   "id": "ph_as_a_result_profitability",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "as a result, our profitability is exposed to currency fluctuations.",
+   "why": "中文写报告时常直接用“因此”衔接因果关系，原句用“as a result”作为正式书面衔接词，更符合英文财报的逻辑表达习惯，避免生硬直译。",
+   "when": "用于财务报告中说明某一因素导致的业务影响时。",
+   "slot": "[...] , as a result, our profitability is exposed to currency fluctuations.",
+   "swap": [
+    "Consequently, our profitability is subject to currency fluctuations. 语气更正式，但衔接稍显生硬，不如原句自然",
+    "Thus, our profitability is affected by currency fluctuations. 用词宽泛，未体现“被动暴露”的精准含义"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1275187/000162828026048138/ango-20260531.htm"
   }
  ]
 }
