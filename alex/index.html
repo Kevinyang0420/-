@@ -553,7 +553,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
       跟主屏图标同一个病、同一个药：URL 上挂**按内容算的版本号**，
       内容一变 URL 就变，缓存自然失效；内容没变则不变，不会白刷。
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
-const BANKV = '252fd7af';
+const BANKV = '4d9f8248';
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
 /* 🚨 Gemini 免费额度是 **每天 × 每个模型** 分开算的
@@ -1346,8 +1346,16 @@ function saveKeys(o){
    没配后端时还留着原来两条直连路，免得他还没来得及配就全瘫。 */
 const LSB = 'alex_backend_cfg';
 function loadApi(){
-  try { return JSON.parse(localStorage.getItem(LSB) || '{}') || {}; }
-  catch(_){ return {}; }
+  let o = {};
+  try { o = JSON.parse(localStorage.getItem(LSB) || '{}') || {}; } catch(_){}
+  /* 🚨 页面要是从后端自己发出来的（他在家里开 http://192.168.x.x:8080），
+     那后端就是同一个地址 —— **自动认出来，一个字都不用他填**。
+     判据：这个页面不是 github.io 发的、也不是本地文件打开的。 */
+  if (!o.url && location.protocol.startsWith('http') &&
+      !/github\.io$/i.test(location.hostname)){
+    o = {url: location.origin, pass: '', auto: true};
+  }
+  return o;
 }
 function saveApi(o){
   try { localStorage.setItem(LSB, JSON.stringify(o)); } catch(_){}
