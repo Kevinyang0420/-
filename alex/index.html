@@ -320,9 +320,22 @@ button{font-family:inherit}
 .dots::after{content:'';animation:d 1.1s steps(4,end) infinite}
 @keyframes d{0%{content:''}25%{content:'·'}50%{content:'··'}75%{content:'···'}}
 
+/* 底部导航：六个 tab 放不下一行，改成可横滑。
+   每个固定 18%（六个 108%），「我的」露一角当作可滑的提示。 */
+#tabbar{overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;
+  scroll-behavior:smooth}
+#tabbar::-webkit-scrollbar{display:none}
+#tabbar button{flex:0 0 18%}
+.rchip{flex:0 0 auto;background:var(--card);border:2px solid var(--line);
+  border-bottom-width:3px;color:var(--muted);border-radius:14px;
+  padding:8px 14px;font-size:13px;font-weight:700;white-space:nowrap}
+.rchip.on{background:var(--brand);border-color:var(--brand-dark);color:#fff}
+
 /* 报告写作 */
+.tile.t-read,
 .tile.t-write{background:var(--card);border:2px solid var(--line);
   border-bottom-width:4px;color:var(--fg-strong)}
+.tile.t-read .ds,
 .tile.t-write .ds{color:var(--muted)}
 #wtext{width:100%;box-sizing:border-box;min-height:190px;margin-top:14px;
   padding:13px 14px;border:2px solid var(--line);border-radius:14px;
@@ -463,10 +476,16 @@ html.booting{background:var(--brand-dark)}
   <div id="feed"></div>
 </div>
 
+<!-- 🚨 Kevin 2026-08-04：「少了一个『写作』，把它也拿进来」「『我的』可以采取
+     右拉滑动的方式，拉到最右边再显示」。所以这一栏改成**可横滑**：
+     每个按钮固定 18% 宽，六个共 108% —— 前五个占满屏，「我的」露出一角，
+     一看就知道能往右拉，又不至于完全藏起来找不到。 -->
 <nav id="tabbar">
   <button data-tab="home"><span class="ti">🏠</span>首页</button>
   <button data-tab="speak"><span class="ti">🗣️</span>口语</button>
   <button data-tab="listen"><span class="ti">🎧</span>听力</button>
+  <button data-tab="read"><span class="ti">📖</span>阅读</button>
+  <button data-tab="write"><span class="ti">✍️</span>写作</button>
   <button data-tab="me"><span class="ti">👤</span>我的</button>
 </nav>
 
@@ -506,7 +525,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
       跟主屏图标同一个病、同一个药：URL 上挂**按内容算的版本号**，
       内容一变 URL 就变，缓存自然失效；内容没变则不变，不会白刷。
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
-const BANKV = 'e6c587d9';
+const BANKV = '8d964bc5';
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
 /* 🚨 Gemini 免费额度是 **每天 × 每个模型** 分开算的
@@ -3207,9 +3226,211 @@ const TABS = {
   home:  {nm:'首页', go:() => { NAV.length = 0; showHome(); }},
   speak: {nm:'口语', go:() => { NAV.length = 0; showList(); }},
   listen:{nm:'听力', go:() => { NAV.length = 0; showLevel('listen'); }},
+  read:  {nm:'阅读', go:() => { NAV.length = 0; READ.page = 0; showRead(); }},
+  write: {nm:'写作', go:() => { NAV.length = 0; WRITE.page = 0; showWrite(); }},
   me:    {nm:'我的', go:() => { NAV.length = 0; showMe(); }},
 };
 let TAB_CUR = 'home';
+
+/* ═══ 阅读：先有输入才有输出 ═══
+   Kevin 2026-08-04：「还可以再加一个『阅读』板块，作为写作的参考…毕竟还是要先有
+   输入才有输出。1. 摘录以前报告里写得好的句式表达。2. 时事文章里有利于职业英语
+   写作的好题材和好写法。3. **不要像以前中学生那种阅读理解，那种没什么意义**。」
+
+   所以这里**一道题都不出**。每条阅读就三件事：
+     读原文 → 看清楚它好在哪 → 把能用的写法带走（模板可复制、可直接拿去写作）
+
+   两类：
+     phrase   他自己 45 份普华报告里的**原文摘录**，模型只做注解
+     passage  一小段职业英文范文，逐句注解写法
+   两类都挂同一套写法维度（归因/模态/名词化/衔接/语域…），跟写作模块判的是同一套，
+   所以「拿这句去练写作」能直接把句式塞进那边的目标表达里。 */
+const READ = {items: [], page: 0, filter: 'all', cur: null};
+const RDIM = {attr:'归因', modal:'模态', nom:'名词化', link:'衔接',
+              reg:'语域', quant:'量化', scope:'范围', hedge:'软化'};
+
+async function loadReading(){
+  if (READ.items.length) return READ.items;
+  try {
+    const r = await fetch(bankURL('reading.json'), {cache:'no-cache'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const b = await r.json();
+    READ.items = (b.items || []).filter(c =>
+      c && c.id && c.en && c.dim && (c.kind === 'phrase' || c.kind === 'passage'));
+  } catch(_){ READ.items = []; }
+  return READ.items;
+}
+
+/* 收藏：读到觉得有用的，存下来（「我的」里能翻） */
+function kept(){
+  try { return JSON.parse(localStorage.getItem('alex_kept') || '[]') || []; }
+  catch(_){ return []; }
+}
+function keepToggle(c){
+  const k = kept(), i = k.findIndex(x => x.id === c.id);
+  if (i >= 0) k.splice(i, 1);
+  else k.unshift({id:c.id, en:c.en, slot:c.slot || (c.take || [])[0] || '',
+                  dim:c.dim, on:TODAY()});
+  try { localStorage.setItem('alex_kept', JSON.stringify(k.slice(0, 300))); } catch(_){}
+  return i < 0;
+}
+const isKept = id => kept().some(x => x.id === id);
+
+async function showRead(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = '读别人怎么写，再自己写';
+  const f = $('#feed');
+  f.innerHTML = '<div class="note">正在取…</div>';
+  const all = await loadReading();
+  if (!all.length){
+    f.innerHTML = '<div class="note">阅读素材还没下下来，检查一下网络再进来。</div>';
+    return;
+  }
+  const pool = all.filter(c => READ.filter === 'all' || c.kind === READ.filter);
+  const sorted = pool.slice().sort((a, b) => {
+    const d = (isKept(a.id) ? 1 : 0) - (isKept(b.id) ? 1 : 0);
+    if (d) return d;
+    const h = x => [...x].reduce((k, c) => (k * 31 + c.charCodeAt(0)) % 9973, 7);
+    return h(a.id + DAYSEED) - h(b.id + DAYSEED);
+  });
+  const PAGE = 5;
+  const from = (READ.page * PAGE) % Math.max(sorted.length, 1);
+  const show = [];
+  for (let k = 0; k < Math.min(PAGE, sorted.length); k++)
+    show.push(sorted[(from + k) % sorted.length]);
+  const chip = (v, nm) => '<button class="rchip' + (READ.filter === v ? ' on' : '') +
+    '" data-f="' + v + '">' + nm + '</button>';
+  f.innerHTML = '<div class="tabs" style="margin-bottom:10px">' +
+      chip('all', '全部 ' + all.length) +
+      chip('phrase', '句式 ' + all.filter(c => c.kind === 'phrase').length) +
+      chip('passage', '范文段 ' + all.filter(c => c.kind === 'passage').length) +
+    '</div>' +
+    show.map(c => '<div class="card" data-id="' + c.id + '"><div class="hd">' +
+      '<span class="ct" style="font-size:11.5px;color:var(--brand-dark);' +
+      'font-weight:800">' + (RDIM[c.dim] || c.dim) + '</span>' +
+      (isKept(c.id) ? '<span class="done">已收藏</span>' : '') + '</div>' +
+      '<div class="en" style="margin-top:2px">' +
+      esc(c.kind === 'phrase' ? c.en : (c.t || '') ) + '</div>' +
+      (c.kind === 'passage'
+        ? '<div class="sit" style="margin-top:6px">' +
+          esc(c.en.slice(0, 88)) + '…</div>' : '') +
+      '</div>').join('');
+  document.querySelectorAll('#feed .rchip').forEach(b =>
+    b.onclick = () => { READ.filter = b.dataset.f; READ.page = 0; showRead(); });
+  document.querySelectorAll('#feed .card').forEach(el =>
+    el.onclick = () => openRead(all.find(x => x.id === el.dataset.id)));
+  if (sorted.length > PAGE){
+    const more = document.createElement('button');
+    more.className = 'play'; more.style.marginTop = '14px';
+    more.textContent = '换一批（共 ' + sorted.length + ' 条）';
+    more.onclick = () => { READ.page++; showRead(); };
+    f.appendChild(more);
+  }
+}
+
+function copyBtn(text, label){
+  const b = document.createElement('button');
+  b.className = 'play';
+  b.textContent = label || '📋 复制模板';
+  b.onclick = () => {
+    try { navigator.clipboard.writeText(text); b.textContent = '✓ 已复制'; }
+    catch(_){ b.textContent = '复制不了，长按选中'; }
+  };
+  return b;
+}
+
+function openRead(c){
+  if (!c) return;
+  READ.cur = c;
+  const f = $('#feed');
+  $('#sub').textContent = (RDIM[c.dim] || c.dim) + (c.kind === 'phrase' ? ' · 句式' : ' · 范文段');
+  f.innerHTML = '';
+
+  // 原文
+  const box = document.createElement('div');
+  box.className = 'better';
+  box.innerHTML = '<div class="lb">' + (c.kind === 'phrase' ? '原句（出自你自己的报告）'
+                                                            : esc(c.t || '范文段')) + '</div>' +
+    '<div class="en" style="font-size:15.5px;line-height:1.75">' + esc(c.en) + '</div>';
+  const sp = document.createElement('button');
+  sp.className = 'play'; sp.textContent = '🔊 听一遍';
+  sp.onclick = () => { unlockTTS(); sp.classList.add('on');
+    say(c.en, 'en').then(() => sp.classList.remove('on')); };
+  box.appendChild(sp);
+  const yg = youglish(c.kind === 'phrase' ? c.en.split(/[,.;]/)[0] : null);
+  if (yg) box.appendChild(yg);
+  f.appendChild(box);
+
+  if (c.kind === 'phrase'){
+    const w = document.createElement('div');
+    w.className = 'better'; w.style.marginTop = '12px';
+    w.innerHTML = '<div class="lb">好在哪</div><div style="font-size:14px;' +
+      'line-height:1.7">' + esc(cleanZh(c.why || '')) + '</div>' +
+      (c.when ? '<div class="k" style="margin-top:8px">什么时候用 · ' +
+                esc(cleanZh(c.when)) + '</div>' : '');
+    f.appendChild(w);
+    const s = document.createElement('div');
+    s.className = 'better'; s.style.marginTop = '12px';
+    s.innerHTML = '<div class="lb">套用模板</div><div class="en">' +
+      esc(c.slot || '') + '</div>';
+    s.appendChild(copyBtn(c.slot || ''));
+    f.appendChild(s);
+    if (Array.isArray(c.swap) && c.swap.length){
+      const sw = document.createElement('div');
+      sw.className = 'better'; sw.style.marginTop = '12px';
+      sw.innerHTML = '<div class="lb">换个语气</div>' +
+        c.swap.map(x => '<div style="font-size:13.5px;line-height:1.65;' +
+          'padding:5px 0;border-top:1px solid var(--line)">' + esc(x) + '</div>').join('');
+      f.appendChild(sw);
+    }
+  } else {
+    if (Array.isArray(c.notes)){
+      const n = document.createElement('div');
+      n.className = 'better'; n.style.marginTop = '12px';
+      n.innerHTML = '<div class="lb">这段为什么这么写</div>' +
+        c.notes.map(x => '<div style="padding:8px 0;border-top:1px solid var(--line)">' +
+          '<div class="en" style="font-size:13.5px">' + esc((x || {}).q || '') + '</div>' +
+          '<div style="font-size:13px;color:var(--muted);margin-top:3px">' +
+          esc(cleanZh((x || {}).why || '')) + '</div></div>').join('');
+      f.appendChild(n);
+    }
+    if (Array.isArray(c.take) && c.take.length){
+      const t = document.createElement('div');
+      t.className = 'better'; t.style.marginTop = '12px';
+      t.innerHTML = '<div class="lb">可以带走的写法</div>';
+      c.take.forEach(x => {
+        const row = document.createElement('div');
+        row.style.cssText = 'padding:8px 0;border-top:1px solid var(--line);' +
+          'display:flex;align-items:center;gap:8px';
+        row.innerHTML = '<span class="en" style="flex:1;font-size:13.5px">' +
+          esc(x) + '</span>';
+        row.appendChild(copyBtn(x, '📋'));
+        t.appendChild(row);
+      });
+      f.appendChild(t);
+    }
+  }
+
+  // 收藏 + 拿去写
+  const act = document.createElement('div');
+  act.style.cssText = 'display:flex;gap:8px;margin-top:14px';
+  const kb = document.createElement('button');
+  kb.className = 'play'; kb.style.flex = '1';
+  kb.textContent = isKept(c.id) ? '★ 已收藏' : '☆ 记下来';
+  kb.onclick = () => { kb.textContent = keepToggle(c) ? '★ 已收藏' : '☆ 记下来'; };
+  const gb = document.createElement('button');
+  gb.className = 'play'; gb.style.flex = '1';
+  gb.textContent = '✍️ 拿去练写作';
+  gb.onclick = () => {
+    WRITE.hint = {en: c.en, slot: c.slot || (c.take || [])[0] || c.en};
+    WRITE.page = 0;
+    go(showWrite, '报告写作');
+    toast('这次试着用上刚读到的写法');
+  };
+  act.appendChild(kb); act.appendChild(gb);
+  f.appendChild(act);
+  markDaily('read');
+}
 
 /* ═══ 英文报告写作练习 ═══
    Kevin 2026-07-31：「我好久没有写英文报告了，技能也有点生疏了…从教学维度来说，
@@ -3326,6 +3547,21 @@ function startWrite(w){
     '（注意谁说的、我们查的、还没拿到的）</div><ul style="margin:6px 0 0 -8px;' +
     'font-size:13.5px;line-height:1.7">' +
     w.facts.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul></div>';
+  // 🚨 从阅读点「拿去练写作」过来的：把那条写法摆在输入框正上方。
+  //    不摆出来的话「先输入后输出」这条链就断了 —— 他记不住刚才读的是什么。
+  if (WRITE.hint){
+    const hb = document.createElement('div');
+    hb.className = 'better';
+    hb.style.cssText = 'margin-top:12px;border-color:var(--brand);' +
+      'background:var(--brand-soft)';
+    hb.innerHTML = '<div class="lb">这次试着用上（刚读到的）</div>' +
+      '<div class="en">' + esc(WRITE.hint.slot) + '</div>';
+    const x = document.createElement('button');
+    x.className = 'play'; x.textContent = '不用了';
+    x.onclick = () => { WRITE.hint = null; hb.remove(); };
+    hb.appendChild(x);
+    f.appendChild(hb);
+  }
   const ta = document.createElement('textarea');
   ta.id = 'wtext';
   ta.placeholder = '用英文写这一段…（写不出来也先写，写完 Alex 会给你可以直接抄的版本）';
@@ -3356,7 +3592,9 @@ async function submitWrite(){
   try {
     const p = WRULES.replace('{brief}', w.brief)
                     .replace('{facts}', w.facts.map(x => '- ' + x).join('\n'))
-                    .replace('{tgt}', (w.tgt || []).join(' / '))
+                    .replace('{tgt}', ((w.tgt || []).concat(
+                       WRITE.hint ? ['（他刚读到的写法，这次特别想练：' +
+                                     WRITE.hint.slot + '）'] : [])).join(' / '))
                     .replace('{text}', text);
     d = firstJson(await textCall(p, 0.3));
   } catch(e){
@@ -3450,8 +3688,8 @@ const DAILY = [
   {k:'news',  ic:'📰', nm:'一段时事听力', go:() => go(showNews, '时事听力')},
   {k:'listen',ic:'🎧', nm:'一组配音听力', go:() => goTab('listen')},
   {k:'speak', ic:'🗣️', nm:'一场口语陪练', go:() => goTab('speak')},
-  {k:'write', ic:'✍️', nm:'写一段英文', go:() => { WRITE.page = 0;
-                                                 go(showWrite, '报告写作'); }},
+  {k:'read',  ic:'📖', nm:'读一条好写法', go:() => goTab('read')},
+  {k:'write', ic:'✍️', nm:'写一段英文', go:() => goTab('write')},
 ];
 const KD = 'alex_dlog', KG = 'alex_gems', KC = 'alex_custom';
 const GEM_TASK = 10, GEM_ALL = 20, GEM_WEEK = 50;
@@ -3747,6 +3985,9 @@ function showHome(){
        <div class="tile t-book wide" data-go="book"><span class="ic">📕</span>
          <div class="nm">错题本${n ? ` · ${n}` : ''}</div>
          <div class="ds">错过的说法和该怎么说，都在这儿</div></div>
+       <div class="tile t-read wide" data-go="read"><span class="ic">📖</span>
+         <div class="nm">阅读</div>
+         <div class="ds">读你自己报告里的好句式，和现成的范文段</div></div>
        <div class="tile t-write wide" data-go="write"><span class="ic">✍️</span>
          <div class="nm">报告写作</div>
          <div class="ds">写一段英文，Alex 按报告的写法给你改</div></div>
@@ -3767,6 +4008,7 @@ function showHome(){
     listen: () => goTab('listen'),
     book: () => go(showBook, '错题本'),
     write: () => { WRITE.page = 0; go(showWrite, '报告写作'); },
+    read:  () => { READ.page = 0; go(showRead, '阅读'); },
     hist: () => go(showHistory, '历史'),
   };
   document.querySelectorAll('.tile').forEach(t =>
@@ -3775,6 +4017,13 @@ function showHome(){
 function paintTabs(){
   document.querySelectorAll('#tabbar button').forEach(b =>
     b.classList.toggle('on', b.dataset.tab === TAB_CUR));
+  // 🚨 这一栏现在是横滑的：选中的那个可能在屏幕外（比如从首页直接跳「我的」），
+  //    不主动滚过去的话，看着就像点了没反应。
+  const bar = $('#tabbar'), on = bar && bar.querySelector('button.on');
+  if (on && bar.scrollWidth > bar.clientWidth + 2){
+    bar.scrollTo({left: Math.max(0, on.offsetLeft -
+      (bar.clientWidth - on.offsetWidth) / 2), behavior: 'smooth'});
+  }
 }
 function goTab(name){
   if (!TABS[name]) return;

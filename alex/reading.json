@@ -1,0 +1,2641 @@
+{
+ "v": 1,
+ "items": [
+  {
+   "id": "ph_asp_declined_amid",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Management indicated that ASP declined amid fierce competition.",
+   "why": "用 \"indicated\" 委婉引述管理层说法以留出余地；用介词 \"amid\"（在……背景下/伴随）替代 because，优雅地将「价格下跌」与「竞争激烈」进行客观关联，避免了主观因果的绝对化。",
+   "when": "汇报某项业绩指标下滑，且需要指出外部市场环境影响时。",
+   "slot": "Management indicated that [...] declined amid [...].",
+   "swap": [
+    "According to management, [...] dropped due to [...]. (更直接、口语化，因果关系更生硬)",
+    "Management stated that [...] decreased in the context of [...]. (更正式、中立，强调大背景而非动态过程)"
+   ]
+  },
+  {
+   "id": "ph_represented_annual_basis",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Management represented that the agreement will be renewed on annual basis.",
+   "why": "使用审计与尽调专用词 \"represented\"（陈述/声称），既明确了信息源头在管理层，又暗示此信息尚未得到底层合同证实；\"on annual basis\" 比 \"every year\" 更具商业文本的规范感。",
+   "when": "引用管理层对未来合同续签、合作期限等口头承诺或未落实条款的陈述。",
+   "slot": "Management represented that the [...] will be [...] on annual basis.",
+   "swap": [
+    "Management claimed that the [...] is to be renewed yearly. (用 claimed 怀疑色彩更重，yearly 较为口语)",
+    "Management confirmed their intention to renew the [...] annually. (用 confirmed 语气更确定，强调主观意愿而非客观事实)"
+   ]
+  },
+  {
+   "id": "ph_represented_start_up_costs",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Management represented that these start-up costs were paid to some consulting companies.",
+   "why": "动词 \"represented\" 精准界定了这是管理层的「单方面陈述」而非审计师核实的结果；\"some consulting companies\" 模糊化处理，既复述了管理层的宽泛解释，又暗示缺乏具体收款方明细。",
+   "when": "解释某笔资金去向或费用性质，但尚未看到具体发票或合同凭证时。",
+   "slot": "Management represented that these [...] were paid to [...].",
+   "swap": [
+    "Management explained that these [...] went to [...]. (explained 语气较温和，went to 较为非正式)",
+    "Management asserted that these [...] had been disbursed to [...]. (asserted 语气更强硬，强调管理层单方面的坚称)"
+   ]
+  },
+  {
+   "id": "ph_settled_once_resolved",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Management explained that the balance will be settled once the penalty issue is resolved.",
+   "why": "用 \"explained\" 引入客观解释；用 \"once [...] is resolved\" 构成一个清晰的条件状语，将「结清尾款」与「解决争议」两个动作的先后顺序和因果关系表达得极其干练，省去了复杂的条件句。",
+   "when": "说明某项待付款项、未结余额的支付前提或后续解决触发条件。",
+   "slot": "Management explained that the [...] will be settled once the [...] is resolved.",
+   "swap": [
+    "Management said they will pay the [...] after they solve the [...]. (口语化，用 active voice 显得主观，不如原文被动语态客观)",
+    "Management clarified that payment of the [...] is contingent upon the resolution of [...]. (更极其正式，contingent upon 商务感极强，但句式较重)"
+   ]
+  },
+  {
+   "id": "ph_centrally_managed_by",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Management indicated that the cash and construction cost are centrally managed by Pangda.",
+   "why": "\"centrally managed by\"（由……集中管理/统筹）是一个极佳的组织架构和资金流向描述词，比 simple words 如 \"controlled by\" 更具中性、客观的集团化运营色彩。",
+   "when": "描述子公司、关联方或特定项目资金与成本归属于集团总部统一调配时。",
+   "slot": "Management indicated that the [...] and [...] are centrally managed by [...].",
+   "swap": [
+    "Management said that [...] controls the [...] and [...]. (主动语态，强调控制权，语气较生硬)",
+    "Management stated that the [...] and [...] are under the centralized control of [...]. (更强调控制关系，偏向法务/合规视角)"
+   ]
+  },
+  {
+   "id": "ph_usually_fully_settled",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "Management indicated that the volume rebates are usually fully settled in the following year.",
+   "why": "连续使用 \"usually\"（通常）和 \"fully\"（完全）两个副词，既精确描述了返利结算的常态规律与完整度，又在时间（下一年度）上留有余地，避免了绝对化的表达。",
+   "when": "描述某种周期性费用、返利或款项结算的常规商业惯例时。",
+   "slot": "Management indicated that the [...] are usually fully settled in [...].",
+   "swap": [
+    "Management said that [...] are normally paid off next year. (normally 较口语，paid off 显得不够商务)",
+    "Management represented that [...] are typically cleared in full during [...]. (typically cleared in full 同样正式，cleared 侧重清算，settled 侧重结算)"
+   ]
+  },
+  {
+   "id": "ph_understand_interest_incurred",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "We understand the interest incurred has been paid monthly.",
+   "why": "使用后置定语 \"interest incurred\" 简洁交代利息状态，配合主句 \"We understand\" 柔化语气，既确认了事实，又避免了绝对化的口吻。",
+   "when": "用于向客户陈述某项财务费用（如利息）的既往支付频率，且该信息来源于未审计账目或日常沟通时。",
+   "slot": "We understand the [...] incurred has been paid [...].",
+   "swap": [
+    "According to the records, the interest incurred has been paid monthly. (语气更客观，强调依据账面记录而非主观理解)",
+    "We note that the incurred interest was paid on a monthly basis. (语气更正式，用 we note 替代 we understand，显得发现更加确凿)"
+   ]
+  },
+  {
+   "id": "ph_understand_no_interest",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "We understand that the Target has not incurred any interest in the past.",
+   "why": "用 \"incurred any interest\" 代替普通的 \"had no interest\"，措辞更符合财务英语规范；配合现在完成时 \"has not incurred\" 准确界定从过去持续到报告期的无利息状态。",
+   "when": "用于确认标的公司在历史期间没有产生过任何利息费用或负债。",
+   "slot": "We understand that the Target has not incurred any [...] in the past.",
+   "swap": [
+    "We are advised that no interest has been incurred by the Target historically. (语气更被动，强调信息是由对方告知，责任边界更清晰)",
+    "Based on our understanding, the Target did not incur interest in prior periods. (语气更具条理性，用 Based on 引导，时间维度用 prior periods 显得更正式)"
+   ]
+  },
+  {
+   "id": "ph_understand_contemplating_acquiring",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "We understand you are contemplating acquiring 100% of the shares of the Target.",
+   "why": "动词 \"contemplate\"（意图、考虑）极其传神，比 \"plan to\" 或 \"want to\" 更显专业和分寸感，精准描述了客户处于“意向阶段”而非“已敲定”的商业状态。",
+   "when": "在报告开头或背景介绍中，阐述客户当前的潜在交易意向和收购比例。",
+   "slot": "We understand you are contemplating acquiring [...] of the shares of the Target.",
+   "swap": [
+    "We understand that you are considering the acquisition of 100% of the Target's shares. (语气更正式，使用名词化结构 the acquisition of 增加了书面语感)",
+    "We understand your intention is to acquire a 100% equity interest in the Target. (语气更明确，直接指向客户的 intention，并用 equity interest 替代 shares 显得更严谨)"
+   ]
+  },
+  {
+   "id": "ph_understand_contemplating_minority",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "We understand that you are contemplating to acquire minority interest in the Target.",
+   "why": "同样使用 \"contemplate\" 表达意向，并用 \"minority interest\"（少数股权）这一标准财务术语，准确界定了非控股权的交易性质。",
+   "when": "用于描述客户计划收购标的公司非控股、少数股权的交易背景。",
+   "slot": "We understand that you are contemplating to acquire [...] in the Target.",
+   "swap": [
+    "We understand you are looking to acquire a minority stake in the Target. (语气略显口语化，用 looking to 替代 contemplating，用 stake 替代 interest)",
+    "We understand that your proposed transaction involves the acquisition of a minority interest in the Target. (语气极正式，用 proposed transaction involves 替代直接的动词，增加客观度)"
+   ]
+  },
+  {
+   "id": "ph_understand_from_management",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "We understand from management that the land use right has not been transferred as at the report date.",
+   "why": "插入语 \"from management\" 极好地锁定了信息源，而时间状语 \"as at the report date\"（截至报告日）则精准限制了事实的时效性，避免了对未来变化的无限期背书。",
+   "when": "用于披露某项资产权属尚未完成转移，且该信息直接来源于管理层访谈。",
+   "slot": "We understand from management that the [...] has not been [...] as at the report date.",
+   "swap": [
+    "Management has informed us that the land use right remains untransferred as of the date of this report. (语气更直接，将管理层设为主语，用 remains untransferred 强调未决状态)",
+    "According to management, the transfer of the land use right has not been completed as of the report date. (语气更中立，用 According to 引入，并将动词 transferred 替换为名词 transfer，结构更稳重)"
+   ]
+  },
+  {
+   "id": "ph_based_on_our_review_subject_to",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Based on our review, CQ ICC was subject to LUT at Rmb20/m2 per year based on the land used.",
+   "why": "双重 based on 结构极其严密。前一个界定了“信息发现的局限范围”，后一个指明了“税费计算的法定依据”，中间用被动语态 was subject to 客观陈述纳税义务，无懈可击。",
+   "when": "用于在尽调报告中引用审阅发现，说明标的项目或资产在特定计税基础下应承担的法定税费。",
+   "slot": "Based on our review, [...] was subject to [...] at [...] based on [...].",
+   "swap": [
+    "According to our review, [...] was liable for [...] calculated on [...] (语气同样客观，但 liable for 强调法定义务，法律色彩更浓)",
+    "Our review indicates that [...] incurred [...] on the basis of [...] (语气较温和，侧重于财务账目呈现的客观结果)"
+   ]
+  },
+  {
+   "id": "ph_based_on_our_review_fy_subject_to",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Based on our review, in FY18 SH MH was subject to LUT at Rmb 6/m2 per year based on the land used.",
+   "why": "信息密度极高。在简短的句子中，将时间维度（in FY18）、主体、适用税率（at Rmb 6/m2）以及计算标准（based on the land used）紧密缝合，层次极清。",
+   "when": "用于按年度披露标的公司某项特定资产或项目的实际税费负担及计算标准。",
+   "slot": "Based on our review, in [...] [...] was subject to [...] at [...] based on [...].",
+   "swap": [
+    "Our review shows that in [...], [...] was charged [...] at [...] based on [...] (语气更直接，用 was charged 强调实际发生的被征收费用)",
+    "As indicated by our review, [...] was subject to [...] of [...] in [...] based on [...] (语气更为正式，突出审阅报告的客观指引作用)"
+   ]
+  },
+  {
+   "id": "ph_based_on_our_review_subject_to_lut",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Based on our review, CQ Manhattan Ph3 was subject to LUT at Rmb16/m2 per year based on the land used.",
+   "why": "通过首尾两个 based on，巧妙地将“顾问的专业工作边界（our review）”与“政府的计税依据（land used）”彻底隔离，既完成了事实披露，又做好了合规免责。",
+   "when": "用于向客户汇报特定项目分期的税费合规风险，明确区分事实依据与顾问的工作边界。",
+   "slot": "Based on our review, [...] was subject to [...] at [...] based on [...].",
+   "swap": [
+    "Pursuant to our review, [...] fell under the scope of [...] at [...] based on [...] (语气更具法律条理性，pursuant to 显得非常严谨正式)",
+    "We noted from our review that [...] was subject to [...] at [...] on the basis of [...] (语气更温和，以 We noted 引导，降低直接断言的强硬度)"
+   ]
+  },
+  {
+   "id": "ph_based_on_our_discussion_did_not_make",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Based on our discussion with Finance Manager, the Target did not make social insurance contributions for all the caregivers and back office staff.",
+   "why": "开篇使用 Based on our discussion with... 明确限定了事实信息的单一来源（口头访谈而非账套审计），在指出标的公司未足额缴纳社保这一敏感合规问题时，起到了极佳的免责保护作用。",
+   "when": "用于披露通过口头访谈获知的标的公司不合规事项，需要明确信息源以防未来产生事实争议。",
+   "slot": "Based on our discussion with [...], the Target did not make [...] for all the [...].",
+   "swap": [
+    "According to the Finance Manager, the Target failed to pay [...] for [...] (语气更直接，failed to pay 比 did not make contributions 违规定性更强)",
+    "As represented by the Finance Manager, the Target did not contribute to [...] for [...] (语气最安全，As represented by 将陈述责任完全归于对方的陈述)"
+   ]
+  },
+  {
+   "id": "ph_principal_overdue",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "We noted that the principal of six loans (“defaulted loans”) were overdue.",
+   "why": "句中使用括号加引号“ (“defaulted loans”) ”在首次提及事项时直接完成术语定义，顺畅连接事实陈述与后续简称，避免了另起一句解释的冗余。",
+   "when": "用于在汇报违约或异常事项时，直接为特定样本或分类赋予简洁的定义名称。",
+   "slot": "We noted that the principal of [...] (“[...]”) were overdue.",
+   "swap": [
+    "Our review revealed that six loans with an aggregate principal of [...] had missed their due dates.（用名词短语 aggregate principal 强调累计本金金额，语气更为严谨）",
+    "It was observed that the principal of six loans fell past due.（使用被动语态 It was observed，措辞更具中立客观色彩）"
+   ]
+  },
+  {
+   "id": "ph_not_fully_reflected",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "We noted that Management has not fully reflected un-paid tax payables in the accounts.",
+   "why": "使用“has not fully reflected”代替“omitted”或“failed to record”，客观指出账务记录的不完整性，措辞克制且保留了专业余地。",
+   "when": "用于指出管理层存在账务少计、漏记或披露不充分，但需保持专业中立态度时。",
+   "slot": "We noted that Management has not fully reflected [...] in the accounts.",
+   "swap": [
+    "Management appears to have understated [...] in the current financial records.（用 appears to have 增加推测缓冲，语气比直接否定更缓和）",
+    "Certain [...] were found to be omitted from the general ledger.（使用被动语态陈述事实，语气偏向技术性客观说明）"
+   ]
+  },
+  {
+   "id": "ph_in_our_experience",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "We note that in our experience, it would be very difficult to adopt the deemed profit method in Shanghai.",
+   "why": "插入介词短语“in our experience”作为限定前提，搭配虚拟语气“it would be”，明确表达这是基于过往实操的专业推断，既有专业权威度又留有余地。",
+   "when": "用于基于顾问团队过往实操经验，对某种方案在特定地区的落地可行性进行预警时。",
+   "slot": "We note that in our experience, it would be very difficult to adopt [...] in [...].",
+   "swap": [
+    "Based on past precedents, adopting [...] in [...] presents significant operational challenges.（用 presents significant operational challenges 替换形容词，提升书面正式度）",
+    "Our past engagements suggest that implementing [...] in [...] is highly unlikely to be approved.（使用 suggest 表达提示性意见，侧重可行性概率）"
+   ]
+  },
+  {
+   "id": "ph_identified_and_reclassified",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "We identified and reclassified expenses that obviously belong to the headquarters according to the journal entries.",
+   "why": "动词组合“identified and reclassified”精准复现“识别并重分类”的工作流程，结尾句尾紧跟证据来源“according to...”，逻辑环环相扣。",
+   "when": "用于说明根据账目凭证等事实依据，对归属不当的费用进行重新归集与调整时。",
+   "slot": "We identified and reclassified [...] that obviously belong to [...] according to [...].",
+   "swap": [
+    "Based on primary accounting vouchers, relevant [...] were reallocated to [...].（采用被动语态配合 reallocated，突出凭证依据与再分配动作）",
+    "Adjustments were made to transfer [...] back to [...] upon review of the ledger entries.（以 Adjustments were made 开头，优先强调调整动作与结果）"
+   ]
+  },
+  {
+   "id": "ph_quality_of_earnings",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "Quality of earnings (1/3) | We identified a few accounting adjustments and normalization adjustments during our due diligence.",
+   "why": "平行并列“accounting adjustments”（会计调整）与“normalization adjustments”（经常性/非经常性规范调整），用词标准规范，信息密度极高。",
+   "when": "用于在尽调报告的 QoE 章节总结针对财务报表所做的不同性质的调整事项时。",
+   "slot": "[...] | We identified a few [...] adjustments and [...] adjustments during our due diligence.",
+   "swap": [
+    "During the financial review, we proposed several GAAP and normalization adjustments to earnings.（用 proposed 表达建议性调整，强调对利润的影响）",
+    "Our analysis uncovered multiple accounting and EBITDA adjustments.（用 uncovered 代替 identified，语气更强调通过深入尽调挖出潜在问题）"
+   ]
+  },
+  {
+   "id": "ph_summarize_in_opposite_table",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "We note that Gaopan and Kunming have recognised DTAs and we summarize the net deferred tax balances as of 31 December 2018, 2019 and 2020 in the opposite table.",
+   "why": "使用“as of [连续年份]”精准限定多个时间节点，并用“in the opposite table”实现高效的版面交叉引用，图文配合极其顺畅。",
+   "when": "用于正文分析中引导读者查看对侧排版或附表中跨期数据的汇总统计时。",
+   "slot": "We note that [...] have recognised [...] and we summarize [...] as of [...] in the opposite table.",
+   "swap": [
+    "The historical balances of [...] as at [...] are presented in the adjacent chart.（使用 presented in the adjacent chart，语气侧重于版面的静态展示）",
+    "For a detailed breakdown of [...] as of [...], please refer to the corresponding table alongside.（用 please refer to 引出对侧表格，指引指令更明确）"
+   ]
+  },
+  {
+   "id": "ph_trends_fx_exposure",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Trends may be affected by foreign exchange exposure.",
+   "why": "用 may be affected by 将趋势变化归因于汇率风险的“潜在影响”，避免把趋势直接硬性归咎于单一因素，措辞客观严谨。",
+   "when": "分析数据趋势并提示汇率波动等外部不确定因素对数据产生扰动时使用。",
+   "slot": "[...] may be affected by [...] exposure.",
+   "swap": [
+    "Trends are affected by foreign exchange exposure.（使用了确凿的 are，语气过于绝对，缺少风险推测的缓冲）",
+    "Trends could potentially be driven by foreign exchange exposure.（用 could potentially 双重软化，语气比 may 更轻柔且偏假设）"
+   ]
+  },
+  {
+   "id": "ph_identify_whether_may_be_significant",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "It will help you identify whether something may be significant.",
+   "why": "在从句中嵌套 may be significant 进行二次软化，即便排查出异常也不直接定性为“重大”，给后续复核留足余地。",
+   "when": "指引读者使用某种分析方法去排查潜在重大风险或重要异常时使用。",
+   "slot": "It will help you identify whether [...] may be significant.",
+   "swap": [
+    "It will help you identify what is significant.（直接用 is 确定性过强，没有保留观察与推测余地）",
+    "It serves to flag items that might be significant.（用 might 代替 may，假设意味更浓，语气更委婉）"
+   ]
+  },
+  {
+   "id": "ph_expenses_may_be_underestimated",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Also, some of the other operating expenses may be under-estimated.",
+   "why": "用 some of 限定范围并结合 may be under-estimated，对费用计提不足提出合理怀疑，避免直接指责数据失真。",
+   "when": "提示财务报表科目（如其他营运费用）可能存在少计或低估风险时使用。",
+   "slot": "Also, some of [...] may be under-estimated.",
+   "swap": [
+    "Also, other operating expenses are under-estimated.（断言式肯定句，语气过于生硬直接）",
+    "Additionally, there appears to be a potential underestimation of other operating expenses.（用 appears to be 与 potential 堆叠，距离感更强、更客套）"
+   ]
+  },
+  {
+   "id": "ph_may_be_useful_to_use_metrics",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "It may be useful to use metrics to understand the trends of certain balances.",
+   "why": "利用形式主语 It may be useful to 搭配 certain，以建设性建议语气提出分析方法，毫无强加于人的生硬感。",
+   "when": "建议读者采用特定指标或分析手段去查看某些科目余额的趋势时使用。",
+   "slot": "It may be useful to [...] to understand the trends of [...].",
+   "swap": [
+    "You must use metrics to analyze the trends of these balances.（使用 must 指令性太强，属于硬性要求而非建议）",
+    "It might be worth considering metrics to grasp the trends of specific balances.（用 might be worth considering，比原句更谦逊客气）"
+   ]
+  },
+  {
+   "id": "ph_may_be_considered_debt_like",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "The following are some typical items which may be considered debt or debt-like.",
+   "why": "使用 may be considered 搭配并列词 debt or debt-like，将定性描述转化为“可被视作”的提议，为后续调整保留讨论弹性。",
+   "when": "列举类债务（Debt-like items）或净债务调整项清单时使用。",
+   "slot": "The following are some typical items which may be considered [...].",
+   "swap": [
+    "The following items are debt or debt-like.（直接下定义定性，缺乏专业报告应有的审慎与软化）",
+    "Below is a list of potential items that could be treated as debt-like.（用 could be treated as，语气偏向于协商讨论）"
+   ]
+  },
+  {
+   "id": "ph_prepayments_may_be_not_accessible",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Tax prepayments may be on the account of the seller and not accessible to the buyer.",
+   "why": "通过 may be 对权益归属与可获取性表达可能性推测，客观提示交割后买方可能无法享受该资产的风险。",
+   "when": "分析预缴税款或待抵扣资产在交易交割后的实际可利用性时使用。",
+   "slot": "[...] may be on the account of [...] and not accessible to [...].",
+   "swap": [
+    "Tax prepayments belong to the seller and are not accessible to the buyer.（直接断言所有权与权限，缺少审慎推测缓冲）",
+    "Tax prepayments could potentially remain with the seller, rendering them unavailable to the buyer.（用 could potentially 搭配分词，语气更偏抽象推论）"
+   ]
+  },
+  {
+   "id": "ph_normalised_numbers_meaningful_picture",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Normalised numbers will provide a more meaningful picture.",
+   "why": "使用比较级 more meaningful 和比喻词 picture，巧妙避免了绝对化词汇，严谨地表达调整后的分析价值。",
+   "when": "用于阐述对原始财务报表进行正常化调整的必要性与分析价值。",
+   "slot": "Normalised [...] will provide a more meaningful picture.",
+   "swap": [
+    "Adjusted figures give a clearer view of underlying performance. （更强调“清晰度”与“底层业绩”，措辞更直白）",
+    "Normalised data facilitates a more representative comparison. （侧重表达数据的“可比性”与“代表性”，学术感更重）"
+   ]
+  },
+  {
+   "id": "ph_proposed_adjustment_corresponding_period",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "We have proposed adjustment to record it in corresponding period.",
+   "why": "动词 proposed 表明专业建议立场，措辞有礼有节，对应的 corresponding period 则准确表达了跨期调整的时间归属。",
+   "when": "用于指出跨期错记事项并提出划归至正确会计期间的调整建议。",
+   "slot": "We have proposed adjustment to record [...] in [...].",
+   "swap": [
+    "We suggest an adjustment to reclassify this into the correct period. （语气更直接且偏口语化，用 correct 替换 corresponding）",
+    "An adjustment is recommended to align this entry with the appropriate period. （被动语态结合 enter 与 align，语气更具独立客观的专业感）"
+   ]
+  },
+  {
+   "id": "ph_subject_to_amendment",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "The comments in this draft report are subject to amendment or withdrawal.",
+   "why": "使用 subject to 明确了报告意见的非终局性，用 amendment or withdrawal 精准说明后续调整的两重可能性（修改或撤回），在规避法律风险的同时表达极为严谨。",
+   "when": "在提交草案报告、需要为后续可能调整或撤回意见留有余地时使用。",
+   "slot": "The comments in this [...] report are subject to amendment or withdrawal.",
+   "swap": [
+    "The findings presented in this draft are tentative and subject to revision.（语气更偏学术或正式分析，强调结论的暂定性）",
+    "Please note that the views in this draft may change as work progresses.（语气更软化且务实，适合日常项目沟通）"
+   ]
+  },
+  {
+   "id": "ph_input_in_valuation_model",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "We recommend you should input the new arrangement in your valuation model.",
+   "why": "用 recommend 配合 input 精确指引客户将新约定纳入估值模型，动作指向极为明确，能够直接对接财务建模的操作步骤。",
+   "when": "在建议客户根据最新交易条款或尽调发现更新其财务与估值模型时使用。",
+   "slot": "We recommend you should input [...] in your valuation model.",
+   "swap": [
+    "We suggest reflecting the updated terms in your valuation framework.（语气稍微更加客观规范，避免了 recommend ... should 的双重建议感）",
+    "You may wish to incorporate the new arrangement into your model.（语气更具协商性，给客户更多自主决定空间）"
+   ]
+  },
+  {
+   "id": "ph_status_update_report",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "The comments in this status update report are subject to amendment or withdrawal.",
+   "why": "将 status update report 与 subject to amendment or withdrawal 结合，既准确界定了当前交付物的阶段性质（阶段更新），又清晰划定了免责边界。",
+   "when": "在向客户提交中间进度汇报（Status Update）并防止客户将其误认为是最终报告时使用。",
+   "slot": "The comments in this status update report are subject to [...].",
+   "swap": [
+    "Observations in this progress update remain subject to change.（语气更简洁明了，适合简短简报）",
+    "This update is for discussion purposes only and remains non-binding.（语气侧重于强调法律上的非约束力）"
+   ]
+  },
+  {
+   "id": "ph_detailed_discussion_with_management",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "We suggest you to have a more detailed discussion with the management on these areas.",
+   "why": "通过 have a more detailed discussion 将关注焦点聚焦于特定领域（these areas），精准引导下一步动作，既给出了专业方向又合理划定了顾问的职责界限。",
+   "when": "在发现疑点但超出当前尽调范围、需要客户与管理层进行深入访谈或谈判时使用。",
+   "slot": "We suggest you to have a more detailed discussion with the management on [...].",
+   "swap": [
+    "Further clarification from management on these matters is highly recommended.（采用被动语态，语气更偏客观中立）",
+    "We advise deep-diving into these specific issues with key management.（语气更有针对性，强调深挖特定问题）"
+   ]
+  },
+  {
+   "id": "ph_subject_to_turnover_taxes",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Under the PRC law, billings, including expenses (and taxes), are subject to turnover taxes and surcharges.",
+   "why": "通过 Under the PRC law 明确法律依据，用 include... 详尽列举计税基数范围，并用 subject to turnover taxes and surcharges 精准表述法定税费承担关系。",
+   "when": "在涉及中国境内开票、费用结算及税费负担提示的专业意见段落中使用。",
+   "slot": "Under the [...] law, billings, including [...], are subject to [...].",
+   "swap": [
+    "According to local tax regulations, gross billings will incur applicable indirect taxes.（语气更通用，适用于非特定法域的合规提示）",
+    "Pursuant to PRC tax rules, relevant expenses and fees are liable for turnover surcharges.（语气更具法律文书的规范感和严谨度）"
+   ]
+  },
+  {
+   "id": "ph_preliminary_breakdown_changes",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "The breakdown is only preliminary and may subject to further changes upon receipt of following information.",
+   "why": "结合 preliminary（初步的）与 upon receipt of（收到……后），清楚交代了数据的阶段限定与后续调整的前置条件，因果逻辑清晰。",
+   "when": "在提供初步数据拆分、且该数据高度依赖后续补充材料时使用。",
+   "slot": "The breakdown is only preliminary and may [...] upon receipt of [...].",
+   "swap": [
+    "This categorization is tentative and remains conditional upon pending documentation.（语气更为正式严密，强调受限于未收到的文档）",
+    "The provided split is provisional and will be updated once more data is available.（语气相对直接明了，适合快节奏沟通）"
+   ]
+  },
+  {
+   "id": "pa_subsidy_sustainability",
+   "kind": "passage",
+   "dim": "nom",
+   "t": "政府补助可持续性尽调分析",
+   "en": "Non-recurring government subsidies constituted RMB 45.2 million, or 28.5%, of reported EBIT in FY25, following a similar influx of RMB 38.0 million in FY24. The heavy concentration of these grants within local municipal funds suggests a heightened vulnerability to regional fiscal tightening, casting reasonable doubt on their full recurrence in 9M26 and FY26F. Management’s inclusion of these non-operational inflows in baseline EBITDA projections appears overly optimistic given the discretionary nature of such awards. Consequently, a downward adjustment to run-rate earnings is advisable to isolate core operating performance from temporary policy-driven tailwinds.",
+   "notes": [
+    {
+     "q": "The heavy concentration of these grants within local municipal funds",
+     "why": "用动作抽象出的名词短语作主语，替代原因状语从句，显著提升了句子的信息密度与专业感。"
+    },
+    {
+     "q": "Management’s inclusion of these non-operational inflows",
+     "why": "将“管理层把非经营性流入纳入计算”压缩为名词短语，使逻辑主语更紧凑并顺畅连接谓语。"
+    },
+    {
+     "q": "appears overly optimistic given the discretionary nature of such awards",
+     "why": "用 appears 开展语气软化，配合介词短语引导的名词化词组，使尽调结论客观且保留余地。"
+    }
+   ],
+   "take": [
+    "The heavy concentration of […] within […] suggests a heightened vulnerability to […].",
+    "Management’s inclusion of […] in […] appears overly optimistic given […].",
+    "Consequently, a downward adjustment to […] is advisable to isolate […] from […]."
+   ]
+  },
+  {
+   "id": "ph_management_represented_not_share",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Management represented the Target and the fellow companies do not share the Marketing Agencies.",
+   "why": "使用 Management represented 明确归因于管理层陈述，同时用 fellow companies 精确指代同系关联公司，语言干净无赘词。",
+   "when": "用于说明标的公司与关联公司在供应商或业务资源上保持独立、无交叉混用时。",
+   "slot": "Management represented the Target and the [...] do not share [...].",
+   "swap": [
+    "Management stated that the Target and its affiliates operate independent marketing agencies. (语气更书面化，强调独立运营事实)",
+    "According to management, there is no overlap in marketing agencies between the Target and sibling entities. (语气偏客观陈述，突出无资源重叠)"
+   ]
+  },
+  {
+   "id": "ph_in_the_processing_of_amending",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Target management represented they are in the processing of amending the amount to US$225 million.",
+   "why": "用 in the process[ing] of 短语精准表征“事项正在推进中”，为尚未最终落定的金额修改留出了恰当的语言弹性。",
+   "when": "用于汇报合同条款、交易对价或协议金额正在进行变更的过渡阶段。",
+   "slot": "Target management represented they are in the process of amending [...] to [...].",
+   "swap": [
+    "Management confirmed that the amendment of the amount to US$225 million is currently underway. (语气更严谨，强调流程已在推进中)",
+    "Management reported that they are actively revising the figure toward US$225 million. (语气更具动态感，突出管理层的积极动作)"
+   ]
+  },
+  {
+   "id": "ph_will_not_pay_until_resolved",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Management explained that BPDB will not pay cash to the Target until the penalty issue was resolved.",
+   "why": "采用 will not ... until ... 句型建立起清晰的因果与前置条件逻辑链，明确表达了款项冻结的触发条件。",
+   "when": "用于解释第三方延期付款或暂停结算的特定前置条件时。",
+   "slot": "Management explained that [...] will not pay [...] until [...] was resolved.",
+   "swap": [
+    "Management clarified that cash payment from BPDB remains conditional upon resolving the penalty issue. (语气更商务规范，用 conditional 代替条件句型)",
+    "Management indicated that cash payout by BPDB is withheld pending the resolution of the penalty issue. (语气带有报告体色彩，用 withheld/pending 显出专业严谨)"
+   ]
+  },
+  {
+   "id": "ph_do_not_involve_use_of",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "Management explained that Jinchen will provide more services that do not involve the use of medicine.",
+   "why": "通过定语从句 that do not involve ... 精确界定了业务拓展的合规边界，语言排他性极强，有效防止信息误读。",
+   "when": "用于澄清未来业务扩展不会触及敏感领域或特定监管资质时。",
+   "slot": "Management explained that [...] will provide more services that do not involve [...].",
+   "swap": [
+    "Management noted that upcoming services from Jinchen will explicitly exclude medical applications. (语气更硬朗直接，用 exclude 强调排他)",
+    "Management indicated that Jinchen intends to expand into non-medicinal service lines. (语气更概括，用形容词短语进行分类)"
+   ]
+  },
+  {
+   "id": "ph_identified_through_tracking",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Management explained that it identified the 35% through tracking the recipient names of the tax invoice.",
+   "why": "动词短语 identified ... through tracking ... 精确呈现了得出特定数据的核查路径，归因清晰，动作指向性极强。",
+   "when": "用于说明管理层获取某个统计数据或比例背后的具体分析手段与依据。",
+   "slot": "Management explained that it identified [...] through tracking [...].",
+   "swap": [
+    "Management clarified that the 35% figure was determined by tracing the invoice recipient details. (语气使用被动语态，侧重数据本身的推导结果)",
+    "Management noted that cross-referencing invoice recipients led to the 35% estimate. (语气强调分析动作与结论之间的因果联系)"
+   ]
+  },
+  {
+   "id": "ph_further_grants_to_make_up",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "Management indicated that there will be further grants from the current RSU pool to make up the deficit.",
+   "why": "用 there will be further grants ... to make up ... 表达管理层未来的补救打算，既交代了预期方案，又与最终执行保持了恰当的陈述距离。",
+   "when": "用于说明管理层计划如何利用现有激励池或资源储备弥补相应缺口。",
+   "slot": "Management indicated that there will be further grants from [...] to make up [...].",
+   "swap": [
+    "Management stated that additional grants will be issued from the existing RSU pool to cover the shortfall. (语气更正式，用 cover the shortfall 替代 make up the deficit)",
+    "According to management, the deficit is expected to be offset by future RSU allocations. (语气客观中立，强调对冲机制与预期状态)"
+   ]
+  },
+  {
+   "id": "ph_did_not_actually_engage",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "We understand that the Target did not actually engage in many R&D activities during the review period.",
+   "why": "开头用 We understand 做软化，后接 did not actually 和 engage in many 巧妙降低否定语气的对抗性，既说明了研发活动匮乏的事实，又留有措辞余地。",
+   "when": "阐述标的公司实际经营与账面声称不符、但需谨慎表达结论时。",
+   "slot": "We understand that [...] did not actually engage in [...] during [...].",
+   "swap": [
+    "According to our review, the Target had limited R&D activities during the period.（语气更客观直接，用 limited 替换否定句）",
+    "It appears that the Target's R&D activities were minimal during the review period.（语气更谨慎，用 It appears 提供双重模糊化）"
+   ]
+  },
+  {
+   "id": "ph_understand_from_management_776",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "We understand from management that the intention of the arrangement is to transfer the profit to the List Co.",
+   "why": "明确插入 from management 将信息来源准确归因于管理层口述，搭配 intention of the arrangement 准确揭示交易安排背后的实质目的。",
+   "when": "说明某项复杂交易安排或会计处理的商业实质意图、且该信息源自管理层访谈时。",
+   "slot": "We understand from management that the intention of [...] is to [...].",
+   "swap": [
+    "Management indicated that the primary objective of this setup is to transfer profit to List Co.（语气更直接，明确强调管理层的表态）",
+    "Based on discussions with management, this arrangement aims to divert profit to List Co.（语气偏客观推导，强调基于访谈记录分析）"
+   ]
+  },
+  {
+   "id": "ph_suffering_cash_flow",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "We understand Agile Listco was suffering some cash flow issues which will further increase the turnover days.",
+   "why": "巧妙使用 was suffering ... which will ... 的定语从句，将关联方的历史/现状困境与未来财务指标（周转天数）的恶化建立起明确的因果推导关联。",
+   "when": "分析客户或关联方的财务健康状况，并评估其对标的公司营运资金指标的连带影响时。",
+   "slot": "We understand [...] was suffering [...] which will further increase [...].",
+   "swap": [
+    "We understand that cash flow pressure at Agile Listco is likely to drive up turnover days.（语气更精练，用 drive up 替换较冗长的从句）",
+    "Agile Listco's cash flow constraints are expected to further lengthen turnover days.（语气更书面客观，去除了主观开场词）"
+   ]
+  },
+  {
+   "id": "ph_mainly_engages_in",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "We understand the Target mainly engages in production and transmission of electricity in Pangaon, Keraniganj, Bangladesh.",
+   "why": "动词短语 engages in 使用地道规范，简洁明了地涵盖了主营业务类型与具体经营地理位置，属于标准的高质量尽调语言。",
+   "when": "在报告概览或公司背景介绍中，快速定性标的公司的核心业务范围与经营地点时。",
+   "slot": "We understand the Target mainly engages in [...] in [...].",
+   "swap": [
+    "The Target's principal business comprises the production and transmission of electricity in Pangaon, Keraniganj, Bangladesh.（语气更正式严肃，适合放在公司介绍页标题）",
+    "The Target operates primarily in electricity production and transmission in Pangaon, Keraniganj, Bangladesh.（语气更动态，强调实际经营动作）"
+   ]
+  },
+  {
+   "id": "ph_mainly_due_to_effect",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "We understand the increase of the construction in progress was mainly due to effect of the acquisition of Sanjiu Hospital.",
+   "why": "归因清晰，用 was mainly due to将报表科目（在建工程）的异常变动直接锚定到具体的单一重大历史事件（并购）。",
+   "when": "解释资产负债表科目或损益表项目发生重大单笔变动的具体驱动因素时。",
+   "slot": "We understand the increase of [...] was mainly due to effect of [...].",
+   "swap": [
+    "The rise in construction in progress primary resulted from the acquisition of Sanjiu Hospital.（语气更地道精炼，用 resulted from 替换 due to effect of）",
+    "We note that the increase in construction in progress was driven largely by the Sanjiu Hospital acquisition.（语气更偏向分析视角，强调驱动因素）"
+   ]
+  },
+  {
+   "id": "ph_search_and_management_discussion",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "From our search and management discussion, we noted that five individual Marketing Agencies directly or indirectly hold equity interests in five Medical Logistics Partners.",
+   "why": "句首用“From our...”精准归因信息来源，配合“we noted that”做客观中立的陈述；“directly or indirectly hold equity interests in”严密涵盖各种显性与隐性持股结构，表述极为规范且严谨。",
+   "when": "用于尽调报告中汇报背景调查、关联方核查或股权穿透发现时。",
+   "slot": "From our […] and […], we noted that […] directly or indirectly hold equity interests in […].",
+   "swap": [
+    "Based on our public records search and management inquiries, it was identified that [Entity A] holds direct or indirect shares in [Entity B].（相比原句使用被动语态，风格更加非人化、中立客观）",
+    "Our research and discussions with management revealed that [Entity A] maintains equity stakes in [Entity B], either directly or through intermediaries.（相比原句使用动词 revealed，语气略显主动且措辞变体更丰富）",
+    "According to our findings and management representations, [Entity A] is linked to [Entity B] via direct or indirect equity ownership.（相比原句用 is linked to，表达更侧重于强调两者之间的关联性）"
+   ]
+  },
+  {
+   "id": "ph_not_provided_explanation",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "We have not been provided with a reasonable explanation on the basis of the financial costs.",
+   "why": "用被动语态 have not been provided with 将责任中立地归于客观信息缺失，避免直接指责管理层；用 on the basis of 精准锁定对成本计算依据的追问。",
+   "when": "当目标公司未能对某项异常费用或成本构成提供合理的计算依据时使用。",
+   "slot": "We have not been provided with a reasonable explanation on [...].",
+   "swap": [
+    "Management failed to explain the basis of [...] - 语气更硬，直接将未提供解释的责任归咎于管理层。",
+    "No detailed breakdown or underlying basis was made available for [...] - 语气更中立客观，完全隐去主语，仅陈述材料缺失事实。"
+   ]
+  },
+  {
+   "id": "ph_litigations_ongoing_unable_estimate",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Given that all these litigations are ongoing, we were unable to estimate the possible financial impact.",
+   "why": "用 Given that 置前交代不可抗客观前提，搭配缓和词 unable to estimate 与 possible financial impact，在阐明做不到的同时严密防范专业免责风险。",
+   "when": "因诉讼、仲裁等未来事件尚未定案，导致无法在报告期内量化潜在财务损失时使用。",
+   "slot": "Given that [...], we were unable to estimate the possible financial impact.",
+   "swap": [
+    "As [...] remains pending, quantifying the financial impact is not feasible at this stage - 语气更书面化，用非人称主语使结论显得更客观沉稳。",
+    "We cannot assess the financial exposure due to [...] - 语气更直接明确，直奔无法评估风险的主题。"
+   ]
+  },
+  {
+   "id": "ph_unable_quantify_no_records",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "We were not able to quantify the impact as management did not keep any information on the timing of vehicle delivery.",
+   "why": "先给结论 were not able to quantify，再用 as 紧跟事实原因；did not keep any information 明确界定是由于管理层原始记录缺失导致分析受限。",
+   "when": "因管理层未记录或保存特定业务细节数据，导致顾问无法定量分析财务影响时使用。",
+   "slot": "We were not able to quantify the impact as management did not keep any information on [...].",
+   "swap": [
+    "Due to the absence of management records regarding [...], this impact remains unquantified - 语气更偏向正式公文风，用名词化结构代替主动否定句。",
+    "The impact cannot be measured owing to a lack of data on [...] - 语气更客观紧凑，强调数据缺乏这一客观条件。"
+   ]
+  },
+  {
+   "id": "ph_did_not_receive_financials",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Note: We did not receive the FY18 and 9M19 financials of Hekang group, therefore we cannot comment on its performance.",
+   "why": "前半句用 did not receive 清楚陈述未拿到数据的客观事实，后半句用连接词 therefore 顺理成章引出 cannot comment 的范围界限，因果逻辑极度清晰。",
+   "when": "因未获取到标的公司或其关联方的历史财务报表，需要做出明确的分析范围免责声明时使用。",
+   "slot": "Note: We did not receive [...], therefore we cannot comment on its performance.",
+   "swap": [
+    "As [...] financials were not made available, we refrain from expressing an opinion on its performance - 语气更具专业合规感，用 refrain from 表达审慎立场。",
+    "In the absence of [...] financial data, no assessment could be performed regarding its performance - 语气更严密中立，彻底排除第一人称主语。"
+   ]
+  },
+  {
+   "id": "ph_journal_entries_not_found",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Start-up cost: Based on the description of journal entries, we did not found the start-up cost of Pudong nursing centre.",
+   "why": "明确限定核查路径 Based on the description of journal entries，避免结论被过度解读为“该费用绝对不存在”，仅精准表明在当前会计凭证描述中未查见。",
+   "when": "依据特定会计凭证或账务记录进行抽查，但未查找到特定科目或项目支出时使用。",
+   "slot": "[...]: Based on [...], we did not found the [...] of [...].",
+   "swap": [
+    "Based on [...], we identified no explicit record of [...] - 语气更正规优雅，修正了原句语法瑕疵并使用肯定的句式表达否定意义。",
+    "From our review of [...], no [...] was identified - 语气更客观被动，突出复核动作与客观查验结果。"
+   ]
+  },
+  {
+   "id": "ph_highlighted_for_attention",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "Accordingly, we did not exclude the government grants from QoE in our adjustment B but highlighted here for your attention.",
+   "why": "用 Accordingly 衔接前文逻辑，用 did not exclude... but highlighted 形成转折，既明确了未做财务调整的处理决定，又通过 highlighted here for your attention 履行的风险提示职责。",
+   "when": "对某项争议科目未做账务调整，但仍需提醒客户或决策方在交易谈判中予以关注时使用。",
+   "slot": "Accordingly, we did not exclude [...] from [...] in [...] but highlighted here for your attention.",
+   "swap": [
+    "We have retained [...] in [...] without adjustment, but bring this item to your special attention - 语气更主动，强调顾问的主动提示动作。",
+    "While no adjustment was made to remove [...] from [...], this matter is noted for client consideration - 语气更偏第三方报告体，正式且客观。"
+   ]
+  },
+  {
+   "id": "ph_there_may_be_good_reason",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "There may be good reason for the latter 8 months being higher than the first four months.",
+   "why": "使用 `there may be good reason for...` 替代直接断定偏高是否合理，既指出了数据前后对比的异常，又为管理层的后续解释保留了弹性空间。",
+   "when": "用于说明财务数据出现前后不一致、但可能存在合理商业解释的场景。",
+   "slot": "There may be good reason for [...] being [...] than [...].",
+   "swap": [
+    "It is likely that [...] is higher due to [...] (语气稍确凿，偏向已形成初步合理推断)",
+    "Management should explain why [...] exceeds [...] (语气转为主动要求解释，专业怀疑度更高)"
+   ]
+  },
+  {
+   "id": "ph_may_be_contingent_on",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "The fees for these other engagements may be success based or contingent on a certain outcome.",
+   "why": "将软化词 `may be` 与专业词汇 `success based` 和 `contingent on` 结合，精准列举非固定收费的常见模式，表述专业且不把情况说死。",
+   "when": "用于说明第三方服务费或咨询费等支出存在或有支付条件时的场景。",
+   "slot": "The fees for [...] may be success based or contingent on [...].",
+   "swap": [
+    "The fees for [...] depend heavily on [...] (语气更客观直接，明确指出费用对特定条件的依赖)",
+    "Part of the fees for [...] could be tied to [...] (语气稍软，侧重说明部分费用存在潜在关联)"
+   ]
+  },
+  {
+   "id": "ph_there_may_be_a_combination",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "In the case of a transaction involving part of a group, there may be a combination of the two.",
+   "why": "句首用 `In the case of...` 精确限定适用前提，句中用 `may be a combination of the two` 涵盖两种模式并存的可能性，避免绝对化归类。",
+   "when": "用于分析拆分重组或复杂交易架构中，多种机制可能同时适用的情形。",
+   "slot": "In the case of [...], there may be a combination of [...].",
+   "swap": [
+    "For [...], a hybrid approach of [...] is typically adopted (语气更偏向行业惯例总结，定性更明确)",
+    "[...] might involve elements of both [...] (语气更轻微，强调可能包含双重元素)"
+   ]
+  },
+  {
+   "id": "ph_may_be_different_to",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "The nature and amount of audited cash flow of 6M22 may be different to the illustrative cash flow.",
+   "why": "用 `nature and amount` 从“性质”与“金额”双维度铺开评价对象，配合 `may be different to` 提示差异，严谨且不偏颇。",
+   "when": "用于提示测算数据/假设数据与最终审计落实数据之间可能存在出入。",
+   "slot": "The nature and amount of [...] may be different to [...].",
+   "swap": [
+    "The actual [...] could deviate from [...] (语气更具警示性，使用 deviate 强调偏离风险)",
+    "[...] does not necessarily match [...] (语气偏中性客观，仅说明两者不一定完全一致)"
+   ]
+  },
+  {
+   "id": "ph_appears_to_be_optimistic",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "The projected operating cashflow inflow appears to be optimistic based on recent financial performance.",
+   "why": "用 `appears to be` 替代 `is` 软化评估判断，同时用 `based on recent financial performance` 给出客观依据，既表达质疑又显得中立专业。",
+   "when": "用于对管理层提供的预测数据（如未来现金流）表达合理怀疑、认为其偏乐观时。",
+   "slot": "The projected [...] appears to be optimistic based on [...].",
+   "swap": [
+    "The forecast [...] seems aggressive given [...] (语气更强硬，用 aggressive 替代 optimistic 强调偏激进的风险)",
+    "[...] might be overly ambitious in light of [...] (语气较软但用词更高阶，指其计划可能过于宏大)"
+   ]
+  },
+  {
+   "id": "ph_may_be_a_separate_document",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Tax deed of Indemnity This document sets out the terms of the tax indemnity and may be a separate document.",
+   "why": "前半句用 `sets out` 明确文件的核心功能，后半句用 `may be a separate document` 说明形式上的灵活性，分清了功能与载体。",
+   "when": "用于解释某一法律或财务协议条款在交易文件中的呈现形式（独立签署或嵌入主合同）。",
+   "slot": "[...] sets out [...] and may be a separate document.",
+   "swap": [
+    "[...] details [...] and can exist as a standalone agreement (语气更肯定，强调其作为独立协议存在的能力)",
+    "[...] outlines [...] which is not necessarily integrated into [...] (语气偏向补充说明，强调不一定嵌入主文件)"
+   ]
+  },
+  {
+   "id": "ph_normalise_trading_results",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "We have normalised the trading results in the Qualify of Earnings.",
+   "why": "使用规范动词 normalise 搭配具体对象 trading results，准确表达将非经常性损益还原为常态化经营业绩的过程，语气严谨专业。",
+   "when": "在写 Quality of Earnings (QoE) 章节阐述对历史业绩进行剔除与还原等正常化调整时使用。",
+   "slot": "We have normalised the [...] in the Qualify of Earnings.",
+   "swap": [
+    "We adjusted the historical earnings to show the normalized performance. (语气较口语化，用 adjust 代替规范词 normalise)",
+    "Trading results have been normalized within the QoE analysis. (使用被动语态，风格更加中立客客观)"
+   ]
+  },
+  {
+   "id": "ph_adjust_sales_price",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "The sales price was adjusted to reflect the value of the business.",
+   "why": "用不定式短语 to reflect... 简洁有力地交代调整售价的终极目的，避免了用 because of 或 for the purpose of 等冗长句式。",
+   "when": "用于说明交易对价或销售价格进行调整背后的归因逻辑。",
+   "slot": "The sales price was adjusted to reflect [...].",
+   "swap": [
+    "The sales price was fine-tuned to align with the underlying enterprise value. (使用 fine-tuned 和 align with，语气更强调精确对齐)",
+    "We revised the sales price so that it matches the company's real worth. (语气偏非正式，句子结构较散)"
+   ]
+  },
+  {
+   "id": "ph_normalise_gross_profit",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "We have normalised the gross profit (after CIT) of the businesses here.",
+   "why": "用括号插入语 (after CIT) 紧跟核心指标 gross profit，在主干动作后迅速补充口径前提，信息密度高且不破坏句式连贯性。",
+   "when": "需要对特定的税后毛利或具体业务板块的损益指标进行量化还原时使用。",
+   "slot": "We have normalised the [...] (after [...]) of the businesses here.",
+   "swap": [
+    "The gross profit (after CIT) has been adjusted for normalization purposes. (被动结构，语气更偏向静态报告描述)",
+    "We normalized the post-CIT gross profit across these business lines. (直接用前置修饰词 post-CIT，表达更精炼)"
+   ]
+  },
+  {
+   "id": "ph_normalise_year_end_spike",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Normalising this year-end spike would likely be beneficial to your client.",
+   "why": "巧妙组合动名词作主语与推测语气词 would likely be，既清晰指明调整动作，又保留了专业咨询文本所需的婉转与留有余地。",
+   "when": "向客户提出调整建议并说明该建议可能带来的潜在好处时使用。",
+   "slot": "Normalising [...] would likely be beneficial to [...].",
+   "swap": [
+    "Adjusting for this year-end surge is expected to work in your client's favor. (使用 is expected to，表达倾向稍显直接)",
+    "Your client may benefit if this year-end spike is normalized. (以人作主语，语气更平实易懂)"
+   ]
+  },
+  {
+   "id": "ph_make_adjustment_reflect_cost",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "We have made the adjustment to reflect his cost in the Target’s financials.",
+   "why": "使用标准名词化结构 make the adjustment，比直接用动词 adjust 更具商务书面报告的正式感，并配合 to reflect 完成逻辑归因。",
+   "when": "说明因将特定人员/高管费用还原或归位至目标公司报表而做出调整时使用。",
+   "slot": "We have made the adjustment to reflect [...] in the Target’s financials.",
+   "swap": [
+    "We adjusted the Target's financials to incorporate his cost. (直接用动词 adjusted，语气更直接、动作感更强)",
+    "An adjustment was applied to accommodate his expenses within Target's accounts. (被动语态配合 accommodate，语气更为客观严谨)"
+   ]
+  },
+  {
+   "id": "ph_raise_adjustment_remove_impact",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "We have raised an adjustment to remove the P&L impact of these transactions.",
+   "why": "动词搭配 raise an adjustment 是四大并购报告中极具行业特色的规范表达，搭配 remove the P&L impact 地道传达剔除损益影响之意。",
+   "when": "说明为消除特定交易对损益表的干扰而提出并做出具体调整时使用。",
+   "slot": "We have raised an adjustment to remove the P&L impact of [...].",
+   "swap": [
+    "We have proposed an adjustment to eliminate the P&L effect of these transactions. (用 propose 代替 raise，语气更侧重于建议性)",
+    "An adjustment was put forward to strip out the P&L impact stemming from these deals. (用 strip out 代替 remove，口吻更具实务剥离感)"
+   ]
+  },
+  {
+   "id": "ph_clawback_clause_condition",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "Participating employees will be committed to a 2-year service period otherwise will be subject to clawback.",
+   "why": "用 be committed to 明确表达员工履约义务，配合 otherwise will be subject to clawback 极为精准地界定违约责任与追回机制，句式结构干净利落。",
+   "when": "用于在报告中提示员工 retention 计划及其履约约束条款。",
+   "slot": "Participating employees will be committed to […] otherwise will be subject to […].",
+   "swap": [
+    "Employees participating in this scheme must complete [...] or face clawback. — 语气更直接硬朗，常用作内部通知或条款摘要。",
+    "Participating employees are required to serve for [...], failing which a clawback mechanism may be triggered. — 语气偏合规规范体，强调触发条件的严密性。"
+   ]
+  },
+  {
+   "id": "ph_subject_to_policy_rebate",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Insurance rebate was the rebate income for the insurance brokers, which was subject to brokers’ rebate policy.",
+   "why": "利用 which was subject to 非限制性定语从句，将业务概念定义与计提所受制的外部政策限制平滑连接，信息分层清晰。",
+   "when": "用于说明某项收入或费用的计算与结算受制于特定的外部或第三方政策。",
+   "slot": "[…] was the […] for […], which was subject to […].",
+   "swap": [
+    "[...] represents [...] and is governed by [...]. — 语气更具官方规范感，突出被管理或管辖的效力。",
+    "[...] refers to [...] which depends on [...]. — 语气较平实直白，适用于口头汇报或初步解释。"
+   ]
+  },
+  {
+   "id": "ph_buyback_approval_prior_closing",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Such buyback plan is still subject to board approval and will be enforced prior to closing of Project Nobel per management.",
+   "why": "通过 is still subject to 提示方案的未定状态，同时末尾使用 per management 明确归因信息来源，既表述了计划时间点又做了恰当的风险隔离。",
+   "when": "用于说明某项重大事项（如回购方案）尚在审批中但计划于交割前完成。",
+   "slot": "Such […] is still subject to […] and will be enforced prior to closing of […] per management.",
+   "swap": [
+    "The [...] remains conditional upon [...] and is expected to take effect before closing, according to management. — 语气更严谨，强调条件的未满足与时间预判。",
+    "Management noted that the [...] requires [...] and will be implemented prior to closing. — 语气更侧重转述管理层的既定表态。"
+   ]
+  },
+  {
+   "id": "ph_related_party_cleaned_up",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "For the related party balances, We recommend that these balances should be cleaned up, to the extent possible, prior to closing.",
+   "why": "在提出建议的同时插入修饰语 to the extent possible（在可能范围内），为实际执行过程中的客观限制留出了极其专业的软化空间。",
+   "when": "用于对历史遗留事项（如关联方往来款）提出交割前清理的建议。",
+   "slot": "For […], We recommend that […] should be cleaned up, to the extent possible, prior to closing.",
+   "swap": [
+    "We suggest clearing [...] to the maximum extent feasible before closing. — 语气更偏行动导向，措辞更为简练。",
+    "It is advisable that [...] be resolved, where practical, prior to completion. — 语气更客观中立，运用虚拟语气增加书面严谨度。"
+   ]
+  },
+  {
+   "id": "ph_recommend_vendor_settle_cp",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "We recommend that you should request the Vendor to settle the issue prior to closing and include it as condition precedent in SPA.",
+   "why": "动词 recommend 与 request 形成双层推进，并精确使用法律术语 include it as condition precedent in SPA，建议具有极高的文本可落地性。",
+   "when": "用于建议客户将某项风险事项直接列为交易协议中的交割先决条件（CP）。",
+   "slot": "We recommend that you should request […] to settle […] prior to closing and include it as condition precedent in SPA.",
+   "swap": [
+    "We advise requiring the Seller to resolve [...] prior to completion and making it a CP in the SPA. — 语气更干练专业，常用于管理层摘要。",
+    "It is recommended to ask [...] to rectify [...] before closing as a prerequisite for SPA. — 语气相对通俗温和，适合初步沟通。"
+   ]
+  },
+  {
+   "id": "ph_tax_penalty_discretion_deviate",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Please note that the levy of penalty, if any, is subject to the discretion of tax authorities and may deviate from our quantification.",
+   "why": "连续使用 if any（如有）、is subject to discretion（取决于裁量）和 may deviate from（可能偏离测算），三重缓冲措辞极为严密地界定了免责边界。",
+   "when": "用于提示潜在罚款或估计金额可能与主管机关最终裁定存在偏差。",
+   "slot": "Please note that […], if any, is subject to the discretion of […] and may deviate from […].",
+   "swap": [
+    "Note that potential [...] falls under the sole authority of [...] and might differ from our estimate. — 语气更直接，明确突出行政机关的独家权力。",
+    "Be advised that any [...] remains entirely at the discretion of [...] and could vary from the quantified amount. — 语气更正式严肃，强调不确定性。"
+   ]
+  },
+  {
+   "id": "pa_depreciation_policy_impact",
+   "kind": "passage",
+   "dim": "quant",
+   "t": "折旧政策变更的正常化调整",
+   "en": "In FY25, the Group extended the useful life of its core manufacturing equipment from 5 to 8 years, which reduced annual depreciation charges by approximately RMB 45 million. On an adjusted basis, excluding the RMB 33.8 million year-to-date impact in 9M26, normalized EBITDA margin for the period would have been 14.2% rather than the reported 16.5%. This accounting tweak artificially boosted reported operating profit, masking a slight underlying contraction in gross margins driven by higher raw material costs. Management attributes the extension to improved maintenance protocols; however, the lower depreciation rate appears aggressive when compared with the 5-year industry standard. Consequently, full-year FY26F net earnings may be overstated by an estimated RMB 40-45 million unless normalized adjustments are factored into the valuation model.",
+   "notes": [
+    {
+     "q": "On an adjusted basis, excluding the RMB 33.8 million year-to-date impact in 9M26, normalized EBITDA margin for the period would have been 14.2% rather than the reported 16.5%.",
+     "why": "使用虚拟语气与对比句式精准量化政策剔除后的影响，是做正常化调整（Normalization）时的标准书面表达。"
+    },
+    {
+     "q": "artificially boosted reported operating profit, masking a slight underlying contraction",
+     "why": "动词组合“人为抬高……掩盖了本质上的下滑”能非常客观且犀利地揭示会计政策变动对真实业绩的失真影响。"
+    },
+    {
+     "q": "appears aggressive when compared with the",
+     "why": "在尽调报告中表达对管理层会计估计偏保守或激进的质疑时，用 appears 进行软化能保持专业中立的态度。"
+    }
+   ],
+   "take": [
+    "On an adjusted basis, excluding the [...] impact in [...], normalized [...] would have been [...] rather than the reported [...].",
+    "This [...] artificially boosted reported [...], masking a slight underlying [...] driven by [...].",
+    "Full-year [...] may be overstated by an estimated [...] unless normalized adjustments are factored into [...]."
+   ]
+  },
+  {
+   "id": "ph_mgmt_explained_no_plan",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Management explained that there is no detailed plan or investment return analysis for the Rmb1b Capex plan.",
+   "why": "使用“Management explained that”将缺乏材料的事实客观归因于管理层的解释，配合“no detailed plan or investment return analysis”双重否定名词并列，措辞严谨且准确复现管理层陈述。",
+   "when": "用于披露管理层对重大项目（如大额资本支出）缺乏后续书面规划或分析支持的口头解释。",
+   "slot": "Management explained that there is no [...] for the [...] plan.",
+   "swap": [
+    "Management indicated that no formal [...] exists for the [...] plan.（用 indicated 替代 explained，语调更为中立客观）",
+    "According to management, the [...] plan lacks [...].（用 According to 前置，更强调客观陈述管理层的说法）"
+   ]
+  },
+  {
+   "id": "ph_written_off_prepayments",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "We have written off the prepayments as management confirmed that they will not be refunded by the government.",
+   "why": "用“as management confirmed that...”做原因连接，巧妙地将会计处理动作（written off）的合理性建立在管理层的明确确认之上，逻辑链条清晰，权责分明。",
+   "when": "用于说明资产减值、冲销或提备的决定依据，且该依据来自管理层的定性确认。",
+   "slot": "We have [...] as management confirmed that [...] will not be [...].",
+   "swap": [
+    "The [...] were written off following management's confirmation that [...].（采用被动语态，表述更侧重财务处理结果本身）",
+    "Based on management's confirmation that [...], we have [...].（将依据前置，更强调动作的遵照性和合规性）"
+   ]
+  },
+  {
+   "id": "ph_understand_review_scope",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "We understand that there are 5 hospitals in the Target and we will review 2 hospitals and 1 entity which develop HIS system.",
+   "why": "用 We understand that 开头界定已知事实前提，再紧接 we will review 明确本次工作的实际核查范围（从5家抽查2家及1个实体），结构上把“总体情况”与“工作边界”割裂开来，界限清晰。",
+   "when": "用于尽调报告或方案中界定项目总体规模与我方实际核查（抽样）范围的对应关系。",
+   "slot": "We understand that there are [...] in the Target and we will review [...].",
+   "swap": [
+    "Based on current information, the Target comprises [5 hospitals], of which [2 hospitals and 1 entity] fall within our review scope.（语气更正式偏客观陈述，强调信息来源与工作界限）",
+    "It is noted that the Target consists of [5 hospitals]; our work will focus on [2 hospitals and 1 entity].（语气更直接干脆，突出工作重点）"
+   ]
+  },
+  {
+   "id": "ph_normalisation_aim",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "Normalisation adjustments are made with the aim of illustrating the underlying (i.",
+   "why": "句首使用抽象名词短语 Normalisation adjustments，配合被动结构 are made with the aim of，将焦点集中于“调整目的”而非“操作者”，表达高度客观专业。",
+   "when": "在报告中解释特定账目调整的客观目的与拟达成的表征效果时使用。",
+   "slot": "[...] adjustments are made with the aim of illustrating the [...]",
+   "swap": [
+    "[...] adjustments are intended to reflect the underlying [...] (语气更直接，凸显预期呈现的效果)",
+    "The primary purpose of [...] adjustments is to showcase the underlying [...] (名词开头强调“目的本身”，语气更平实)",
+    "We make [...] adjustments to illustrate the underlying [...] (主动语态，凸显分析团队的操作主体性)"
+   ]
+  },
+  {
+   "id": "ph_normalisations_structural",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "Normalisations do not address structural issues – such items are pro forma matters.",
+   "why": "通过动词短语 do not address 精准限定正常化调整的责任边界，再用破折号与限定词 such items 引出归类定义，对比清晰，语气干脆明确。",
+   "when": "需要明确划分分析范围、区分不同财务调整性质（如正常化调整与备考调整）时使用。",
+   "slot": "[...] do not address [...] – such items are [...] matters.",
+   "swap": [
+    "[...] fall outside the scope of [...], as such items are [...] matters (用 fall outside the scope 精确界定范畴，语气更书面化)",
+    "[...] do not extend to [...]; these should be treated as [...] (采用分号连接，语气更偏向建议与操作指引)",
+    "[...] exclude [...], which are classified under [...] (用 exclude 强调排除关系，语气更坚决)"
+   ]
+  },
+  {
+   "id": "ph_suggest_detail_discussion",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "We suggest you have more detail discussion with the operation team on the basis of assumptions, and expenses to be incurred by other group entities (e.",
+   "why": "使用 We suggest 配合 detail discussion 委婉地提出待办事项；incurred by 准确描述了费用发生的归属关系，比 simple spent 更具会计专业感。",
+   "when": "在报告中建议客户就特定假设或跨公司费用与被调查方业务团队进一步核实细节时。",
+   "slot": "We suggest you have more detail discussion with [...] on the basis of [...], and [...] to be incurred by [...]",
+   "swap": [
+    "It is recommended that management clarify [...] (更正式且客观的第三人称语气)",
+    "Please further discuss with [...] regarding [...] (更直接的指令式语气，用于 Action Point 清单)"
+   ]
+  },
+  {
+   "id": "ph_subject_to_update",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "Financial assets through profit and loss – there’s no separate fund valuation for Mar-23 balance thus balance is subject to further update in market value.",
+   "why": "subject to further update 这一表达体现了极强的专业严谨性，它不直接说数据会变，而是强调数据受限于后续更新，为潜在的金额调整留足了空间。",
+   "when": "当某项财务数据因缺乏外部凭据（如评估报告）而可能在未来发生变动时，用来提示风险。",
+   "slot": "[...] – there’s no [...] for [...] thus balance is subject to further update in [...]",
+   "swap": [
+    "The balance is pending final valuation (强调流程尚未完成的中间状态)",
+    "The figures are indicative and may be adjusted upon [...] (强调数据仅具参考性，语气更具防御性)"
+   ]
+  },
+  {
+   "id": "pa_fx_normalization_dd",
+   "kind": "passage",
+   "dim": "quant",
+   "t": "汇率波动对毛利影响的归因与正常化分析",
+   "en": "For FY25, the Target’s gross margin contracted by 120 basis points, largely attributable to the sharp appreciation of the CNY against the USD during the settlement window. On a constant currency basis, however, the underlying margin would have remained resilient at approximately 28.5%, effectively offsetting the 4.2% increase in raw material costs. This FX-induced headwind resulted in a non-cash translational loss of $2.4 million, which we have normalized in our adjusted EBITDA bridge to reflect the core operational performance. Looking ahead to 9M26, the management has implemented a rolling hedge strategy to mitigate further downside risk, although FY26F projections remain sensitive to any breach of the 7.20 threshold. While these measures provide a buffer, the inherent volatility in cross-border settlements necessitates a cautious interpretation of the forecasted net recovery.",
+   "notes": [
+    {
+     "q": "largely attributable to",
+     "why": "标准的归因表达，将财务指标的变化（contracted）直接关联到特定的宏观因素。"
+    },
+    {
+     "q": "On a constant currency basis",
+     "why": "财务尽调中进行“正常化”处理的固定术语，用于剔除汇率波动以比较经营性业绩。"
+    },
+    {
+     "q": "normalized in our adjusted EBITDA bridge",
+     "why": "量化分析的动作描述，说明该数字已被放入调整表（Bridge）中以修正报表利润。"
+    },
+    {
+     "q": "remain sensitive to",
+     "why": "用于预测（FY26F）的软化表达，量化了风险点但保留了专业审慎余地。"
+    }
+   ],
+   "take": [
+    "On a constant currency basis, [财务指标] would have been [具体数值/比例].",
+    "The [波动/损失] is largely attributable to [原因], resulting in a [数值] impact on [受影响项目].",
+    "[预测指标] remain sensitive to [外部变量], necessitating a cautious interpretation of [预期结果]."
+   ]
+  },
+  {
+   "id": "ph_mgmt_classification_basis",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Management does not provide the classification basis of different department, we classify them based on our understanding.",
+   "why": "采用“责任对冲”结构，先清晰指出管理层的信息缺失，再以 based on our understanding 承接，既交代了工作局限又合理解释了后续分类的主观依据。",
+   "when": "当管理层未提供官方分类标准，需要尽调人员自行定义分类逻辑时。",
+   "slot": "Management does not provide […], we classify them based on our understanding.",
+   "swap": [
+    "In the absence of […] from management, we have categorized them based on our professional judgment. (更正式，强调专业判断)",
+    "As management did not specify […], the classification is based on our interpretation of the data. (语气中性，侧重对数据的解读)"
+   ]
+  },
+  {
+   "id": "ph_cogs_allocation_assumption",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "For indirect COGS of supporting depts, the assumption used for allocation is based on our understanding of the nature of the COGS and discussion with management.",
+   "why": "通过 nature of...（本质理解）和 discussion with...（管理层访谈）构建了双重归因，为原本主观的分摊假设（assumption）提供了多维度的证据支撑。",
+   "when": "在解释复杂成本分摊、预提拨备等主观会计估计的依据时。",
+   "slot": "For […], the assumption used for […] is based on our understanding of […] and discussion with management.",
+   "swap": [
+    "The allocation of […] is derived from our assessment of its nature and corroborated by management. (语气更强，强调证据交叉验证)",
+    "We have allocated […] based on the underlying nature of the costs as discussed with management. (更简洁，强调讨论的一致性)"
+   ]
+  },
+  {
+   "id": "ph_entity_subsidy_review",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Based on our review of the selected entities, financial subsidies were received by the three entities during the review period, refer to the table above for details.",
+   "why": "句首以 Based on our review 锚定证据范围，配合被动语态 were received 聚焦于事实发现而非执行动作，最后用祈使句实现文表联动。",
+   "when": "总结特定范围内发现的财务事实，并引导读者查看详细数据表时。",
+   "slot": "Based on our review of […], […] were received by […] during […], refer to […] for details.",
+   "swap": [
+    "Our review indicates that […] were granted to […] as detailed in the table above. (主动语态，结论导向更强)",
+    "According to our review, the entities received […] during the period; see the above table for a breakdown. (语气较轻松，侧重信息索引)"
+   ]
+  },
+  {
+   "id": "ph_tax_lat_reconciliation",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "Based on our analysis, for SH Concord, as most of saleable areas have been sold (except for self-holding/using areas), the tax authority is allowed to require LAT reconciliation be performed.",
+   "why": "模态短语 is allowed to require 极其严谨，准确描述了税务机关拥有的“法定裁量权”而非“必然动作”，为风险揭示留出了专业余地。",
+   "when": "描述监管机构有权干预或要求补税，但尚未实际发生时的潜在风险。",
+   "slot": "Based on our analysis, for […], as […], the [authority] is allowed to require […] be performed.",
+   "swap": [
+    "The tax authority reserves the right to demand […] given the current status of […]. (语气更硬，强调职权保留)",
+    "It is possible that the tax authority may request […] because […]. (语气较软，侧重可能性提示)"
+   ]
+  },
+  {
+   "id": "ph_identified_adjustments",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "We identified a few accounting adjustments and normalization adjustments during our due diligence.",
+   "why": "使用 identified 确立了专业发现的基调，通过 accounting 和 normalization 两个精确的限定词对 adjustments 进行并列分类，体现了 FDD 报告严谨的名词化表达风格。",
+   "when": "在尽调报告的执行摘要或财务分析章节中，概括性地陈述发现的调整事项。",
+   "slot": "We identified a few [...] adjustments and [...] adjustments during our due diligence.",
+   "swap": [
+    "Our procedures resulted in several accounting and normalization adjustments. (语气更中立，强调调整是程序执行的客观结果)",
+    "We have proposed certain accounting and normalization adjustments based on our findings. (语气更具建议性，强调这些调整是待讨论的提议)"
+   ]
+  },
+  {
+   "id": "ph_unable_to_quantify",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "We were unable to quantify the underpayment due to limited data.",
+   "why": "unable to quantify 准确界定了‘定性已完成但定量无法做’的边界，due to 引导的归因非常直接。",
+   "when": "发现问题但因数据颗粒度不够，无法算出具体影响金额时。",
+   "slot": "We were unable to quantify the […] due to […].",
+   "swap": [
+    "Quantification of the [...] was not possible. (名词化开头，语气更加冷峻客观)",
+    "The impact of [...] could not be reliably estimated. (使用 estimate 留出了一定专业判断的空间)"
+   ]
+  },
+  {
+   "id": "ph_not_been_provided",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "We have not been provided with details of the recognition basis.",
+   "why": "have not been provided with 是典型的被动语态，将焦点从‘对方没给’转移到‘我方未处于拥有信息的状态’。",
+   "when": "礼貌但明确地指出对方未对某些会计政策或核算逻辑给出解释。",
+   "slot": "We have not been provided with […].",
+   "swap": [
+    "Details of [...] have not been made available to us. (更正式，强调信息的可获得性)",
+    "The management has not yet shared the [...]. (直接点名管理层，语气稍重)"
+   ]
+  },
+  {
+   "id": "ph_did_not_verify",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "We did not verify the tax losses accumulated before review period.",
+   "why": "verify 是尽调核心动词，明确了动作的缺失；before review period 划定了清晰的时间红线。",
+   "when": "声明某些历史遗留数据不在本次审计或尽调的核查范围之内。",
+   "slot": "We did not verify the […] accumulated before […].",
+   "swap": [
+    "The [...] falls outside our agreed scope of review. (强调这是双方约定好的范围限制)",
+    "No verification procedures were performed on [...]. (完全去人称化，极度客观)"
+   ]
+  },
+  {
+   "id": "ph_note_headcount_breakdown",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Note that we have not been provided headcount and staff cost breakdown for all entities.",
+   "why": "Note that 起到强制提醒作用；breakdown 体现了对数据颗粒度的专业要求。",
+   "when": "在列示总体数据时，提醒读者某些子实体的明细数据是缺失的。",
+   "slot": "Note that we have not been provided […] for […].",
+   "swap": [
+    "It should be noted that [...] is unavailable. (更正式的免责语气)",
+    "Please be advised that we lack the [...]. (带有通知性质，语气较硬)"
+   ]
+  },
+  {
+   "id": "ph_limitation_of_information",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "Due to limitation of information, we are unable to verify the aforementioned adjustments.",
+   "why": "limitation of information 是标准术语，aforementioned（前述的）体现了严谨的法律/报告文体风格。",
+   "when": "作为总结性陈述，解释为何无法对前面提到的调整项进行核实。",
+   "slot": "Due to […], we are unable to verify the […].",
+   "swap": [
+    "Information constraints prevent us from verifying [...]. (动词化表达，语气更具阻碍感)",
+    "The verification of [...] is constrained by the lack of [...]. (强调因果关系的必然性)"
+   ]
+  },
+  {
+   "id": "pa_subsidy_sustainability_776",
+   "kind": "passage",
+   "dim": "nom",
+   "t": "政府补助可持续性及其对盈利影响的评估",
+   "en": "The Target’s reliance on non-recurring government grants reached a peak in FY24, contributing 15% to its total pre-tax profit. However, the subsequent contraction of local fiscal budgets led to a noticeable decline in subsidy disbursements during 9M26. This downward trend raises concerns regarding the replicability of such windfall gains in FY26F and beyond. Management’s anticipation of future policy support remains subject to significant uncertainty given the shift in regional industrial priorities. Consequently, the exclusion of these one-off items from core earnings is necessary for a normalized assessment of the Target’s operational profitability.",
+   "notes": [
+    {
+     "q": "The Target’s reliance on",
+     "why": "将动词 rely on 转化为名词 reliance，使句子的主语从‘公司’转向‘公司对某物的依赖性’这一客观状态。"
+    },
+    {
+     "q": "the subsequent contraction of local fiscal budgets",
+     "why": "通过名词词组 contraction（收缩）将一个复杂的背景动因压缩进主语位置，大幅提升了信息密度。"
+    },
+    {
+     "q": "remains subject to significant uncertainty",
+     "why": "财务报告中常用的软化表达（Hedging），用名词 uncertainty 搭配形容词，比直接说 is uncertain 更显专业审慎。"
+    },
+    {
+     "q": "the exclusion of these one-off items",
+     "why": "将动作‘剔除这些非经常性损益’名词化，作为全句的逻辑起点，使后续的判断显得更具结论性。"
+    }
+   ],
+   "take": [
+    "The [Entity]’s reliance on [Source] reached a peak in [Year]...",
+    "The [Action/Event] led to a noticeable decline in [Metric] during [Period].",
+    "The exclusion of [Items] is necessary for a normalized assessment of [Subject]."
+   ]
+  },
+  {
+   "id": "pa_depreciation_normalization",
+   "kind": "passage",
+   "dim": "quant",
+   "t": "折旧政策变更的财务量化与分析",
+   "en": "In FY25, the Target extended the estimated useful lives of its production machinery from five to eight years, resulting in a non-recurring depreciation saving of USD 2.4 million. To ensure comparability across periods, we have applied a normalization adjustment to FY25 EBITDA to reflect the historical run-rate prior to this accounting estimate change. For 9M26, the cumulative impact of this policy shift contributed approximately 120 basis points to the reported gross margin. Looking ahead to FY26F, the full-year recurring benefit is expected to stabilize as newer CAPEX additions are recognized under the revised schedule. While this change aligns with general industry benchmarks, it appears to partially mask a underlying contraction in operational efficiency during the period under review.",
+   "notes": [
+    {
+     "q": "resulting in a non-recurring depreciation saving of",
+     "why": "使用现在分词短语引导结果，并用saving量化政策变更带来的财务增益。"
+    },
+    {
+     "q": "To ensure comparability across periods, we have applied a normalization adjustment to",
+     "why": "标准的尽调话术，解释为了实现“跨期可比性”而进行的“标准化调增/调减”。"
+    },
+    {
+     "q": "contributed approximately 120 basis points to",
+     "why": "将具体金额转化为基点（bps），是分析盈利能力（Margin）变动原因时的地道写法。"
+    },
+    {
+     "q": "partially mask a underlying contraction in",
+     "why": "用mask（掩盖）和underlying（潜在的）来委婉指出财务粉饰背后的真实业务下滑。"
+    }
+   ],
+   "take": [
+    "The [Change] resulted in a [Positive/Negative] impact of [Amount] on [Metric].",
+    "To reflect the historical run-rate, we have applied a normalization adjustment of [Amount] to [Metric].",
+    "The impact of [Event] contributed approximately [Number] basis points to the reported [Margin]."
+   ]
+  },
+  {
+   "id": "pa_valuation_gap_modality",
+   "kind": "passage",
+   "dim": "modal",
+   "t": "并购估值中的断言、观察与推迟判断",
+   "en": "The Target’s adjusted EBITDA margin expanded to 18.5% in FY25, a performance largely attributable to favorable raw material pricing cycles. While 9M26 results indicate a degree of operational stability, the current run-rate suggests that the FY26F target of 21.0% may be overly optimistic. Management contends that upcoming efficiency gains will bridge this gap; however, we observe that these projections rely heavily on aggressive synergy assumptions. At this stage, we remain unable to assess the full impact of potential supply chain disruptions on the FY26F outlook pending further sensitivity analysis. This lack of visibility warrants a cautious approach to the final valuation, particularly regarding the earn-out structure.",
+   "notes": [
+    {
+     "q": "largely attributable to",
+     "why": "用于对已发生的财务表现进行断言归因，既明确了因果关系又通过largely保留了一定余地。"
+    },
+    {
+     "q": "suggests that the FY26F target of 21.0% may be overly optimistic",
+     "why": "通过suggests和may进行观察层面的软化处理，在指出预测不合理的同时避免主观武断。"
+    },
+    {
+     "q": "unable to assess the full impact of potential supply chain disruptions on the FY26F outlook pending further sensitivity analysis",
+     "why": "标准的尽调推迟性陈述，明确指出因缺乏特定分析而无法在现阶段给出定论。"
+    }
+   ],
+   "take": [
+    "The [Metric] expanded to [Value], a performance largely attributable to [Factor].",
+    "The current run-rate suggests that the [Year] target of [Value] may be [Adjective].",
+    "We remain unable to assess [Issue] pending [Condition/Information]."
+   ]
+  },
+  {
+   "id": "pa_fx_volatility_normalization",
+   "kind": "passage",
+   "dim": "quant",
+   "t": "汇率波动对跨国结算影响的量化分析",
+   "en": "In FY25, the Target's reported revenue grew by 12.4% year-on-year, though this figure was significantly bolstered by the strengthening of the USD against the CNY. On a constant currency basis, the organic growth rate narrows to approximately 8.2%, reflecting a 420-basis-point impact from favorable FX tailwinds. Management attributes this discrepancy to the lag in cross-border settlement cycles, where receivables booked in 9M26 may face margin compression if the current volatility persists. While the normalized EBITDA margin remains resilient at 18.5%, potential downside risks should be considered should the CNY rebound beyond the 7.10 threshold in FY26F. Consequently, we have adjusted the projected cash flows to account for these non-operational fluctuations, ensuring a more conservative valuation baseline.",
+   "notes": [
+    {
+     "q": "On a constant currency basis",
+     "why": "这是财务尽调中用于排除汇率波动干扰、对比业务真实表现（即“正常化”）的标准表述。"
+    },
+    {
+     "q": "a 420-basis-point impact from",
+     "why": "在量化两个百分比之间的差异时，使用“基点（bps）”而非“%”能显著提升专业度并避免歧义。"
+    },
+    {
+     "q": "should the CNY rebound beyond",
+     "why": "使用 should 引导的倒装虚拟语气，是职业英语中处理“敏感预测”或“软化警告”的高级写法。"
+    }
+   ],
+   "take": [
+    "On a constant currency basis, the [指标] narrows/expands to [数字].",
+    "reflecting a [数字]-basis-point impact from [原因/因子].",
+    "potential downside risks should be considered should [变量] [动词] beyond [阈值]."
+   ]
+  },
+  {
+   "id": "pa_interest_rate_impact",
+   "kind": "passage",
+   "dim": "modal",
+   "t": "利率环境对融资成本影响的尽调分析",
+   "en": "The Target’s weighted average cost of debt surged to 6.2% in FY25, up from 4.8% in FY24, reflecting the persistent high-yield environment. This escalation is directly attributable to the repricing of floating-rate tranches following successive benchmark hikes. Based on 9M26 management accounts, interest coverage ratios have tightened significantly, signaling potential covenant breaches if base rates remain elevated. We are currently unable to assess the full impact on the FY26F refinancing schedule pending the finalization of the proposed credit facility restructuring terms. Consequently, the Target’s capital structure appears increasingly fragile under the current monetary trajectory.",
+   "notes": [
+    {
+     "q": "is directly attributable to",
+     "why": "使用强断言动词短语，将成本上升明确归因于外部环境，展现分析师对因果关系的确定性判断。"
+    },
+    {
+     "q": "signaling potential covenant breaches",
+     "why": "通过 signaling 引导观察到的迹象，并用 potential 软化语气，在未发生违约前仅作风险提示而非事实断定。"
+    },
+    {
+     "q": "unable to assess the full impact on the FY26F refinancing schedule pending",
+     "why": "标准的推迟性模态表达，明确指出评估的局限性源于外部未决事项，是尽调报告中免责和保留意见的常用手法。"
+    }
+   ],
+   "take": [
+    "[A] is directly attributable to [B] following [C]",
+    "Signaling potential [Risk/Issue] if [Condition] remains [Status]",
+    "Unable to assess the full impact on [Subject] pending the finalization of [Event/Document]"
+   ]
+  },
+  {
+   "id": "ph_understand_independent_operation",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "We understand that the Target operates relatively independently.",
+   "why": "使用 “We understand that” 引入我方理解，配合程度副词 “relatively” 限制独立性的范围，在语法上构成双重对冲（hedging），既客观陈述了现状，又避免了绝对化的武断判定。",
+   "when": "用于在尽调报告中描述目标公司运营或财务的独立性，但需要留有余地、避免法律责任时。",
+   "slot": "We understand that the Target operates relatively [...].",
+   "swap": [
+    "Based on our review, the Target appears to operate independently. (语气更客观：侧重于基于书面证据呈现出来的迹象)",
+    "It is understood that the Target's operations are substantially independent. (语气更正式：使用被动语态和副词substantially，强调独立性的实质程度)"
+   ]
+  },
+  {
+   "id": "ph_understand_negotiating_post_transaction",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "We understand you are discussing and negotiating with the Vendor on operation and maintenance arrangement post-Transaction.",
+   "why": "通过并列动词 “discussing and negotiating” 精确界定沟通深度，并用介词 “on” 引导具体事项，最后以无冠词的 “post-Transaction” 作后置定语，语言极度凝练。",
+   "when": "用于向客户确认其与交易对手正在进行的、涉及交易后过渡安排的谈判进展。",
+   "slot": "We understand you are discussing and negotiating with the Vendor on [...] post-Transaction.",
+   "swap": [
+    "We note that negotiations are ongoing with the Vendor regarding post-transaction [...] arrangements. (语气更中立：用 We note 替代 We understand，侧重于客观记录这一事实)",
+    "According to the management, you are currently in discussions with the Vendor concerning [...] after the Transaction. (语气信息源更明确：指明信息来自管理层，口吻更具追溯性)"
+   ]
+  },
+  {
+   "id": "ph_understand_rental_cutoff",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "We understand that you are discussing with Pangda and that the rental will not be paid after the cut-off date (June 17, 2019).",
+   "why": "使用 “that... and that...” 引导的双重并列宾语从句，将“正在进行的动作”与“未来的确定结果”并列在同一个理解框架下，结构严密，信息承载力极强。",
+   "when": "用于陈述复杂的、包含多项并列事实或后续财务安排的既定情况。",
+   "slot": "We understand that you are discussing with [...] and that the [...] will not be paid after the cut-off date ([...]).",
+   "swap": [
+    "We understand that your ongoing discussions with Pangda involve the non-payment of rental post the cut-off date. (语气更紧凑：将并列从句压缩为名词短语，信息密度更高)",
+    "It is our understanding that discussions with Pangda are underway, with the expectation that no rental will be paid after the cut-off date. (语气更委婉：使用 expectation 弱化确定性，强调预期效果)"
+   ]
+  },
+  {
+   "id": "pa_interest_rate_impact_121",
+   "kind": "passage",
+   "dim": "quant",
+   "t": "利率飙升对融资成本的量化分析",
+   "en": "Throughout FY25, the Target's weighted average cost of debt escalated by 150 basis points to 6.2%, primarily driven by the refinancing of its USD 50 million senior notes under a high-rate environment. This rate hike resulted in an incremental interest expense of USD 0.75 million in FY25, which compressed the net interest margin by approximately 80 basis points. Had the refinanced rate been applied retroactively to the beginning of FY25, the full-year normalized financing cost would have been higher by an additional USD 0.3 million. Looking ahead to FY26F, assuming interest rates plateau at current levels, the annualized debt service obligation is projected to stabilize at USD 3.8 million, representing a 12% year-on-year increase on a normalized basis.",
+   "notes": [
+    {
+     "q": "primarily driven by the refinancing of",
+     "why": "使用被动结构结合'primarily driven by'，在进行财务归因时显得客观中立，避免主观武断。"
+    },
+    {
+     "q": "resulted in an incremental interest expense of",
+     "why": "用'incremental'（增量的）来精准界定和量化因特定外部事件（加息）所导致的财务支出增加额。"
+    },
+    {
+     "q": "Had the refinanced rate been applied retroactively to",
+     "why": "使用虚拟语气倒装句（Had + done），是尽调报告中进行‘追溯调整/历史正常化’假设分析的经典高级句型。"
+    },
+    {
+     "q": "on a normalized basis",
+     "why": "买方尽调中最核心的短语，意为‘在正常化基准下’，用于提示读者该数字已剔除了一次性或非经常性因素影响。"
+    }
+   ],
+   "take": [
+    "primarily driven by the [名词/动名词] of [...]",
+    "Had the [指标/利率] been applied retroactively to [时间], the [指标] would have been [较高/较低] by an additional [...]",
+    "representing a [百分比] year-on-year increase on a normalized basis"
+   ]
+  },
+  {
+   "id": "pa_depreciation_policy_shift",
+   "kind": "passage",
+   "dim": "quant",
+   "t": "折旧政策变更对利润的可比性调整",
+   "en": "Effective from Q1 FY25, the Target extended the estimated useful lives of its core manufacturing equipment from 5 to 8 years, aligning its depreciation policy with industry standards. This accounting estimate change reduced the FY25 depreciation charge by USD 1.2 million, thereby artificially boosting the reported operating profit margin by 2.4 percentage points. On a normalized basis, adjusting for this policy alignment to ensure historical comparability, the 9M26 adjusted EBITDA would be USD 8.5 million instead of the reported USD 9.4 million. While management attributes this adjustment to technological upgrades, the resulting non-cash earnings boost should be excluded when assessing the Target's recurring run-rate profitability.",
+   "notes": [
+    {
+     "q": "aligning its depreciation policy with",
+     "why": "用现在分词短语作伴随状语，顺承说明会计政策变更的‘合理性化理由’（与行业标准对齐）。"
+    },
+    {
+     "q": "thereby artificially boosting the reported",
+     "why": "使用'thereby artificially boosting'（从而虚增了/非自然地推高了），一针见血地指出会计调整对账面利润的非经营性美化作用。"
+    },
+    {
+     "q": "adjusting for this policy alignment to ensure historical comparability",
+     "why": "用'adjusting for... to ensure historical comparability'来阐明‘做正常化调整’是为了确保历史数据的可比性，理据充分。"
+    },
+    {
+     "q": "assessing the Target's recurring run-rate profitability",
+     "why": "使用'recurring run-rate profitability'（可持续的常规盈利能力），这是评估标的公司真实赚钱能力时的行业标准表达。"
+    }
+   ],
+   "take": [
+    "This [会计变更] reduced the [费用科目] by [...], thereby artificially boosting the reported [利润率/利润] by [...]",
+    "On a normalized basis, adjusting for [调整项] to ensure historical comparability, the [指标] would be [...] instead of the reported [...]",
+    "the resulting non-cash [收益/增长] should be excluded when assessing the Target's recurring run-rate profitability"
+   ]
+  },
+  {
+   "id": "pa_fx_impact_normalization",
+   "kind": "passage",
+   "dim": "quant",
+   "t": "汇率波动对毛利的量化分析",
+   "en": "The Target’s reported gross margin in FY25 contracted by 240bps, primarily driven by the 8% depreciation of the RMB against the USD in cross-border settlements. On a constant currency basis, the normalized margin would have reached 32.4%, suggesting that the underlying operational efficiency remained intact. Management has proactively shifted towards a USD-denominated pricing model for 9M26 to natural hedge against future currency volatility. This strategic pivot, coupled with a realized FX gain of $1.5M, has largely neutralized the impact of exchange rate fluctuations on the bottom line for the current period. We have further adjusted for these translation effects to present a clearer view of the recurring EBITDA performance.",
+   "notes": [
+    {
+     "q": "On a constant currency basis",
+     "why": "财务尽调中的标准表达，用于剔除汇率变动干扰，在统一汇率基准下比较经营表现。"
+    },
+    {
+     "q": "primarily driven by",
+     "why": "典型的归因表达，比 because of 更正式，用于将财务指标的变化归结到特定因素。"
+    },
+    {
+     "q": "largely neutralized the impact of",
+     "why": "形容一种对冲或抵消效果，用 neutralize 体现专业报告中对风险抵消的精确描述。"
+    }
+   ],
+   "take": [
+    "On a constant currency basis, the [指标] would have [动词] by [数字/百分比].",
+    "The [指标] was primarily driven by [因素A], partially offset by [因素B].",
+    "We have adjusted for [非经常性项目] to reflect the underlying [财务指标] performance."
+   ]
+  },
+  {
+   "id": "pa_seasonality_cash_flow",
+   "kind": "passage",
+   "dim": "quant",
+   "t": "季节性波动对营运资本的影响",
+   "en": "The Target’s cash flow profile exhibits pronounced seasonality, with historical data showing that approximately 45% of annual collections occur during the peak season in Q4. In FY25, this cyclicality resulted in a temporary working capital build-up of $8.2M, which was primarily funded through a revolving credit facility. As of 9M26, the cash conversion cycle has moderated to 62 days, compared to a 68-day average in FY24, indicating enhanced liquidity management. We expect a significant cash inflow in early FY26F as the receivables from the 2025 holiday season are fully liquidated. Consequently, the normalized operating cash flow, stripping out these timing differences, provides a more accurate representation of the business's self-funding capability.",
+   "notes": [
+    {
+     "q": "exhibits pronounced seasonality",
+     "why": "使用 exhibit 搭配形容词 pronounced，客观描述财务表现中非常明显的季节性特征。"
+    },
+    {
+     "q": "stripping out these timing differences",
+     "why": "口语化但在报告中常用的表达，指剔除因时间点（如结算延迟）导致的数字偏差。"
+    },
+    {
+     "q": "working capital build-up",
+     "why": "量化描述营运资本的占用情况，build-up 形象地说明了资金被存货或应收账款堆积的情况。"
+    }
+   ],
+   "take": [
+    "The Target’s [财务指标] exhibits pronounced seasonality, characterized by [具体特征].",
+    "As of [时间点], the [指标] has moderated to [数字], compared to [对比数字].",
+    "Stripping out the impact of [因素], the normalized [指标] represents [结论]."
+   ]
+  },
+  {
+   "id": "pa_interest_rate_impact_792",
+   "kind": "passage",
+   "dim": "modal",
+   "t": "高利率环境对融资成本的持续压力",
+   "en": "The sustained high-interest environment throughout FY25 has markedly escalated the target's weighted average cost of capital (WACC) to 8.4%. We observe that the floating-rate portion of the long-term debt, totaling $45M as of 9M26, remains particularly sensitive to further benchmark hikes. However, the management's ability to successfully refinance the upcoming 2027 notes at sub-7% coupons is currently difficult to assess, pending the finalization of the Q4 credit rating review. Consequently, interest coverage ratios are projected to tighten significantly in FY26F if the current trajectory persists. Preliminary data suggest a pivot toward short-term commercial paper to mitigate long-term yield lock-ins.",
+   "notes": [
+    {
+     "q": "is currently difficult to assess, pending",
+     "why": "这是标准的‘推迟判断’写法，用于在信息不全或外部审计未结束时避免给出过早的定论。"
+    },
+    {
+     "q": "We observe that",
+     "why": "使用观察式动词引出客观事实，比直接断言更具客观中立性，适合尽调报告中的事实描述。"
+    },
+    {
+     "q": "are projected to",
+     "why": "在处理预测性财务指标时，使用被动语态的预测词能有效软化断言的语气，增加专业审慎感。"
+    }
+   ],
+   "take": [
+    "The [Metric] is currently difficult to assess, pending the [Event/Report].",
+    "We observe that [Fact], particularly [Sub-detail].",
+    "[Metric] are projected to [Increase/Decrease] significantly in [Period] if [Condition]."
+   ]
+  },
+  {
+   "id": "pa_fx_volatility_settlement",
+   "kind": "passage",
+   "dim": "modal",
+   "t": "汇率波动与跨境结算风险评估",
+   "en": "During 9M26, the sharp depreciation of the local currency against the USD has resulted in a realized FX loss of $3.2M, primarily stemming from unhedged raw material imports. The current settlement framework lacks robust natural hedging mechanisms, exposing the Group’s consolidated EBITDA to significant tail risks in FY26F. The exact impact of the newly proposed hedging policy on net margins remains pending, as the implementation timeline for forward contracts is still under internal review. Trends in FY25 indicate that local-currency invoicing has only been adopted by 15% of the supplier base. Strengthening the treasury function is therefore imperative to stabilize cash flow predictability amidst ongoing volatility.",
+   "notes": [
+    {
+     "q": "remains pending, as",
+     "why": "用于表达因果关系的推迟性表述，说明结论悬而未决的具体原因（实施时间表尚在审查）。"
+    },
+    {
+     "q": "is therefore imperative to",
+     "why": "这是强有力的断言写法，用于在分析完风险后给出确定性的建议，展现审计/尽调的专业立场。"
+    },
+    {
+     "q": "indicate that",
+     "why": "通过‘数据/趋势显示’来引出结论，将判断的依据归于证据而非撰写人的主观臆断。"
+    }
+   ],
+   "take": [
+    "The exact impact of [Action] on [Metric] remains pending, as [Reason].",
+    "[Data/Trends] indicate that [Fact/Finding].",
+    "[Action] is therefore imperative to [Goal] amidst [Context]."
+   ]
+  },
+  {
+   "id": "pa_customer_concentration_limits",
+   "kind": "passage",
+   "dim": "scope",
+   "t": "大客户依赖度与预测验证限制",
+   "en": "The Target’s revenue profile for FY25 exhibits significant concentration, with the top three customers accounting for 68% of total billings. While management anticipates a broader client base in FY26F, we were unable to independently verify the conversion probability of the projected pipeline due to the sensitive, pre-contractual nature of ongoing negotiations. Our analysis was further restricted by the absence of historical churn data for niche segments, which limits our ability to stress-test the downside impact of potential contract non-renewals. Consequently, the stability of 9M26 earnings remains contingent upon the successful execution of these pending agreements. Despite these limitations, our high-level review of the Master Service Agreements suggests that existing long-term partnerships provide a baseline level of structural protection.",
+   "notes": [
+    {
+     "q": "we were unable to independently verify",
+     "why": "用“无法独立验证”代替“没查到”，将责任归于客观缺乏第三方证据而非工作偷懒。"
+    },
+    {
+     "q": "due to the sensitive, pre-contractual nature of",
+     "why": "给出合理的限制理由（商务敏感/合同前阶段），显得对业务逻辑有深度理解。"
+    },
+    {
+     "q": "limits our ability to stress-test",
+     "why": "清晰界定“没做这件事”导致了什么具体的分析局限（无法做压力测试），而非简单的未尽事宜。"
+    }
+   ],
+   "take": [
+    "We were unable to independently verify […] due to the [adjective] nature of […].",
+    "Our analysis was further restricted by the absence of […], which limits our ability to […].",
+    "The stability of [period] earnings remains contingent upon [external factor/event]."
+   ]
+  },
+  {
+   "id": "pa_subsidy_sustainability_172",
+   "kind": "passage",
+   "dim": "attr",
+   "t": "政府补助收入持续性的多维核实",
+   "en": "The Target reported a significant spike in net income for FY25, primarily driven by a RMB 50 million government grant related to regional industrial upgrades. Management represents that such subsidies are recurring in nature and expects similar disbursements in 9M26 and beyond. However, our review of the underlying grant agreements suggests that the FY25 payout was a one-time incentive for the completion of a specific Phase II facility. Discussions with the local bureau further indicate that the policy framework has shifted towards performance-based R&D rebates rather than fixed-asset investment grants. Consequently, the non-recurring nature of this income item warrants a pro-forma adjustment to reflect the Target’s core earnings power.",
+   "notes": [
+    {
+     "q": "Management represents that",
+     "why": "标准的尽调用语，将说法归因于管理层陈述，不代表审计师认可"
+    },
+    {
+     "q": "suggests that the FY25 payout was a one-time incentive",
+     "why": "用suggests进行软化处理，基于查阅协议得出的初步结论，比is更专业"
+    },
+    {
+     "q": "Discussions with the local bureau further indicate",
+     "why": "引入第三方（政府部门）的外部核实，增强归因的客观性和说服力"
+    }
+   ],
+   "take": [
+    "Management represents that […] and expects […]",
+    "Our review of the underlying […] suggests that […]",
+    "Discussions with […] further indicate that […]"
+   ]
+  },
+  {
+   "id": "pa_margin_compression",
+   "kind": "passage",
+   "dim": "attr",
+   "t": "供应链成本上升对毛利的结构性影响",
+   "en": "The Target’s gross margin contracted by 450 basis points during 9M26 compared to the same period in FY25. While management attributes this decline to temporary logistics bottlenecks, our variance analysis reveals a more systemic increase in raw material procurement costs. Benchmarking against industry peers confirms that the Target’s input costs rose by 12% year-on-year, significantly outpacing the 3% price hike implemented in mid-2026. Our inspection of recent purchase orders verifies that supplier price escalations are tied to long-term index-linked contracts rather than transitory freight spikes. Therefore, the margin pressure appears more structural than management's initial characterization of the situation.",
+   "notes": [
+    {
+     "q": "While management attributes this decline to",
+     "why": "用While引导让步状语从句，引出管理层的归因，为后文的反驳做铺垫"
+    },
+    {
+     "q": "our variance analysis reveals a more systemic",
+     "why": "展示通过专业分析工具（差异分析）发现的真实原因，而非听信管理层"
+    },
+    {
+     "q": "Our inspection of recent purchase orders verifies",
+     "why": "通过具体的底层原始凭证（采购订单）进行事实核实，归因最有力"
+    }
+   ],
+   "take": [
+    "While management attributes […] to […], our [analysis] reveals […]",
+    "Benchmarking against industry peers confirms that […]",
+    "Our inspection of […] verifies that […] are tied to […]"
+   ]
+  },
+  {
+   "id": "pa_regulatory_contingency",
+   "kind": "passage",
+   "dim": "attr",
+   "t": "监管调查下的或有负债认定",
+   "en": "Management represented that the pending investigation by the regulator regarding FY24 emissions is unlikely to result in material fines. However, based on our review of the 9M26 internal compliance logs, we observed recurring procedural lapses that contradict the aforementioned optimism. According to public records from the Ministry of Ecology, similar cases in the same jurisdiction have historically incurred penalties ranging from $2M to $5M. While the Company has not recognized any provision for this matter, it is our understanding that the risk of a retrospective settlement remains elevated for FY26F. Consequently, we recommend adjusting the valuation model to reflect this potential contingent liability.",
+   "notes": [
+    {
+     "q": "Management represented that",
+     "why": "用于引述管理层的陈述，暗示这是对方的一面之词，而非审计确认的事实。"
+    },
+    {
+     "q": "based on our review of",
+     "why": "引出我方尽调程序的标准用语，强调结论是建立在具体证据（内部日志）基础上的。"
+    },
+    {
+     "q": "it is our understanding that",
+     "why": "一种典型的职场软化语（Hedging），在表达具有不确定性的专业判断时避免语气过于绝对。"
+    }
+   ],
+   "take": [
+    "Management represented that [Claim] is unlikely to [Outcome].",
+    "Based on our review of [Document], we observed [Fact] that contradict [Management Claim].",
+    "It is our understanding that the risk of [Event] remains elevated for [Period]."
+   ]
+  },
+  {
+   "id": "pa_subscription_recognition",
+   "kind": "passage",
+   "dim": "attr",
+   "t": "订阅制收入提前确认的审计发现",
+   "en": "The Company asserts that 100% of the upfront payments received in FY25 should be recognized as revenue upon signing, citing immediate value delivery. Our analysis of the Master Service Agreements (MSAs) indicates, however, that these contracts typically entail multi-year performance obligations. We found that approximately $12.4M of the revenue reported in 9M26 pertains to services scheduled for FY26F and beyond. It is our view that this accounting treatment deviates from standard industry practices regarding deferred revenue. Therefore, the reported growth figures for FY25 may be overstated by approximately 15% due to this premature recognition.",
+   "notes": [
+    {
+     "q": "The Company asserts that",
+     "why": "使用 assert 强调这是对方的主张，通常后续会跟一个转折来引出我方的不同发现。"
+    },
+    {
+     "q": "indicates, however, that",
+     "why": "将 however 放在谓语动词后作为插入语，使语气衔接更自然且专业。"
+    },
+    {
+     "q": "It is our view that",
+     "why": "明确区分“事实发现”与“我方观点”，在进行会计准则偏差判定时使用。"
+    }
+   ],
+   "take": [
+    "The Company asserts that [Accounting Treatment] is justified by [Reason].",
+    "Our analysis of [Document] indicates, however, that [Finding].",
+    "It is our view that this treatment deviates from [Standard/Practice]."
+   ]
+  },
+  {
+   "id": "pa_regulatory_penalty_contingency",
+   "kind": "passage",
+   "dim": "modal",
+   "t": "监管处罚与或有负债评估",
+   "en": "The target company faces a potential regulatory fine of approximately $4.2 million following the FY25 non-compliance audit. Management asserts that this exposure is limited to administrative penalties rather than operational suspension. However, we are currently unable to assess the ultimate financial impact pending the final disclosure from the regulatory body expected in 9M26. We advise retaining a $2.0 million reserve as a conservative estimate until further legal clarity emerges. The probability of a total exemption remains statistically low based on historical precedents within the sector.",
+   "notes": [
+    {
+     "q": "Management asserts that",
+     "why": "使用asserts表达对方的立场，但在报告中保持中立，不为对方观点背书。"
+    },
+    {
+     "q": "unable to assess the ultimate financial impact pending",
+     "why": "这是标准的推迟判断表达，pending明确了导致不确定的具体前置条件。"
+    },
+    {
+     "q": "remains statistically low",
+     "why": "用数据限定词软化结论，避免使用过于绝对的否定，体现专业谨慎。"
+    }
+   ],
+   "take": [
+    "Management asserts that […]",
+    "We are unable to assess [the impact] pending [the outcome of X].",
+    "The probability of [event] remains [adverb] low based on [basis]."
+   ]
+  },
+  {
+   "id": "pa_subscription_revenue_recognition",
+   "kind": "passage",
+   "dim": "nom",
+   "t": "订阅制收入确认机制分析",
+   "en": "The transition to a pure subscription-based model in FY25 necessitated a fundamental shift in revenue recognition methodology. The deferral of license fees over the contract term resulted in a 14% contraction in reported top-line growth compared to the legacy perpetual license structure. This accounting adjustment reflects the alignment of revenue streams with the actual delivery of cloud services. Management’s implementation of automated billing cycles has significantly mitigated the risk of revenue leakage. Consequently, the observed stabilization in deferred revenue balances indicates a successful maturation of the recurring billing framework.",
+   "notes": [
+    {
+     "q": "The deferral of license fees",
+     "why": "通过名词化将“推迟确认许可费”这一动作压缩为名词短语，使报告语调更具客观性。"
+    },
+    {
+     "q": "a 14% contraction in reported top-line growth",
+     "why": "使用名词短语描述变动，避免使用动词而使句子结构保持紧凑，提高信息密度。"
+    },
+    {
+     "q": "the observed stabilization in deferred revenue balances",
+     "why": "将“余额趋于稳定”这一动态过程名词化，作为分析结论的主语，符合商务英语的正式表达习惯。"
+    }
+   ],
+   "take": [
+    "The adoption of […] resulted in a […] contraction in […]",
+    "The shift in […] necessitated a fundamental change in […]",
+    "The stabilization in […] indicates a successful […] of the […]"
+   ]
+  },
+  {
+   "id": "pa_seasonal_cash_flow_impact",
+   "kind": "passage",
+   "dim": "nom",
+   "t": "季节性现金流波动归因",
+   "en": "The 9M26 cash flow statement underscores the pronounced impact of seasonal demand cycles on working capital requirements. A significant build-up in inventory levels during Q3 serves as a precursor to the anticipated high-volume sales period in Q4. This deliberate cash outflow is offset by a marked improvement in account receivable turnover observed throughout FY25. The interplay between these seasonal fluctuations and the company’s credit facility utilization warrants close monitoring. Ultimately, the cyclical volatility in liquidity remains well within the parameters of the current financing strategy.",
+   "notes": [
+    {
+     "q": "the pronounced impact of seasonal demand cycles",
+     "why": "使用名词短语概括复杂的因果关系，体现出专业尽调报告中“定性分析”的严谨感。"
+    },
+    {
+     "q": "A significant build-up in inventory levels",
+     "why": "把“存货增加”这一动作名词化，使句子核心逻辑更聚焦于指标变动本身。"
+    },
+    {
+     "q": "the cyclical volatility in liquidity",
+     "why": "用“流动性波动”这一名词组合概括财务状态，比使用动词描述流动性变化更具归纳力。"
+    }
+   ],
+   "take": [
+    "The […] underscores the impact of […] on […]",
+    "The interplay between […] and […] warrants close monitoring",
+    "The volatility in […] remains within the parameters of […]"
+   ]
+  },
+  {
+   "id": "pa_seasonal_cash_flow",
+   "kind": "passage",
+   "dim": "reg",
+   "t": "季节性波动对现金流的影响",
+   "en": "The company’s cash position exhibits pronounced seasonality, with operating cash flow hitting a trough in 9M26 due to the extended credit terms offered to distributors. This timing mismatch results in a temporary liquidity strain during the first three quarters, historically requiring bridge financing of approximately $15 million. While management intends to optimize billing cycles in FY27, current projections suggest the cash conversion cycle will remain sensitive to peak-season procurement demands. Consequently, stakeholders should anticipate continued working capital volatility throughout the upcoming fiscal periods.",
+   "notes": [
+    {
+     "q": "exhibits pronounced seasonality",
+     "why": "书面用语，比 'is very seasonal' 更客观且正式。"
+    },
+    {
+     "q": "timing mismatch",
+     "why": "专业术语，用于描述现金流入与流出在时间上的错配，避免使用口语化的 'don't match'。"
+    },
+    {
+     "q": "stakeholders should anticipate",
+     "why": "语气委婉的警告，比 'you must expect' 更符合审计报告的礼貌客观原则。"
+    }
+   ],
+   "take": [
+    "The [financial metric] exhibits pronounced seasonality, with [event] peaking in [period].",
+    "This timing mismatch necessitates [action/financing] to manage [risk].",
+    "Current projections suggest [metric] will remain sensitive to [factor]."
+   ]
+  },
+  {
+   "id": "pa_inventory_turnover_slowdown",
+   "kind": "passage",
+   "dim": "reg",
+   "t": "存货周转率下降的归因分析",
+   "en": "Inventory turnover metrics decelerated from 6.2x in FY24 to 4.8x in FY25, primarily driven by the accumulation of legacy product lines. Management attributes this buildup to an overly optimistic sales forecast, which resulted in an excess buffer of $8 million in finished goods. Although these items are currently non-obsolete, the prolonged holding period exerts downward pressure on overall gross margins. We recommend a rigorous assessment of the inventory provision policy to better reflect the risks associated with these slow-moving assets.",
+   "notes": [
+    {
+     "q": "Inventory turnover metrics decelerated",
+     "why": "使用 'decelerated' 比 'slowed down' 更具商务色彩，专业度更高。"
+    },
+    {
+     "q": "primarily driven by",
+     "why": "典型的归因句式，替代口语化的 'because' 或 'it happened because'。"
+    },
+    {
+     "q": "exerts downward pressure on",
+     "why": "职场书面用语，比 'makes margins lower' 更具分析深度和逻辑感。"
+    }
+   ],
+   "take": [
+    "[Metric] decelerated from [value] to [value], primarily driven by [factor].",
+    "Management attributes this [phenomenon] to [reason].",
+    "The [factor] exerts downward pressure on [financial statement item]."
+   ]
+  },
+  {
+   "id": "pa_goodwill_impairment_assessment",
+   "kind": "passage",
+   "dim": "nom",
+   "t": "商誉减值迹象的评估",
+   "en": "The FY25 impairment testing revealed a potential shortfall in recoverable amounts within the software segment. This valuation discrepancy primarily stems from the unanticipated erosion of market share during 9M26. A sustained decline in customer retention rates necessitates a rigorous reassessment of the existing cash-generating units. Management’s revised growth projections suggest a significant departure from the initial acquisition assumptions. Consequently, the potential for a material non-cash write-down remains a focal point for our subsequent review.",
+   "notes": [
+    {
+     "q": "potential shortfall in recoverable amounts",
+     "why": "将“金额可能不够”转化为名词短语，体现了财务报告中对估值结果的客观陈述。"
+    },
+    {
+     "q": "unanticipated erosion of market share",
+     "why": "用 erosion of market share 代替 market share dropped，将动作名词化，使分析显得更具专业洞察力。"
+    },
+    {
+     "q": "significant departure from the initial acquisition assumptions",
+     "why": "通过 departure 概括偏差，将复杂的比较动作抽象为名词短语，压缩了句子空间并提高了信息密度。"
+    }
+   ],
+   "take": [
+    "The valuation discrepancy primarily stems from [the decline in X].",
+    "A sustained decline in [metric] necessitates a rigorous reassessment of [subject].",
+    "The potential for a material [action] remains a focal point for our review."
+   ]
+  },
+  {
+   "id": "pa_related_party_pricing",
+   "kind": "passage",
+   "dim": "nom",
+   "t": "关联方交易定价合规性",
+   "en": "Our audit of the FY24 intercompany transactions identified inconsistencies in the transfer pricing methodology applied to procurement services. The deviation from arm’s length standards reflects a lack of adequate documentation for the markup applied to raw material sourcing. This absence of verifiable benchmark data complicates the justification of cost-plus margins. Furthermore, the substantial increase in transaction volume throughout FY25 highlights an elevated exposure to regulatory scrutiny. We recommend a comprehensive restatement of the internal pricing policy to ensure full tax compliance.",
+   "notes": [
+    {
+     "q": "inconsistencies in the transfer pricing methodology",
+     "why": "用 inconsistencies 代替 inconsistent，直接点出问题所在，避免了赘述动词结构。"
+    },
+    {
+     "q": "deviation from arm’s length standards",
+     "why": "将违反原则的行为名词化，使报告语气更中性、专业，不带主观指责色彩。"
+    },
+    {
+     "q": "elevated exposure to regulatory scrutiny",
+     "why": "利用 exposure 与 scrutiny 两个名词组合，精准表达了法律风险的上升，而非简单的叙述。"
+    }
+   ],
+   "take": [
+    "The deviation from [standard] reflects a lack of [evidence/documentation].",
+    "This absence of [data] complicates the justification of [financial item].",
+    "The substantial increase in [volume/activity] highlights an elevated exposure to [risk]."
+   ]
+  },
+  {
+   "id": "pa_sensitivity_analysis_forecast",
+   "kind": "passage",
+   "dim": "attr",
+   "t": "预测假设的敏感性分析",
+   "en": "Management maintains that revenue will grow by 12% in FY26F, banking on sustained post-pandemic recovery. However, our stress test suggests that if consumer sentiment weakens by 5%, the projected EBITDA margin could compress by 180 basis points. While the company attributes this optimism to its recent product pipeline, our independent market analysis indicates a saturation point in core categories. We have reconciled these findings to suggest that the base-case scenario may be overly reliant on aggressive pricing power. Consequently, we advise a more conservative outlook to account for potential downside volatility.",
+   "notes": [
+    {
+     "q": "Management maintains that",
+     "why": "利用report verb明确区分管理层的陈述，保持客观距离。"
+    },
+    {
+     "q": "our stress test suggests that",
+     "why": "通过第一人称限定分析来源，避免将我们的推论与管理层结论混淆。"
+    },
+    {
+     "q": "our independent market analysis indicates",
+     "why": "使用independent强调数据的独立来源，增加审计结论的可信度。"
+    }
+   ],
+   "take": [
+    "Management maintains that […], while our independent analysis suggests […].",
+    "Our stress test indicates that a [X]% shift in [variable] would result in a [Y] bps compression in [metric].",
+    "The base-case scenario appears to be predicated on [assumption], which may be overly optimistic given [data/fact]."
+   ]
+  },
+  {
+   "id": "pa_inventory_turnover_slowdown_262",
+   "kind": "passage",
+   "dim": "attr",
+   "t": "存货周转效率下滑分析",
+   "en": "The target company reported a slowdown in inventory turnover from 4.2x in FY24 to 3.5x in 9M26. Management claims this is a strategic buildup to mitigate supply chain disruptions anticipated in early FY27. Conversely, our physical inspection of the warehouse reveals a high concentration of aging SKUs that lack clear liquidation channels. We have corroborated these observations with internal sales velocity reports, which show a 15% decline in sell-through rates for these specific items. It appears that the inventory accumulation is more likely a result of stagnant demand rather than a proactive procurement strategy.",
+   "notes": [
+    {
+     "q": "Management claims this is",
+     "why": "用claim一词隐含对管理层解释的某种程度的保留或怀疑。"
+    },
+    {
+     "q": "our physical inspection of the warehouse reveals",
+     "why": "明确归因于实地审计手段，将我们观察到的事实与管理层观点对立。"
+    },
+    {
+     "q": "We have corroborated these observations with",
+     "why": "展示审计证据的交叉验证过程，增强推论的严谨性。"
+    }
+   ],
+   "take": [
+    "Management claims that [action] is intended to [purpose], whereas our analysis reveals [finding].",
+    "We have corroborated the [report/claim] with internal data, which indicates a [percentage]% decline in [metric].",
+    "The current [metric] trend appears to be driven by [cause] rather than [management's stated reason]."
+   ]
+  },
+  {
+   "id": "pa_cogs_margin_analysis",
+   "kind": "passage",
+   "dim": "attr",
+   "t": "供应链成本与毛利分析",
+   "en": "Management attributes the 180-basis-point margin compression in 9M26 primarily to elevated logistics and raw material costs. While the company maintains that these inflationary pressures are transitory, our analysis of procurement contracts suggests a more structural shift in pricing. We identified a 12% year-over-year increase in freight rates that has yet to be fully passed on to end customers. Furthermore, internal cost-reconciliation logs indicate that manufacturing overheads have remained stubbornly high despite recent efficiency initiatives. Consequently, we believe the current gross margin recovery timeline may be overly optimistic.",
+   "notes": [
+    {
+     "q": "Management attributes",
+     "why": "作为归因的起点，区分了管理层的公开表态与事实陈述。"
+    },
+    {
+     "q": "our analysis of procurement contracts suggests",
+     "why": "通过将结论锚定在具体证据（合同）上，从而表达与管理层不同的专业观点。"
+    },
+    {
+     "q": "may be overly optimistic",
+     "why": "通过情态动词的使用，在挑战结论时保持客观与审慎的专业语气。"
+    }
+   ],
+   "take": [
+    "Management attributes the [percentage] margin compression to [factor].",
+    "Our analysis of [document/data source] suggests a more [adjective] shift in [metric].",
+    "Consequently, we believe the [forecast/timeline] may be overly optimistic."
+   ]
+  },
+  {
+   "id": "pa_inventory_turnover_analysis",
+   "kind": "passage",
+   "dim": "attr",
+   "t": "存货周转率下降原因",
+   "en": "The firm reported a notable slowdown in inventory turnover during FY25, citing deliberate strategic stockpiling ahead of anticipated supply chain disruptions. However, our verification of warehouse audit trails reveals that a significant portion of this accumulation consists of slow-moving finished goods. It appears that inventory levels have decoupled from historical sales velocity, indicating potential obsolescence risks. We have observed that similar industry peers are liquidating excess stock, a practice not currently reflected in the target’s balance sheet. Therefore, we suspect that the reported turnover ratio may mask underlying challenges in sales execution.",
+   "notes": [
+    {
+     "q": "citing deliberate strategic stockpiling",
+     "why": "引用管理层解释时使用中性动词，避免直接背书其合理性。"
+    },
+    {
+     "q": "our verification of warehouse audit trails reveals",
+     "why": "强调证据来源的实证性，与管理层的口径形成对比。"
+    },
+    {
+     "q": "we suspect that",
+     "why": "在提出负面推论时，使用软化表达以符合尽调报告谨慎的文体要求。"
+    }
+   ],
+   "take": [
+    "The firm reported [metric] slowdown, citing [reason].",
+    "Our verification of [source] reveals that [fact].",
+    "Therefore, we suspect that [reported data] may mask [underlying issue]."
+   ]
+  },
+  {
+   "id": "pa_valuation_gap_analysis",
+   "kind": "passage",
+   "dim": "scope",
+   "t": "并购估值分歧的局限性说明",
+   "en": "The valuation discrepancy of $45 million between the target’s expectations and our FY26F projections primarily stems from divergent assumptions regarding terminal growth rates. While we have performed a comprehensive review of the historical earnings, our analysis is constrained by the limited access to the target's internal long-term strategic planning documents. Consequently, we cannot provide an exhaustive validation of the management’s projected 15% CAGR beyond the current fiscal year. This limitation should not be interpreted as a lack of thoroughness in our audit process, but rather a reflection of the scope boundaries inherent in this pre-acquisition phase. We remain focused on the verifiable data points to ensure a prudent assessment of the enterprise value.",
+   "notes": [
+    {
+     "q": "our analysis is constrained by the limited access to",
+     "why": "通过明确指出客观获取信息的限制，将无法深入挖掘的原因归结于外部条件，而非自身工作不力。"
+    },
+    {
+     "q": "we cannot provide an exhaustive validation of",
+     "why": "明确界定工作职责边界，使用“cannot provide”这种客观表达，告知对方当前阶段的能力极限。"
+    },
+    {
+     "q": "This limitation should not be interpreted as a lack of thoroughness",
+     "why": "主动防守，通过否定式表达（不应被理解为……），预先化解客户对尽调深度可能产生的负面评价。"
+    }
+   ],
+   "take": [
+    "Our assessment is necessarily limited by the absence of [specific data/documents].",
+    "We are unable to verify [metric/projection] due to the inherent constraints of [current stage/access].",
+    "This approach focuses on [Scope A] while acknowledging that [Scope B] remains outside the current engagement parameters."
+   ]
+  },
+  {
+   "id": "pa_channel_stuffing_review",
+   "kind": "passage",
+   "dim": "scope",
+   "t": "经销商压货退货的范围说明",
+   "en": "Our 9M26 audit identified a 22% surge in year-end shipments to distributors, which coincides with an unusual uptick in subsequent returns recorded in Q1 FY26. While these patterns suggest potential channel stuffing, our review scope is restricted to financial records provided by the accounting department. We have not conducted field interviews with the third-party distributors to verify underlying sales intent. As such, we cannot confirm whether these returns represent genuine commercial disputes or artificial inventory management practices. This analytical boundary ensures that our findings remain grounded in documented financial evidence rather than speculative qualitative assessments.",
+   "notes": [
+    {
+     "q": "our review scope is restricted to",
+     "why": "使用“restricted to”明确界定审计范围的物理边界，将调查局限于财务底稿，暗示非财务环节不在责任范围。"
+    },
+    {
+     "q": "As such, we cannot confirm whether",
+     "why": "用连词As such引出结论，指出能力范围之外的结论无法定性，既展现了严谨性，也规避了法律责任。"
+    },
+    {
+     "q": "This analytical boundary ensures that",
+     "why": "将“局限性”转化为一种“专业严谨性”，强调所有结论都基于证据而非猜测，将受限转化为优势。"
+    }
+   ],
+   "take": [
+    "Our review is confined to [source documents], which precludes a comprehensive investigation into [process/external activity].",
+    "The current scope does not extend to [specific verification procedure], and thus we cannot draw definitive conclusions on [subject].",
+    "Findings are limited to [Scope A], and we do not provide assurance regarding [Scope B]."
+   ]
+  },
+  {
+   "id": "pa_fx_volatility_impact",
+   "kind": "passage",
+   "dim": "hedge",
+   "t": "汇率波动对跨境结算的影响",
+   "en": "The depreciation of the local currency by 8% during 9M26 appears to have compressed the target's gross margins on imported raw materials. While this trend correlates with the observed downturn, it is difficult to isolate the exchange rate effect from broader supply chain cost inflation. Management's current hedging strategy seems insufficient to fully offset the volatility experienced in FY25. Consequently, the company may remain exposed to further currency headwinds should the current macroeconomic environment persist. We have factored a moderate margin buffer into our projections to account for this potential ongoing friction.",
+   "notes": [
+    {
+     "q": "appears to have compressed",
+     "why": "使用 appears to 软化结论，避免直接断言因果关系，体现客观审计态度。"
+    },
+    {
+     "q": "it is difficult to isolate",
+     "why": "通过指出归因难度来限制结论的确定性，展示尽调过程中的谨慎性。"
+    },
+    {
+     "q": "seems insufficient",
+     "why": "用 seems 代替 is，在表达评估意见时留有余地，避免对管理层策略做出绝对否定。"
+    }
+   ],
+   "take": [
+    "The [metric] appears to have [effect] due to [cause].",
+    "It is difficult to isolate the impact of [factor] from [broader context].",
+    "The company may remain exposed to [risk] should the [condition] persist."
+   ]
+  },
+  {
+   "id": "pa_sensitivity_analysis_assumptions",
+   "kind": "passage",
+   "dim": "hedge",
+   "t": "财务预测假设的敏感性",
+   "en": "Our sensitivity analysis suggests that the valuation model is highly contingent upon the revenue growth assumptions for FY26F. A 200 basis point deviation in projected sales could potentially alter the enterprise value by approximately 5% to 7%. Such a variance indicates that our baseline forecast might be overly sensitive to minor shifts in market penetration rates. We would caution that these projections are subject to inherent estimation uncertainties. Therefore, the actual financial outcome could deviate from the model depending on future competitive dynamics.",
+   "notes": [
+    {
+     "q": "suggests that the valuation model is highly contingent upon",
+     "why": "使用 suggests 和 contingent upon 软化对模型的评判，指出结果依赖于特定假设。"
+    },
+    {
+     "q": "could potentially alter",
+     "why": "双重模态词 could 和 potentially 叠加，最大程度软化对财务波动的影响预测。"
+    },
+    {
+     "q": "might be overly sensitive",
+     "why": "使用 might 软化对模型缺陷的指正，使评价听起来更像是一种基于数据的推测。"
+    }
+   ],
+   "take": [
+    "The valuation model is highly contingent upon [assumption].",
+    "A [number] deviation in [variable] could potentially alter [metric] by [range].",
+    "These projections are subject to inherent estimation uncertainties regarding [factor]."
+   ]
+  },
+  {
+   "id": "pa_fx_volatility_impact_812",
+   "kind": "passage",
+   "dim": "modal",
+   "t": "汇率波动与跨境结算影响",
+   "en": "Net exchange losses surged to $4.2 million in 9M26, reflecting the increased exposure to volatile emerging market currencies. Our analysis indicates that the current unhedged settlement structure significantly amplifies the margin sensitivity to currency fluctuations. We contend that the current treasury policy is insufficient to mitigate these systemic risks effectively. However, we are unable to assess the potential for recovery in FY26F pending the finalization of the revised hedging strategy. The final impact on the valuation model remains subject to the sensitivity analysis of the updated FX hedging policy.",
+   "notes": [
+    {
+     "q": "Our analysis indicates that",
+     "why": "使用中性证据引导词，建立专业客观的论述逻辑。"
+    },
+    {
+     "q": "We contend that",
+     "why": "使用断言谓词（contend），在有数据支撑的情况下，坚定地表达专业立场。"
+    },
+    {
+     "q": "remains subject to",
+     "why": "通过限定词（subject to），将结论的生效前提显性化，保护报告的严谨性。"
+    }
+   ],
+   "take": [
+    "Our analysis indicates that the current [policy/structure] amplifies the sensitivity to […].",
+    "We contend that the existing measures are insufficient to mitigate [risk type] effectively.",
+    "The impact on […] remains subject to the sensitivity analysis of […] ."
+   ]
+  },
+  {
+   "id": "pa_sensitivity_margin_analysis",
+   "kind": "passage",
+   "dim": "quant",
+   "t": "预测假设的敏感性分析",
+   "en": "Our base-case projection assumes a 15% revenue growth in FY26F, yet the bottom line remains highly sensitive to potential fluctuations in customer acquisition costs. A 50-basis-point increase in variable marketing spend would compress the EBITDA margin by approximately 40 basis points, assuming no corresponding pricing adjustments. To normalize for this risk, we modeled a stress-test scenario where customer retention rates decline by 2%. Under this conservative assumption, the forecasted net income would contract by $2.4 million compared to our primary outlook. This sensitivity illustrates the necessity of monitoring unit economics closely to protect long-term profitability.",
+   "notes": [
+    {
+     "q": "remains highly sensitive to",
+     "why": "这是表达财务指标对外部变量依赖性的标准学术化句式。"
+    },
+    {
+     "q": "compress the EBITDA margin by approximately",
+     "why": "compress 用来形容利润率受压挤，比 decrease 更具专业感。"
+    },
+    {
+     "q": "To normalize for this risk",
+     "why": "normalize for 是财务写作中剔除异常波动、对冲风险的固定表达。"
+    }
+   ],
+   "take": [
+    "The bottom line remains highly sensitive to [variable].",
+    "A [number]-basis-point increase in [cost] would compress the [margin] by [number] basis points.",
+    "To normalize for [risk], we modeled a stress-test scenario where [parameter] changes by [percentage]."
+   ]
+  },
+  {
+   "id": "pa_supply_chain_cost_impact",
+   "kind": "passage",
+   "dim": "quant",
+   "t": "供应链成本对毛利的影响",
+   "en": "Supply chain volatility throughout 9M26 has necessitated a comprehensive reassessment of the company’s direct material costs. Elevated logistics surcharges and raw material price spikes eroded gross margins by 120 basis points compared to FY24 levels. We have adjusted our FY26F forecasts to incorporate a 3% permanent hike in procurement expenses, reflecting a shift toward more resilient, albeit costlier, domestic suppliers. When normalized for these one-off freight disruptions, the core gross margin shows a moderate expansion of 50 basis points. This suggests that underlying operational efficiencies are partially offsetting the broader inflationary headwinds.",
+   "notes": [
+    {
+     "q": "necessitated a comprehensive reassessment of",
+     "why": "用名词化短语表达客观情况对公司决策的驱动，避免使用过于简单的动词。"
+    },
+    {
+     "q": "eroded gross margins by",
+     "why": "erode 形象地描述了成本上升如何持续消耗利润空间。"
+    },
+    {
+     "q": "When normalized for these one-off freight disruptions",
+     "why": "通过引入 one-off 来界定非经常性损益，使利润分析更具逻辑性。"
+    }
+   ],
+   "take": [
+    "[Factor] has necessitated a comprehensive reassessment of [subject].",
+    "[Factor] eroded [margin] by [number] basis points compared to [period].",
+    "When normalized for [one-off item], the [metric] shows a [trend] of [number] basis points."
+   ]
+  },
+  {
+   "id": "pa_goodwill_impairment_analysis",
+   "kind": "passage",
+   "dim": "nom",
+   "t": "商誉减值迹象分析",
+   "en": "The material deterioration in the target’s FY25 operating performance necessitates an assessment of potential goodwill impairment. A significant deviation from the FY24 revenue projections, coupled with rising customer attrition, signals a possible erosion of the initial investment thesis. The stagnation of market penetration in core segments during 9M26 further exacerbates the risk of a downward adjustment to the carrying value. Consequently, a formal impairment test is required to ensure alignment with current valuation standards. This proactive review reflects the management’s commitment to maintaining fiscal transparency regarding intangible asset valuations.",
+   "notes": [
+    {
+     "q": "The material deterioration in the target’s FY25 operating performance",
+     "why": "使用 deterioration 这个名词短语代替动词短语，将复杂的情况浓缩为单一主语，增加报告的客观性。"
+    },
+    {
+     "q": "A significant deviation from the FY24 revenue projections",
+     "why": "将财务差异转化为名词短语，便于后续进行因果归因，使句子结构更稳重。"
+    },
+    {
+     "q": "stagnation of market penetration",
+     "why": "用名词 stagnation 描述经营状态，避免了冗长的描述性句子，提升了专业感。"
+    }
+   ],
+   "take": [
+    "The [noun: e.g., persistent decline] in [target] performance necessitates an assessment of [issue].",
+    "A significant deviation from [period] projections, coupled with [factor], signals [consequence].",
+    "The [noun: e.g., erosion] of [subject] further exacerbates the risk of [action]."
+   ]
+  },
+  {
+   "id": "pa_fx_volatility_impact_832",
+   "kind": "passage",
+   "dim": "link",
+   "t": "汇率波动对跨境结算的影响",
+   "en": "The group’s net profit margin in 9M26 contracted by 120 bps, primarily due to intensifying volatility in the USD/CNY exchange rate. Hedging instruments mitigated some exposure; however, the persistent depreciation of the local currency significantly inflated the cost of imported raw materials. Cross-border settlement cycles were subsequently extended by an average of 15 days to manage liquidity. Accordingly, management has recalibrated the working capital forecast for FY26F to account for these ongoing macroeconomic headwinds.",
+   "notes": [
+    {
+     "q": "Hedging instruments mitigated some exposure; however, the persistent depreciation",
+     "why": "利用分号衔接两个独立分句，'however' 放在分号后强调转折，展示了如何平衡积极对冲与消极市场影响。"
+    },
+    {
+     "q": "Cross-border settlement cycles were subsequently extended",
+     "why": "使用 'subsequently' 替代简单的 'then'，增强了逻辑的先后递进感，使因果链条更具书面严谨性。"
+    },
+    {
+     "q": "Accordingly, management has recalibrated",
+     "why": "在分析完市场压力后，用 'Accordingly' 引出应对措施，体现了商务写作中“陈述事实-逻辑推导-得出结论”的经典结构。"
+    }
+   ],
+   "take": [
+    "Hedging instruments mitigated some exposure; however, the persistent […] negatively impacted margins.",
+    "Cross-border settlement cycles were subsequently extended by […] days to maintain liquidity.",
+    "Accordingly, management has recalibrated the […] forecast for FY26F."
+   ]
+  },
+  {
+   "id": "pa_rd_capitalization_analysis",
+   "kind": "passage",
+   "dim": "link",
+   "t": "研发支出资本化的合规判断",
+   "en": "The company capitalized 45% of its R&D expenditure in FY25, a notable increase compared to the 32% recorded in FY24. Such a shift reflects the progression of the 'Project Alpha' into the commercial feasibility stage; whereas, legacy projects continue to be expensed immediately to maintain conservative accounting practices. This dual approach ensures compliance with internal capitalization thresholds. We have scrutinized the underlying project documentation to verify that capitalized costs are strictly attributable to future economic benefits. Accordingly, we suggest further review of the amortization schedule to align with current market lifecycles.",
+   "notes": [
+    {
+     "q": "a notable increase compared to",
+     "why": "用 'notable' 软化了对数据大幅波动的判断，既指出事实，又保持了审计人员的客观中立立场。"
+    },
+    {
+     "q": "stage; whereas, legacy projects continue",
+     "why": "使用 'whereas' 对比两类项目的不同会计处理方式，清晰地展示了公司策略的细分，体现了分析的深度。"
+    },
+    {
+     "q": "We have scrutinized the underlying project documentation",
+     "why": "用 'scrutinized' 这样具备专业力度的词汇，替代了简单的 'checked'，直接体现尽职调查工作的严谨程度。"
+    }
+   ],
+   "take": [
+    "The company capitalized […]% of its R&D expenditure, a notable increase compared to […]%.",
+    "[...] whereas, legacy projects continue to be expensed immediately to maintain conservative practices.",
+    "Accordingly, we suggest a review of […] to align with market expectations."
+   ]
+  },
+  {
+   "id": "pa_customer_concentration_analysis",
+   "kind": "passage",
+   "dim": "reg",
+   "t": "客户集中度风险分析",
+   "en": "The Group’s revenue architecture exhibits a pronounced reliance on its top three distributors, which collectively accounted for 68% of total turnover in FY25. This high level of concentration exposes the entity to significant counterparty risk, as the loss of any single major account could precipitate a material decline in top-line performance. While management has initiated a geographical diversification strategy in 9M26, the current penetration rates in emerging markets remain insufficient to offset potential volatility. We advise stakeholders to monitor the renewal status of these primary master-purchase agreements closely. Ultimately, the sustainability of current growth trajectories is contingent upon the Group’s ability to broaden its customer base over the coming fiscal years.",
+   "notes": [
+    {
+     "q": "exhibits a pronounced reliance on",
+     "why": "书面用语，比 'relies heavily on' 更正式、客观，避免了口语化的感性表达。"
+    },
+    {
+     "q": "precipitate a material decline",
+     "why": "使用 'precipitate' 表示诱发，'material' 在审计中特指重大影响，体现了专业语境。"
+    },
+    {
+     "q": "remain insufficient to offset",
+     "why": "通过委婉的否定句式来指出业务短板，比直接说 'failed to' 显得更加职业和客观。"
+    }
+   ],
+   "take": [
+    "The entity’s revenue structure exhibits a pronounced reliance on [Customer Name/Segment].",
+    "This concentration exposes the Group to [specific risk], which could precipitate a material impact on [financial metric].",
+    "The current [strategy/metric] remains insufficient to mitigate the risks associated with [specific issue]."
+   ]
+  },
+  {
+   "id": "pa_channel_stuffing_evaluation",
+   "kind": "passage",
+   "dim": "reg",
+   "t": "压货与渠道退货评估",
+   "en": "Evidence of aggressive channel-stuffing practices surfaced during 9M26, characterized by a notable surge in Q4 FY25 shipments that did not align with downstream sell-through data. Concurrently, the return-to-revenue ratio climbed from 3.2% in FY24 to 7.8% in FY25, suggesting that inventory was pushed prematurely into the distribution channel. Such anomalies indicate a potential disconnect between recognized sales and actual market demand. Unless these channel incentives are restructured, the entity may face substantial liquidity pressure from projected product returns. Investors should exercise caution regarding the quality of earnings reported during periods of abnormal shipment volatility.",
+   "notes": [
+    {
+     "q": "characterized by a notable surge",
+     "why": "在描述财务异常时，用 'characterized by' 引导客观特征，避免使用带有指责意味的口语词汇。"
+    },
+    {
+     "q": "did not align with",
+     "why": "委婉表达销售数据造假或虚报的嫌疑，比 'did not match' 或 'was fake' 更严谨。"
+    },
+    {
+     "q": "suggesting that",
+     "why": "在尽调中，对于尚未实锤的风险使用 'suggesting that' 进行推论，是保护审计人员的专业写法。"
+    }
+   ],
+   "take": [
+    "The discrepancy between [shipment data] and [sell-through data] suggests potential channel stuffing.",
+    "The return-to-revenue ratio increased from [X]% to [Y]%, which warrants further investigation into [specific revenue stream].",
+    "These anomalies indicate a possible misalignment between [recognized revenue] and [actual market demand]."
+   ]
+  },
+  {
+   "id": "pa_supply_chain_margin",
+   "kind": "passage",
+   "dim": "nom",
+   "t": "供应链成本上升对毛利的影响",
+   "en": "Persistent supply chain disruptions throughout FY25 resulted in a 150-basis-point contraction in gross margins. This deterioration was primarily driven by the escalation of logistics expenses and the procurement of high-cost raw materials. The inability to execute a full pass-through of these costs to end customers further exacerbated the margin compression. Consequently, the company recorded a 4% year-on-year decline in operating profitability as of 9M26. Management’s ongoing efforts to stabilize the cost structure remain critical to a potential recovery in FY26F.",
+   "notes": [
+    {
+     "q": "escalation of logistics expenses",
+     "why": "将动词 escalate 转化为名词 escalation，将具体的动作转化为静态的成本归因，提升报告的正式感。"
+    },
+    {
+     "q": "full pass-through of these costs",
+     "why": "利用名词短语 pass-through 描述定价策略，避免了使用长句解释定价机制，使因果逻辑更紧凑。"
+    },
+    {
+     "q": "margin compression",
+     "why": "用名词短语替代动词短语（margins were compressed），让讨论对象直接成为句子焦点，符合审计文风。"
+    }
+   ],
+   "take": [
+    "The escalation of […] resulted in a […] contraction in margins.",
+    "The inability to execute a full pass-through of […] further exacerbated the […].",
+    "Management’s ongoing efforts to stabilize […] remain critical to […]."
+   ]
+  },
+  {
+   "id": "pa_interest_rate_financing",
+   "kind": "passage",
+   "dim": "nom",
+   "t": "利率环境对融资成本的影响",
+   "en": "The prevailing high-interest-rate environment throughout FY25 has led to a significant increase in the company’s debt servicing obligations. Elevated financing costs exerted downward pressure on net income, offsetting the gains from operational efficiency. A strategic transition toward fixed-rate debt instruments in 9M26 mitigated exposure to further volatility in market rates. However, the refinancing of maturing credit facilities remains a primary concern for the company's liquidity profile in FY26F. Careful monitoring of interest coverage ratios is essential to maintaining financial stability.",
+   "notes": [
+    {
+     "q": "debt servicing obligations",
+     "why": "将‘偿还债务’的动作归纳为名词短语，作为衡量财务负担的核心指标，增强了信息的专业密度。"
+    },
+    {
+     "q": "downward pressure on net income",
+     "why": "将‘利润下降’这一抽象结果名词化，使因果关系呈现为一种力的平衡，常用于财经评论。"
+    },
+    {
+     "q": "refinancing of maturing credit facilities",
+     "why": "将动作‘再融资’与对象‘到期信贷额度’合并，在单句中同时交代了动作的实质和背景。"
+    }
+   ],
+   "take": [
+    "The prevailing […] environment has led to a significant increase in […].",
+    "Elevated […] exerted downward pressure on […].",
+    "The refinancing of […] remains a primary concern for the […]."
+   ]
+  },
+  {
+   "id": "pa_shared_cost_allocation",
+   "kind": "passage",
+   "dim": "reg",
+   "t": "分拆业务的成本分摊分析",
+   "en": "The historical allocation of shared corporate costs to the target division appears aggressive, potentially overstating standalone profitability for FY24 and FY25. Management currently applies a fixed overhead markup of 12% based on headcount, which deviates from the actual resource consumption observed during our 9M26 site visits. We have adjusted the pro-forma EBITDA downward by $4.2 million to reflect a more accurate activity-based costing methodology. This correction aligns the target's operating margins with industry benchmarks, narrowing the variance from 15% to approximately 8%. We recommend that the transaction agreement include a transitional service mechanism to stabilize these cost structures post-closing.",
+   "notes": [
+    {
+     "q": "appears aggressive",
+     "why": "在尽调中软化措辞，用 appears 而非直接指责对方作假，符合客观中立的职业语域。"
+    },
+    {
+     "q": "deviates from",
+     "why": "相比口语中的 doesn't match，deviates from 更加正式，常用于描述实操与逻辑的不符。"
+    },
+    {
+     "q": "pro-forma EBITDA",
+     "why": "专业术语，必须使用财务口径而非简单的 earnings，确保写作的专业精度。"
+    }
+   ],
+   "take": [
+    "The historical allocation of […] appears aggressive, potentially overstating […]",
+    "We have adjusted the pro-forma […] downward by […] to reflect a more accurate methodology.",
+    "This correction aligns the […] with industry benchmarks, narrowing the variance from […] to […]"
+   ]
+  },
+  {
+   "id": "pa_ar_collection_slowdown",
+   "kind": "passage",
+   "dim": "reg",
+   "t": "应收账款回款放缓分析",
+   "en": "Accounts receivable turnover has decelerated significantly throughout 9M26, with the average collection period extending from 65 days in FY25 to 88 days currently. This deterioration is primarily attributed to a shift in client mix toward lower-credit-quality accounts rather than structural liquidity constraints. While the company maintains that these delays are transient, our aging analysis reveals a rising concentration of overdue balances exceeding 180 days. Consequently, we have applied a $2.1 million incremental provision for doubtful accounts to account for potential collection risks. A closer examination of the upcoming FY27 contract renewals will be necessary to determine if this trend represents a systemic credit risk.",
+   "notes": [
+    {
+     "q": "has decelerated significantly",
+     "why": "用 decelerated 代替 slowed down，体现书面语中的精确性与正式感。"
+    },
+    {
+     "q": "is primarily attributed to",
+     "why": "因果关系的专业表达，比 because of 更有说服力，适合报告的归因分析。"
+    },
+    {
+     "q": "incremental provision for doubtful accounts",
+     "why": "会计准则术语，避免使用口语化的 'write-off' 猜测，体现审计工作的严谨性。"
+    }
+   ],
+   "take": [
+    "[…] has decelerated significantly throughout […], with the average period extending from […] to […].",
+    "This deterioration is primarily attributed to a shift in […] rather than […].",
+    "We have applied an incremental provision of […] to account for potential collection risks."
+   ]
+  },
+  {
+   "id": "pa_hr_cost_compliance",
+   "kind": "passage",
+   "dim": "quant",
+   "t": "人力成本合规性与社保基数",
+   "en": "The target’s historical payroll data reveals a systematic under-contribution to social insurance funds throughout FY24 and FY25. We estimate a potential compliance exposure of RMB 4.2 million, assuming a full-basis remediation for all eligible employees. Management acknowledges this shortfall, attributing it to a legacy practice of calculating contributions based on minimum local thresholds rather than actual gross earnings. To normalize future earnings, we have adjusted the 9M26 EBITDA downwards by RMB 1.8 million to reflect the impact of standardized contribution levels. This pro-forma adjustment provides a more accurate baseline for assessing the company’s recurring labor expenditure.",
+   "notes": [
+    {
+     "q": "systematic under-contribution",
+     "why": "用 systematic 指代非偶然的、系统性的问题，避免直接用 illegal 等过于情绪化的词汇。"
+    },
+    {
+     "q": "assuming a full-basis remediation",
+     "why": "用 remediation 指代补缴或修复，符合尽调中处理历史遗留问题的语境。"
+    },
+    {
+     "q": "To normalize future earnings",
+     "why": "用 normalize 明确告知读者这一步是为了将非经常性因素剔除，回归常态化财务表现。"
+    }
+   ],
+   "take": [
+    "We estimate a potential compliance exposure of […] assuming a full-basis remediation.",
+    "Management attributes this shortfall to a legacy practice of […].",
+    "We have adjusted the […] EBITDA downwards by […] to reflect the impact of […]."
+   ]
+  },
+  {
+   "id": "pa_channel_stuffing_limits",
+   "kind": "passage",
+   "dim": "scope",
+   "t": "经销商压货与渠道库存限制",
+   "en": "Our preliminary review of FY25 distributor sell-in data indicates a 14% year-over-year increase in primary shipments, yet end-market sell-out trackers imply constrained downstream absorption. While comprehensive multi-tier inventory audits fall outside the scope of this targeted financial review, available warehouse sampling suggests elevated return risks in specific regional nodes. Within the constraints of current data availability, we cannot definitively quantify the aggregate non-standard credit extended to these tier-1 accounts. Consequently, management should address these visibility gaps through targeted confirmation procedures ahead of the upcoming FY26F closing.",
+   "notes": [
+    {
+     "q": "While comprehensive multi-tier inventory audits fall outside the scope of this targeted financial review",
+     "why": "用明确的边界划分（outside the scope）说明没查全的原因不是偷懒，而是项目授权限制，保护专业信誉。"
+    },
+    {
+     "q": "Within the constraints of current data availability",
+     "why": "把做不到归结于客观数据条件受限（constraints of current data availability），而非主观能力不足。"
+    },
+    {
+     "q": "we cannot definitively quantify the aggregate non-standard credit",
+     "why": "用 definitively 和 aggregate 软化语气，准确界定无法给出的具体数字，避免绝对化表述。"
+    }
+   ],
+   "take": [
+    "While [...] falls outside the scope of this targeted review, available [...] suggests [...]",
+    "Within the constraints of current data availability, we cannot definitively quantify [...]",
+    "Management should address these visibility gaps through [...] ahead of [...]"
+   ]
+  },
+  {
+   "id": "pa_fx_exposure_limits",
+   "kind": "passage",
+   "dim": "scope",
+   "t": "汇率波动与跨境结算敞口",
+   "en": "During the 9M26 reporting period, cross-border settlements across three key emerging market jurisdictions experienced heightened volatility due to localized currency depreciation. Due to the decentralized nature of the target's regional treasury operations, real-time transaction-level FX matching logs were not accessible for our review team. Although we are unable to independently verify the exact hedging efficacy of historical forward contracts executed in FY24, macro-level cash reconciliation points to potential unhedged translation losses. To the extent permitted by local confidentiality covenants, further granular analysis of bank statements is recommended to isolate structural exposure.",
+   "notes": [
+    {
+     "q": "Due to the decentralized nature of the target's regional treasury operations",
+     "why": "归因于对方运营结构的分散性（decentralized nature），把拿不到日志的原因客观化。"
+    },
+    {
+     "q": "Although we are unable to independently verify the exact hedging efficacy",
+     "why": "坦诚无法独立核实（unable to independently verify），但用 exact 锁定局部边界，显得严谨而非无能。"
+    },
+    {
+     "q": "To the extent permitted by local confidentiality covenants",
+     "why": "用法律和合规限制（confidentiality covenants）作为做不到某事的挡箭牌，礼貌且专业。"
+    }
+   ],
+   "take": [
+    "Due to the decentralized nature of [...], [...] were not accessible for our review team",
+    "Although we are unable to independently verify [...], macro-level [...] points to [...]",
+    "To the extent permitted by local confidentiality covenants, further [...] is recommended"
+   ]
+  },
+  {
+   "id": "pa_interest_rate_impact_601",
+   "kind": "passage",
+   "dim": "nom",
+   "t": "利率环境与融资成本",
+   "en": "The macroeconomic landscape of FY25 witnessed a sharp acceleration in central bank tightening, resulting in severe compression of corporate liquidity margins. This persistent monetary tightening directly induced a 140-basis-point escalation in the average cost of debt across the portfolio. Furthermore, the systematic expiration of legacy fixed-rate tranches accelerated the transition to unhedged floating liabilities. Consequently, the resulting surge in quarterly interest outlays exerted substantial downward pressure on aggregate free cash flow generation. Management's subsequent implementation of proactive debt restructuring successfully mitigated broader margin erosion in 9M26.",
+   "notes": [
+    {
+     "q": "a sharp acceleration in central bank tightening",
+     "why": "用名词短语 acceleration 和 tightening 代替描述央行收紧动作的动词，将事件静态化、报告化，提升了信息密度。"
+    },
+    {
+     "q": "a 140-basis-point escalation in the average cost of debt",
+     "why": "将债务成本上升这一个动作转化为名词 escalation 并带有具体量化数据，符合财务报告直接、客观的文风。"
+    },
+    {
+     "q": "the systematic expiration of legacy fixed-rate tranches",
+     "why": "通过 expiration、tranches 等专业名词串联复杂背景，避免了长句嵌套，使因果关系更加清晰紧凑。"
+    }
+   ],
+   "take": [
+    "The […] of […] resulted in severe compression of […]",
+    "This persistent […] directly induced a […] escalation in the average cost of [...]",
+    "Management's subsequent implementation of proactive […] successfully mitigated broader [...]"
+   ]
+  },
+  {
+   "id": "pa_rd_capitalization",
+   "kind": "passage",
+   "dim": "nom",
+   "t": "研发资本化的判断",
+   "en": "The rigorous evaluation of FY24 technical feasibility milestones governed the unprecedented surge in software development capitalization. This aggressive accounting treatment facilitated the deferral of significant engineering overheads into multi-year intangible assets. However, the subsequent deceleration of commercialization velocity in core product lines triggered immediate impairment testing requirements. Such unfavorable divergence between capitalized expenditure and realized revenue streams necessitated a conservative revision of future asset recovery schedules. Ultimately, auditor scrutiny regarding technological uncertainty led to a substantial retrospective write-down of deferred balances in FY25.",
+   "notes": [
+    {
+     "q": "The rigorous evaluation of FY24 technical feasibility milestones",
+     "why": "用 evaluation 和 milestones 等抽象名词组合替代对技术评估过程的动词化叙述，增强了审计报告的专业感。"
+    },
+    {
+     "q": "the deferral of significant engineering overheads into multi-year intangible assets",
+     "why": "将费用递延这一会计处理过程压缩为名词短语 deferral，使复杂的财务操作变得高度概括。"
+    },
+    {
+     "q": "auditor scrutiny regarding technological uncertainty",
+     "why": "将审计师的质疑转化为 scrutiny 这个高信息密度的名词，体现了尽调报告中客观且带有警示意味的语气。"
+    }
+   ],
+   "take": [
+    "The rigorous evaluation of […] governed the unprecedented surge in [...]",
+    "Such unfavorable divergence between […] and […] necessitated a conservative revision of [...]",
+    "Auditor scrutiny regarding […] led to a substantial retrospective write-down of [...]"
+   ]
+  },
+  {
+   "id": "pa_channel_stuffing_attr",
+   "kind": "passage",
+   "dim": "attr",
+   "t": "经销商压货归因分析",
+   "en": "Management attributed the 18% surge in FY25 revenue primarily to robust terminal demand across tier-two cities. However, our preliminary channel checks suggest that this top-line expansion was largely driven by aggressive distributor loading ahead of the price hike. Furthermore, inventory reconciliations between distributor ERP logs and company dispatch records reveal an average 35-day discrepancy in stock-in transit. These quantitative anomalies imply that reported sell-in figures may significantly overstate actual sell-out velocity.",
+   "notes": [
+    {
+     "q": "Management attributed the 18% surge in FY25 revenue primarily to",
+     "why": "用 attribute to 明确指出这是管理层的口径，主动将信源归责于对方，为后续转折做铺垫。"
+    },
+    {
+     "q": "our preliminary channel checks suggest that",
+     "why": "用 suggest 替代 prove，在买方尽调中保持客观审慎的专业语气，避免过早下定论。"
+    },
+    {
+     "q": "reveal an average 35-day discrepancy",
+     "why": "通过具体数字（35天）和客观动作（reconciliations... reveal），将查到的客观事实与主观说法形成对比。"
+    }
+   ],
+   "take": [
+    "[Party A] attributed [metric] primarily to [stated reason]",
+    "Our preliminary [channel checks / interviews] suggest that [inferred reality]",
+    "Reconciliations between [source A] and [source B] reveal a [number]-day discrepancy in [metric]"
+   ]
+  },
+  {
+   "id": "pa_labor_cost_attr",
+   "kind": "passage",
+   "dim": "attr",
+   "t": "社保基数合规归因",
+   "en": "The target company claimed that its headcount reduction in 9M26 naturally lowered overall social insurance obligations. Conversely, our interviews with departing factory workers indicate that previous underreporting of payroll bases was systemic to bypass regulatory thresholds. Meanwhile, audit sampling of bank statements and local tax filings uncovers an estimated 22% social security contribution shortfall. Consequently, we understand that current labor cost savings stem from non-compliant base adjustments rather than operational efficiency.",
+   "notes": [
+    {
+     "q": "The target company claimed that",
+     "why": "用 claim 带有保留态度地引述被审计方的主张，暗示其真实性需要进一步核实。"
+    },
+    {
+     "q": "our interviews with departing factory workers indicate that",
+     "why": "明确指出我们查到的信息来源（离职员工访谈），增强证据链的透明度。"
+    },
+    {
+     "q": "we understand that current labor cost savings stem from",
+     "why": "用 we understand that 将前述矛盾证据整合为买方最终的专业认知，表述委婉且逻辑严密。"
+    }
+   ],
+   "take": [
+    "The target company claimed that [stated reason]",
+    "Our [interviews / site visits] with [source] indicate that [inferred reality]",
+    "We understand that [target outcome] stems from [root cause] rather than [distractor]"
+   ]
+  },
+  {
+   "id": "pa_depr_policy_change",
+   "kind": "passage",
+   "dim": "quant",
+   "t": "折旧政策变更的影响",
+   "en": "In FY25, the target company prospectively adjusted the estimated useful lives of its core manufacturing machinery from 8 years to 12 years. This accounting estimate revision reduced annual depreciation expense by approximately RMB 14.2 million, which effectively inflated operating profit for the period. To establish a normalized baseline for our valuation, we added back this non-operational variance to historical EBITDA. Furthermore, we adjusted the baseline downward to reflect the ongoing capital expenditure required to maintain these aging assets. Consequently, the normalized EBITDA for FY25 stands at RMB 86.5 million rather than the reported RMB 100.7 million.",
+   "notes": [
+    {
+     "q": "prospectively adjusted the estimated useful lives",
+     "why": "用 prospectively 表明会计估计变更采取未来适用法，不追溯调整前期，属审计报告标准措辞。"
+    },
+    {
+     "q": "effectively inflated operating profit",
+     "why": "用 effectively 软化了语气，既指出利润虚增的事实，又避免了直接使用操纵利润等带有主观指控的词。"
+    },
+    {
+     "q": "To establish a normalized baseline for our valuation",
+     "why": "用 infinitive phrase 作目的状语，清晰向买方交代进行各项数字调整的商业动机和估值逻辑。"
+    }
+   ],
+   "take": [
+    "[verb: adjust / revise] the estimated useful lives of [asset category] from [X] years to [Y] years",
+    "This accounting estimate revision reduced [expense item] by approximately [amount], which effectively inflated [profit metric]",
+    "To establish a normalized baseline for our valuation, we added back this non-operational variance to [financial metric]"
+   ]
+  },
+  {
+   "id": "pa_labor_cost_social_security",
+   "kind": "passage",
+   "dim": "quant",
+   "t": "人力成本与社保基数",
+   "en": "During 9M26, direct labor costs increased by 14.8% year-over-year, driven primarily by a regulatory upward adjustment in the mandatory social security contribution baseline. This statutory adjustment added an estimated RMB 6.3 million in incremental overhead that the company could not fully pass on to end customers. On a normalized run-rate basis, we estimate this regulatory pressure will permanently compress gross margins by roughly 120 basis points. Management has initiated automation projects to mitigate these ongoing personnel headwinds starting in FY27. However, short-term earnings visibility remains constrained by these rigid statutory obligations.",
+   "notes": [
+    {
+     "q": "driven primarily by a regulatory upward adjustment",
+     "why": "用 passive voice 配合 driven by 明确指出成本上升的外部监管原因，归因清晰。"
+    },
+    {
+     "q": "On a normalized run-rate basis",
+     "why": "使用 run-rate 概念把前三季度的数据年化并剔除偶发因素，是财务尽调中预测未来常态的固定说法。"
+    },
+    {
+     "q": "permanently compress gross margins by roughly 120 basis points",
+     "why": "用 bps（基点）精确量化利润率的收窄幅度，体现财务英语对微小变动的专业度。"
+    }
+   ],
+   "take": [
+    "[cost item] increased by [X]% year-over-year, driven primarily by [driver]",
+    "On a normalized run-rate basis, we estimate this [factor] will permanently [compress / expand] [margin metric] by roughly [X] basis points",
+    "Short-term earnings visibility remains constrained by these rigid [statutory / contractual] obligations"
+   ]
+  }
+ ]
+}
