@@ -18277,6 +18277,406 @@
    "src": "美联储讲话",
    "srcen": "Federal Reserve",
    "url": "https://www.federalreserve.gov/newsevents/speech/bowman20260714a.htm"
+  },
+  {
+   "id": "ph_increasing_number_health_insurance",
+   "kind": "phrase",
+   "en": "increasing the number of people who could get health insurance",
+   "why": "用动名词短语作主语搭配定语从句精准限定范围，比中文直译对应的生硬英文更符合正式报告表达习惯，清晰传递覆盖人群数量变化",
+   "when": "正式报告中描述项目覆盖范围、受益人数变化时使用",
+   "slot": "increasing the number of people who could get [X] through […]",
+   "swap": [
+    "growing the number of people who could access health insurance through […]（语气更侧重数量增长趋势）",
+    "expanding the pool of people who could get health insurance through […]（语气更侧重覆盖范围扩大）"
+   ],
+   "dim": "nom",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_formal_it_structure",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "make it difficult to convince national brands to return or invest",
+   "why": "用it作形式宾语，避免真正宾语（不定式）后置导致的头重脚轻，符合英文正式写作的紧凑结构；中文常直接写“convincing national brands is difficult”，头重脚轻不够正式。",
+   "when": "正式报告中表达“说服某群体做某事很困难”的场合。",
+   "slot": "make it difficult to convince […] to […] or […]",
+   "swap": [
+    "make it hard to persuade（hard比difficult更口语，正式报告用difficult更合适）",
+    "pose a challenge to convincing（用名词challenge更正式，适合深度分析）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_spurred_demand_for",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "spurred demand for stronger Medicaid oversight and enforcement",
+   "why": "该短语用“spurred demand for”精准表达“促使产生对…的需求”，比中国人常用的“made people need”更正式且有动作感，符合财经报告的正式语气。",
+   "when": "在撰写政策、监管相关的财经报告时，表达“某事件促使产生对某方面的需求”的场景下使用。",
+   "slot": "[…] spurred demand for […]",
+   "swap": [
+    "gave rise to the need for（语气更中性，侧重客观结果）",
+    "prompted a call for（更侧重呼吁行动，语气更主动）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_established_the_national_program",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "established the national Medicaid Fraud Control Units program",
+   "why": "用“established”表达官方设立项目，比中国人常用的“set up”更正式，契合官方财经/政策报告的措辞规范，避免口语化。",
+   "when": "在撰写官方项目、机构设立的财经或政策报告时使用。",
+   "slot": "established the national […] program",
+   "swap": [
+    "set up the national […] program（更口语化，适合非正式场合）",
+    "created the national […] program（侧重创造新机制，语气稍弱）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_primarily_reliant_on_vendor",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "primarily reliant upon our predominant merchant silicon vendor",
+   "why": "用“primarily”和“predominant”双重限定依赖的程度与主体，避免绝对化表述，符合SEC合规报告的谨慎性要求，中文常直接写“主要依赖某供应商”，英文通过双重限定更精准",
+   "when": "描述对特定核心供应商的依赖关系时套用",
+   "slot": "we are primarily reliant upon our predominant […] vendor",
+   "swap": [
+    "are mainly reliant on our dominant […] vendor（mainly比primarily随意，dominant语气弱于predominant）",
+    "are primarily dependent on our leading […] vendor（dependent不如reliant正式，leading语气弱于predominant）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_scope_of_obligation",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "beyond the amounts established in our submitted purchase orders or forecasts",
+   "why": "用“beyond”明确义务的范围边界，搭配“established”增强正式性，中文常直接写“超出采购订单或预测的数量”，此写法更符合法律合规文档的措辞规范",
+   "when": "描述合同义务或责任的范围边界时套用",
+   "slot": "typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted […] or forecasts",
+   "swap": [
+    "beyond the quantities set in our submitted purchase orders or forecasts（set不如established正式）",
+    "other than the amounts confirmed in our submitted purchase orders or forecasts（other than语气模糊，不如beyond明确边界）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_concerns_about_medicaid_integrity_became",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Concerns about Medicaid’s “integrity ” became highly politicized",
+   "why": "这个写法用“Concerns about [主题] became highly politicized”清晰表达某议题因政治因素被高度化，中国人常直接写“[主题] is very political”，缺乏正式且精准的表述，适合财经报告描述政策争议的语境。",
+   "when": "撰写财经或政策相关报告，描述某议题因政治因素被高度化、引发争议的场合。",
+   "slot": "Concerns about […] became highly politicized",
+   "swap": [
+    "Issues related to Medicaid’s integrity were highly politicized（更正式，适合学术类报告）",
+    "Medicaid integrity concerns became highly politicized（更简洁，适合短篇幅报告）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_maintained_that_anti_fraud_rhetoric_disg",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "maintained that anti-fraud rhetoric often disguised ideological opposition",
+   "why": "这个写法用“maintained that [论点]”清晰表达某方坚持的观点，且用“disguised ideological opposition”精准描述修辞背后的真实意图，中国人常写“said that anti-fraud words hide real opposition”，表述不够正式且精准，适合报告中引用观点的场合。",
+   "when": "撰写报告时，引用某方坚持的论点并点明其背后真实意图的场合。",
+   "slot": "maintained that […] often disguised ideological opposition",
+   "swap": [
+    "argued that anti-fraud rhetoric masked ideological opposition（语气更强，适合争议性话题）",
+    "asserted that anti-fraud rhetoric concealed ideological opposition（更正式，适合政策分析报告）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_candidate_studying_fiscal_and",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "I am a Ph.D. candidate studying fiscal and social policy",
+   "why": "用“Ph.D. candidate”正式说明身份，搭配现在分词后置修饰研究领域，比中式的“I am a student who is studying for Ph.D. in...”更简洁专业，符合学术写作规范",
+   "when": "学术报告、简历或正式自我介绍场合",
+   "slot": "I am a Ph.D. candidate studying […]",
+   "swap": [
+    "I am a doctoral candidate researching […]（更正式，用于学术论文）",
+    "I am a PhD student focusing on […]（更常用，语气稍轻）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_since_the_effects_shocks",
+   "kind": "phrase",
+   "en": "Since the effects of shocks are uncertain in real time",
+   "why": "中文正式报告常直接用\"Because\"引导原因，此处用\"Since\"更贴合财经/政策报告的正式语气，且\"in real time\"是专业领域精准表达\"实时\"的固定搭配，避免中式英语生硬翻译",
+   "when": "适合正式报告中引出因果关系的论述，尤其是涉及专业领域时效性分析时",
+   "slot": "Since the effects of […] are uncertain in real time",
+   "swap": [
+    "As the effects of shocks are uncertain in real time（语气更柔和，适合缓和论证）",
+    "Because the effects of shocks are uncertain in real time（更直接，适合强调因果逻辑）"
+   ],
+   "dim": "reg",
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
+  },
+  {
+   "id": "ph_policymakers_must_draw_conclusions",
+   "kind": "phrase",
+   "en": "policymakers must draw conclusions about their nature based on analysis of data",
+   "why": "中文写报告常拆分冗余从句如\"policymakers must draw conclusions about their nature because they analyze data\"，此处用\"based on\"的分词结构作后置定语，避免冗余，符合英文正式报告的简洁性要求，且\"draw conclusions\"是财经领域固定表达",
+   "when": "适合正式报告中描述决策/结论的依据时使用",
+   "slot": "[…] must draw conclusions about their nature based on analysis of […]",
+   "swap": [
+    "policymakers should draw conclusions about their nature on the basis of analysis of data（\"on the basis of\"更正式，适合学术类报告）",
+    "policymakers need to draw conclusions about their nature through analysis of data（\"through\"更强调方式，语气稍弱）"
+   ],
+   "dim": "reg",
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
+  },
+  {
+   "id": "ph_whose_relative_importance_and",
+   "kind": "phrase",
+   "en": "whose relative importance and interactions must be assessed",
+   "why": "中文写报告常重复名词如\"overlapping shocks, and their relative importance...\"，此处用\"whose\"引导非限制性定语从句，指代明确，避免名词重复，让句子更连贯紧凑，符合正式写作要求",
+   "when": "适合正式报告中对前文提到的复数名词（如多个因素、冲击）的补充说明时使用",
+   "slot": "[…] overlapping shocks, whose relative importance and interactions must be assessed",
+   "swap": [
+    "[…] overlapping shocks, and their relative importance and interactions must be evaluated（用and连接，语气稍口语化，正式度略低）",
+    "[…] overlapping shocks, the relative importance and interactions of which must be assessed（用\"of which\"替代\"whose\"，更书面化，适合严谨学术写作）"
+   ],
+   "dim": "reg",
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
+  },
+  {
+   "id": "ph_make_it_difficult_to_convince_347",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "make it difficult to convince national brands to return or invest in Detroit for the first time",
+   "why": "用形式主语it替代冗长的真正不定式短语，避免句子头重脚轻，中文常直接写“很难说服”，显得生硬不流畅。",
+   "when": "用于正式报告中表达“做某事存在困难”的语境",
+   "slot": "make it difficult to convince […] to return or invest in […] for the first time",
+   "swap": [
+    "make it hard to persuade national brands to return or invest in Detroit for the first time（hard比difficult语气更随意，persuade侧重行动说服）",
+    "pose a challenge to convincing national brands to return or invest in Detroit for the first time（更正式，强调挑战属性）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_increase_cost_of_dual_gerunds",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "increase the cost of moving goods and maintaining retail inventory",
+   "why": "用两个动名词moving和maintaining构成平行结构，清晰对应成本的两项具体内容，比中国人易犯的不定式不平行错误更符合英文正式写作的严谨规范，逻辑清晰",
+   "when": "财经报告中阐述成本对应的具体活动内容时套用",
+   "slot": "increase the cost of moving […] and maintaining […]",
+   "swap": [
+    "raise the cost of transporting goods and keeping retail inventory（transporting侧重货运，keeping偏口语，适配性窄）",
+    "boost the cost of moving goods and to maintain retail inventory（不定式破坏平行结构，不符合正式写作要求）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_reg_governing_rules",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "The rules governing these banks were first established in 1993.",
+   "why": "用现在分词\"governing\"作后置定语修饰\"rules\"，简洁紧凑，避免了冗余的定语从句，中国人常习惯写\"the rules which govern these banks\"，表述更冗长。",
+   "when": "用于正式财经或监管报告中，修饰规章制度、条款等名词的场合。",
+   "slot": "The rules governing […] were first established in […].",
+   "swap": [
+    "The rules that govern these banks were first set in 1993.（用定语从句替代现在分词，语气稍正式但表述更冗长）",
+    "The rules governing these banks were initially set in 1993.（用\"initially\"替换\"first\"，强调初始性，语气略有差异）"
+   ],
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731a.htm"
+  },
+  {
+   "id": "ph_quant_respectively",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "represented 80%, 79% and 80% of our total revenues for 2025, 2024, and 2023, respectively.",
+   "why": "用respectively精准匹配多组对应数据（百分比与年份），避免分述每年占比的冗余，中国人常直接罗列各年占比，结构松散",
+   "when": "正式财务报告（如SEC 10-K）中披露多组对应量化数据的场合",
+   "slot": "represented […], […], and […] of our total revenues for […], […], and […], respectively.",
+   "swap": [
+    "accounted for 80%, 79% and 80% of our total revenues for 2025, 2024, and 2023, correspondingly（correspondingly语气模糊，不如respectively精准对应）",
+    "made up 80%, 79% and 80% of our total revenues for 2025, 2024, and 2023, respectively（made up偏口语化，不如represented正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1833756/000183375626000013/drs-20251231.htm"
+  },
+  {
+   "id": "ph_rev_derived_contractor",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Revenues derived directly, as a prime contractor, or indirectly, as a subcontractor, from contracts with the U.S. government",
+   "why": "用derived from明确收入来源，用as修饰身份（主承包商/分包商），结构清晰正式，中国人常写“revenues from direct contracts as prime and indirect as subcontractor”，缺少规范来源表述结构",
+   "when": "正式财务报告中界定收入来源及对应合作身份的场合",
+   "slot": "Revenues derived […], as a […], or […], as a […], from contracts with […]",
+   "swap": [
+    "Revenues generated directly, as a prime contractor, or indirectly, as a subcontractor, from contracts with the U.S. government（generated侧重创造，不如derived侧重来源精准）",
+    "Revenues coming directly, as a prime contractor, or indirectly, as a subcontractor, from contracts with the U.S. government（coming偏口语，不符合正式报告措辞）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1833756/000183375626000013/drs-20251231.htm"
+  },
+  {
+   "id": "ph_concentrated_dow",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Our U.S. government sales are concentrated with the DoW, which constitutes the majority of our U.S. government revenue for any given year.",
+   "why": "用定语从句which补充核心客户（DoW）的收入占比地位，紧凑且信息完整，中国人常拆成两句，逻辑衔接弱、正式度不足",
+   "when": "正式财务报告中披露客户集中度及核心客户地位的场合",
+   "slot": "Our […] sales are concentrated with the […], which constitutes the majority of our […] revenue for any given year.",
+   "swap": [
+    "Our U.S. government sales are concentrated with the DoW, and it constitutes the majority of our U.S. government revenue for any given year.（用and连接，逻辑紧凑度弱于定语从句）",
+    "Our U.S. government sales are concentrated with the DoW, which forms the majority of our U.S. government revenue for any given year.（forms语气稍弱，不如constitutes正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1833756/000183375626000013/drs-20251231.htm"
+  },
+  {
+   "id": "ph_based_on_competitive_dynamics",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "based on the competitive dynamics of each opportunity",
+   "why": "该写法用具体维度明确决策依据，避免模糊空泛，中文常写笼统表述，不够严谨",
+   "when": "说明业务角色、合作模式等决策依据的正式报告场景",
+   "slot": "based on the competitive dynamics of […]",
+   "swap": [
+    "in light of the competitive dynamics of […]（更正式，适合监管类报告）",
+    "depending on the competitive dynamics of […]（更灵活，适合内部分析）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1833756/000183375626000013/drs-20251231.htm"
+  },
+  {
+   "id": "ph_derive_revenue_from",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "derive a significant portion of our revenue from",
+   "why": "精准量化核心收入的来源占比，符合英文财经报告的正式书面表达习惯，中文常笼统写“我们的大部分收入来自”，缺少正式性与精准占比表述",
+   "when": "在财务报告中说明核心收入的主要来源场景时套用",
+   "slot": "We derive a significant portion of our revenue from […]",
+   "swap": [
+    "generate a large share of our revenue from（语气偏向市场份额视角，原句侧重来源的持续性）",
+    "obtain a substantial part of our revenue from（语气更正式，适合监管类文件）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1833756/000183375626000013/drs-20251231.htm"
+  },
+  {
+   "id": "ph_revenue_percentage_derived",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "A significant percentage of our revenue is derived from",
+   "why": "用被动语态客观表述收入结构占比，符合英文正式报告的中立性要求，中文常直接写“我们的很大一部分收入来自”，缺少被动语态带来的客观性",
+   "when": "在财务报告中客观说明收入的结构占比时套用",
+   "slot": "A significant percentage of our revenue is derived from […]",
+   "swap": [
+    "A large proportion of our revenue is generated from（更偏向运营视角，原句侧重来源的根源性）",
+    "A substantial percentage of our revenue is obtained from（更正式，适合SEC类监管文件）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1833756/000183375626000013/drs-20251231.htm"
+  },
+  {
+   "id": "ph_quant_fall_to_from",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "had fallen to 2.3 percent from 2.8 percent a year earlier",
+   "why": "这个量化对比写法清晰严谨，符合财经报告的正式风格，中国人常直接写“decreased from X to Y”，缺少时态和具体时间参照，不够精准",
+   "when": "用于财务报告中描述指标同比变化的幅度",
+   "slot": "had fallen to […] percent from […] percent a year earlier",
+   "swap": [
+    "declined to […] percent from […] percent a year earlier（语气更中性，适合非紧急类报告）",
+    "decreased to […] percent from […] percent a year earlier（更简洁，适合短篇幅报告）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/cook20260715a.htm"
+  },
+  {
+   "id": "ph_rests_with_responsibility",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "But, ultimately, the decision of when and how to innovate rests with each bank and its management.",
+   "why": "用「rests with」清晰表达责任归属，比中国人常用的「is the responsibility of」更简洁正式，符合财经报告的严谨性。",
+   "when": "用于财务尽职调查或审计报告中明确责任主体的场合。",
+   "slot": "But, ultimately, the decision of when and how to […] rests with […]",
+   "swap": [
+    "ultimately, the responsibility for deciding when and how to innovate lies with each bank and its management.（用「lies with」替换「rests with」，语气更中性）",
+    "ultimately, it is the responsibility of each bank and its management to decide when and how to innovate.（用形式主语it结构，更书面化，增强正式感）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/bowman20260714a.htm"
+  },
+  {
+   "id": "ph_set_clear_expectations",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Our job is to set clear expectations, be transparent, and not micromanage individual business decisions.",
+   "why": "用并列结构（set clear expectations, be transparent, not micromanage）清晰罗列职责，比中国人常用的「our responsibilities include」更简洁有力，符合报告凝练要求。",
+   "when": "用于财务尽职调查或审计报告中明确自身职责的场合。",
+   "slot": "Our job is to set clear expectations, be transparent, and not micromanage individual […] decisions.",
+   "swap": [
+    "Our responsibilities include establishing clear expectations, maintaining transparency, and avoiding micromanagement of individual business decisions.（用「establishing」「maintaining」「avoiding」替换动词短语，更书面化）",
+    "We are tasked with setting clear expectations, being transparent, and refraining from micromanaging individual business decisions.（用「are tasked with」替换「Our job is to」，语气更正式）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/bowman20260714a.htm"
+  },
+  {
+   "id": "ph_being_receptive_to_new_ideas",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "We can create a supportive regulatory environment by being receptive to new ideas and technologies.",
+   "why": "用「being receptive to」表达开放接纳的态度，比中国人常用的「accept」更委婉专业，符合财经报告中对创新的中立立场表达。",
+   "when": "用于财务尽职调查或审计报告中描述对新事物（如新技术、新方法）态度的场合。",
+   "slot": "We can create a supportive […] environment by being receptive to […]",
+   "swap": [
+    "We can foster a supportive regulatory environment by being open to new ideas and technologies.（用「foster」替换「create」，更具动态感；「open to」替换「receptive to」，语气更直接）",
+    "We can build a supportive environment by being amenable to new ideas and technologies.（用「build」替换「create」，「amenable to」替换「receptive to」，更强调愿意协商）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/bowman20260714a.htm"
   }
  ]
 }
