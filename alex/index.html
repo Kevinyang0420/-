@@ -525,7 +525,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
       跟主屏图标同一个病、同一个药：URL 上挂**按内容算的版本号**，
       内容一变 URL 就变，缓存自然失效；内容没变则不变，不会白刷。
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
-const BANKV = '8d964bc5';
+const BANKV = '9e7917c7';
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
 /* 🚨 Gemini 免费额度是 **每天 × 每个模型** 分开算的
@@ -3286,10 +3286,17 @@ async function showRead(){
     f.innerHTML = '<div class="note">阅读素材还没下下来，检查一下网络再进来。</div>';
     return;
   }
-  const pool = all.filter(c => READ.filter === 'all' || c.kind === READ.filter);
+  const pool = all.filter(c => READ.filter === 'all' ? true
+                             : READ.filter === 'real' ? !!c.url
+                             : c.kind === READ.filter);
   const sorted = pool.slice().sort((a, b) => {
     const d = (isKept(a.id) ? 1 : 0) - (isKept(b.id) ? 1 : 0);
     if (d) return d;
+    /* 🚨 真实披露排前面、Alex 自己写的范文沉底。
+       Kevin 2026-08-04 要的是「从专业点的财经频道摘」—— 那么默认看到的
+       就该是真材料，范文只是补充。有出处链接的（url）就是真的。 */
+    const r = (b.url ? 1 : 0) - (a.url ? 1 : 0);
+    if (r) return r;
     const h = x => [...x].reduce((k, c) => (k * 31 + c.charCodeAt(0)) % 9973, 7);
     return h(a.id + DAYSEED) - h(b.id + DAYSEED);
   });
@@ -3302,12 +3309,15 @@ async function showRead(){
     '" data-f="' + v + '">' + nm + '</button>';
   f.innerHTML = '<div class="tabs" style="margin-bottom:10px">' +
       chip('all', '全部 ' + all.length) +
+      chip('real', '真实披露 ' + all.filter(c => c.url).length) +
       chip('phrase', '句式 ' + all.filter(c => c.kind === 'phrase').length) +
       chip('passage', '范文段 ' + all.filter(c => c.kind === 'passage').length) +
     '</div>' +
     show.map(c => '<div class="card" data-id="' + c.id + '"><div class="hd">' +
       '<span class="ct" style="font-size:11.5px;color:var(--brand-dark);' +
-      'font-weight:800">' + (RDIM[c.dim] || c.dim) + '</span>' +
+      'font-weight:800">' + (RDIM[c.dim] || c.dim) +
+      (c.src ? ' <span style="color:var(--faint);font-weight:600">· ' +
+               esc(c.src) + '</span>' : '') + '</span>' +
       (isKept(c.id) ? '<span class="done">已收藏</span>' : '') + '</div>' +
       '<div class="en" style="margin-top:2px">' +
       esc(c.kind === 'phrase' ? c.en : (c.t || '') ) + '</div>' +
@@ -3349,8 +3359,13 @@ function openRead(c){
   // 原文
   const box = document.createElement('div');
   box.className = 'better';
-  box.innerHTML = '<div class="lb">' + (c.kind === 'phrase' ? '原句（出自你自己的报告）'
-                                                            : esc(c.t || '范文段')) + '</div>' +
+  /* 🚨 出处一定要标出来。Kevin 2026-08-04：「不要都从普华报告里摘，这里面很多
+     也是我写的」—— 那么他就有权知道**眼前这句到底是谁写的**：是 SEC 的真实
+     披露、还是他自己当年写的、还是 Alex 编的范文。分不清就没法判断值不值得学。 */
+  box.innerHTML = '<div class="lb">' +
+    (c.kind === 'phrase'
+       ? '原句 · ' + esc(c.src || '未标出处')
+       : esc(c.t || '范文段') + ' · ' + esc(c.src || 'Alex 范文')) + '</div>' +
     '<div class="en" style="font-size:15.5px;line-height:1.75">' + esc(c.en) + '</div>';
   const sp = document.createElement('button');
   sp.className = 'play'; sp.textContent = '🔊 听一遍';
@@ -3359,6 +3374,13 @@ function openRead(c){
   box.appendChild(sp);
   const yg = youglish(c.kind === 'phrase' ? c.en.split(/[,.;]/)[0] : null);
   if (yg) box.appendChild(yg);
+  if (c.url){
+    const a = document.createElement('a');
+    a.className = 'play'; a.target = '_blank'; a.rel = 'noopener';
+    a.href = c.url; a.style.textDecoration = 'none'; a.style.marginLeft = '8px';
+    a.textContent = '🔗 看原文';
+    box.appendChild(a);
+  }
   f.appendChild(box);
 
   if (c.kind === 'phrase'){
