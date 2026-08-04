@@ -24728,6 +24728,3632 @@
    "src": "SEC 10-K",
    "srcen": "SEC 10-K filing",
    "url": "https://www.sec.gov/Archives/edgar/data/1855747/000185574726000016/blnd-20251231.htm"
+  },
+  {
+   "id": "ph_have_great_consequences_for",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "something that will likely have great consequences for financial inclusion and our economy more broadly in the years ahead is artificial intelligence",
+   "why": "用 have great consequences for 来表达重大影响，比中国职场人常用的 will heavily influence 更具学术感和官方报告的厚重感。同时插入语 in the years ahead 放在经济体后面，节奏更自然。",
+   "when": "在财务尽职调查或宏观审计报告中，评估某项新兴技术、监管政策或市场趋势的深远影响时。",
+   "slot": "something that will likely have great consequences for [...] and [...] more broadly in the years ahead is [...]",
+   "swap": [
+    "will heavily influence (...) — 中文直译味太浓，缺乏官方文件的正式感",
+    "will dramatically impact (...) — 副词修饰动词略显口语化，不如名词词组沉稳"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/barr20260714a.htm"
+  },
+  {
+   "id": "ph_explore_in_a_number_of",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "As I have explored in a number of speeches over the past several years",
+   "why": "用 have explored in a number of 比简单的 mentioned in many 显得资深且有积累。中国人写报告常爱用 many speeches，而 a number of 更加职业且正式。",
+   "when": "在审计报告前言、尽调访谈综述或专业文章开篇，引用前期研究或多次调研成果时。",
+   "slot": "As I have explored in a number of [...] over the past several years",
+   "swap": [
+    "As I mentioned in many [...] — 口语感强，缺乏审计报告应有的严谨与专业度",
+    "As I have discussed across several [...] — 稍显单薄，没有 a number of 涵盖的面广"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/barr20260714a.htm"
+  },
+  {
+   "id": "ph_it_is_also_the_case_that",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "But it is also the case that AI may instead exacerbate inequality",
+   "why": "用 it is also the case that 优雅地引入转折和对立观点，避免了生硬的 However, AI may...。这种句式在美联储和四大审计报告中极为常见，能展现客观、平衡的分析态度。",
+   "when": "在财务尽调或审计风险评估中，需要客观指出潜在负面影响、对立风险或不利假设时。",
+   "slot": "But it is also the case that [...] may instead [...]",
+   "swap": [
+    "However, [...] may [...] — 过于直接生硬，缺乏专业报告委婉而客观的论证语气",
+    "On the other hand, [...] will [...] — 语气绝对化，不符合审计报告谨慎的风险提示原则"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/barr20260714a.htm"
+  },
+  {
+   "id": "ph_if_passed_amendment",
+   "kind": "phrase",
+   "en": "If passed, Amendment 3 would lower the cap",
+   "why": "精简的条件状语从句省略（If it is passed 的省略），极具专业法律和政策文书的干练感。中国人常写成全句 If it is passed, 或者用多余的状语，显得不够地道紧凑。",
+   "when": "在财务尽职调查或审计报告中，假设某项法案、条款或拟议政策通过时使用",
+   "slot": "If passed, […] would [行动/调整] […]",
+   "swap": [
+    "Should it pass, [...] (语气更正式，商务报告中常用)",
+    "If approved, [...] (动词用 approved 代替 passed，强调审批结果)"
+   ],
+   "dim": "hedge",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/floridas-proposed-property-tax-amendment-will-require-trade-offs-and-some-residents-could-end-up-with-higher-costs-287149"
+  },
+  {
+   "id": "ph_benefit_from",
+   "kind": "phrase",
+   "en": "we are able to benefit from a substantial volume of high-intent consumer traffic with no incremental acquisition costs",
+   "why": "用 benefit from 搭配具体的业务资产（high-intent traffic）和成果，比中国人在财务或业务报告中常用的 obtain 或 gain 显得更加自然且具有专业黏性，突出了模式的协同性。",
+   "when": "描述企业依靠现有资源或网络优势获得免费或低成本业务增长时",
+   "slot": "we are able to benefit from [...] with no incremental [...]",
+   "swap": [
+    "we can acquire [...] without additional [...] (听起来像是直接买量，缺乏原句的借势感)",
+    "we can leverage [...] at zero extra [...] (语气偏向营销口号，不如原句严谨)"
+   ],
+   "dim": "misc",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1855747/000185574726000016/blnd-20251231.htm"
+  },
+  {
+   "id": "ph_as_more_become",
+   "kind": "phrase",
+   "en": "As more financial services firms become Blend customers or deploy additional products through our software platform",
+   "why": "用 As 引领动态发展的条件，比生硬的 conditional clause (If...) 更能体现业务规模扩大与客户行为之间的自然演进和因果联系。",
+   "when": "说明业务指标增长如何驱动生态系统协同演进时",
+   "slot": "As more [...] become [...] or deploy [...] through our [...]",
+   "swap": [
+    "If more [...] sign up as [...] and use [...] (用 if 显得过于绝对且带有假设性，不如 as 贴合实际业务增长)",
+    "When additional [...] adopt [...] and implement [...] (when 的时间先后感太强，不如 as 强调伴随发生)"
+   ],
+   "dim": "quant",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1855747/000185574726000016/blnd-20251231.htm"
+  },
+  {
+   "id": "ph_creates_a_powerful",
+   "kind": "phrase",
+   "en": "We believe this shared success model creates a powerful network effect that will continue to expand our serviceable addressable market over time",
+   "why": "主谓宾结构干净利落，用 create a network effect 代替了解释性的长篇大论，末尾加 over time 表现趋势，比单纯用 grow 更有画面感。",
+   "when": "总结核心商业模式并展望其长期市场空间时",
+   "slot": "We believe this [...] model creates a powerful [...] that will continue to [...] over time",
+   "swap": [
+    "We think this business model will help us grow our market over time (动词 think 偏口语，grow our market 过于平淡)",
+    "It is believed that this model can expand our market continuously (被动语态显得游离，失去了管理层的自信语气)"
+   ],
+   "dim": "misc",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1855747/000185574726000016/blnd-20251231.htm"
+  },
+  {
+   "id": "ph_require_sb_to_do",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Should the U.S. government require artificial intelligence companies to transfer half of their stock to a sovereign wealth fund",
+   "why": "用 require sb. to do 精准表达监管合规层面的强制要求，避免了中国写作者常误用的 force sb. that 或 make sb. to do 等语法错误。",
+   "when": "在审计报告或尽调条款中提出合规整改或强制要求时。",
+   "slot": "Should the [...] government require [...] companies to [...]?",
+   "swap": [
+    "mandate that [...] transfer [...] (语气更显官方强制，但结构稍显死板)",
+    "compel [...] to transfer [...] (动词色彩过重，不如 require 正式)"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/a-government-fund-of-ai-stocks-to-benefit-all-americans-is-a-good-idea-but-hard-to-pull-off-287558"
+  },
+  {
+   "id": "ph_invests_surplus_state_revenues",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "a government-run fund that invests surplus state revenues for long-term savings and economic stability",
+   "why": "用 surplus state revenues 代替泛泛的 money 或 funds，专业词汇精准度极高，中国写作者容易写成 extra government money。",
+   "when": "在财务报告中描述政府或企业的闲置资金与专项盈余配置时。",
+   "slot": "a [...] fund that invests surplus [...] revenues for [...] and [...]",
+   "swap": [
+    "allocates excess government income [...] (excess 不如 surplus 正式)",
+    "deploys remaining state funds [...] (remaining 显得口语化)"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/a-government-fund-of-ai-stocks-to-benefit-all-americans-is-a-good-idea-but-hard-to-pull-off-287558"
+  },
+  {
+   "id": "ph_rest_on",
+   "kind": "phrase",
+   "en": "continues to rest on the fundamental strengths of the U.S. economy",
+   "why": "用 'rest on' 比常用的 'depend on' 或 'rely on' 更有金融报告的稳重感，显得支撑根基深厚，中国人常写成 depend heavily on。",
+   "when": "在审计报告或尽调中分析某项资产、估值或商业模式的底层支撑时。",
+   "slot": "[...], which continues to rest on the fundamental strengths of [...]",
+   "swap": [
+    "depends heavily on (语气太重且口语化，缺乏客观分析感)",
+    "is anchored in (过于文学化，不符合严肃财务报告文风)"
+   ],
+   "dim": "misc",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/fifth-conference-on-the-international-roles-of-the-u-s-dollar-stablecoins-digital-payments-and-the-ir-of-the-usd-20260716.html"
+  },
+  {
+   "id": "ph_at_the_same_time",
+   "kind": "phrase",
+   "en": "At the same time, he noted that technological innovation",
+   "why": "用 'At the same time' 做转折引入新维度，既自然又具权威观点平衡感，中国审计师常机械地用 'However' 或 'In addition'。",
+   "when": "在尽调报告中需要转换视角，指出利好背后的潜在风险或新技术带来的新变量时。",
+   "slot": "At the same time, [he/management] noted that [...]",
+   "swap": [
+    "However (转折过于生硬，缺乏客观评述的缓冲感)",
+    "In addition (纯粹表并列，无法体现兼顾两面辩证看的专业思维)"
+   ],
+   "dim": "link",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/fifth-conference-on-the-international-roles-of-the-u-s-dollar-stablecoins-digital-payments-and-the-ir-of-the-usd-20260716.html"
+  },
+  {
+   "id": "ph_lead_to_better_outcomes",
+   "kind": "phrase",
+   "en": "lead to more competition, which generally leads to better outcomes for both consumers and society as a whole",
+   "why": "用 'lead to better outcomes for' 代替空洞的 'be good for' 或 'benefit'，显得对宏观影响的评估极具专业厚度，中国人常写成 be good for both sides。",
+   "when": "在评估某项业务整改、市场准入或技术应用对生态各方的整体影响时。",
+   "slot": "lead to [...], which generally leads to better outcomes for both [...] and [...]",
+   "swap": [
+    "benefit both sides (过于笼统，缺乏商务报告应有的具体层面分析)",
+    "result in positive effects on everyone (用词拖沓，不符合专业英文精炼习惯)"
+   ],
+   "dim": "misc",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/fifth-conference-on-the-international-roles-of-the-u-s-dollar-stablecoins-digital-payments-and-the-ir-of-the-usd-20260716.html"
+  },
+  {
+   "id": "ph_balancing_those_scales",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Balancing those scales of costs and benefits involves examining whether the benefits are broadly shared or concentrated.",
+   "why": "用 balancing those scales 这种隐喻开篇，把抽象的权衡利弊具象化，比干巴巴地用 weighing 或 considering 更生动有画面感。中国人写财报常直译为 considering both sides，略显平淡。",
+   "when": "在审计报告或尽调总结中，需要引出对复杂利弊、风险与回报进行权衡的段落时",
+   "slot": "Balancing those scales of [...] involves examining whether [...]",
+   "swap": [
+    "Weighing the pros and cons requires assessing if [...]（更为传统直接，缺乏隐喻色彩）",
+    "Evaluating the trade-offs entails looking into whether [...]（偏向学术，不如原文流畅）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/barr20260714a.htm"
+  },
+  {
+   "id": "ph_past_experience_has_shown",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Past experience has shown that technological leaps forward can raise living standards.",
+   "why": "用 past experience has shown 代替主观的 we know 或 history tells us，既客观又具权威性。中国人写报告常喜欢用 it is well known，显得不够严谨专业。",
+   "when": "在尽调报告中引用历史规律、行业惯例或过往数据来支撑当前论点时",
+   "slot": "Past experience has shown that [...] can [...]",
+   "swap": [
+    "History indicates that [...] tend to [...]（语气稍显生硬，不如 past experience 地道）",
+    "It is widely known that [...] will [...]（主观色彩较浓，缺乏官方文件的稳健感）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/barr20260714a.htm"
+  },
+  {
+   "id": "ph_increase_the_value",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "increase the value we deliver to our customers",
+   "why": "使用定语从句 we deliver to our customers 紧凑地修饰 value，动作感极强。中国人常写成 improve customer value 或 enhance value for customers，不如这种结构直观地强调“向客户交付的价值”。",
+   "when": "在讨论产品战略、客户关系或商业回报时，表达为客户创造和提升价值的举措。",
+   "slot": "increase the value we deliver to our […]",
+   "swap": [
+    "enhance the value provided to our customers (被动式，不如主动的 we deliver 有温度)",
+    "maximize customer value (过于绝对和空洞，缺乏 deliver 所传达的具体行动感)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1855747/000185574726000016/blnd-20251231.htm"
+  },
+  {
+   "id": "ph_the_central_role_of",
+   "kind": "phrase",
+   "en": "highlighted the central role of U.S. dollar funding in the international banking system",
+   "why": "用名词短语 central role of 来替代动词化的表述，使得结论更加客观且具有权威感。中国人的直觉常写成 play a very important role in，显得口语化且缺乏分析力度。",
+   "when": "在审计报告或尽调总结中强调某项资产、资金或技术在整个体系中的核心地位时",
+   "slot": "highlighted the central role of […] in the international [system / market]",
+   "swap": [
+    "underscored the pivotal importance of […] - 语气更重，强调刻不容缓或风险极高",
+    "emphasized the critical function of […] - 侧重功能性而非宏观战略地位"
+   ],
+   "dim": "nom",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/fifth-conference-on-the-international-roles-of-the-u-s-dollar-stablecoins-digital-payments-and-the-ir-of-the-usd-20260716.html"
+  },
+  {
+   "id": "ph_even_as_new_technologies",
+   "kind": "phrase",
+   "en": "Even as new technologies reshape how dollars are transferred and intermediated",
+   "why": "用 Even as 引导让步状语从句，既承认了技术变革的现实，又自然引出核心结论。中国财务人员容易用 Although 或 While，往往流于表面，不如 Even as 更有动态的临场感。",
+   "when": "在讨论宏观趋势、技术冲击或市场变革时，需要衬托出某种底层结构或核心机制依然稳固的语境",
+   "slot": "Even as [new technologies / market trends] reshape how […]",
+   "swap": [
+    "While ongoing structural shifts alter how […] - 语气偏中性，缺乏 Even as 的戏剧张力",
+    "Despite the fact that emerging innovations transform how […] - 略显冗长，不如原句紧凑"
+   ],
+   "dim": "misc",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/fifth-conference-on-the-international-roles-of-the-u-s-dollar-stablecoins-digital-payments-and-the-ir-of-the-usd-20260716.html"
+  },
+  {
+   "id": "ph_is_a_function_of",
+   "kind": "phrase",
+   "en": "Wealth inequality is a function of the distribution of ownership of assets",
+   "why": "用 'is a function of' 代替常见的 'depends on' 或 'is caused by', 显得极有数学感和严谨的经济学素养。中国人写财报常习惯用简单的 'depends on', 显得口语化且缺乏因果分析的深度。",
+   "when": "在财务审计报告中分析某项财务指标波动或经济现象的深层驱动因素时",
+   "slot": "[Financial metric or economic phenomenon] is a function of [underlying driver …driver …and driver …]",
+   "swap": [
+    "depends heavily on (语气更为主观且缺乏学术感)",
+    "is directly caused by (过于绝对，缺乏经济学中多因素共振的严谨度)"
+   ],
+   "dim": "reg",
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/barr20260714a.htm"
+  },
+  {
+   "id": "ph_subject_to_claims_that",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "we may be subject to claims that our technology or services infringe or misappropriate",
+   "why": "用 subject to claims that 将面临诉讼风险隐患的被动状态刻画得极其地道，动词短语比直接用 may be sued 更有画面感。中国人写风险时常拼凑出 are possible to receive lawsuits 这种中式英语。",
+   "when": "在审计或尽调报告中披露潜在法律纠纷、知识产权侵权或合同违约风险时套用。",
+   "slot": "we may be subject to claims that our [...] infringe or misappropriate [...]",
+   "swap": [
+    "we might face lawsuits that our [...] break the rules（lawsuits 搭配 break 极不专业，错用动词）",
+    "others might sue us because our [...] use their things（表达极其幼稚，缺乏法律文书的专业度）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1855747/000185574726000016/blnd-20251231.htm"
+  },
+  {
+   "id": "ph_failure_to_adequately",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "Failure to adequately protect our intellectual property could adversely affect",
+   "why": "将 failure to do 作为主语直接凝练成名词性结构，配合 adversely affect 展现了风险披露的高级感。中国人习惯写成 If we fail to protect our IP well, it will be bad for us，完全失去了财报的精炼感。",
+   "when": "在风险提示、尽调报告总结部分，警示某项核心管理疏漏将带来的严重负面后果时使用。",
+   "slot": "Failure to adequately [...] could adversely affect [...]",
+   "swap": [
+    "If we don't protect [...] well, it will hurt [...]（从句头重脚轻，副词 well 极度口语化）",
+    "Not protecting [...] properly might cause bad results to [...]（主语结构松散，bad results 词汇贫乏）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1855747/000185574726000016/blnd-20251231.htm"
+  },
+  {
+   "id": "ph_spent_nearly_years_studying",
+   "kind": "phrase",
+   "en": "I’ve spent nearly 20 years studying sovereign wealth funds",
+   "why": "用现在完成时搭配具体时长，清晰说明研究经历的持续性，中国人常误用一般过去时或省略具体时长，导致表述模糊。",
+   "when": "学术报告或专业文章开头介绍自身研究背景的场合",
+   "slot": "I’ve spent nearly […] years studying […]",
+   "swap": [
+    "I have spent almost two decades researching […]：语气更正式，适合正式报告",
+    "I have been researching […] for nearly 20 years：强调研究的延续性动作"
+   ],
+   "dim": "misc",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/a-government-fund-of-ai-stocks-to-benefit-all-americans-is-a-good-idea-but-hard-to-pull-off-287558"
+  },
+  {
+   "id": "ph_specific_laws_define_how",
+   "kind": "phrase",
+   "en": "Specific laws define how they receive the cash they invest",
+   "why": "用从句衔接规则与动作，避免重复表述，结构紧凑，中国人常拆分为多个短句，显得冗余。",
+   "when": "阐述规则、流程或机制的场合",
+   "slot": "[…] define how […]",
+   "swap": [
+    "Clear regulations stipulate the process by which […]：“stipulate”更正式，适合财经报告",
+    "Specific rules outline the manner in which […]：“outline”清晰，适合尽职调查文档"
+   ],
+   "dim": "link",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/a-government-fund-of-ai-stocks-to-benefit-all-americans-is-a-good-idea-but-hard-to-pull-off-287558"
+  },
+  {
+   "id": "ph_provides_a_powerful_boost",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "provides a powerful boost to imports of high-technology capital goods",
+   "why": "动宾搭配精准且力度感十足，用 provides a powerful boost to 代替泛泛的 increases，使经济增长或拉动效应的表述更具专业质感。中国人常写成 makes imports grow fast。",
+   "when": "在财务尽职调查报告中分析某项新技术、政策或投资对特定供应链、进出口或板块的驱动作用时。",
+   "slot": "provides a powerful boost to [...]",
+   "swap": [
+    "drives a significant increase in (语气偏中性，稍显平淡)",
+    "spurs rapid growth in (强调刺激作用，但力度略逊)"
+   ],
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/technology-shocks-the-ai-boomandthe-u-s-current-account-20260714.html"
+  },
+  {
+   "id": "ph_bears_the_hallmarks_of",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "bears the hallmarks of an investment-specific technology shock",
+   "why": "用 bears the hallmarks of 替代简单的 looks like 或 is characterized by，极具学术与央行报告的洞察力。中国人常写成 has the characteristics of。",
+   "when": "在审计分析或行业研究中，为某种复杂的经济现象、财务特征定性时。",
+   "slot": "bears the hallmarks of [...]",
+   "swap": [
+    "exhibits the key features of (偏学术说明，画面感不如 hallmarks)",
+    "is characteristic of (略显平淡，缺乏修辞张力)"
+   ],
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/technology-shocks-the-ai-boomandthe-u-s-current-account-20260714.html"
+  },
+  {
+   "id": "ph_reaping_those_efficiency_gains",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "reaping those efficiency gains requires continuous and substantial investment",
+   "why": "动名词短语 reaping those efficiency gains 作主语，比用条件句 If we want to get efficiency gains 紧凑得多，且搭配 substantial investment 显得极具专业财务感。中国人常写成 Getting these benefits needs much money。",
+   "when": "在尽调报告中评估某项资本开支（Capex）的必要性或回报前提时。",
+   "slot": "reaping those [...] requires continuous and substantial investment",
+   "swap": [
+    "capturing these productivity benefits demands significant capital outlays (更偏技术与财务审计口吻)",
+    "achieving these cost savings calls for heavy spending (语气稍显口语化)"
+   ],
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/technology-shocks-the-ai-boomandthe-u-s-current-account-20260714.html"
+  },
+  {
+   "id": "ph_001_491",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Spending by households and businesses has been resilient",
+   "why": "该写法用现在完成时加resilient，精准表达支出的持续性与抗波动属性，中国人常写“is very strong”，不够贴合财经语境中对经济主体稳定性的专业描述",
+   "when": "描述家庭或企业支出、活动等经济指标的稳定状态时使用",
+   "slot": "[...] by households and businesses has been resilient",
+   "swap": [
+    "has remained robust（更强调抗冲击的稳定性，比resilient更侧重抵御不利因素的能力）",
+    "has stayed strong（语气更平实，适合非正式报告）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/waller20260713a.htm"
+  },
+  {
+   "id": "ph_002_346",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "inflation and monetary policy are at a crossroads",
+   "why": "用“at a crossroads”比喻政策/经济处于关键转折点，比直白的“are facing a critical situation”更生动专业，符合权威财经报告的措辞风格",
+   "when": "描述政策方向、经济走势处于关键抉择节点的场合",
+   "slot": "[...] and [...] are at a crossroads",
+   "swap": [
+    "are standing at a pivotal juncture（更正式，强调节点的关键性）",
+    "are at a critical turning point（更侧重转折的变化性）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/waller20260713a.htm"
+  },
+  {
+   "id": "ph_harness_buffer",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "harness AI and buffer the economy and workers",
+   "why": "用两个精准动词并列（harness表主动利用，buffer表缓冲风险），中文常直接用“利用AI、缓冲经济和工人”，英文并列动词更紧凑正式，符合财经报告的简洁要求",
+   "when": "在财经报告中描述某政策或工具的双重作用（利用某事物同时缓冲负面影响）时套用",
+   "slot": "harness […] and buffer the economy and workers",
+   "swap": [
+    "leverage AI and protect the economy and workers：leverage与harness同义，protect侧重主动防御，语气比buffer稍弱",
+    "utilize AI and shield the economy and workers：utilize更正式，shield比buffer更侧重抵御风险，语气更强烈"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/a-government-fund-of-ai-stocks-to-benefit-all-americans-is-a-good-idea-but-hard-to-pull-off-287558"
+  },
+  {
+   "id": "ph_expand_footprint",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "expanding our footprint in both new and existing markets",
+   "why": "\"expand footprint\"是凝练专业的商业表达，形象描述市场布局拓展，中国人常直译\"expand our market coverage\"，不够简洁专业",
+   "when": "商业报告中描述市场拓展、业务布局的场合",
+   "slot": "expanding our footprint in both new and existing […]",
+   "swap": [
+    "expanding our market coverage in both new and existing […] (直译，不够凝练)",
+    "extending our market reach in both new and existing […] (同义但正式度略弱)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1177702/000119312526067030/saia-20251231.htm"
+  },
+  {
+   "id": "ph_try_treat_only_where",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "try to treat only where surveys turn up a problem",
+   "why": "用“only where”精准限定动作的适用场景，避免绝对化表述，比中文常写的“只在有问题的地方处理”更简洁严谨，适合正式报告的限定性描述。",
+   "when": "在报告中描述动作的触发条件或适用范围时套用。",
+   "slot": "try to […] only where […] turn up a problem",
+   "swap": [
+    "attempt to address issues only where surveys reveal a problem (更正式，适配审计报告语境)",
+    "strive to treat problems only where surveys show an issue (语气更积极，适合正面表述)"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/better-guacamole-how-avocado-import-rules-helped-cut-mexicos-water-pollution-it-holds-lessons-for-future-us-trade-deals-287477"
+  },
+  {
+   "id": "ph_progress_description_phrase",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "have been progressing swiftly over the past year",
+   "why": "正式报告中描述近期工作进展，中国人常写“have developed very fast in the last year”，口语化且不够正式，“progressing swiftly”是地道的财经表达，符合专业报告的语气",
+   "when": "正式报告中总结过去一段时间的工作进展情况",
+   "slot": "[our efforts/this project] have been progressing swiftly over the past […months/fiscal year]",
+   "swap": [
+    "have been advancing rapidly over the past year（语气更积极，适合突出成果的推进）",
+    "have been moving forward quickly over the past year（更侧重流程的推进，适合描述执行类工作）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/bowman20260713a.htm"
+  },
+  {
+   "id": "ph_due_to_lower_capacity_utilization",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "due to lower capacity utilization and weather effects",
+   "why": "使用行业标准术语“capacity utilization”（产能利用率），精准解释成本/收入变动原因，中文常写得笼统，比如“因为资源用得少和天气问题”，不够专业。",
+   "when": "用于财务报告中说明财务或运营差异的原因时。",
+   "slot": "due to [specific factor …e.g., lower capacity utilization] and [specific factor …e.g., weather effects]",
+   "swap": [
+    "stemming from reduced capacity utilization and weather-related impacts（用“stemming from”更正式，“reduced”替代“lower”）",
+    "as a result of lower capacity utilization and weather-related effects（用“as a result of”强化因果逻辑，更清晰）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1177702/000119312526067030/saia-20251231.htm"
+  },
+  {
+   "id": "ph_scope_time_phrase",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "through the recent U.S. monetary policy tightening cycle",
+   "why": "该短语清晰界定了分析的时间与政策背景范围，中国人写财经报告常模糊时间边界，直接写“近期”缺乏明确指向，此写法更严谨。",
+   "when": "撰写涉及特定政策周期的财经分析、对比研究时套用。",
+   "slot": "through the recent U.S. monetary policy […] cycle",
+   "swap": [
+    "during the recent U.S. monetary policy tightening phase（语气更侧重政策阶段而非循环周期）",
+    "over the recent U.S. monetary policy tightening period（语气更侧重时间跨度而非特定周期）"
+   ],
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/how-resilient-were-emerging-market-economies-through-the-2022-23-u-s-monetary-tightening-cycle-20260702.html"
+  },
+  {
+   "id": "ph_highlight_remedy_sparingly",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "highlights a remedy that probate judges use sparingly",
+   "why": "用定语从句修饰“remedy”，简洁说明措施使用频率，比中文拆分的表述更紧凑，符合正式财经报告的表达习惯。",
+   "when": "用于正式报告中指出某一措施的使用情况时套用。",
+   "slot": "highlights a remedy that […] use sparingly",
+   "swap": [
+    "points out a solution that judges rarely deploy ：“points out”更直接，“deploy”更专业",
+    "emphasizes a remedy that judges seldom employ ：“emphasizes”更侧重强调程度，“seldom employ”更口语化"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/family-feud-over-chadwick-bosemans-estate-highlights-3-lessons-for-grieving-families-288243"
+  },
+  {
+   "id": "ph_stopped_defending_trump_public",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "stopped defending Trump’s public charge policy in court",
+   "why": "中文表达“停止为某政策在法庭上辩护”时易啰嗦重复，而英文用此短语直接点明动作和场景，简洁精准，中国人常写冗余表述。",
+   "when": "撰写政府政策法律相关的英文报告时，描述停止某项法律辩护的场景。",
+   "slot": "stopped defending […] in court",
+   "swap": [
+    "ceased defending […] in legal proceedings（更正式，适合官方正式报告）",
+    "halted defending […] in court（语气随意，不适合正式报告）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-changes-to-public-charge-rule-could-keep-millions-of-immigrants-and-their-us-citizen-kids-from-getting-healthcare-they-need-288141"
+  },
+  {
+   "id": "ph_the_cartons_used_our",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "the cartons used in our baby personal care line are environmentally-friendly, Forest Stewardship Council (“FSC”)-certified, and/or made from 100% recycled, PCW (pre/post consumer waste) materials",
+   "why": "用\"and/or\"灵活表述产品属性的可选性，同时明确认证与材料来源，逻辑清晰；中国人常直接用\"是环保的、FSC认证的、由100%回收材料制成\"，缺少灵活连接，逻辑层次弱。",
+   "when": "正式报告中列举产品属性或合规要求时套用",
+   "slot": "the [product type] used in our [product line] are [attribute …], [certification …]-certified, and/or made from [material specification] materials",
+   "swap": [
+    "the [product type] used in our [product line] are [attribute 1], [certification 1]-certified, and made from [material specification] materials（语气更确定，适合必须满足的要求）",
+    "the [product type] used in our [product line] feature [attribute 1], hold [certification 1], and/or are produced with [material specification] materials（更强调产品特点，语气更积极）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1530979/000162828026011634/hnst-20251231.htm"
+  },
+  {
+   "id": "ph_taking_actions_to_increase_revenue_growt",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "taking actions to increase revenue growth through improved benefits options and risk management capabilities",
+   "why": "中国人写英文报告常直接用take actions to increase revenue，缺少对动作路径的清晰衔接，这里用through引出核心举措，逻辑更连贯严谨，符合正式报告要求",
+   "when": "撰写公司战略规划类英文报告（如SEC 10-K、年报）时可套用",
+   "slot": "taking actions to increase […] through improved […] and […] capabilities",
+   "swap": [
+    "implement initiatives to boost revenue growth via enhanced benefit options and risk management functions（initiatives比actions更贴合战略层面正式举措，via比through更书面正式）",
+    "undertake measures to lift revenue growth through upgraded benefit options and risk management abilities（undertake measures比take actions更正式，upgrade比improve更突出升级属性）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/937098/000093709826000010/tnet-20251231.htm"
+  },
+  {
+   "id": "ph_best_in_parallel",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "best in benefits, best in platform, best in service",
+   "why": "中文通常会用“在福利、平台、服务方面做到最好”这种重复结构，而这种平行的“best in X”句式更简洁有力，符合英文正式报告的节奏，避免冗余重复的表达，同时清晰传递三个核心目标。",
+   "when": "用于撰写企业战略定位、核心竞争力或目标愿景的正式报告场景，如SEC filings、年度报告等。",
+   "slot": "best in […], best in […], best in […]",
+   "swap": [
+    "top-tier in […], leading in […], best-in-class in […]: 该替换用“top-tier（顶级）、leading（领先）、best-in-class（同类最佳）”替代原句的“best in”，语气更侧重行业层级和差异化，适合需要突出竞争优势的场景",
+    "best in […], leading in […], top in […]: 该替换调整了表述顺序，用不同的形容词搭配，语气更灵活，适合需要避免重复的语境"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/937098/000093709826000010/tnet-20251231.htm"
+  },
+  {
+   "id": "ph_increased_financial_exposure_some_employ",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "the increased financial exposure some employees may face",
+   "why": "用省略引导词的定语从句后置修饰核心名词，避免中文式前置长定语的臃肿，符合英文正式报告的简洁性；中国人常写“员工可能面临的增加的财务风险”，前置定语冗长且不符合英文正式文体习惯",
+   "when": "撰写财务报告中描述主体面临的风险/敞口相关内容时套用",
+   "slot": "the [adjective] [noun] some […] may face",
+   "swap": [
+    "the heightened financial exposure some employees might confront（更正式，适合审计报告）",
+    "the greater financial risk some employees could encounter（更偏向风险表述，语气稍弱）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/4977/000162828026011402/afl-20251231.htm"
+  },
+  {
+   "id": "ph_reg_institution_direct",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "directs the U.S. Department of Justice (\"DOJ\") and the U.S. Federal Trade Commission (\"FTC\") to establish",
+   "why": "用正式动词directs（而非口语化的tells），搭配官方机构全称加缩写的规范写法，符合SEC报告的正式性，中国人常写得过于随意或机构名称不规范",
+   "when": "正式监管报告、官方公告中描述机构发布指令的内容时使用",
+   "slot": "[Authoritative Body] directs the [Full Official Name 1] (\"[Abbreviation 1]\") and the [Full Official Name 2] (\"[Abbreviation 2]\") to establish […]",
+   "swap": [
+    "instructs (语气稍弱，偏向一般指令，不如directs正式)",
+    "mandates (语气更强，更具强制性，适合法定强制指令)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1755672/000175567226000004/ctva-20251231.htm"
+  },
+  {
+   "id": "ph_with_a_view_to",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "with a view to optimize their product selection and maximize their yield and profitability",
+   "why": "用介词短语引出目的，比中国人常用的直接用“to”更正式贴合专业报告语境，中国人常写的“to”过于直白，缺乏正式感",
+   "when": "在财务报告或正式商务文本中引出目的状语的场合",
+   "slot": "with a view to optimize […] and maximize […]",
+   "swap": [
+    "for the purpose of optimizing […] and maximizing […]：更侧重明确目的的正式性，比原短语稍显生硬",
+    "in order to optimize […] and maximize […]：更口语化，不如原短语贴合SEC报告的正式语气"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1755672/000175567226000004/ctva-20251231.htm"
+  },
+  {
+   "id": "ph_there_can_be_no_assurance",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "there can be no assurance that Corteva will be successful in this regard",
+   "why": "用委婉的不确定性表述，是专业报告常用的对冲写法，比中国人常写的“we are not sure”更严谨符合SEC披露要求，更正式",
+   "when": "在财务报告或正式披露中表达对未来事项无法保证的场合",
+   "slot": "there can be no assurance that […] will be successful in this regard",
+   "swap": [
+    "no assurance can be given that […] will be successful in this regard：语序稍显生硬，不如原短语自然流畅",
+    "we cannot guarantee that […] will be successful in this regard：更偏向口语化，不符合专业报告的正式性"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1755672/000175567226000004/ctva-20251231.htm"
+  },
+  {
+   "id": "ph_may_affect_ability",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "may affect Corteva's ability to safely operate in",
+   "why": "用“may affect”委婉表达潜在影响，避免绝对化表述，符合SEC报告的谨慎性要求，中国人常直接写“会影响”，语气过于绝对，不符合专业报告的严谨性。",
+   "when": "正式报告中描述潜在、非确定的业务影响的场合。",
+   "slot": "may affect [Company]'s ability to [verb phrase] in […]",
+   "swap": [
+    "could impact [Company]'s capacity to [verb phrase] in […]（\"could\"比\"may\"语气更弱，更委婉；\"impact\"比\"affect\"更侧重冲击性）",
+    "might influence [Company]'s ability to [verb phrase] within […]（\"might\"比\"may\"更正式；\"influence\"比\"affect\"更侧重间接影响）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1755672/000175567226000004/ctva-20251231.htm"
+  },
+  {
+   "id": "ph_actual_results_differ_materially",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "we caution that actual results may differ materially",
+   "why": "用\"caution that\"加\"differ materially\"的结构，比中国人常写的直白警告更专业，\"materially\"（重大地）精准符合SEC报告的表述要求，避免模糊的\"不同\"表述。",
+   "when": "财务报告中警示实际经营结果与预期存在重大差异的场合。",
+   "slot": "we caution that actual results may differ materially from […]",
+   "swap": [
+    "we warn that actual results could differ significantly from […]（语气更直接，不如原句专业严谨）",
+    "we advise that actual outcomes may differ materially from […]（\"advise\"偏建议，不符合风险警示的语境）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1328581/000132858126000006/bcc-20251231.htm"
+  },
+  {
+   "id": "ph_margin_profile",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "carry a higher and more stable margin profile",
+   "why": "This concise phrase uses “profile” to frame margin’s two key characteristics (higher + stable), making the expression structured and professional. Chinese writers usually translate this literally as “利润率更高且更稳定”, which is less formal and lacks standardized financial writing framing.",
+   "when": "When comparing financial metrics (like margin) between different product lines or segments in formal filings.",
+   "slot": "carry a higher and more stable margin profile than […]",
+   "swap": [
+    "boast a stronger and more consistent margin profile (slightly conversational, for investor presentations)",
+    "exhibit a better and more reliable margin profile (simpler, for internal summary reports)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1328581/000132858126000006/bcc-20251231.htm"
+  },
+  {
+   "id": "ph_see_item_1a_for_further_discussion",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "See Item 1A, \"Risk Factors,\" for further discussion of risks related to protecting our intellectual property",
+   "why": "这里用标准的正式交叉引用指引格式，符合SEC报告的规范要求，比口语化表述更专业，中国人写英文报告常忽略这类标准指引，显得不够合规。",
+   "when": "撰写正式合规报告、监管文件时，指引读者查看特定章节的场合。",
+   "slot": "See Item [X], \"[Section Name],\" for further discussion of […]",
+   "swap": [
+    "Refer to Item 1A, \"Risk Factors,\" for more details（更简洁但不够正式）",
+    "Check Item 1A, \"Risk Factors,\" for additional discussion（过于随意，不适合合规文件）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1618732/000119312525213801/ntnx-20250731.htm"
+  },
+  {
+   "id": "ph_unable_maintain_profit_anticipated",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "If we are ultimately unable to maintain profitability at the level anticipated by analysts and our stockholders",
+   "why": "中文常写“如果我们无法维持盈利”，但明确了盈利基准是分析师和股东的预期，让风险表述更具体，符合尽职调查的严谨要求",
+   "when": "披露未达利益相关方预期的风险时适用",
+   "slot": "If we are ultimately unable to maintain profitability at the level anticipated by […].",
+   "swap": [
+    "If we fail to sustain profitability as expected by analysts and investors.（更简洁，不够正式）",
+    "Should we not maintain profitability at the level analysts expect.（倒装条件句，语气更正式但稍显生硬）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1618732/000119312525213801/ntnx-20250731.htm"
+  },
+  {
+   "id": "ph_pose_risk_loss_dif",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "pose a greater risk of loss to the DIF",
+   "why": "这个动宾结构明确了机构对存款保险基金的风险指向，中国人常直译用“cause a greater risk of loss to the DIF”，原表达更正式专业，贴合金融监管报告的措辞",
+   "when": "描述金融机构对特定监管主体的风险影响时套用",
+   "slot": "pose a greater risk of loss to the […]",
+   "swap": [
+    "present a higher risk of loss to the DIF（present侧重客观呈现风险，适合数据支撑的风险描述）",
+    "create a larger risk of loss for the DIF（create侧重主动造成风险，适合描述机构行为带来的影响）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1074902/000143774926007758/lcnb20251231_10k.htm"
+  },
+  {
+   "id": "ph_due_to_merchandise_changes",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "due to changes in the types of merchandise sold between periods",
+   "why": "中文常写“因为不同时期销售商品类型的变化”，此处用due to衔接原因，结构清晰，符合正式报告的逻辑连接规范。",
+   "when": "正式报告中解释某一情况的原因时套用。",
+   "slot": "due to changes in the types of merchandise sold between […] periods",
+   "swap": [
+    "owing to variations in the categories of goods sold across different periods（owing to更正式，variations强调差异，categories比types更正式）",
+    "as a result of shifts in the kinds of products sold over successive periods（as a result of侧重结果关联，shifts强调转变，products比merchandise更常用）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/105418/000010541826000024/wmk-20251227x10k.htm"
+  },
+  {
+   "id": "ph_by_gerund_income_source",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "by (i) providing marketing services for the refined products output of the Tyler Refinery",
+   "why": "用by引导动名词短语明确说明收入来源的方式，结构清晰正式，符合专业报告规范；中国人常直译“通过提供XX服务”，未用列点形式，不够简洁有条理。",
+   "when": "正式财务报告中说明业务收入的实现方式时套用",
+   "slot": "by (i) providing […] for the […] of the […]",
+   "swap": [
+    [
+     "through (i) providing marketing services",
+     "through侧重强调实现方式的路径，语气比by更侧重操作过程，适合需突出路径的场景"
+    ],
+    [
+     "via (i) providing marketing services",
+     "via更简洁紧凑，语气更正式，适合短篇幅的业务说明"
+    ]
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1552797/000162828026012666/dkl-20251231.htm"
+  },
+  {
+   "id": "ph_as_well_as_location_parallel",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "as well as at terminals owned by third parties",
+   "why": "用as well as连接并列的地点，避免重复介词at，结构流畅紧凑；中国人常直译“还有在第三方拥有的码头”，重复介词，不够简洁。",
+   "when": "正式报告中列举并列的地点或主体时套用",
+   "slot": "as well as at terminals owned by […]",
+   "swap": [
+    [
+     "and also at terminals owned by third parties",
+     "and also语气更口语化，不如as well as正式，适合非正式场合"
+    ],
+    [
+     "in addition to terminals owned by third parties",
+     "in addition to侧重补充说明，逻辑上更侧重附加项，适合不同的并列逻辑"
+    ]
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1552797/000162828026012666/dkl-20251231.htm"
+  },
+  {
+   "id": "ph_cross_reference_see",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "See \"Commercial Agreements—Other Agreements with Third Parties—West Texas.\"",
+   "why": "用See引导明确的交叉引用，格式规范，符合SEC报告要求；中国人常直译“详见XX”，未统一使用专业报告的交叉引用格式，不够正式。",
+   "when": "正式财务报告中需要引用其他章节内容时套用",
+   "slot": "See \"[…]—[…]—[…]\"",
+   "swap": [
+    [
+     "Refer to \"Commercial Agreements—Other Agreements with Third Parties—West Texas.\"",
+     "Refer to更侧重查阅动作，语气比See更正式，适合需强调查阅的场景"
+    ],
+    [
+     "Check \"Commercial Agreements—Other Agreements with Third Parties—West Texas.\"",
+     "Check语气更随意，不如See正式，适合内部文档而非公开报告"
+    ]
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1552797/000162828026012666/dkl-20251231.htm"
+  },
+  {
+   "id": "ph_structured_as_corporation",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "is structured as a corporation with no publicly traded equity",
+   "why": "用structured as描述公司架构属性，比中国人常用的is a corporation without更专业，突出结构层面的特征，适合披露公司法律架构",
+   "when": "正式报告中说明公司法律结构的场合",
+   "slot": "is structured as a corporation with no […]",
+   "swap": [
+    "organized as a corporation with no publicly traded equity（侧重组织架构，表述稍不同）",
+    "formed as a corporation lacking publicly traded equity（侧重形成方式，语气正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1657853/000165785326000008/htz-20251231.htm"
+  },
+  {
+   "id": "ph_modal",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "when events or changes in circumstances indicate that the carrying value may not be recoverable",
+   "why": "用“may”委婉表达不确定性，符合正式报告的严谨性，中国人常直接用绝对表述如“cannot be recoverable”，显得武断",
+   "when": "正式财务报告中描述资产减值测试触发条件的场合",
+   "slot": "when events or changes in circumstances indicate that the […] may not be recoverable",
+   "swap": [
+    "when events or changes in circumstances suggest that the carrying value might not be recoverable（用suggest替代indicate，语气更委婉，弱化判断性）",
+    "when events or changes in circumstances signal that the carrying value could not be fully recoverable（用signal替代indicate，语气更正式，增加“fully”强化程度）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/931755/000093175526000003/aei21-20251231.htm"
+  },
+  {
+   "id": "ph_precise",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "by comparing the property’s probability-weighted future undiscounted cash flows to its current carrying value",
+   "why": "用“probability-weighted”精准定义现金流的计算逻辑，符合财务报告的专业性，中国人常直接写“future cash flows”，缺少关键限定，表述模糊",
+   "when": "财务报告中描述资产减值测试的现金流计算方法的场合",
+   "slot": "by comparing the […]’s probability-weighted future undiscounted cash flows to its current carrying value",
+   "swap": [
+    "by comparing the property’s weighted probability future undiscounted cash flows to its current carrying value（语序调整，将“weighted probability”前置，表述稍显随意）",
+    "by comparing the property’s probability-weighted future non-discounted cash flows to its current carrying value（用“non-discounted”替代“undiscounted”，用词差异，正式度相近）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/931755/000093175526000003/aei21-20251231.htm"
+  },
+  {
+   "id": "ph_hedge",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Changes in these assumptions or analysis may cause material changes in the carrying value of the properties",
+   "why": "用“may cause”委婉表述潜在影响，避免绝对化，符合SEC报告的合规要求，中国人常直接写“will cause changes”，过于武断",
+   "when": "正式财务报告中披露假设变动对资产价值影响的场合",
+   "slot": "Changes in these assumptions or analysis may cause material changes in the carrying value of the […]",
+   "swap": [
+    "Changes in these assumptions or analysis might result in material changes in the carrying value of the properties（用“result in”替代“cause”，语气更正式，弱化直接性）",
+    "Changes in these assumptions or analysis could lead to material changes in the carrying value of the properties（用“lead to”替代“cause”，语气更弱，更显谨慎）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/931755/000093175526000003/aei21-20251231.htm"
+  },
+  {
+   "id": "ph_as_receive_revenue",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "as the Company does not receive significant revenue from its business operations",
+   "why": "用as引导原因状语，简洁衔接逻辑，比because更符合正式报告书面语气，避免过于口语化",
+   "when": "用于正式报告中说明前文动作的原因",
+   "slot": "[…], as the Company does not receive significant revenue from its business operations",
+   "swap": [
+    "because the Company does not generate meaningful revenue from its operations（更强调“产生”而非“收到”，语气稍重）",
+    "since the Company has no material revenue from its business（更简洁，用会计术语material替代significant）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1230524/000147793225007668/cyap_10k.htm"
+  },
+  {
+   "id": "ph_no_guarantee",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "There is no guarantee that the Company will be successful in arranging financing on acceptable terms",
+   "why": "用模糊性表达避免绝对化，符合SEC报告谨慎性要求，中文常直接写“公司无法保证”，此表述更委婉正式，降低法律风险",
+   "when": "用于正式报告中说明融资、业绩等不确定性事项",
+   "slot": "There is no guarantee that the Company will be successful in […] on acceptable terms",
+   "swap": [
+    "It is not guaranteed that the Company will successfully arrange financing on reasonable terms（更强调被动性，语气稍弱）",
+    "The Company cannot ensure it will secure financing on favorable terms（更主动，但不够正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1230524/000147793225007668/cyap_10k.htm"
+  },
+  {
+   "id": "ph_002_162",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "achieve a mix of fixed and variable rate debt",
+   "why": "用“achieve a mix of”精准表达构建合适组合的意图，比中式英语常用的“get a combination of”更专业，契合财经语境中对债务结构调整的正式表述。",
+   "when": "可套用在财务报告中描述构建特定类型债务或资产组合的场合。",
+   "slot": "achieve a mix of […] and […] rate debt",
+   "swap": [
+    "attain a combination of […] and […] rate debt（更侧重达成目标的过程）",
+    "establish a mix of […] and […] rate debt（更侧重主动建立组合的动作）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/63296/000006329625000070/matw-20250930.htm"
+  },
+  {
+   "id": "ph_min_ratio_structure",
+   "kind": "phrase",
+   "en": "a minimum ratio of CET1 to risk-weighted assets",
+   "why": "中文常直接写「最低比例」，此处用「a minimum ratio of X to Y」结构，明确对应「X对Y的比例」，避免歧义，符合正式报告的精准性要求",
+   "when": "用于金融监管文件、财务报告中说明指标比例的场合",
+   "slot": "a minimum ratio of […] to […]",
+   "swap": [
+    "a floor ratio of […] to […]（更正式，适用于监管文件）",
+    "the minimum required ratio of […] to […]（更侧重合规要求）"
+   ],
+   "dim": "reg",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/712534/000071253426000022/frme-20251231.htm"
+  },
+  {
+   "id": "ph_cause_clients_move_investments",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "could also cause clients to move their investments to lower margin products",
+   "why": "用cause sb to do sth清晰表达因果，搭配lower margin products精准使用财经术语，比中国人常写的口语化表述更专业简洁。",
+   "when": "撰写英文财经报告中描述市场因素导致的客户行为变化时套用。",
+   "slot": "could also cause clients to move their investments to […]",
+   "swap": [
+    "might prompt clients to shift their investments to lower margin products：prompt更侧重触发，shift更专业",
+    "could lead clients to transfer their investments to lower margin products：transfer更侧重资金转移"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/815917/000119312526105798/ck0000815917-20251231.htm"
+  },
+  {
+   "id": "ph_in_terms_of",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "in terms of capital, resources, AUC, transaction volume and range of product offerings",
+   "why": "‘in terms of’是正式书面语中精准限定比较维度的常用短语，中国人常使用‘in the aspect of’这类直译表达，不如其自然贴合SEC报告的正式语境，且更简洁",
+   "when": "撰写正式财务报告、对比不同主体的规模或能力维度时可套用",
+   "slot": "in terms of […], […], […], […], […]",
+   "swap": [
+    "with regard to capital, resources, AUC, transaction volume and range of product offerings（语气更侧重关联关系，比‘in terms of’更正式）",
+    "as measured by capital, resources, AUC, transaction volume and range of product offerings（侧重用这些指标衡量，更具量化属性）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/815917/000119312526105798/ck0000815917-20251231.htm"
+  },
+  {
+   "id": "ph_existing_and_future",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Existing and future clients may seek lower cost options",
+   "why": "用‘Existing and future’并列修饰名词，简洁覆盖两类主体，避免分开表述的冗长（如‘current clients and future clients’），符合正式报告的紧凑性要求",
+   "when": "撰写涉及现有和未来主体的商业报告、客户分析时可套用",
+   "slot": "[Existing and future] [….] may seek [….]",
+   "swap": [
+    "Current and prospective clients may seek lower cost options（‘prospective’比‘future’更正式，侧重潜在的未来主体）",
+    "Existing and potential clients may seek lower cost options（‘potential’更侧重可能性，比‘future’更灵活）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/815917/000119312526105798/ck0000815917-20251231.htm"
+  },
+  {
+   "id": "ph_adversely_impact_ops_fin",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "could adversely impact our operations and/or financial results.",
+   "why": "用“adversely impact”精准表达不利影响，比中国人常写的“会产生不好的影响”更简洁专业，符合财经报告的正式语气。",
+   "when": "撰写风险因素分析时，描述对业务或财务结果的不利影响的场合。",
+   "slot": "could adversely impact our […] and/or financial results.",
+   "swap": [
+    "could negatively affect our operations and/or financial performance（用affect替换impact，更正式）",
+    "might harm our operations and/or financial results（语气更弱，适合风险预警表述）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1490906/000149090625000033/cffn-20250930.htm"
+  },
+  {
+   "id": "ph_management_reviews_deposit_flows",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "management reviews deposit flows, loan demand, cash levels, and changes in several market interest rates",
+   "why": "用并列名词短语清晰罗列审查维度，逻辑明确，中国人常写‘management checks deposit flows, loan demand...’用词较口语化，专业度不足",
+   "when": "用于正式报告中描述管理层的常规审查动作",
+   "slot": "management reviews […] , […] , […] , and […]",
+   "swap": [
+    "management examines deposit flows, loan demand...（语气更正式，适合审计报告）",
+    "management assesses deposit flows, loan demand...（侧重评估，适合财务分析报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1490906/000149090625000033/cffn-20250930.htm"
+  },
+  {
+   "id": "ph_based_competitor_pricing_and",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "based on competitor pricing and the credit risk of the borrower",
+   "why": "用‘based on A and B’结构明确说明决策依据，并列成分逻辑对等，中国人常写‘according to competitor pricing and borrower's credit risk’用词冗余，结构不够紧凑",
+   "when": "用于正式报告中说明产品定价或策略的依据",
+   "slot": "based on […] and […]",
+   "swap": [
+    "dependent on competitor pricing and the borrower's credit risk（侧重依赖，语气不如前者中性）",
+    "grounded in competitor pricing and the credit risk of the borrower（更书面化，适合学术类报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1490906/000149090625000033/cffn-20250930.htm"
+  },
+  {
+   "id": "ph_comprehensive_suite",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "We are preparing to implement a comprehensive suite of private banking products and services in fiscal year 2026",
+   "why": "“comprehensive suite”比“a full set of”更正式，强调配套设计的严密性；中国写作者通常直译“一套完整产品”，丢失“suite”隐含的“集成套件”感。",
+   "when": "在年报或项目计划中预告将推出一整套互为补充的产品或服务时。",
+   "slot": "We are preparing to implement a comprehensive suite of […] in fiscal year […]",
+   "swap": [
+    "a full range of (强调种类齐全，但不如suite突出各部分的有机搭配)",
+    "an end-to-end solution (侧重端到端，更偏向单一整合方案而非多个产品组合)",
+    "a complete set of (最直白，缺乏商业文件所需的专业质感)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1490906/000149090625000033/cffn-20250930.htm"
+  },
+  {
+   "id": "ph_better_serve_and_grow",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "to better serve our customers and grow our non-interest revenue",
+   "why": "用“to better serve … and grow …”一个不定式带出双重目的，比“in order to improve service to customers and to increase non‑interest income”紧凑；“better serve”是地道搭配，中国学生易说“improve service”。",
+   "when": "介绍一项新举措如何同时提升客户体验和财务指标时。",
+   "slot": "to better serve our […] and grow our […]",
+   "swap": [
+    "to enhance customer service and boost non-interest revenue (更书面，但boost稍显营销口吻)",
+    "aiming to improve the customer experience while increasing non-interest income (while引出两个动作，语气更松散)",
+    "with the goal of better serving customers and expanding revenue streams (streams涵盖更宽，但不如grow直接)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1490906/000149090625000033/cffn-20250930.htm"
+  },
+  {
+   "id": "ph_bridge_the_gap",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "our private banking line of business will bridge the gap between high-net-worth depository customers, small business owners or commercial customers, and corporate trustee opportunities for the Bank",
+   "why": "“bridge the gap”用比喻说明填补业务空白，比“connect”形象；between后并列三项，用逗号分隔再加“and”使列举清晰，中文习惯罗列时易忽略这种层次。",
+   "when": "在阐述新业务能打通原本隔离的客群或机会，创造协同价值时。",
+   "slot": "[…] will bridge the gap between […], […], and […]",
+   "swap": [
+    "close the divide between (强调分歧、对立，语气较严肃，适用于明显隔阂)",
+    "link … with … (仅表示连接，缺少“原先存在缺口”的意味)",
+    "create synergy among (强调协同，但没有暗示此前存在不连通的情况)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1490906/000149090625000033/cffn-20250930.htm"
+  },
+  {
+   "id": "ph_cause_actual_results_differ_materially",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "could cause actual results to differ materially from those in any forward-looking statement",
+   "why": "用“differ materially from”精准表达财务报告中要求的“实质性差异”，中国人常直接写“be different from”，表述笼统，不符合专业报告的精准性要求。",
+   "when": "撰写财务报告中前瞻性声明的风险提示内容时套用。",
+   "slot": "could cause actual results to differ materially from those in any forward-looking statement related to […]",
+   "swap": [
+    "might result in actual outcomes differing significantly from those in any forward-looking statement（“differ materially”比“differ significantly”更贴合SEC专业术语，语气更严谨）",
+    "could lead to actual results being materially different from those in any forward-looking statement（“differ materially”比“being materially different”更简洁，更符合正式报告的措辞习惯）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1376986/000137698625000056/tve-20250930.htm"
+  },
+  {
+   "id": "ph_undertakes_no_obligation",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "undertakes no obligation to update any forward-looking statement",
+   "why": "用“undertakes no obligation”正式表达“不承担义务”，中国人常写“has no duty”，语气不够正式，不符合SEC filing的规范表述。",
+   "when": "财务报告中声明前瞻性声明的更新义务时套用。",
+   "slot": "undertakes no obligation to update any forward-looking statement to reflect developments that occur after […]",
+   "swap": [
+    "does not have a duty to revise any forward-looking statement（“undertakes no obligation”比“has no duty”更贴合监管文件的正式措辞，更具法律严谨性）",
+    "is not obligated to update any forward-looking statement（“undertakes no obligation”比“is not obligated”更书面化，更符合专业报告风格）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1376986/000137698625000056/tve-20250930.htm"
+  },
+  {
+   "id": "ph_will_receive_any_class",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "it will receive 100% of any Class B distributions made by MAIT.",
+   "why": "用过去分词短语作后置定语修饰名词，避免定语从句的冗长，结构紧凑，中国人常写“distributions that are made by MAIT”，更啰嗦",
+   "when": "用于正式报告中描述权益或资金的分配流向",
+   "slot": "it will receive …% of any [Class X] distributions made by [Entity].",
+   "swap": [
+    "it will receive all Class B distributions issued by MAIT.（“issued”比“made”更贴合证券发行场景，更正式）",
+    "it will get 100% of any Class B distributions from MAIT.（“from”更简洁，适合内部非正式报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/2038118/000203811826000013/fet-20251231.htm"
+  },
+  {
+   "id": "ph_designed_improve_operating_flexibility",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "designed to improve operating flexibility, increase reliability, position transmission capacity for future load growth and facilitate response to system events",
+   "why": "采用平行结构的不定式短语作后置定语，避免拆分多个分句，符合英文正式报告的凝练表达，中文常拆成多个独立分句，英文用并列不定式结构更紧凑，减少冗余",
+   "when": "撰写项目计划、方案的目的说明时套用",
+   "slot": "[plan] designed to improve […], increase […], position […] for […] and facilitate […]",
+   "swap": [
+    "intended to enhance operating flexibility, boost reliability, allocate transmission capacity for future load growth and support response to system events（语气更正式，enhance比improve更强调效果提升）",
+    "created to advance operating flexibility, strengthen reliability, align transmission capacity with future load growth and ease response to system events（语气偏向战略层面，align比position更强调匹配度）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/2038118/000203811826000013/fet-20251231.htm"
+  },
+  {
+   "id": "ph_phrase_risk_enumeration",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "including the risk of potential breakdown or failure of equipment or processes due to aging infrastructure",
+   "why": "用名词性短语分层列举风险，比中文常直接罗列更清晰严谨，避免冗余动词，中国人写英文常直接用“have risks like”，不够专业凝练",
+   "when": "用于财务/审计报告中列举业务相关风险因素时",
+   "slot": "including the risk of potential […] or failure of […] due to […]",
+   "swap": [
+    "including risks such as potential breakdown or failure of equipment or processes（替换后更简洁，适合短报告，语气平实）",
+    "including the potential risk of breakdown or failure of equipment or processes（替换后更强调风险可能性，语气稍强）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/2038118/000203811826000013/fet-20251231.htm"
+  },
+  {
+   "id": "ph_phrase_attr_modifier",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "weather-related incidents and other natural disasters can disrupt transmission systems",
+   "why": "用合成形容词“weather-related”修饰名词，比中文常直译“incidents related to weather”更紧凑专业，符合英文报告风格，中国人写英文常拆分表述，不够凝练",
+   "when": "用于财务报告中描述与特定因素相关的事件时",
+   "slot": "[…] incidents and other natural disasters can disrupt […] systems",
+   "swap": [
+    "weather-related events and other natural disasters can disrupt transmission networks（替换后用events替代incidents，语气更通用）",
+    "weather-related occurrences and other natural disasters can disrupt transmission systems（替换后用occurrences替代incidents，更正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/2038118/000203811826000013/fet-20251231.htm"
+  },
+  {
+   "id": "ph_phrase_passive_risk",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "could be adversely affected by unexpected or uncontrollable events occurring on the systems of such third parties",
+   "why": "用被动语态客观表述潜在影响，避免主动语态的主观性，符合SEC报告的中立正式要求，中国人写英文常常用主动语态“will affect”，不够严谨",
+   "when": "用于财务尽职调查/审计报告中描述外部因素对主体的潜在影响时",
+   "slot": "could be adversely affected by unexpected or uncontrollable events occurring on the systems of such […]",
+   "swap": [
+    "may be negatively impacted by unforeseen or uncontrollable events occurring on the systems of such third parties（替换后用may替代could，语气更弱）",
+    "might be adversely impacted by unforeseeable or uncontrollable events occurring on the systems of such third parties（替换后用might替代could，更委婉）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/2038118/000203811826000013/fet-20251231.htm"
+  },
+  {
+   "id": "ph_also_have_items_not",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "We also have items not directly attributable to an operating segment.",
+   "why": "用“not directly attributable to”精准表达财务项的归属关系，是SEC报告标准专业术语，中文常直接写“不能直接归属于”，英文表述更契合正式财务文件的措辞规范。",
+   "when": "在财务报告中区分无法直接归属到特定业务部门的项目时使用。",
+   "slot": "We also have items not directly attributable to [… ].",
+   "swap": [
+    "that cannot be directly traced to（更强调追溯性，适用于需明确溯源的场景）",
+    "not directly assignable to（assignable更偏向分配属性，适用于需明确分配规则的场景）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/789933/000078993326000070/nacco-20251231.htm"
+  },
+  {
+   "id": "ph_for_detailed_breakdown_of_loan_portfolio",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "For a detailed breakdown of the composition of our loan portfolio",
+   "why": "用“For a detailed breakdown of + 名词”清晰指引读者查找详细内容，符合SEC报告的规范，中文常直接说“详见贷款组合构成的详细拆分”，英文的指引结构更简洁正式。",
+   "when": "用于财报中指引读者查看附注或详细数据。",
+   "slot": "For a detailed breakdown of the composition of our […]",
+   "swap": [
+    "For a granular breakdown of our loan portfolio’s composition（granular强调颗粒度更细，适合更细节的指引）",
+    "For a detailed analysis of our loan portfolio composition（analysis侧重分析，breakdown侧重拆分，语气不同）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/818677/000143774926009181/sfdl20251231_10k.htm"
+  },
+  {
+   "id": "ph_such_as_examples",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "such as U.S. Treasury securities and GNMA securities",
+   "why": "用such as紧跟被修饰名词，明确举例范围，中国人写英文常误用like或把例子后置，such as更符合正式报告的严谨性，无歧义。",
+   "when": "正式报告中举例说明名词时套用。",
+   "slot": "such as […] and […]",
+   "swap": [
+    "including U.S. Treasury securities and GNMA securities（语气宽泛，适合列举部分案例）",
+    "like U.S. Treasury securities and GNMA securities（更口语化，适合非正式文档）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/936528/000093652825000117/wfsl-20250930.htm"
+  },
+  {
+   "id": "ph_compete_with_branded_biosimilar_generic",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "must compete with other branded, biosimilar, or generic products",
+   "why": "该写法明确列举竞品的三类具体类型，表述精准且符合正式报告的专业规范；中国人常笼统写“compete with other products”，缺少分类，不够严谨。",
+   "when": "撰写行业竞争分析、产品市场定位相关的正式报告、财务尽职调查文档时套用。",
+   "slot": "[…] must compete with other branded, biosimilar, or generic products",
+   "swap": [
+    "face competition from other branded, biosimilar, or generic products（语气更侧重被动面临竞争，原句侧重主动参与竞争）",
+    "have to compete against other branded, biosimilar, or generic products（语气稍口语化，正式度略低于原句）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/59478/000005947826000013/lly-20251231.htm"
+  },
+  {
+   "id": "ph_forward_looking_terms_list",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "terms such as \"anticipates,\" \"believes,\" \"could,\" \"estimates,\" \"expects,\" \"forecasts,\" \"goals,\" \"guidance,\" \"intends,\" \"may,\" \"objectives,\" \"plans,\" \"possible,\" \"potential,\" \"projects,\" \"seeks,\" \"should,\" \"targets,\" \"will,\" or variations of these terms",
+   "why": "用正式“such as”列举术语，术语加引号明确标识，补充变体说明覆盖范围，中国人常误用口语化“like”或省略变体，该写法精准全面符合SEC要求",
+   "when": "正式报告中列举特定术语（如前瞻性陈述标识词）时",
+   "slot": "terms such as \"[Term1],\" \"[Term2],\" ..., \"[TermN],\" or variations of these terms",
+   "swap": [
+    "terms including \"anticipates,\" \"believes,\" ..., \"will,\" or their variants: 表述简洁，适合篇幅紧张的正式文件",
+    "terms like \"anticipates,\" \"believes,\" ..., \"will,\" or related terms: 语气稍口语化，适合非监管类正式报告"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/107815/000010781526000003/wep-20251231.htm"
+  },
+  {
+   "id": "ph_following_sections_10k",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "in the following sections of this Annual Report on Form 10-K",
+   "why": "中文常写“在本年报的以下部分”，该表述使用了监管文件的标准术语“Form 10-K”，精准明确，符合专业报告的规范。",
+   "when": "用于监管报告中指定具体的报告章节位置。",
+   "slot": "in the following sections of this Annual Report on Form …-K",
+   "swap": [
+    "in the subsequent sections of this Annual Report on Form 10-K (subsequent比following更正式，适用于更严谨的监管语境)",
+    "in the below sections of this Annual Report on Form 10-K (below更简洁，适合篇幅较短的报告)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/109563/000010956325000080/ait-20250630.htm"
+  },
+  {
+   "id": "ph_in_the_absence_of",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "In the absence of significant revenue and profits",
+   "why": "是正式财经报告中常用的严谨表达，替代口语化的'without'，中国人常直接用'without'，不够贴合正式报告语境。",
+   "when": "正式财务报告中描述企业缺乏某项关键指标（如收入、利润）的场合。",
+   "slot": "In the absence of […], we will be completely dependent on […].",
+   "swap": [
+    "Without significant revenue and profits（语气更直接，不够正式）",
+    "Given the lack of significant revenue and profits（侧重客观缺失，与原句条件语气不同）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1310488/000109181826000047/bfnh-123125_10k.htm"
+  },
+  {
+   "id": "ph_more_likely_to_be_affected",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "more likely to be affected by adverse personal circumstances",
+   "why": "体现概率性而非绝对性，中国人常直接写“will be affected”，过于绝对，不符合财报审慎性原则",
+   "when": "描述风险或影响的概率性表述场合",
+   "slot": "more likely to be affected by […]",
+   "swap": [
+    "could be impacted（语气更委婉，用于初步评估）",
+    "may be influenced（更中性，用于非核心风险）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/805676/000080567626000017/prk-20251231.htm"
+  },
+  {
+   "id": "ph_included_elsewhere",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "included elsewhere in this Annual Report on Form 10-K",
+   "why": "清晰指明补充信息的位置，避免了用“mentioned in other parts”这类模糊表达，中国人常使用不明确的指代，增加读者查找难度。",
+   "when": "在官方报告中引导读者查找同一报告内的补充信息时使用。",
+   "slot": "[补充信息] is included elsewhere in this Annual Report on Form …-K",
+   "swap": [
+    "appearing elsewhere in this Annual Report on Form 10-K: 更简洁，稍不正式",
+    "found elsewhere in this Annual Report on Form 10-K: 口语化，用于非监管文件"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1467373/000146737325000217/acn-20250831.htm"
+  },
+  {
+   "id": "ph_contain_uncertainties_that_may",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "contain uncertainties that may materially affect actual results",
+   "why": "用副词\"materially\"精准修饰影响程度，比中国人常用的\"greatly\"更符合SEC报告的专业表述，避免模糊，体现财务报告的严谨性",
+   "when": "在财务报告中描述不确定因素对结果的潜在影响时使用",
+   "slot": "contain uncertainties that may materially affect […] results",
+   "swap": [
+    "carry uncertainties that could significantly impact actual outcomes（用carry替代contain，语气更弱，impact替代affect，表述更委婉）",
+    "involve uncertainties that may substantially influence actual results（substantially替代materially，influence替代affect，侧重影响的实质性）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/27430/000002743026000011/dpl-20251231.htm"
+  },
+  {
+   "id": "ph_see_item_risk_factors",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "See Item 1A. - Risk Factors in this Annual Report on Form 10-K",
+   "why": "用\"See\"直接指引到具体报告章节，比中国人常用的\"Please refer to\"更简洁专业，符合正式报告的高效表述习惯",
+   "when": "在财务报告中引用其他章节的详细内容时使用",
+   "slot": "See Item […] in this Annual Report on Form 10-K",
+   "swap": [
+    "Refer to Item […] within this Annual Report on Form 10-K（更正式，用within替代in，语气更严谨）",
+    "Check Item […] in this Annual Report on Form 10-K（语气随意，不适合正式报告，仅用于非正式场景）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/27430/000002743026000011/dpl-20251231.htm"
+  },
+  {
+   "id": "ph_applies_all_aes_employees",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "applies to all AES employees and employees of AES subsidiaries",
+   "why": "中文对应正式报告的适用范围，常有人用“is applicable to”，但此写法用“applies to”更简洁，无冗余，符合SEC报告的简洁正式风格。",
+   "when": "正式报告中说明规则、标准要求的适用对象时使用。",
+   "slot": "[Rule/Standard] applies to all [Group …] and [Group …], as well as [Group …]",
+   "swap": [
+    "is applicable to all [Group 1] and [Group 2], as well as [Group 3]：更书面化，语气更正式，适合监管报告",
+    "covers all [Group 1] and [Group 2], as well as [Group 3]：侧重覆盖范围，语气稍宽泛，适合非监管类内部报告"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/27430/000002743026000011/dpl-20251231.htm"
+  },
+  {
+   "id": "ph_parallel_associated",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "associated with cooling and in the winter months associated with heating",
+   "why": "采用平行结构的后置定语，避免重复“associated with”，句式简洁对称，符合英文正式写作的平行原则，比中国人常写的“which are associated with cooling and which are associated with heating”更紧凑。",
+   "when": "适用于正式报告中描述并列的关联事项时，保持句式的平行性以提升可读性。",
+   "slot": "[…] associated with […] and […] associated with […]",
+   "swap": [
+    "linked to cooling and in the winter months linked to heating（“linked to”与“associated with”同义，语气稍弱）",
+    "related to cooling and in the winter months related to heating（“related to”更通用，不如“associated with”贴合业务关联的紧密性）",
+    "correlated with cooling and in the winter months correlated with heating（“correlated with”侧重统计关联，不如“associated with”贴合业务归属）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/27430/000002743026000011/dpl-20251231.htm"
+  },
+  {
+   "id": "ph_passive_impact",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "can also be impacted by service territory economic activity and the number of retail customers we have",
+   "why": "使用被动语态客观陈述业务影响因素，避免使用主观主语（如“we”），符合SEC报告的中立、客观风格，比中国人常写的“service territory economic activity and the number of retail customers we have also impact”更正式、客观。",
+   "when": "适用于正式财经报告中描述业务被外部因素影响时，保持中立语气以符合专业报告要求。",
+   "slot": "[…] can also be impacted by […] and […]",
+   "swap": [
+    "can also be affected by service territory economic activity and the number of retail customers we have（“affected”更通用，专业语境中“impacted”更贴合业务层面的影响）",
+    "may also be influenced by service territory economic activity and the number of retail customers we have（“may”语气更弱，适合不确定性更高的语境）",
+    "are also impacted by service territory economic activity and the number of retail customers we have（去掉“can”，语气更肯定，适合确定性较高的影响）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/27430/000002743026000011/dpl-20251231.htm"
+  },
+  {
+   "id": "ph_eliminates_duplication_effect",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "eliminates duplication of upload and data entry while reducing errors",
+   "why": "用while引导的伴随状语简洁表达措施的双重效果，中国人常拆成两个独立分句更啰嗦",
+   "when": "写专业报告描述某举措带来的双重益处时套用",
+   "slot": "eliminates duplication of […] and […] while reducing […]",
+   "swap": [
+    "removes redundancy of upload and data entry while cutting errors（语气更口语化）",
+    "eliminates redundant uploads and data entries while lowering mistakes（更简洁的名词形式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1099369/000106299325016994/form10k.htm"
+  },
+  {
+   "id": "ph_arrangement_additional_benefits",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "These arrangements provide a number of additional benefits",
+   "why": "Chinese writers often use vague expressions like '带来很多好处' when describing business gains, while this phrase uses precise wording to clearly state advantages, avoiding ambiguity.",
+   "when": "When explaining the advantages of a business arrangement or partnership.",
+   "slot": "These arrangements provide a number of additional benefits, including […], […], […], […].",
+   "swap": [
+    "offer a variety of extra benefits (more casual, less formal for official reports)",
+    "deliver several supplementary benefits (more formal, suitable for strict regulatory documents)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1364479/000136447926000050/hri-20251231.htm"
+  },
+  {
+   "id": "ph_increase_our_share_of_our_customers_tota",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "increase our share of our customers’ total rental spend",
+   "why": "用具体的“total rental spend”替代模糊的“customers’ spending”，表述精准，符合SEC报告的严谨性，中国人常写“increase our share of customers’ spending”，不够具体。",
+   "when": "用于撰写市场份额、客户支出相关的业务指标表述场合",
+   "slot": "increase our share of our customers’ total […] spend",
+   "swap": [
+    "grow our share of customers’ total rental expenditure（更正式，适合年报表述）",
+    "boost our share of customers’ total rental spending（更强调增长幅度，适合业绩表述）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1364479/000136447926000050/hri-20251231.htm"
+  },
+  {
+   "id": "ph_including_refineries_and_petrochemical",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "including refineries and petrochemical operations, industrial manufacturing including automotive and aerospace, power, energy, renewables, metals and mining, agriculture, pulp, paper and wood and food and beverage",
+   "why": "用including分层列举行业，逻辑清晰，中国人常直接罗列行业，缺少分层显得杂乱",
+   "when": "撰写业务覆盖的行业范围时",
+   "slot": "including […], […], […], […], […], […], […], […], […]",
+   "swap": [
+    "such as refineries and petrochemical operations, industrial manufacturing, power, energy, renewables, metals and mining, agriculture, pulp, paper and wood, and food and beverage（更简洁，去掉重复的including）",
+    "like refineries and petrochemical operations, etc.（更随意，不适合正式报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1364479/000136447926000050/hri-20251231.htm"
+  },
+  {
+   "id": "ph_approximately_25_percent",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "represented approximately 25% of our equipment rental revenue for the year ended December 31, 2025",
+   "why": "用approximately体现量化的严谨性，避免绝对化，中国人常直接写25%，正式报告中不够专业",
+   "when": "撰写财务数据占比时",
+   "slot": "represented approximately […]% of our […] revenue for the year ended […]",
+   "swap": [
+    "accounted for roughly 25% of our equipment rental revenue for the fiscal year ended December 31, 2025（用fiscal year替代calendar year，更符合财务术语）",
+    "constituted about 25% of our equipment rental revenue for the year ending December 31, 2025（用ending替代ended，时间范围表述不同）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1364479/000136447926000050/hri-20251231.htm"
+  },
+  {
+   "id": "ph_remained_conservative_when_considering",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "has remained conservative when considering rates and rate increases",
+   "why": "该写法用现在完成体搭配“when considering”清晰传递决策时的审慎态度，符合正式报告的专业语气；中文常直接生硬直译或用简单的“considering”，缺乏时态带来的语境连贯性。",
+   "when": "用于正式财务报告中描述决策制定时的审慎原则。",
+   "slot": "The Company has remained conservative when considering […] and […].",
+   "swap": [
+    "has exercised caution when considering […] and […]（语气更侧重主动采取谨慎措施）",
+    "has taken a conservative approach to considering […] and […]（更强调决策方法而非状态）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/216877/000106299325017396/form10k.htm"
+  },
+  {
+   "id": "ph_as_a_result_of_experiencing",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "As a result of experiencing increasing operational expenses and conducting a local comparative rate study",
+   "why": "用“As a result of + 动名词短语”清晰衔接因果逻辑，正式且具体；中文常直接用“由于”加简单名词，缺乏动作细节的支撑，显得笼统。",
+   "when": "用于正式报告中说明决策或行动的直接原因。",
+   "slot": "As a result of experiencing […] and conducting […], […].",
+   "swap": [
+    "Given that the Company has experienced […] and conducted […]（语气更侧重已知事实）",
+    "On account of rising […] and a local comparative rate study（更简洁，适合篇幅紧张的报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/216877/000106299325017396/form10k.htm"
+  },
+  {
+   "id": "ph_quant_growth_comparison",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "an increase of $125 million, or 27%, compared to the prior-year quarter",
+   "why": "中文财务写作常直接写“同比增长1.25亿美元，27%”，该写法将绝对值与百分比并列，用“compared to the prior-year quarter”明确对比基准，结构清晰，便于读者快速对比数据",
+   "when": "适用于季度财务业绩同比增长的披露场景",
+   "slot": "an increase of […], or […], compared to the prior-year quarter",
+   "swap": [
+    "a rise of $125 million, or 27%, versus the prior-year quarter（versus比compared to更正式，适合SEC类报告）",
+    "a 27% increase of $125 million, compared to the prior-year quarter（语序调整，突出百分比增长幅度）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/277509/000162828026011576/fss-20251231x10kexhx991.htm"
+  },
+  {
+   "id": "ph_attr_adjusted_metric",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "adjusted net income for the fourth quarter of $71.6 million, or $1.16 per diluted share",
+   "why": "中文常写“第四季度调整后净利润7160万美元，每股摊薄收益1.16美元”，该写法将“adjusted”置于指标前，明确是调整后指标，用“or”并列每股数据，避免歧义，符合专业报告规范",
+   "when": "适用于非GAAP调整后财务指标的披露场景",
+   "slot": "adjusted […指标] for the […quarter] of […], or $[…] per diluted share",
+   "swap": [
+    "adjusted net profit for the fourth quarter amounting to $71.6 million, or $1.16 per diluted share（amounting to比of更正式，强调金额属性）",
+    "adjusted net income in the fourth quarter of $71.6 million, or $1.16 diluted per share（语序调整，突出期间的位置）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/277509/000162828026011576/fss-20251231x10kexhx991.htm"
+  },
+  {
+   "id": "ph_nom_net_income",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "Net income for the year ended December 31, 2025 was $246.6 million, or $4.01 per diluted share",
+   "why": "用“核心指标 + for + 截止日期的年度 + was + 总数值, or + 单位数值”的名词性结构，比中国人常用的“Net income in 2025 was...”更准确体现财务报告的时间边界，清晰拆分每股收益的数值，符合专业报告规范。",
+   "when": "用于财务报告中披露年度核心指标（如净利润、每股收益）时。",
+   "slot": "Net income for the year ended […] was $[…] million, or $[…] per diluted share",
+   "swap": [
+    "Net earnings for the year ended […] were $[…] million, or $[…] per diluted share（用earnings替代income，部分地区财务报告常用表述）",
+    "Net profit for the year ended […] was $[…] million, or $[…] per basic share（用basic替代diluted，区分不同类型的每股收益）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/277509/000162828026011576/fss-20251231x10kexhx991.htm"
+  },
+  {
+   "id": "ph_attr_adjusted",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Adjusted net income for the year ended December 31, 2025 was $260.2 million",
+   "why": "用“Adjusted + 核心指标”的属性修饰结构，明确区分常规净利润与调整后净利润，比中国人直接写的“adjusted net profit”更符合SEC报告的规范术语，避免指标混淆。",
+   "when": "用于财务报告中披露经调整的非公认会计准则（GAAP）指标时。",
+   "slot": "Adjusted net income for the year ended […] was $[…] million",
+   "swap": [
+    "Adjusted net earnings for the year ended […] were $[…] million（用earnings变体，部分报告的常用表述）",
+    "Adjusted operating income for the year ended […] was $[…] million（调整不同类型的收入指标，适配不同披露场景）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/277509/000162828026011576/fss-20251231x10kexhx991.htm"
+  },
+  {
+   "id": "ph_attr_1",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "net sales for the fourth quarter were $504 million",
+   "why": "中文财务写作常把时间放句首，英文此处将核心指标“net sales”放句首，符合英文“先核心信息”的表达逻辑，中国人写英文常语序颠倒导致不地道。",
+   "when": "财务报告中陈述特定期间核心指标数值的场合。",
+   "slot": "[net sales/gross profit] for the [first/second/third/fourth] quarter were $[…] million",
+   "swap": [
+    "the fourth quarter net sales amounted to $504 million（用amounted to更正式，适合年报）",
+    "$504 million was the net sales for the fourth quarter（强调数值，适合数据对比场景）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/277509/000162828026011576/fss-20251231x10kexhx991.htm"
+  },
+  {
+   "id": "ph_list_financial_instruments",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "purchasing financial instruments, such as prepaid variable forward contracts, equity swaps, collars, and exchange funds",
+   "why": "中文罗列金融工具常生硬堆砌，此处用“such as [A], [B], [C], and [D]”的正式罗列结构，逻辑清晰，符合财经报告的规范表述。",
+   "when": "罗列具体金融工具名称的场合",
+   "slot": "purchasing financial instruments, such as […], equity swaps, collars, and exchange funds",
+   "swap": [
+    "acquiring financial instruments, including prepaid variable forward contracts, equity swaps, collars, and exchange funds：“acquiring”比“purchasing”更正式，适用于非直接购买的金融工具获取",
+    "buying financial instruments, like prepaid variable forward contracts, equity swaps, collars, and exchange funds：“like”比“such as”更口语化，仅适用于非正式的列举场景"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1803901/000119312526197712/talk-20251231.htm"
+  },
+  {
+   "id": "ph_via_direct_connection",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "via direct connection with the point of care",
+   "why": "用介词短语「via」清晰说明业务实现路径，比中国人常写的「通过直接连接」更简洁正式，符合SEC报告的严谨措辞要求。",
+   "when": "用于说明产品、服务的实现方式或业务路径的场合。",
+   "slot": "via [direct/secure/...] connection with the [target/...]",
+   "swap": [
+    "through direct connection with the point of care（更侧重物理连接，via更侧重渠道属性）",
+    "by direct connection with the point of care（语气更被动，正式度稍低）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1124804/000119312526239413/mdrx-20241231.htm"
+  },
+  {
+   "id": "ph_power_patented_methodology",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "power our patented risk adjustment methodology with dynamic intervention planning",
+   "why": "用动词「power」搭配修饰语「patented」「dynamic」传递产品赋能作用，比中国人常直译的「支持我们的专利风险调整方法」更具商业力量感，符合英文报告的积极表达习惯。",
+   "when": "用于介绍产品核心功能、核心价值的场合。",
+   "slot": "power our [patented/core/...] [risk adjustment/...] methodology with [dynamic/customized/...] planning",
+   "swap": [
+    "drive our patented risk adjustment methodology with dynamic intervention planning（更侧重驱动效果，power更侧重赋能）",
+    "fuel our patented risk adjustment methodology with dynamic intervention planning（更侧重动力属性，使用场景更窄）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1124804/000119312526239413/mdrx-20241231.htm"
+  },
+  {
+   "id": "ph_revenue_arrangements_include",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "Our revenue arrangements commonly include support and maintenance, software as a service (“SaaS”), private cloud hosting, network & processing solutions, marketing impressions, data, software licenses, and professional services",
+   "why": "用“commonly include”明确是常规包含的内容，避免绝对化，中国人常直接写“include”，表述不够严谨",
+   "when": "在财务报告中列举业务收入的常规组成部分时使用",
+   "slot": "Our revenue arrangements commonly include […]",
+   "swap": [
+    "Our revenue arrangements typically include […]（“typically”更侧重典型情况，“commonly”侧重普遍情况，语气略有差异）",
+    "Our revenue arrangements generally include […]（“generally”更侧重整体情况，与“commonly”的使用场景略有不同）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1124804/000119312526239413/mdrx-20241231.htm"
+  },
+  {
+   "id": "ph_solutions_enable_customers",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "transition, analyze and coordinate care and improve the quality, efficiency and value of healthcare delivery across the care community",
+   "why": "使用平行并列动词结构，逻辑清晰简洁，中国人常重复使用不定式符号“to”，结构冗余，不够简洁",
+   "when": "在正式报告中描述解决方案的功能时使用",
+   "slot": "enable our customers to […], […], and […], and […] the […]",
+   "swap": [
+    "transition, analyze, coordinate care, and improve the quality, efficiency and value of healthcare delivery across the care community（将逗号替换为“and”，更简洁）",
+    "facilitate our customers to transition, analyze and coordinate care and improve the quality, efficiency and value of healthcare delivery across the care community（“facilitate”比“enable”更侧重辅助，正式程度略低）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1124804/000119312526239413/mdrx-20241231.htm"
+  },
+  {
+   "id": "ph_forward_looking_statements_can",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Forward-looking statements can be identified by words such as “anticipate,” “believe,” “estimate,” “expect,” “guidance,” “intend,” “may,” “outlook,” “plan,” “predict,” “project,” “target,” “potential,” “will,” “would,” “could,” “should,” “continue,” “contemplate,” “aim,” “strive,” “goal,” “seek,” “forecast” and other similar expressions",
+   "why": "该写法用被动句式清晰定义了识别特定表述的方法，符合正式报告的严谨性，中国人常直接用主动式如“You can identify forward-looking statements by...”，语气生硬不够正式",
+   "when": "用于正式报告中定义特定术语的识别方式时套用",
+   "slot": "Forward-looking statements can be identified by words such as […] and other similar expressions",
+   "swap": [
+    "Forward-looking statements are identifiable via terms like “anticipate,” “believe,” etc.（更简洁，适合短篇幅报告）",
+    "You can tell forward-looking statements from other text by words such as […]（主动式，语气口语化，不适合正式披露）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1687221/000119312525313470/revg-20251031.htm"
+  },
+  {
+   "id": "ph_investors_are_cautioned_that",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Investors are cautioned that forward-looking statements are inherently uncertain",
+   "why": "用被动式发出正式警示，避免直接指向读者的生硬感，中国人常写“We caution investors that...”，语气过于直接，不符合SEC报告的正式语境",
+   "when": "用于正式报告中向受众发出合规性警示时套用",
+   "slot": "[Recipients] are cautioned that […] are inherently uncertain",
+   "swap": [
+    "We hereby caution recipients that […] carry inherent uncertainty（主动式，针对性更强，适合特定受众）",
+    "It is important to note that […] are inherently uncertain（中性表述，警示性稍弱）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1687221/000119312525313470/revg-20251031.htm"
+  },
+  {
+   "id": "ph_number_factors_could_cause",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "A number of factors could cause actual results to differ materially from these statements, including, but not limited to",
+   "why": "用“including, but not limited to”明确列举的开放性，中国人常直接写“including”，易被误解为列举全部因素，该写法更严谨，符合披露要求",
+   "when": "用于正式报告中列举影响结果的因素，需说明列举不完整的场景时套用",
+   "slot": "A number of factors could cause actual results to differ materially from these statements, including, but not limited to […]",
+   "swap": [
+    "Various factors might lead actual outcomes to differ significantly from these statements, such as […]（用“various”和“might”更灵活，适合非强制披露）",
+    "Many factors could result in actual results being materially different, including […]（省略“but not limited to”，适合内部报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1687221/000119312525313470/revg-20251031.htm"
+  },
+  {
+   "id": "ph_adjusted_net_income_and",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Adjusted Net Income and Adjusted EBITDA (as defined in “Item 7. Management’s Discussion and Analysis of Financial Condition and Results of Operations”)",
+   "why": "中国人写财务术语时常直接使用不标注定义来源，原文明确标注术语出处，符合SEC披露的合规要求，避免不同解读的歧义。",
+   "when": "财务报告中首次出现需定义的专业术语的场合。",
+   "slot": "[Adjusted Net Income] and [Adjusted EBITDA] (as defined in “Item …Management’s Discussion and Analysis of Financial Condition and Results of Operations”)",
+   "swap": [
+    "Adjusted Net Income and Adjusted EBITDA (see Item 7. Management’s Discussion and Analysis of Financial Condition and Results of Operations)（用see简化表述，更简洁）",
+    "Adjusted Net Income and Adjusted EBITDA (per definitions in Item 7 of MD&A)（用MD&A缩写，更符合行业惯例）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1687221/000119312525313470/revg-20251031.htm"
+  },
+  {
+   "id": "ph_passive_governance",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "The system is guided by an executive committee",
+   "why": "采用被动语态弱化主观主体，增强正式报告的客观性与严谨性；中文写作常直接使用主动语态，不符合SEC等正式报告的规范。",
+   "when": "适用于正式合规报告中，描述体系或流程的治理主体时。",
+   "slot": "[…] is guided by […]",
+   "swap": [
+    "The executive committee guides […]（主动语态，语气偏主观，不适合正式报告）",
+    "[…] is overseen by […]（替换动词为overseen，更侧重监督职能）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1687221/000119312525313470/revg-20251031.htm"
+  },
+  {
+   "id": "ph_infinitive_purpose",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "applying defined controls to engage employees and manage injury risk",
+   "why": "用不定式清晰说明动作的目的，结构紧凑简洁，符合正式报告的写作要求；中文写作常使用冗余连接词，导致句子冗长。",
+   "when": "适用于正式报告中，说明所采取措施的具体目的时。",
+   "slot": "applying […] to […] and […]",
+   "swap": [
+    "using […] to engage […] and manage […]（替换动词为using，语气更侧重工具使用）",
+    "implementing […] for engaging […] and managing […]（替换动词为implementing，更侧重执行落地）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1687221/000119312525313470/revg-20251031.htm"
+  },
+  {
+   "id": "ph_return_cash_to_shareholders",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "return cash to our shareholders through payment of dividends and stock buybacks",
+   "why": "用‘through + 名词短语’表方式，比中文直译常用的动名词结构更正式简洁，符合SEC报告的书面语规范，中国人常使用更口语化的表达",
+   "when": "商业报告中描述向股东返还资金方式的场合",
+   "slot": "return cash to our shareholders through […]",
+   "swap": [
+    "return cash to our stockholders via dividend payments and share repurchases（stockholders和share repurchases更符合美股术语，via更正式）",
+    "distribute cash to our shareholders via dividends and stock repurchases（distribute更侧重分配，repurchases更正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/310354/000143774925024450/sxi20250630_10k.htm"
+  },
+  {
+   "id": "ph_reflect_associated",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "Restructuring expenses reflect costs associated with our efforts of continuously improving operational efficiency and expanding globally in order to remain competitive in our end-user markets.",
+   "why": "中文常直接写「重组费用包括与我们...相关的成本」，用「reflect costs associated with」更符合英文财报正式语气，清晰关联费用与战略动作，逻辑更顺",
+   "when": "用于SEC 10-K等正式财报中说明费用的性质及关联动作",
+   "slot": "[Expense Category] reflect costs associated with our efforts of [action …] and [action …] in order to remain competitive in our [target market]",
+   "swap": [
+    "Restructuring expenses represent costs related to our efforts of continuously improving operational efficiency and expanding globally to stay competitive in our end-user markets.（用represent替换reflect，语气稍弱，正式度略低）",
+    "Restructuring expenses include costs linked to our efforts of continuously improving operational efficiency and expanding globally for competitiveness in our end-user markets.（用include替换reflect，linked to替换associated with，更简洁）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/310354/000143774925024450/sxi20250630_10k.htm"
+  },
+  {
+   "id": "ph_link_compare",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "compared to the cost of a new well",
+   "why": "用“compared to”明确对比对象（成本），逻辑清晰，中国人常写“than a new well”易歧义，缺少对比的核心维度",
+   "when": "正式报告中做成本或数值对比时套用",
+   "slot": "[…] compared to the cost of a new […]",
+   "swap": [
+    "in relation to the cost of a new well（更书面化的对比表述）",
+    "versus the cost of a new well（更偏向数据对比的专业语气）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1724009/000119312526128868/prt_10-k_2025-12-31.htm"
+  },
+  {
+   "id": "ph_derives_all_or_substantially",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "derives all or substantially all of its income",
+   "why": "“substantially all”是财经精准表述，指几乎全部但留有余地，比中国人常用的“almost all”更专业严谨，符合审计/尽职调查的精准性要求",
+   "when": "正式报告中描述主体收入来源比例时套用",
+   "slot": "derives all or substantially all of its income from […] ",
+   "swap": [
+    "gets all or almost all of its income（口语化，不够正式）",
+    "obtains all or nearly all of its income（“nearly”语气不如“substantially”专业）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1724009/000119312526128868/prt_10-k_2025-12-31.htm"
+  },
+  {
+   "id": "ph_operate_at_scale",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "operate at scale across the U.S. and U.K.",
+   "why": "中文作者常写“在…拥有大规模业务”，表述较繁琐；“operate at scale”简洁正式，符合监管报告的专业语气。",
+   "when": "描述公司在特定区域的运营规模时套用。",
+   "slot": "operate at scale across […]",
+   "swap": [
+    "conduct large-scale operations in (表述较繁琐，不够凝练)",
+    "operate on a large scale in (语气稍显口语化，正式度不足)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1031203/000103120326000064/gpi-20251231.htm"
+  },
+  {
+   "id": "ph_strategy_centered_on",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "our strategy is centered on building density within defined markets",
+   "why": "中文作者常用“我们的策略聚焦于”，“is centered on”更正式，能突出策略的核心地位，适合SEC这类监管文件。",
+   "when": "陈述公司核心业务策略时套用。",
+   "slot": "our strategy is centered on […]",
+   "swap": [
+    "our strategy focuses on (较常用，正式度略低)",
+    "our core strategy is focused on (冗余，'centered'已体现核心含义)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1031203/000103120326000064/gpi-20251231.htm"
+  },
+  {
+   "id": "ph_participle_link_outcomes",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "allowing us to better serve customers, improve retention and increase share of garage across the vehicle ownership lifecycle",
+   "why": "中文作者常拆分多个句子表述策略带来的好处，用现在分词短语可将动作与结果紧密连接，行文流畅简洁，避免冗余。",
+   "when": "连接业务举措与预期成果时套用。",
+   "slot": "allowing us to […], […], and […]",
+   "swap": [
+    "which enables us to better serve customers, improve retention and increase share of garage across the vehicle ownership lifecycle (用定语从句，句子更长)",
+    "helping us better serve customers, improve retention and increase share of garage across the vehicle ownership lifecycle (正式度不足，不适合监管文件)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1031203/000103120326000064/gpi-20251231.htm"
+  },
+  {
+   "id": "ph_operational_improvement_list",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "improving appointment access, billing accuracy, workflow management and service-to-sales integration",
+   "why": "用动名词短语列举运营改进的具体维度，结构清晰正式，中国人常罗列零散动词，不如该写法流畅专业",
+   "when": "撰写业务运营改进、流程优化部分，需要列举具体成效时套用",
+   "slot": "improving [operational area …], [operational area …], [operational area …] and [operational area …]",
+   "swap": [
+    "enhancing appointment access, billing accuracy, workflow management and service-to-sales integration（enhancing更侧重提升幅度，语气比improving更强）",
+    "boosting appointment access, billing accuracy, workflow management and service-to-sales integration（boosting更具动态感，侧重推动增长）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1031203/000103120326000064/gpi-20251231.htm"
+  },
+  {
+   "id": "ph_design_solutions_for_client_needs",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "We design products and services as solutions for clients’ cash and liquidity, asset accumulation, retirement, protection, income generation and disbursement and estate and wealth transfer needs.",
+   "why": "该写法将产品服务定位为解决客户多维度需求的方案，用并列名词短语清晰罗列需求类型，逻辑严谨专业；中国人常直接写“we provide products to meet clients' needs”，缺乏具体需求分类，表述笼统。",
+   "when": "适用于财务报告中说明业务服务的定位与覆盖的客户需求场景。",
+   "slot": "We design products and services as solutions for clients’ […] needs.",
+   "swap": [
+    "We develop products and services to address clients’ […] needs（更正式，address比design更侧重解决需求）",
+    "We create products and services that solve clients’ […] needs（更口语化，语气较随意）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/820027/000082002726000011/amp-20251231.htm"
+  },
+  {
+   "id": "ph_link_own_and_third_party_products",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "The financial solutions we offer through our advisors include our own products and services as well as other providers’ products.",
+   "why": "用定语从句明确服务提供渠道，用as well as清晰区分自有与第三方产品，层次分明；中国人常写“our products and others' products”，缺乏正式连接结构，不够严谨。",
+   "when": "适用于财务报告中说明产品的来源构成。",
+   "slot": "The financial solutions we offer through our […] include our own products and services as well as other providers’ products.",
+   "swap": [
+    "The financial solutions provided via our advisors encompass our own products and services in addition to other providers’ products（更正式，encompass和in addition to更符合报告语气）",
+    "The financial solutions we provide through our advisors include our own products and services plus other providers’ products（更简洁，plus比as well as更口语化）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/820027/000082002726000011/amp-20251231.htm"
+  },
+  {
+   "id": "ph_specify_distribution_details",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "We distribute our life and disability income insurance, as well as annuity products, through our advisor channel under the RiverSource ® brand.",
+   "why": "清晰列明分销的产品类型、渠道及所属品牌，信息完整；中国人常写“we sell insurance products through our channel”，缺乏具体产品和品牌说明，表述模糊。",
+   "when": "适用于财务报告中说明产品的分销方式。",
+   "slot": "We distribute our […] products, as well as […] products, through our advisor channel under the […] brand.",
+   "swap": [
+    "We market our life and disability income insurance, in addition to annuity products, via our advisor channel under the RiverSource ® brand（更正式，market和via更专业）",
+    "We sell our life and disability income insurance, plus annuity products, through our advisor channel under the RiverSource ® brand（更简洁，plus更常用）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/820027/000082002726000011/amp-20251231.htm"
+  },
+  {
+   "id": "ph_organized_as_luxembourg",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "organized as Luxembourg-based investment companies with variable capital",
+   "why": "中文常把组织形式放在名词前作定语，如“卢森堡注册的可变资本投资公司”，但英文用后置的过去分词短语，避免头重脚轻，符合正式报告的语法规范",
+   "when": "在报告中说明实体的注册地、组织形式等属性时套用",
+   "slot": "organized as […]-based investment companies with […]",
+   "swap": [
+    "structured as Luxembourg-based investment companies with variable capital（侧重架构设计）",
+    "formed as Luxembourg-based investment companies with variable capital（侧重设立主体）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/820027/000082002726000011/amp-20251231.htm"
+  },
+  {
+   "id": "ph_link_guidance",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "available on our website at www.virtus.com under \"Investor Relations.\"",
+   "why": "用被动语态\"available\"比中国人常用的主动语态\"you can find\"更正式客观，符合SEC报告的中立立场，避免第二人称的使用。中国人常写得太随意，不够正式。",
+   "when": "正式年报、合规文件中指引投资者查找补充信息时使用。",
+   "slot": "available on our website at www.[…].com under \"[…]\"",
+   "swap": [
+    "accessible via our website at www.[…].com under \"[…]\" 更简洁，介词使用更正式",
+    "can be found on our website at www.[…].com under \"[…]\" 更口语化，适合内部文件"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/883237/000088323726000009/vrts-20251231.htm"
+  },
+  {
+   "id": "ph_generally_earned_if",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "generally earned if the returns on the portfolios exceed agreed upon periodic or cumulative return targets",
+   "why": "用“generally”明确该费用是常规情况，“agreed upon”强调是双方约定的标准，表述更符合正式报告的严谨性；中国人常直接写“if returns exceed targets”，未体现常规性和约定属性，不够规范。",
+   "when": "用于描述费用、收益的触发条件，尤其是涉及双方约定的条款时。",
+   "slot": "generally earned if the returns on […] exceed agreed upon […] targets",
+   "swap": [
+    "typically earned when（更偏向描述一般情况，不如generally贴合正式报告的表述）",
+    "usually earned if（语气较口语化，正式报告中generally更合适）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/883237/000088323726000009/vrts-20251231.htm"
+  },
+  {
+   "id": "ph_provides_for_rate_declines",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "provides for rate declines or “breakpoints” as asset levels increase to certain thresholds",
+   "why": "用“provides for”正式表述条款包含的内容，“as”清晰引导费率调整的触发场景，使费用结构的描述更精准；中国人常直接写“has rate declines when assets reach thresholds”，不够正式和贴合合同条款的表述。",
+   "when": "用于描述合同条款、费用结构中随条件变化的规则时。",
+   "slot": "provides for rate declines or “breakpoints” as […] levels increase to certain thresholds",
+   "swap": [
+    "includes rate reductions or “breakpoints” when（rate reductions侧重减少幅度，不如rate declines贴合费率调整的表述）",
+    "specifies lower rates or “breakpoints” as（specifies侧重明确规定，不如provides for贴合条款包含的内容）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/883237/000088323726000009/vrts-20251231.htm"
+  },
+  {
+   "id": "ph_our_owned_and_under_control_lot_position",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "Our owned and under control lot position was 60,916 as of December 31, 2025",
+   "why": "中文常写“截至2025年12月31日，我们的自有和受控地块数量为60,916个”，该写法用\"as of\"明确时间点，避免歧义，符合英文财经报告的时间表述规范",
+   "when": "撰写财经报告时，用于陈述截至某一时间点的资产数量或规模",
+   "slot": "Our owned and under control lot position was [number] as of [December …20XX]",
+   "swap": [
+    "As of December 31, 2025, our owned and controlled lot position stood at 60,916（调整语序，更正式）",
+    "At December 31, 2025, our owned and under control lot position was 60,916（用At替代as of，更简洁）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1576940/000157694026000005/ccs-20251231x10k.htm"
+  },
+  {
+   "id": "ph_must_comply_with_applicable",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "must comply with applicable real estate, lending and insurance laws and regulations.",
+   "why": "用“applicable”精准限定适用范围的法规，比中国人常用的“related”更专业精准，避免歧义",
+   "when": "撰写企业合规相关的报告、声明时套用",
+   "slot": "[...] must comply with applicable [领域] laws and regulations.",
+   "swap": [
+    "are required to adhere to relevant real estate, lending and insurance statutes and rules：用“required to adhere to”替换“must comply with”，更正式，“statutes and rules”替换“laws and regulations”，更侧重具体法条",
+    "shall conform to applicable real estate, lending and insurance statutory and regulatory provisions：用“shall conform to”替换“must comply with”，更具强制性，“statutory and regulatory provisions”替换“laws and regulations”，更书面化"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1576940/000157694026000005/ccs-20251231x10k.htm"
+  },
+  {
+   "id": "ph_hedge_03",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "could cause actual results to differ materially from those contained in any forward-looking statement",
+   "why": "中文常写“导致实际结果与前瞻性陈述有重大差异”，此写法用“differ materially”是英文正式报告的标准措辞，比“have big differences”更专业严谨，符合报告的正式语气。",
+   "when": "风险因素部分描述潜在影响时使用。",
+   "slot": "cause actual results to differ materially from those contained in any […]",
+   "swap": [
+    "lead actual outcomes to vary significantly from those in any forward-looking statement：原写法的“differ materially”更贴合正式报告的严谨措辞，vary significantly的表述稍显模糊；",
+    "result in actual outcomes to differ greatly from those in any forward-looking statement：differ greatly的程度表述不如materially专业。"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/2078416/000110465926020657/tmb-20251231x10k.htm"
+  },
+  {
+   "id": "ph_generated_billion_its_total",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "generated $20.9 billion, or 83%, of its total revenue during 2025",
+   "why": "用“or [百分比]”补充量化数据的占比，让财务数据更清晰，中国人写常只放数字，缺少补充说明导致读者感知弱",
+   "when": "财报中披露业务收入占比的场合",
+   "slot": "generated $[...], or [...]%, of its total revenue during [...]",
+   "swap": [
+    "represented $[...], or [...]%, of its total revenue in [...]（represented更偏向占比的陈述，generated更强调创造的收入）",
+    "accounted for $[...], or [...]%, of its total revenue in [...]（accounted for更偏向会计计入，适合不同报告语境）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/2078416/000110465926020657/tmb-20251231x10k.htm"
+  },
+  {
+   "id": "ph_expects_its_seasonality_trends",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "expects its seasonality trends to evolve as it continues to expand its global operations",
+   "why": "用as引导伴随状语说明趋势变化的原因，逻辑更完整，中国人写常省略原因，仅写预期导致逻辑不清晰",
+   "when": "财报中描述业务趋势变化的前瞻性陈述场合",
+   "slot": "expects its [...] trends to evolve as it continues to expand [...] operations",
+   "swap": [
+    "anticipates its [...] trends to change as it continues to grow [...] operations（anticipate比expect更正式，change比evolve更偏向简单变化）",
+    "foresees its [...] trends to develop as it continues to expand [...] operations（foresee更强调预见，develop比evolve更偏向发展）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/2078416/000110465926020657/tmb-20251231x10k.htm"
+  },
+  {
+   "id": "ph_cross_reference_phrase",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "see Item 1A, “Risk Factors” in this Annual Report on Form 10-K",
+   "why": "中文常写“详见本报告第1A项‘风险因素’”，英文用“see + 具体章节 + 报告名称”的格式更正式精准，符合SEC报告规范，避免模糊表述",
+   "when": "撰写正式财务年报等文件，需交叉引用具体章节内容的场合",
+   "slot": "see Item […] in this Annual Report on Form 10-K",
+   "swap": [
+    "refer to Item […] of this Annual Report on Form 10-K，语气更偏向主动指引查阅，比see稍正式",
+    "consult Item […] in this Annual Report on Form 10-K，更强调需主动查阅，适合需明确指引的场景"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/96943/000009694326000019/tfx-20251231.htm"
+  },
+  {
+   "id": "ph_express_disclaimer_phrase",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "We expressly disclaim any obligation to update these forward-looking statements",
+   "why": "中文常写“我们不承担更新前瞻性陈述的义务”，英文用“expressly disclaim any obligation”明确且正式，避免模糊否定，符合监管文件的严谨性，比直接说“don't have obligation”更专业",
+   "when": "撰写含前瞻性陈述的正式报告，需明确排除自身更新义务的场合",
+   "slot": "We expressly disclaim any obligation to update these […]",
+   "swap": [
+    "We explicitly decline any responsibility for updating these forward-looking statements，用“explicitly decline responsibility”替换，语气更偏向主动拒绝责任，比disclaim稍弱",
+    "We hereby disclaim any duty to update these forward-looking statements，增加“hereby”更具法律效力，适合需明确法律声明的场景"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/96943/000009694326000019/tfx-20251231.htm"
+  },
+  {
+   "id": "ph_hedge_435",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "could have a material adverse impact on gross margins",
+   "why": "用情态动词could搭配正式商务措辞，比中国人常用的绝对化表达如‘will cause’更审慎，符合SEC报告的严谨性，避免武断结论。",
+   "when": "财务尽职调查或审计报告中描述潜在风险对财务指标的影响时。",
+   "slot": "could have a material adverse impact on […]",
+   "swap": [
+    "might have a materially negative effect on […]（语气更弱，更强调可能性而非确定性）",
+    "may result in a material adverse effect on […]（更明确体现因果逻辑）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/38725/000003872526000009/fele-20251231.htm"
+  },
+  {
+   "id": "ph_generally_have_constructed_acquired",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "We generally have constructed or acquired towers that accommodate multiple tenants",
+   "why": "用\"generally\"作为情态副词，明确表达公司的常规业务做法，避免绝对化，中国人常写\"We constructed or acquired many towers with multiple tenants\"，缺少正式的情态表达，不够严谨",
+   "when": "用于正式报告中描述公司的常规业务模式",
+   "slot": "We generally have constructed or acquired […] that accommodate multiple tenants",
+   "swap": [
+    "We typically have built or purchased towers which host several tenants：\"typically\"比\"generally\"更偏向一般情况，语气稍随意，不如\"generally\"符合监管报告的正式性",
+    "We usually have erected or bought towers that hold various tenants：\"erected\"\"bought\"\"hold\"\"various\"替换后词汇更口语化，不符合SEC报告的专业措辞"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1034054/000103405426000002/sbac-20251231x10k.htm"
+  },
+  {
+   "id": "ph_001_725",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "derives its revenues from the sale of franchise and development rights",
+   "why": "中国人常写口语化的“gets its revenue from”，此表达是财报正式语境中说明收入来源的标准说法，更专业严谨",
+   "when": "用于财务报告中说明业务板块的收入来源",
+   "slot": "[...] derives its revenues from the sale of [...] and [...]",
+   "swap": [
+    "generates its revenue from the sale of [...] and [...]（更侧重收入的产生过程）",
+    "obtains its revenue from the sale of [...] and [...]（更侧重收入的获取）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/901491/000162828026011965/pzza-20251228.htm"
+  },
+  {
+   "id": "ph_003_490",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "contribute to our royalty revenues, franchisee marketing fund contributions, and commissary revenue",
+   "why": "中国人常写非正式的“help get”类表达，此表达是财报中说明业务间关联的标准用词，更符合专业语境",
+   "when": "用于财务报告中说明某类销售额对其他收入项的贡献",
+   "slot": "contribute to our [...], [...], and [...]",
+   "swap": [
+    "add to our [...], [...], and [...]（更侧重数值上的增加）",
+    "support our [...], [...], and [...]（更侧重对资金的支持）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/901491/000162828026011965/pzza-20251228.htm"
+  },
+  {
+   "id": "ph_lead_to_efficiencies_both",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "lead to efficiencies in both attracting and servicing of students",
+   "why": "该结构用‘lead to efficiencies in both...and...’清晰表达双维度效率提升，比中国人常写的‘make both attracting and serving students more efficient’更正式，结构更严谨，符合英文财报写作规范",
+   "when": "适合在企业报告中描述某一举措带来的多维度效率提升的场合",
+   "slot": "lead to efficiencies in both […] and […] of […]",
+   "swap": [
+    "result in improved efficiency in both […] and […]（语气更偏向实际价值优化，适合强调效率提升的成果）",
+    "bring about greater efficiencies in both […] and […]（语气更偏向积极影响，适合强调举措的正面作用）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1046568/000119312526059331/prdo-20251231.htm"
+  },
+  {
+   "id": "ph_primary_point_of_contact",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "serve as a primary point of contact for prospective students",
+   "why": "中文常写“是潜在学生的主要联系人”，口语化且不够正式，此处用“serve as a primary point of contact”更符合正式报告的专业语气，精准定位角色功能",
+   "when": "正式报告中描述岗位/角色的核心联络职责时套用",
+   "slot": "serve as a primary point of contact for […]",
+   "swap": [
+    "act as the main point of contact for […]（更口语化，适合非正式内部文档）",
+    "function as the primary liaison for […]（更侧重跨方联络属性，适合多主体场景）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1046568/000119312526059331/prdo-20251231.htm"
+  },
+  {
+   "id": "ph_transition_smoothly_into",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "helping students transition smoothly into their first class",
+   "why": "中文常写“帮助学生适应第一堂课”，口语化且不够精准，此处用“transition smoothly into”体现流程的顺畅性，符合正式场景的专业表述",
+   "when": "正式报告中描述新成员/新用户的过渡流程时套用",
+   "slot": "helping […] transition smoothly into their […]",
+   "swap": [
+    "assisting […] in making a smooth transition to their […]（更侧重“协助过程”的动作）",
+    "supporting […] to move seamlessly into their […]（更侧重“无缝衔接”的流畅度）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1046568/000119312526059331/prdo-20251231.htm"
+  },
+  {
+   "id": "ph_quant_asset_disclosure",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "The Inflation Beneficiaries ETF had net assets of $1.4 billion and $1.1 billion at December 31, 2025 and 2024, respectively.",
+   "why": "用respectively对应两组时间和金额，避免重复表述，紧凑专业；中国人常分开写，冗余且不符合正式报告风格。",
+   "when": "披露基金或投资产品的资产规模及对应时间时套用",
+   "slot": "[Fund Name] had net assets of [Amount …] and [Amount …] at [Date …] and [Date …], respectively.",
+   "swap": [
+    "[Fund Name] had net assets of $1.4 billion and $1.1 billion as of December 31, 2025 and 2024, respectively.（用as of替换at，符合财务报告常用表述）",
+    "[Fund Name] reported net assets of $1.4 billion and $1.1 billion at December 31, 2025 and 2024, respectively.（用reported替换had，更正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/88000/000119312526104113/hkhc-20251231.htm"
+  },
+  {
+   "id": "ph_under_certain_other_antitrust",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "under certain other antitrust and foreign investment laws",
+   "why": "中文常直接写“根据某些其他反垄断和外国投资法律”，此处用介词under更符合正式报告中法规适用的标准表述，简洁且专业，避免冗余。",
+   "when": "撰写正式报告时提及适用的相关法规条款时使用。",
+   "slot": "under certain other […] and […] laws",
+   "swap": [
+    "pursuant to certain other antitrust and foreign investment laws（更正式，多用于法律文书，严谨性高于under）",
+    "as per certain other antitrust and foreign investment laws（偏日常商务用语，正式程度弱于under，不适合SEC类官方报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1133470/000110465926003786/cvgw-20251031x10k.htm"
+  },
+  {
+   "id": "ph_the_absence_any_law",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "the absence of any law or order prohibiting the consummation of the Mergers",
+   "why": "中文常写“没有任何禁止合并完成的法律或命令”，此处用名词化结构the absence of替代动词表述，更符合正式报告的客观、紧凑的风格，避免主观化表达。",
+   "when": "撰写报告中陈述不存在某项障碍或限制时使用。",
+   "slot": "the absence of any […] or […] prohibiting the consummation of the […]",
+   "swap": [
+    "there is no law or order that prohibits the consummation of the Mergers（动词结构，更口语化，不适合正式报告）",
+    "no law or order exists that prohibits the consummation of the Mergers（稍正式，但不如名词化结构紧凑）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1133470/000110465926003786/cvgw-20251031x10k.htm"
+  },
+  {
+   "id": "ph_for_additional_information_regarding",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "For additional information regarding the risks and uncertainties related to the Merger Agreement and the Mergers",
+   "why": "中文常写“关于与合并协议及合并相关的风险和不确定性的更多信息”，此处用For additional information regarding是正式报告中标准的衔接表述，清晰指引读者查看后续内容，比普通的“关于更多信息”更规范。",
+   "when": "撰写报告时需要指引读者查看更多相关内容时使用。",
+   "slot": "For additional information regarding the risks and uncertainties related to the […] and the […]",
+   "swap": [
+    "To find more details about the risks and uncertainties associated with the Merger Agreement and the Mergers（更口语化，不适合官方报告）",
+    "For more information on the risks and uncertainties related to the Merger Agreement and the Mergers（更简洁，但regarding的正式度高于on）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1133470/000110465926003786/cvgw-20251031x10k.htm"
+  },
+  {
+   "id": "ph_parallel_reasons",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "due to health, food safety or other reasons",
+   "why": "平行列举原因，用词简洁清晰；中国人常写得冗余，比如“因为健康、食品安全或其他方面的原因”",
+   "when": "用于正式写作中列举多个相关的原因或因素",
+   "slot": "due to [reason …], [reason …] or other reasons",
+   "swap": [
+    "because of health, food safety and other reasons (连词误用，or应表示其他可选原因，此处and改变语义)",
+    "on account of health, food safety or other factors (用词稍显正式，不如原句常用)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1133470/000110465926003786/cvgw-20251031x10k.htm"
+  },
+  {
+   "id": "ph_changes_financial_aid_programs",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Changes to financial aid programs that restrict student eligibility or reduce funding levels",
+   "why": "用定语从句后置修饰核心名词“Changes”，避免头重脚轻，符合英文正式写作结构，中国人常将定语前置或拆分句子，显得冗长",
+   "when": "正式报告中描述对核心项目的变更内容时套用",
+   "slot": "Changes to […] programs that restrict […] or reduce […]",
+   "swap": [
+    "Modifications to financial aid programs which limit student eligibility or lower funding levels；用Modifications更正式，which替换that稍显严谨",
+    "Alterations to financial aid programs that cut student eligibility or decrease funding levels；Alterations侧重局部变更，cut比reduce更口语化"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/730464/000155837025010780/atge-20250630x10k.htm"
+  },
+  {
+   "id": "ph_see_item_risk_factors_241",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "See Item 1A. “Risk Factors” and Item 7, “Management’s Discussion and Analysis of Financial Condition and Results of Operations”",
+   "why": "用“See + 章节标识”清晰指引读者到对应内容，符合SEC报告规范，中国人常误用口语化的“you can look at”，不够正式简洁",
+   "when": "正式报告中引用其他章节内容时套用",
+   "slot": "See Item […] “[…]” and Item […] “[…]”",
+   "swap": [
+    "Refer to Item 1A. “Risk Factors” and Item 7, “Management’s Discussion and Analysis of Financial Condition and Results of Operations”；Refer to比See更正式，适合审计报告语境",
+    "Consult Item 1A. “Risk Factors” and Item 7, “Management’s Discussion and Analysis of Financial Condition and Results of Operations”；Consult更侧重专业咨询，适合尽职调查报告"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/730464/000155837025010780/atge-20250630x10k.htm"
+  },
+  {
+   "id": "ph_time_condition_precision",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "in each case for two years in a three-year period",
+   "why": "中文常简化表述为“连续两年”，英文用该短语精准界定时间范围，避免“连续”的歧义，符合审计/合规文档对时间条件的严谨要求。",
+   "when": "撰写涉及合规时间要求的财务报告或审计说明时套用。",
+   "slot": "in each case for […] years in a three-year period",
+   "swap": [
+    "in each instance for two consecutive years within a three-year window：consecutive强调连续性，window比period更具灵活性",
+    "in each scenario for two years over a three-year span：scenario侧重具体场景，span比period更口语化"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/730464/000155837025010780/atge-20250630x10k.htm"
+  },
+  {
+   "id": "ph_cross_reference_format",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "See Item 1A. “Risk Factors” and Item 7. “Management’s Discussion and Analysis of Financial Condition and Results of Operations”",
+   "why": "中文常直接写“见风险因素和管理层讨论”，英文用“See Item X. “[Section Name]””的格式，符合SEC报告的正式交叉引用规范，清晰准确。",
+   "when": "撰写正式合规报告（如SEC 10-K）中的交叉引用内容时套用。",
+   "slot": "See Item […]. “[…]” and Item […]. “[…]”",
+   "swap": [
+    "Refer to Item 1A. “Risk Factors” and Item 7. “Management’s Discussion and Analysis of Financial Condition and Results of Operations”：Refer比See更正式，适合高阶合规文档",
+    "Please consult Item 1A. “Risk Factors” and Item 7. “Management’s Discussion and Analysis of Financial Condition and Results of Operations”：consult更书面，语气更谨慎"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/730464/000155837025010780/atge-20250630x10k.htm"
+  },
+  {
+   "id": "ph_adtalem_business_operations_are",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "Adtalem’s business operations are subject to numerous risks and uncertainties",
+   "why": "中文常直接写“面临许多风险和不确定性”，用“are subject to”更正式严谨，契合SEC报告的专业语境，比直白表述更符合英文正式文书的措辞习惯。",
+   "when": "正式报告中描述主体业务受外部因素约束的场合，如风险披露、业务概述。",
+   "slot": "[...]’s business operations are subject to numerous risks and uncertainties",
+   "swap": [
+    "are exposed to numerous risks and uncertainties（语气稍弱，侧重被动暴露，正式度略低）",
+    "face a variety of risks and uncertainties（更偏向口语化，正式度不足）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/730464/000155837025010780/atge-20250630x10k.htm"
+  },
+  {
+   "id": "ph_before_making_investment_decision",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "before making an investment decision with respect to",
+   "why": "中文常写“在做投资决定之前”，用“with respect to”替代“about”更正式，契合SEC报告的书面语要求，中国人易误用口语化介词导致不够专业。",
+   "when": "正式报告中给投资者的建议场合，如风险提示前的引导语。",
+   "slot": "before making an investment decision with respect to [...] ",
+   "swap": [
+    "prior to making an investment decision regarding（更简洁，正式度相当）",
+    "before making an investment decision on（口语化，正式度低）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/730464/000155837025010780/atge-20250630x10k.htm"
+  },
+  {
+   "id": "ph_reflecting_as_well_as",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Revenue is typically lower in the first and third quarters and higher in the second and fourth quarters, reflecting client spending patterns during the year, as well as additional project work that usually occurs in the fourth quarter.",
+   "why": "现在分词“reflecting”平滑补充解释原因，避免because/since等连词带来的停顿感；“as well as”连接两个原因比and更正式。中国学生常拆成两句或生硬用“This is because...”，打断行文。",
+   "when": "描述数据后需自然带出原因的分析性段落。",
+   "slot": "[Main clause], reflecting [reason 1]..., as well as [reason 2]...",
+   "swap": [
+    "..., due to... and...（直接但生硬，不如reflecting连贯）",
+    "..., which is attributable to...（更正式但冗长，适合极正式报告）",
+    "..., a reflection of...（名词化，但需调整主句结构）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/29989/000002998926000006/omc-20251231.htm"
+  },
+  {
+   "id": "ph_year_over_year",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "Certain global events targeted by major marketers for advertising expenditures, such as the FIFA World Cup and the Olympics, and certain national events, such as the U.S. election process, may affect our revenue year-over-year in certain businesses.",
+   "why": "“year-over-year”是标准财务英语副词，简洁表达“同比”。中国学生可能写“compared with the same period of last year”，冗长且不够精炼。",
+   "when": "进行同比分析时，用于替换冗长的比较短语。",
+   "slot": "[Subject] may affect/change [something] year-over-year [in...].",
+   "swap": [
+    "on a year-on-year basis（英式，稍正式但多词）",
+    "compared with the same period a year earlier（口语化，解释性强，缺专业感）",
+    "yoy（缩写，适用于图表或非正式沟通）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/29989/000002998926000006/omc-20251231.htm"
+  },
+  {
+   "id": "ph_no_material_effect_on",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "did not have a material effect on our business, results of operations or financial condition",
+   "why": "这是财务报告中表述无重大影响的标准正式措辞，精准使用专业术语\"material\"（重大的）；中国人常写\"has no big impact on\"，既不正式也未用专业术语，不够严谨",
+   "when": "撰写审计说明、10-K报告等正式财经文件，说明某事项未对业务、经营成果或财务状况产生重大影响时使用",
+   "slot": "did not have a material effect on our […] , results of operations or financial condition",
+   "swap": [
+    "did not materially affect our business, operating results or financial position: 用副词\"materially\"修饰动词\"affect\"，比原短语更简洁，适合动词主导的句式",
+    "had no material impact on our business, operating results or financial condition: 用\"impact\"替代\"effect\"，语气更直接，部分正式报告中常用\"impact\"表述影响"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/29989/000002998926000006/omc-20251231.htm"
+  },
+  {
+   "id": "ph_additional_info_regarding_impact",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Additional information regarding the impact of government regulations on our business is included in",
+   "why": "这是正式报告中指引读者获取补充信息的规范表达，结构清晰；中国人常写\"More info about regulations is in\"，表述模糊且不够正式，不符合专业报告写作规范",
+   "when": "在SEC filings、年度报告等正式财经文件中，指引读者查看其他章节补充信息时使用",
+   "slot": "Additional information regarding the impact of […] on our business is included in Item 1A, “Risk Factors - Legal and Regulatory Risks .”",
+   "swap": [
+    "Further details on the effects of government rules on our business are provided in: 用\"further details\"替代\"additional information\"，\"effects\"替代\"impact\"，\"provided in\"替代\"included in\"，语气更主动",
+    "Supplementary information about how government regulations affect our business is contained in: 用\"supplementary\"替代\"additional\"，\"how...affect\"替代\"the impact of...on\"，表述更口语化，适合部分非严格正式场景"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/29989/000002998926000006/omc-20251231.htm"
+  },
+  {
+   "id": "ph_each_the_atlanta_braves",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "Each of the Atlanta Braves Holdings Split-Off and the Reclassification",
+   "why": "用“Each of”明确指代并列的两个独立交易，避免模糊指代，中国人常省略“Each of”直接并列，易混淆主体独立性",
+   "when": "用于列举多个需分别明确的并列主体（如交易、项目）时",
+   "slot": "Each of the […] and the […]",
+   "swap": [
+    "Both the Atlanta Braves Holdings Split-Off and the Reclassification（语气侧重两者整体，弱化个体独立性）",
+    "The Atlanta Braves Holdings Split-Off along with the Reclassification（语气侧重补充关系，明确性弱于Each of）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1560385/000110465926020653/lmca-20251231x10k.htm"
+  },
+  {
+   "id": "ph_agreed_with_the_nontaxable",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "agreed with the nontaxable characterization of the transaction",
+   "why": "用“characterization”（定性）精准表述交易的税务属性，符合SEC报告专业语境，中国人常误用“nature”或生硬直译，专业度不足",
+   "when": "用于审计或合规文件中，描述监管方对交易的定性意见时",
+   "slot": "agreed with the nontaxable characterization of the […]",
+   "swap": [
+    "accepted the nontaxable characterization of the transaction（语气更被动，未体现双向沟通属性）",
+    "concurred with the nontaxable nature of the transaction（用“nature”替代“characterization”，专业精准度稍弱）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1560385/000110465926020653/lmca-20251231x10k.htm"
+  },
+  {
+   "id": "ph_recognizes_majority_revenue_expenses",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "recognizes the majority of its revenue and expenses in connection with",
+   "why": "用「in connection with」精准连接收支与对应事项，比中文常直译的「关于」更符合正式报告的专业语气，避免模糊",
+   "when": "用于正式财务报告中说明收支与相关业务事件的关联",
+   "slot": "recognizes the majority of its revenue and expenses in connection with […]",
+   "swap": [
+    "accounts for most of its revenue and expenses related to […]（用accounts for替代recognizes，related to替代in connection with，更偏向会计核算表述）",
+    "recognizes most of its revenue and expenses associated with […]（associated with比in connection with语气稍口语化，适合简化表述）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1560385/000110465926020653/lmca-20251231x10k.htm"
+  },
+  {
+   "id": "ph_lower_during_first_quarter_as_compared_t",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "lower during the first quarter as compared to the rest of the quarters",
+   "why": "用「as compared to」清晰对比两期间数值差异，比中文常直译的「与…相比更低」更符合正式书面语，避免歧义",
+   "when": "用于正式财务报告中对比不同季度的财务数据",
+   "slot": "[…] during the […] quarter as compared to the rest of the quarters",
+   "swap": [
+    "less during the first quarter versus the other quarters（less替代lower，versus替代as compared to，更简洁）",
+    "lower in the first quarter relative to the remaining quarters（relative to替代as compared to，remaining替代rest，更正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1560385/000110465926020653/lmca-20251231x10k.htm"
+  },
+  {
+   "id": "ph_financial_performance_sustained_profitab",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "financial performance, sustained profitability, market capitalization, technology-driven business model, consistent growth in client accounts and assets",
+   "why": "该部分用平行结构列举核心指标，逻辑清晰符合英文正式写作习惯，中国人常杂乱罗列或用重复表述，缺乏平行感。",
+   "when": "用于正式报告中列举支撑结论的多项核心依据，如业绩、指标、优势等场合。",
+   "slot": "[…], sustained profitability, market capitalization, technology-driven business model, consistent growth in client accounts and assets",
+   "swap": [
+    "financial results, ongoing profitability, market cap, tech-enabled business model, steady expansion of client accounts and assets 用词更简洁，适合篇幅有限的报告",
+    "financial performance, persistent profitability, market value, technology-powered business model, consistent growth of client accounts and assets 用persistent替代sustained，语气更侧重稳定性"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1381197/000138119726000062/ibkr-20251231.htm"
+  },
+  {
+   "id": "ph_offering_participle_phrase",
+   "kind": "phrase",
+   "en": "offering multi-custody solutions, advanced reporting, global support, benchmarks, risk metrics, GIPS® verified returns and powerful on-the-go analytics.",
+   "why": "用现在分词作伴随状语紧凑衔接产品多项功能，避免重复主语，中国人写英文报告常拆分多个独立短句，显得冗余拖沓。",
+   "when": "介绍金融产品或服务功能的场合",
+   "slot": "offering […], […], […], […], […], GIPS® verified returns and powerful on-the-go analytics.",
+   "swap": [
+    "which provides multi-custody solutions, advanced reporting, global support, benchmarks, risk metrics, GIPS® verified returns and powerful on-the-go analytics.（用定语从句衔接，语气更正式）",
+    "delivering multi-custody solutions, advanced reporting, global support, benchmarks, risk metrics, GIPS® verified returns and powerful on-the-go analytics.（用delivering替换offering，更侧重功能交付）"
+   ],
+   "dim": "link",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1381197/000138119726000062/ibkr-20251231.htm"
+  },
+  {
+   "id": "ph_designed_to_help_advisors",
+   "kind": "phrase",
+   "en": "designed to help advisors with customer portfolio performance reporting, market updates and ticker-specific news.",
+   "why": "用过去分词短语作后置定语修饰产品，比定语从句更简洁凝练，符合英文报告正式风格，中国人常写冗长定语从句（如which is designed to...），不够紧凑。",
+   "when": "描述金融工具或服务设计目的的场合",
+   "slot": "designed to help […], […], and […],.",
+   "swap": [
+    "which is intended to help […], […], and […],.（用定语从句，语气更正式）",
+    "created to assist […], […], and […],.（用created替换designed，更侧重工具创建初衷）"
+   ],
+   "dim": "reg",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1381197/000138119726000062/ibkr-20251231.htm"
+  },
+  {
+   "id": "ph_link_section_reference",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "In addition, the factors described under “Risk Factors” and “Discussion of Critical Accounting Estimates” in this Form 10-K",
+   "why": "用“In addition”清晰衔接上下文，“described under”精准对应文件章节表述，符合SEC规范，中国人常直接写“另外”但英文更正式严谨。",
+   "when": "财务报告中补充说明相关章节内容的场合。",
+   "slot": "In addition, the factors described under “[Section Name …]” and “[Section Name …]” in this Form …-K",
+   "swap": [
+    "Furthermore, the factors outlined in the “Risk Factors” and “Critical Accounting Policies” sections of this Form 10-K（用Furthermore更书面，outlined侧重概述）",
+    "Additionally, the factors detailed in the “Risk Factors” and “Key Accounting Estimates” sections within this Form 10-K（用Additionally替代In addition，detailed强调详细说明）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/807882/000080788225000072/jack-20250928.htm"
+  },
+  {
+   "id": "ph_modal_obligation_definition",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "The Company is under no obligation to update forward-looking statements",
+   "why": "用“is under no obligation”正式明确声明义务边界，避免模糊，中国人常直接写“没有义务”但英文适配商务法律语境，精准界定责任。",
+   "when": "财务报告中明确公司不承担更新前瞻性表述义务的场合。",
+   "slot": "The Company is under no obligation to update forward-looking statements, whether as a result of [reason …] or [reason …]",
+   "swap": [
+    "shall not be required to update forward-looking statements, whether due to new information or otherwise（用shall not be required更具法律约束力，适配合规文件）",
+    "has no duty to update forward-looking statements, whether from new information or other causes（用has no duty更简洁，适配投资者摘要）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/807882/000080788225000072/jack-20250928.htm"
+  },
+  {
+   "id": "ph_based_market_conditions_pricing",
+   "kind": "phrase",
+   "en": "based on market conditions, pricing, and other commercial factors",
+   "why": "中文常写“根据市场情况、定价和其他商业因素”，此写法用并列名词短语清晰列出决策依据，符合专业写作的规范，逻辑层次明确",
+   "when": "撰写融资决策、项目选择等需要说明决策依据的正式报告场合",
+   "slot": "based on […], […], and other commercial factors",
+   "swap": [
+    "in light of market dynamics, pricing structures, and additional business considerations（更正式，替换部分词汇避免重复）",
+    "depending on market situations, pricing, and other business factors（更口语化，适合非正式沟通）"
+   ],
+   "dim": "nom",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/899629/000119312526051677/akr-20251231.htm"
+  },
+  {
+   "id": "ph_combination_fixed_rate_debt",
+   "kind": "phrase",
+   "en": "combination of fixed-rate debt and, where variable-rate debt is utilized, Secured Overnight Financing Rate (\"SOFR\") swaps and caps",
+   "why": "中文常直接写“固定利率债务和使用浮动利率债务时的SOFR互换及上限组合”，此写法用插入语补充说明适用场景，结构严谨，符合金融专业报告的表达习惯",
+   "when": "撰写金融机构、REIT等的利率风险管理相关正式报告的场合",
+   "slot": "combination of fixed-rate debt and, where variable-rate debt is utilized, […] swaps and caps",
+   "swap": [
+    "mix of fixed-rate obligations and, when variable-rate debt is employed, SOFR swaps and caps（用obligations、employed替换更正式，适配顶级报告）",
+    "blend of fixed-rate debt and, if variable-rate debt is used, SOFR swaps and caps（更简洁，适合篇幅较短的报告）"
+   ],
+   "dim": "reg",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/899629/000119312526051677/akr-20251231.htm"
+  },
+  {
+   "id": "ph_quant_substantial_majority",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "Although the substantial majority of our revenue in 2025 was from customers other than governmental entities",
+   "why": "中文常用「大部分收入」这类口语化表达，此处用「substantial majority of our revenue」是正式财经报告中表述收入占比的标准写法，既准确又符合SEC文件的严谨性，避免模糊表述。",
+   "when": "适用于撰写企业年度报告、尽职调查说明或审计文件中，表述收入来源结构占比的场合。",
+   "slot": "Although the substantial majority of our revenue in […] was from customers other than […]",
+   "swap": [
+    "While the vast majority of our revenue in […] came from customers not affiliated with governmental entities ——「vast majority」侧重数量上的极大多数，语气比「substantial majority」稍弱，更适合非严格强调规模实质性的场合。",
+    "Where the overwhelming majority of our revenue in […] originated from clients not belonging to governmental bodies ——「overwhelming majority」语气最强，侧重占比的压倒性，适合需突出绝对多数的场景。"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1786842/000162828026007648/vnt-20251231.htm"
+  },
+  {
+   "id": "ph_reg_subject_to_regulations",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "we are subject to various statutes and regulations that apply to companies doing business with governments",
+   "why": "中文常用「受各种法规约束」这类直白表达，此处用「be subject to various statutes and regulations」是法律与商业报告中描述合规义务的正式措辞，符合SEC文件的专业规范，避免口语化。",
+   "when": "适用于撰写企业合规披露、尽职调查风险提示或审计说明中，表述企业受法规约束情况的场合。",
+   "slot": "we are subject to various statutes and regulations that apply to companies doing business with […]",
+   "swap": [
+    "we are bound by a range of statutory provisions and rules applicable to entities conducting business with governmental bodies ——「be bound by」更强调受法规约束的义务属性，语气比「be subject to」稍强，适合需突出合规责任的场景。",
+    "we are exposed to multiple laws and regulations applicable to firms engaging in business with government entities ——「be exposed to」侧重被动接触法规，语气较中性，适合描述潜在合规风险的场合。"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1786842/000162828026007648/vnt-20251231.htm"
+  },
+  {
+   "id": "ph_link_refer_to_item",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "For a discussion of risks related to government contracting requirements, please refer to “Item 1A. Risk Factors.”",
+   "why": "中文常用「关于相关风险，请参见」这类生硬表述，此处用「For a discussion of […] related to […] please refer to […]」是专业报告中交叉引用的标准正式写法，清晰指引读者定位对应内容，提升报告的逻辑性与可读性。",
+   "when": "适用于撰写SEC文件、尽职调查或审计报告中，引用其他章节内容的场合。",
+   "slot": "For a discussion of risks related to […] please refer to \"Item […]. Risk Factors.\"",
+   "swap": [
+    "To learn more about risks associated with government contracting requirements, kindly consult \"Item 1A. Risk Factors.\" ——「To learn more about」语气稍友好，适合内部文档，「kindly consult」比「please refer to」更委婉，适合面向多方的正式披露。",
+    "For further details on risks linked to government contracting requirements, please check \"Item 1A. Risk Factors.\" ——「further details」比「discussion」更侧重细节，「check」比「refer to」更口语化，适合非正式的专业文档。"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1786842/000162828026007648/vnt-20251231.htm"
+  },
+  {
+   "id": "ph_focus_on_improve",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "focus on improving returns on capital, as well as earnings margin",
+   "why": "用\"focus on + doing\"结构明确核心工作，比中文常直译的\"我们关注提高资本回报率和利润率\"更简洁，符合英文正式报告的凝练风格",
+   "when": "财务报告中说明核心战略重点的场合",
+   "slot": "focus on improving […] , as well as […]",
+   "swap": [
+    "concentrate on enhancing returns on capital, and earnings margin（语气更正式，适合严肃的年报）",
+    "lay emphasis on boosting returns on capital, alongside earnings margin（语气稍弱，适合内部报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/29905/000002990526000009/dov-20251231.htm"
+  },
+  {
+   "id": "ph_such_supply_chain_optimization",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "such as supply chain optimization, automation and productivity capital expenditures, e-commerce and digital go-to-market, restructuring, product complexity reduction, improved footprint utilization, strategic pricing and portfolio management",
+   "why": "用\"such as\"引导的并列举例结构，比中文常直译的\"比如供应链优化、自动化等\"更符合英文正式写作的列举规范，逻辑清晰",
+   "when": "财务报告中列举具体落地举措的场合",
+   "slot": "such as […] , […] , […] , […]",
+   "swap": [
+    "including supply chain optimization, automation and productivity capital expenditures, etc.（更简洁，适合简短说明）",
+    "for instance, supply chain optimization, automation and productivity capital expenditures（更正式，适合专业报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/29905/000002990526000009/dov-20251231.htm"
+  },
+  {
+   "id": "ph_enhance_shareholder_returns",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "enhance shareholder returns through the productive re-deployment of free cash flow",
+   "why": "中文常直接写“提升股东回报”，此写法明确了通过自由现金流的有效再部署实现，更具体清晰，避免空泛。",
+   "when": "撰写公司资本回报策略相关内容时套用。",
+   "slot": "enhance shareholder returns through the productive re-deployment of […]",
+   "swap": [
+    "boost shareholder returns via effective redeployment of free cash flow（boost比enhance更具动作感，via比through稍显正式）",
+    "increase shareholder returns through efficient reallocation of excess cash（increase比enhance更直白，excess cash替换free cash flow更侧重超额部分）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/29905/000002990526000009/dov-20251231.htm"
+  },
+  {
+   "id": "ph_prioritizes_deploying_fcf",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "prioritizes deploying free cash flow toward high-return and high-confidence organic reinvestments",
+   "why": "中文常写“优先用自由现金流做高回报投资”，此写法用“prioritizes deploying... toward...”明确动作优先级与方向，还加了“high-return and high-confidence”修饰，更严谨专业。",
+   "when": "撰写资本配置优先级相关内容时套用。",
+   "slot": "prioritizes deploying free cash flow toward high-return and high-confidence […]",
+   "swap": [
+    "focuses on using free cash flow for high-yield, high-certainty organic reinvestments（focuses on比prioritizes语气稍弱，high-yield是更常用金融术语）",
+    "emphasizes deploying free cash flow to high-return, high-certainty organic investments（emphasizes比prioritizes侧重强调而非优先级，to替换toward更简洁）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/29905/000002990526000009/dov-20251231.htm"
+  },
+  {
+   "id": "ph_committed_to_returning_excess_capital",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "committed to returning excess capital to shareholders through growing dividends and opportunistic share repurchases",
+   "why": "中文常写“致力于回报股东”，此写法明确是“超额资本”而非所有资本，还说明了具体方式，更精准专业。",
+   "when": "撰写股东回报策略相关内容时套用。",
+   "slot": "committed to returning excess capital to shareholders through […]",
+   "swap": [
+    "focused on distributing surplus capital to shareholders via increasing dividends and opportunistic share buybacks（distributing比returning更侧重分配动作，buybacks比repurchases更常用）",
+    "dedicated to returning surplus capital to shareholders through growing dividends and opportunistic share repurchases（dedicated比committed语气更坚定，surplus比excess稍正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/29905/000002990526000009/dov-20251231.htm"
+  },
+  {
+   "id": "ph_one_of_several_companies",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "We are one of several companies competing for new business within the furniture industry.",
+   "why": "该写法用“one of several”客观界定自身在行业竞争中的位置，避免绝对化表述，符合正式报告的谨慎性；中国人常直接写“We are a company competing in...”，表述主观且缺乏行业格局的客观性。",
+   "when": "用于财务报告、商业计划中介绍自身行业竞争地位的场合。",
+   "slot": "We are one of several companies competing for […] within the […].",
+   "swap": [
+    "We are among a number of companies vying for new business in the furniture sector. 中文：“among a number of”和“vying”语气偏口语化，不如原句正式严谨；",
+    "We are one of multiple firms competing for new business in the furniture industry. 中文：“multiple firms”偏向更正式的商务语境，原句的“several companies”更通用灵活；"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/66382/000006638225000069/mlkn-20250531.htm"
+  },
+  {
+   "id": "ph_list_product_categories",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "Many of our competitors offer similar categories of products, including office seating, systems and freestanding furniture, casegoods, storage products, as well as residential, education and healthcare furniture solutions.",
+   "why": "该写法用“including... as well as...”清晰分层罗列产品类别，结构清晰；中国人常直接用“such as”或简单逗号罗列，缺乏层级感，显得杂乱。",
+   "when": "用于年报、产品说明中介绍竞品或自身产品范围的场合。",
+   "slot": "Many of our competitors offer similar categories of products, including […], as well as […].",
+   "swap": [
+    "Many competitors provide comparable product lines, like office seating, systems and freestanding furniture, casegoods, storage products, plus residential, education and healthcare furniture solutions. 中文：“like”和“plus”更随意，不符合正式报告的语气；",
+    "Numerous competitors offer similar product categories, including office seating, systems and freestanding furniture, casegoods, storage products, and residential, education and healthcare furniture solutions. 中文：用“and”代替“as well as”会让长列表读起来更紧凑，原句更强调补充的产品类别；"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/66382/000006638225000069/mlkn-20250531.htm"
+  },
+  {
+   "id": "ph_risk_statement_hedge",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "increased market pricing pressure and other factors could make it difficult for us to win new business with certain customers and within certain market segments at acceptable profit margins.",
+   "why": "该写法用“could make it difficult”委婉披露潜在风险，既说明问题又不绝对化，符合SEC报告的谨慎性要求；中国人常直接写“will make it hard”，表述绝对，不符合正式报告的规范。",
+   "when": "用于年报、尽职调查报告中披露潜在业务风险的场合。",
+   "slot": "increased […] and other factors could make it difficult for us to win new business with certain customers and within certain market segments at acceptable profit margins.",
+   "swap": [
+    "rising market pricing pressure and other elements might make it challenging for us to secure new business with specific clients and in particular market segments at satisfactory profit margins. 中文：“might make it challenging”比原句语气更弱，风险程度表述更轻；",
+    "higher market pricing pressure and other factors could make it hard for us to win new business with some customers and in some market segments at acceptable profit margins. 中文：“hard”比“difficult”更口语化，原句更正式；"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/66382/000006638225000069/mlkn-20250531.htm"
+  },
+  {
+   "id": "ph_002_902",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "designed to improve the regulation, supervision, and risk management",
+   "why": "中文常用定语从句“旨在改善…的”，英文用过去分词短语作后置定语，避免冗余从句，更简洁正式，符合SEC报告要求。",
+   "when": "正式报告中修饰名词（如措施、框架等），说明其目的时套用。",
+   "slot": "designed to improve […]",
+   "swap": [
+    "intended to enhance the regulation, supervision, and risk management（intended更侧重意图，enhance比improve稍正式）",
+    "created to boost the regulation, supervision, and risk management（created更突出措施的创设目的，语气不同）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/763563/000162828026017546/chmg-20251231.htm"
+  },
+  {
+   "id": "ph_001_278",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "In underwriting loans, primary emphasis is placed on",
+   "why": "采用正式被动结构，避免第一人称，符合财经报告客观性；中国人常写主动句（如“we place primary emphasis on”），正式度不足。",
+   "when": "撰写金融行业正式报告、尽职调查文档时套用。",
+   "slot": "In [business activity], primary emphasis is placed on […]",
+   "swap": [
+    "we place primary emphasis on […]（中文：主动句带主语，不够客观正式，适合内部非正式沟通）",
+    "primary focus is laid on […]（中文：用focus替换emphasis，更侧重聚焦核心，语气稍弱）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/763563/000162828026017546/chmg-20251231.htm"
+  },
+  {
+   "id": "ph_003_470",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Interest rates charged by the Bank vary with degree of risk",
+   "why": "用“vary with”精准表达“随…变化”，后置定语“charged by the Bank”清晰修饰rates，结构专业；中国人常写“change with”，专业度不足。",
+   "when": "描述金融费率、价格随风险等因素变动时套用。",
+   "slot": "[…] vary with degree of […]",
+   "swap": [
+    "fluctuate based on the level of […]（中文：fluctuate侧重波动，不如vary通用，适用于价格大幅变动场景）",
+    "change in accordance with the degree of […]（中文：in accordance with略显冗长，不够简洁）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/763563/000162828026017546/chmg-20251231.htm"
+  },
+  {
+   "id": "ph_important_factors_that_cause_results_dif",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Important factors that could cause actual results to differ materially from our expectations",
+   "why": "用定语从句精准限定导致结果差异的重要因素，比中文常省略限定词的写法更严谨，避免歧义",
+   "when": "写风险提示、业绩说明类报告，说明影响结果的因素时套用",
+   "slot": "Important factors that could cause actual results to differ materially from our […]",
+   "swap": [
+    "Key factors that might lead actual outcomes to vary significantly from our projections（中文：用Key、might、lead、vary、projections替换对应词，语气更正式）",
+    "Material factors that could make actual results differ substantially from our forecasts（中文：用Material、substantially、forecasts替换对应词，更侧重实质性影响）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1720420/000172042025000027/ibex-20250630.htm"
+  },
+  {
+   "id": "ph_statements_expressly_qualified_in_entire",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "are expressly qualified in their entirety by these cautionary statements",
+   "why": "用被动语态+明示全部约束的表述，明确前瞻性内容受全部警示声明限制，比中文常写的“受相关声明约束”更无漏洞",
+   "when": "写SEC合规文件、正式报告，声明表述的约束性时套用",
+   "slot": "[…] are expressly qualified in their entirety by these cautionary statements",
+   "swap": [
+    "are explicitly conditioned in full on these cautionary statements（中文：用explicitly、conditioned、full替换对应词，更侧重条件关系）",
+    "are formally limited in their entirety by these cautionary disclosures（中文：用formally、limited、disclosures替换对应词，更正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1720420/000172042025000027/ibex-20250630.htm"
+  },
+  {
+   "id": "ph_evaluate_statements_in_context_of_risks",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "in the context of these risks and uncertainties",
+   "why": "用“in the context of”明确要求在整体语境下评估，比中文常写的“考虑这些风险”更符合英文报告规范",
+   "when": "评估前瞻性表述、业绩预测类内容时套用",
+   "slot": "You should evaluate all forward-looking statements made in this Form 10-K in the context of these […]",
+   "swap": [
+    "You should assess all forward-looking statements in this filing against the backdrop of these risks and uncertainties（中文：用assess、against the backdrop of、filing替换对应词，更侧重背景参照）",
+    "You should review all forward-looking statements herein in light of these risks and uncertainties（中文：用review、herein、in light of替换对应词，更简洁）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1720420/000172042025000027/ibex-20250630.htm"
+  },
+  {
+   "id": "ph_hedge1",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "could cause actual events or results to differ materially from",
+   "why": "该写法用“differ materially from”精准表达“重大差异”，比中国人常写的“be different from”更符合财经报告的专业严谨性，避免模糊表述",
+   "when": "用于财务报告、审计说明中描述实际结果与预期的差异时",
+   "slot": "could cause actual events or results to differ materially from […]",
+   "swap": [
+    "might lead to actual events or results to vary significantly from（“vary significantly”稍口语化，正式报告中“differ materially”更常用）",
+    "could result in actual events or results being materially different from（结构稍长，不如原句简洁）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/915840/000091584025000075/bzh-20250930.htm"
+  },
+  {
+   "id": "ph_has_been_ranked_customer",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "has been ranked #1 in customer experience by Trust Builder for each of the past four years",
+   "why": "用被动语态突出排名结果，避免主观主语，符合正式报告客观性，中国人常主动语态太主观",
+   "when": "正式报告中展示第三方机构排名时",
+   "slot": "has been ranked #…in [metric] by [entity] for each of the past [number] years",
+   "swap": [
+    "has been ranked first in customer experience by Trust Builder over the past four years（更书面，first比#1正式）",
+    "has secured the top rank in customer experience from Trust Builder for each of the past four years（更强调主动获得的结果）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/915840/000091584025000075/bzh-20250930.htm"
+  },
+  {
+   "id": "ph_may_be_impacted_by_factors",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "may be impacted by a variety of factors",
+   "why": "用委婉的情态被动表述替代绝对语气，符合SEC财报的审慎性要求；中国人常写will be affected by many factors，语气过于肯定，缺乏不确定性缓冲",
+   "when": "用于财报中描述事件受多种不确定因素影响的场合",
+   "slot": "[...] may be impacted by a variety of factors, including [...] ",
+   "swap": [
+    "could be influenced by a range of factors（语气更弱，更显不确定性）",
+    "might be affected by numerous factors（用词偏口语，不如原表述正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/915840/000091584025000075/bzh-20250930.htm"
+  },
+  {
+   "id": "ph_operate_within_rapidly_evolving",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "We operate within a rapidly evolving energy and technology environment.",
+   "why": "用“rapidly evolving”修饰环境，精准体现动态变化的持续性，中文常直接写“快速发展的环境”，缺少这种体现持续演进的细节，表达更笼统。",
+   "when": "撰写行业报告时描述自身所处的动态行业环境。",
+   "slot": "We operate within a rapidly evolving […] environment.",
+   "swap": [
+    "We operate within a fast-changing energy and technology landscape.（landscape侧重行业格局，比environment更正式，适合描述行业整体态势）",
+    "We operate within a dynamically evolving energy and technology space.（space更偏向口语化的领域，不如environment正式，适合非正式报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1664703/000162828026006516/be-20251231.htm"
+  },
+  {
+   "id": "ph_influencing_how_organizations_plan",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "influencing how organizations plan, procure and deploy power infrastructure",
+   "why": "用现在分词短语作伴随状语，紧凑衔接前文的影响因素，避免重复主语，中文习惯用独立分句表达，结构松散，英文这种写法更凝练。",
+   "when": "描述某因素对主体行为的影响时使用。",
+   "slot": "influencing how […] plan, procure and deploy […] infrastructure",
+   "swap": [
+    "impacting how organizations design, source and roll out power infrastructure.（design比plan更侧重设计环节，source比procure更侧重采购渠道，roll out比deploy更侧重落地执行，语气更活泼）",
+    "affecting how companies plan, acquire and implement power infrastructure.（companies比organizations更口语化，acquire比procure更宽泛，implement比deploy更侧重内部执行）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1664703/000162828026006516/be-20251231.htm"
+  },
+  {
+   "id": "ph_heightened_scrutiny",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "heightened scrutiny from both commercial and residential customers",
+   "why": "用“heightened”修饰“scrutiny”，比中国人常用的“increased”更正式精准，契合SEC公开报告的专业严谨调性，避免口语化表达",
+   "when": "正式公开报告中描述各方关注度、审查力度提升的场合",
+   "slot": "heightened scrutiny from both […] and […]",
+   "swap": [
+    "increased scrutiny from both commercial and residential customers（语气平实，缺乏专业报告的正式感）",
+    "elevated scrutiny from both commercial and residential customers（侧重层级提升，未体现程度加剧的动态）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1664703/000162828026006516/be-20251231.htm"
+  },
+  {
+   "id": "ph_prompting_utilities_explore",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "prompting utilities to explore more flexible and capital-efficient ways",
+   "why": "用“prompting”体现动因的推动性，比中国人常写的“making”“leading to”更精准专业，符合正式报告的措辞要求",
+   "when": "正式报告中描述市场/环境因素推动主体采取行动的场合",
+   "slot": "prompting […] to explore more flexible and capital-efficient ways",
+   "swap": [
+    "leading utilities to explore more flexible and capital-efficient ways（侧重结果而非主动推动的动因）",
+    "causing utilities to explore more flexible and capital-efficient ways（略带负面色彩，不如prompting中性）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1664703/000162828026006516/be-20251231.htm"
+  },
+  {
+   "id": "ph_provided_by_our_wholly_owned_subsidiary",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "provided by our wholly-owned subsidiary AppFolio Insurance Services, Inc.",
+   "why": "中文常直接写“由我们的全资子公司AppFolio保险服务公司提供”，此处用过去分词短语作后置定语，结构紧凑，避免冗余，符合正式报告的简洁要求",
+   "when": "正式报告中说明产品/服务提供主体的场合",
+   "slot": "provided by our wholly-owned subsidiary […]",
+   "swap": [
+    "offered by our wholly-owned subsidiary AppFolio Insurance Services, Inc.（offered语气较provided弱，provided更侧重供应的正式性）",
+    "supplied by our wholly-owned subsidiary AppFolio Insurance Services, Inc.（supplied多用于物资供应，此处为服务，provided更合适）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1433195/000143319526000011/appf-20251231.htm"
+  },
+  {
+   "id": "ph_terms_definition_as_used",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "As used herein, “Amazon.com,” “we,” “our,” and similar terms include Amazon.com, Inc. and its subsidiaries, unless the context indicates otherwise.",
+   "why": "中国人写正式报告时常省略指代术语的范围界定，易引发歧义，此处用“As used herein”清晰限定指代对象，逻辑严谨。",
+   "when": "正式年报、法律文件中界定指代术语时套用。",
+   "slot": "As used herein, “[…],” “[…],” “[…],” and similar terms include […] and its subsidiaries, unless the context indicates otherwise.",
+   "swap": [
+    "For the purposes of this document, “[…],” “[…],” “[…],” and related terms refer to […] and its affiliates, unless the context requires a different meaning（更偏向法律文件的正式表述）",
+    "In this report, “[…],” “[…],” “[…],” and analogous terms include […] and its subsidiaries, unless the context specifies otherwise（“analogous”比“similar”更正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000004/amzn-20251231.htm"
+  },
+  {
+   "id": "ph_reference_to_risk_factors",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "See Item 1A of Part I — “Risk Factors.”",
+   "why": "中国人写正式报告引用其他章节时常模糊标注，此处明确标注章节位置，便于读者快速定位，符合合规报告规范。",
+   "when": "正式年报、合规报告中引用其他章节内容时套用。",
+   "slot": "See Item […] of Part […] — “[…].”",
+   "swap": [
+    "Refer to Item […] of Part […] titled “[…]”（“titled”更清晰说明章节主题）",
+    "Consult Item […] of Part […] — “[…]”（“consult”比“see”更书面化）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000004/amzn-20251231.htm"
+  },
+  {
+   "id": "ph_based_on_info_currently_known",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Based on the information currently known to us",
+   "why": "用被动语态加限定词体现信息的时效性与局限性，避免绝对化，中国人常直接写“根据我们目前所知”，英文表述更严谨符合专业报告要求",
+   "when": "正式报告（如风险披露、声明类文件）中引出基于当前信息的判断",
+   "slot": "Based on the information currently known to us, we believe that […]",
+   "swap": [
+    "To the best of our current knowledge, 更简洁，语气稍口语化，适合非正式专业表述",
+    "Given the information available to us now, 语气更平实，强调信息可得性"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1722684/000172268426000007/wh-20251231.htm"
+  },
+  {
+   "id": "ph_impact_clarify",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "did not impact our Consolidated Financial Statements or our reportable segments",
+   "why": "用精准的动词短语明确说明变动的影响边界，中国人常写“不会影响”这类口语化表达，此处更符合财报正式用语的严谨性",
+   "when": "用于正式财务报告中说明会计调整或业务变动对核心报表的影响",
+   "slot": "[…] did not impact our Consolidated Financial Statements or our reportable segments",
+   "swap": [
+    "had no effect on our Consolidated Financial Statements or our reportable segments（语气更委婉，适合强调非重大影响的场景）",
+    "did not affect our Consolidated Financial Statements or our reportable segments（表述更简洁，正式报告中可通用）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/51143/000005114326000010/ibm-20251231_d2.htm"
+  },
+  {
+   "id": "ph_cross_reference",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Refer to note C, \"Revenue Recognition,\" for additional information",
+   "why": "用正式的交叉引用短语指引读者查看相关附注，中国人常写“请参见”的直译，此处符合SEC报告的规范用语",
+   "when": "用于正式报告中指引读者查阅相关附注或补充资料",
+   "slot": "Refer to note […], \" […] ,\" for additional information",
+   "swap": [
+    "See note C, \"Revenue Recognition,\" for more details（表述更简洁，适合内部非正式报告）",
+    "Please consult note C, \"Revenue Recognition,\" for further information（语气更礼貌，适合需要委婉指引的场景）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/51143/000005114326000010/ibm-20251231_d2.htm"
+  },
+  {
+   "id": "ph_refer_to_additional_info",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Refer to “Currency Rate Fluctuations,” for additional information",
+   "why": "中文常写“详见‘汇率波动’，获取更多信息”，用“Refer to”是SEC财报标准的交叉引用表述，简洁正式，符合监管报告的规范",
+   "when": "用于财报中指向其他章节补充相关信息的场合",
+   "slot": "Refer to “[…] ,” for additional information",
+   "swap": [
+    "See “Currency Rate Fluctuations,” for more details（更口语化，正式度不足）",
+    "Consult “Currency Rate Fluctuations,” for additional information（偏向咨询，不适合报告引用）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/51143/000005114326000010/ibm-20251231_d2.htm"
+  },
+  {
+   "id": "ph_non_gaap_measure_def",
+   "kind": "phrase",
+   "en": "a non-GAAP measure that is a component of Realized Income",
+   "why": "用定语从句精准说明非GAAP指标的从属关系，中国人常直接简化为“a non-GAAP measure of Realized Income”，易造成从属关系模糊。",
+   "when": "定义专业财务术语（如非GAAP指标）的场合。",
+   "slot": "a non-GAAP measure that is a component of […]",
+   "swap": [
+    "a non-GAAP metric that forms part of Realized Income（metric比measure更侧重财务指标，语气更正式）",
+    "a non-GAAP measure which is a component of Realized Income（用which替换that，更符合正式书面语规范）"
+   ],
+   "dim": "misc",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1176948/000162828026011413/ares-20251231.htm"
+  },
+  {
+   "id": "ph_assess_core_operating_perf",
+   "kind": "phrase",
+   "en": "is used to assess core operating performance by determining whether recurring revenue, primarily consisting of management fees and fee related performance revenues, is sufficient to cover operating expenses and to generate profits",
+   "why": "用by引导的方式状语明确评估逻辑，插入语补充收入构成，结构清晰，中国人常省略插入语或简化为“assess core performance by checking revenue”，逻辑不完整。",
+   "when": "说明财务指标用途及判断依据的场合。",
+   "slot": "is used to assess core operating performance by determining whether […]",
+   "swap": [
+    "is employed to evaluate core operating performance by verifying if recurring revenue（employ比use更正式，verify比determine更侧重验证）",
+    "is utilized to assess core operating performance by checking whether recurring revenue（utilize更书面，check更口语化）"
+   ],
+   "dim": "misc",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1176948/000162828026011413/ares-20251231.htm"
+  },
+  {
+   "id": "ph_non_gaap_vs_gaap_diff",
+   "kind": "phrase",
+   "en": "FRE differs from income before taxes computed in accordance with GAAP as FRE excludes net performance income, investment income and adjusts for certain other items that we believe are not indicative of our core operating performance",
+   "why": "用differs from明确差异，as引导原因状语说明差异原因，中国人常直接写“FRE is different from GAAP income because it excludes…”，不够正式且逻辑衔接弱。",
+   "when": "对比非GAAP与GAAP财务指标差异的场合。",
+   "slot": "[…] differs from […] computed in accordance with GAAP as […] excludes […] and adjusts for […]",
+   "swap": [
+    "[…] is distinct from income before taxes calculated under GAAP since […] excludes […]（distinct比differs更正式，calculated under比computed in accordance with更简洁）",
+    "[…] differs from GAAP income before taxes because […] excludes […]（更简洁，适合非正式报告）"
+   ],
+   "dim": "link",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1176948/000162828026011413/ares-20251231.htm"
+  },
+  {
+   "id": "ph_additional_info_with_respect_to",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Additional information with respect to operations by geographic area appears in Note 2 of the Consolidated Financial Statements included in Item 8 of this report.",
+   "why": "用正式介词短语“with respect to”引出信息主题，比中国人常用的口语化“about”更符合SEC报告的正式语气，避免生硬语序。",
+   "when": "正式财务报告中，指引读者到特定附注查找相关主题补充信息时使用。",
+   "slot": "Additional information with respect to […] appears in Note […] of the Consolidated Financial Statements included in Item […] of this report.",
+   "swap": [
+    "Concerning operations by geographic area, additional information appears in Note 2...（更简洁，适合短篇幅指引）",
+    "Regarding operations by geographic area, additional information is presented in Note 2...（更通用，适用于各类正式报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/66382/000006638226000092/mlkn-20260530.htm"
+  },
+  {
+   "id": "ph_refer_to_item_for_discussion",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Refer to Item 7A, Quantitative and Qualitative Disclosures about Market Risk, for further discussion regarding the Company's foreign exchange risk.",
+   "why": "用“Refer to […] for further discussion regarding”的结构明确指引读者到特定章节获取相关讨论，比中国人常用的简单“See Item 7A”更规范，符合SEC报告的披露要求。",
+   "when": "正式财务报告中，指引读者到特定项目章节获取某一主题详细讨论时使用。",
+   "slot": "Refer to Item […], Quantitative and Qualitative Disclosures about […], for further discussion regarding the Company's […] risk.",
+   "swap": [
+    "See Item 7A for more details on the Company's foreign exchange risk（更简洁，适合内部报告）",
+    "Please refer to Item 7A for additional discussion about the Company's foreign exchange risk（更礼貌，适合面向投资者的报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/66382/000006638226000092/mlkn-20260530.htm"
+  },
+  {
+   "id": "ph_future_expand_impact_compete",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "Future efforts to expand our business may impact our ability to compete for business",
+   "why": "用\"Future efforts to expand our business\"明确限定动作范围，比直接写\"Expanding our business\"更精准避免歧义；中国人常写\"Expanding our business may affect our competitiveness\"，不够正式且限定模糊",
+   "when": "用于正式报告中描述未来业务扩张可能带来的潜在影响时",
+   "slot": "Future efforts to expand our […] may impact our ability to compete for […]",
+   "swap": [
+    "Future plans to expand our business could affect our ability to compete for contracts（\"could\"语气更弱，\"plans\"比\"efforts\"更侧重已规划动作）",
+    "Upcoming expansion initiatives may hinder our ability to compete for business（\"hinder\"比\"impact\"更具负面指向，\"initiatives\"比\"efforts\"更正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/66382/000006638226000092/mlkn-20260530.htm"
+  },
+  {
+   "id": "ph_operating_env_reg_challenge",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "expose us to operating environments with complex, changing, and in some cases, inconsistently-applied legal and regulatory requirements",
+   "why": "用\"in some cases, inconsistently-applied\"精准描述法规执行的不一致性，比笼统写\"unclear\"更具体；中国人常写\"face complex and changing laws\"，缺少对执行层面的精准描述，不符合SEC报告严谨性",
+   "when": "用于正式报告中描述新区域或海外业务面临的法规环境挑战时",
+   "slot": "expose us to operating environments with complex, changing, and in some cases, inconsistently-applied legal and regulatory requirements in […]",
+   "swap": [
+    "expose us to operating environments with complex, evolving, and sometimes inconsistently-enforced legal and regulatory requirements（\"evolving\"比\"changing\"更侧重动态变化，\"enforced\"比\"applied\"更贴合法规执行场景）",
+    "expose us to operating environments with complex, shifting, and occasionally inconsistently-implemented legal and regulatory requirements（\"shifting\"比\"changing\"更具不确定性，\"implemented\"比\"applied\"更正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/66382/000006638226000092/mlkn-20260530.htm"
+  },
+  {
+   "id": "ph_compliance_failure_limit_business",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "failure to remain compliant with them could limit our ability to continue doing business in these locations",
+   "why": "用\"failure to remain compliant with them\"明确指出合规失败的后果，比写\"if we don't comply\"更正式书面；中国人常写\"if we don't follow the rules, we can't do business here\"，过于口语化不符合正式报告要求",
+   "when": "用于正式报告中描述合规失败可能带来的业务限制时",
+   "slot": "failure to remain compliant with […] could limit our ability to continue doing business in these locations",
+   "swap": [
+    "non-compliance with them would restrict our ability to continue operating in these locations（\"non-compliance\"比\"failure to remain compliant\"更简洁正式，\"restrict\"比\"limit\"更具约束感）",
+    "failing to comply with them would hinder our ability to continue doing business in these areas（\"failing to comply\"更直接，\"hinder\"比\"limit\"更侧重阻碍，\"areas\"比\"locations\"更通用）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/66382/000006638226000092/mlkn-20260530.htm"
+  },
+  {
+   "id": "ph_dedicated_global_team_technologies",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "Through a dedicated global team of approximately 51,000 associates, process expertise and advanced technologies",
+   "why": "用“Through + 并列支撑资源”清晰引出业务交付依托，“approximately”比“about”更书面严谨，中国人常写“With our global team of about 51,000 employees...”，“Through”更具动态性，体现资源对业务的支撑作用",
+   "when": "介绍公司业务交付核心支撑资源的场合，比如年报的运营能力部分",
+   "slot": "Through a dedicated global team of approximately […] associates, process expertise and advanced technologies",
+   "swap": [
+    "With a dedicated worldwide team of roughly 51,000 employees, process know-how and cutting-edge technologies",
+    "差在“Through”比“With”更具动态性，“expertise”比“know-how”更正式，“advanced”比“cutting-edge”更中性严谨，适合正式报告"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1677703/000167770326000024/cndt-20251231.htm"
+  },
+  {
+   "id": "ph_help_state_agencies",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "help state agencies determine eligibility, streamline enrollment, adjudicate claims and meet requirements",
+   "why": "用对称并列动词短语清晰罗列功能，逻辑层次分明，中国人写英文常罗列时结构零散，此结构更易读。",
+   "when": "撰写报告中列举产品/服务具体作用的场合。",
+   "slot": "help […] determine eligibility, streamline enrollment, adjudicate claims and meet requirements",
+   "swap": [
+    "assist state agencies in determining eligibility, streamlining enrollment, adjudicating claims and meeting requirements（动名词结构繁琐，不如原句简洁）",
+    "aid state agencies to determine eligibility, streamline enrollment, adjudicate claims and meet requirements（“aid”语气较弱，不如“help”贴合商务常用语气）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1677703/000167770326000024/cndt-20251231.htm"
+  },
+  {
+   "id": "ph_measure_success_through",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "We measure success in “Growth” through revenue retention, our net Annual Recurring Revenue (\"ARR\") activity metric and new business signings, among other metrics.",
+   "why": "measure success in … through … 结构清晰，将模糊的“成功”与具体指标挂钩；among other metrics 收尾，既留有余地又显示严谨。中国报告常写 We use … to measure success 或直接用 The success is measured by …，不够精炼且易漏掉 among other 的周全表达。",
+   "when": "阐述如何用量化指标衡量某战略目标或维度时，尤其需要列举非穷尽的关键指标。",
+   "slot": "We measure success in “[...]” through [...], our [...] and [...], among other metrics.",
+   "swap": [
+    "We assess our “Growth” performance by tracking … along with other measures. — assess 偏定性评估, by tracking 不如 through 直接；along with 不如 among other 正式",
+    "We gauge success in “Growth” using … and a number of other indicators. — gauge 偏口语, using 欠精准, a number of 不及 among other 简洁",
+    "We define success in “Growth” as reflected in … amongst other metrics. — define as reflected in 绕口且弱化了指标的直接作用"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1677703/000167770326000024/cndt-20251231.htm"
+  },
+  {
+   "id": "ph_launched_ai_experience_center",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "launched our AI Experience Center in our Florham Park, NJ headquarters",
+   "why": "用“launched”准确描述商业项目推出动作，搭配地点状语清晰，比中国人常写的“we opened our AI Experience Center at our headquarters in Florham Park, NJ”更专业，符合SEC报告正式措辞",
+   "when": "用于描述推出新商业实体、中心等的场景",
+   "slot": "launched our […] in our Florham Park, NJ headquarters",
+   "swap": [
+    "opened our AI Experience Center at our Florham Park, NJ headquarters（“opened”偏向普通开业，不如“launched”贴合商业项目）",
+    "established our AI Experience Center in our Florham Park, NJ headquarters（“established”偏向长期设立，不如“launched”贴合新推出）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1677703/000167770326000024/cndt-20251231.htm"
+  },
+  {
+   "id": "ph_which_believe_represents_the",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "which we believe represents the vast majority of total expenditures in the hospice market",
+   "why": "该写法用“we believe”限定判断，避免绝对化，符合专业合规报告要求，中国人常直接写“which represents”，过于绝对易有风险",
+   "when": "撰写涉及公司主观判断的行业数据归属、市场份额分析时使用",
+   "slot": "which we believe represents the vast majority of total expenditures in the […] market",
+   "swap": [
+    "which we consider to be the vast majority（更侧重公司主观认定，语气稍强）",
+    "which is believed by us to account for most（被动语态，更正式，适合严格合规报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1803737/000180373726000018/ehab-20251231.htm"
+  },
+  {
+   "id": "ph_as_of_date_qualifier",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "as of 2024 (the most current information available)",
+   "why": "用“as of”精准限定数据时间节点，括号补充说明数据最新性，避免模糊；中国人常直接写“in 2024”，缺少对数据时效性的严谨补充。",
+   "when": "撰写财务报告中需明确数据时间及最新性的场合。",
+   "slot": "as of […] (the most current information available)",
+   "swap": [
+    "as of the fiscal year ended 2024 (the latest data available)，更强调财年属性，适合年报类正式报告",
+    "as of 2024 (the most recent information on hand)，语气偏向内部实操表述，适合内部报告"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1803737/000180373726000018/ehab-20251231.htm"
+  },
+  {
+   "id": "ph_result_participle_link",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "highlighting home health care’s savings potential for the healthcare system",
+   "why": "用现在分词作结果状语，简洁衔接前文数据与结论，避免重复主语；中国人常写“this shows that home health care has savings potential”，表述更啰嗦。",
+   "when": "撰写报告中用数据引出结论的逻辑衔接场合。",
+   "slot": "highlighting […]’s […] potential for the […]",
+   "swap": [
+    "demonstrating […]’s […] potential for the […]，用“demonstrating”替换，语气更侧重实证支撑",
+    "illustrating […]’s […] potential for the […]，用“illustrating”替换，语气更侧重举例说明"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1803737/000180373726000018/ehab-20251231.htm"
+  },
+  {
+   "id": "ph_based_on_current_expectations",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "based on current expectations, estimates, assumptions, and projections",
+   "why": "中文常重复用同类词冗余，英文用并列专业名词简洁精准，中国人易写得拖沓",
+   "when": "财务报告中说明假设依据时使用",
+   "slot": "based on current expectations, estimates, assumptions, and projections about […]",
+   "swap": [
+    "based on current expectations, estimates, assumptions, and forecasts（forecasts侧重短期预测，比projections更具体）",
+    "derived from our current expectations, estimates, assumptions, and projections（derived from强调来源，比based on更正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1365135/000119312526061340/wu-20251231.htm"
+  },
+  {
+   "id": "ph_could_differ_materially",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "could differ materially from the results contemplated by these forward-looking statements",
+   "why": "中文常生硬写“可能不同”，英文用could委婉、materially强调重大差异、contemplated正式专业，中国人易写得不够严谨",
+   "when": "财务报告中说明实际与预测差异时使用",
+   "slot": "Our actual results could differ materially from the results contemplated by these forward-looking statements regarding […]",
+   "swap": [
+    "may differ significantly from the results described in these forward-looking statements（may语气稍弱，significantly偏口语化）",
+    "might differ materially from the results outlined in these forward-looking statements（might更委婉，outlined侧重概述）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1365135/000119312526061340/wu-20251231.htm"
+  },
+  {
+   "id": "ph_see_the_discussion",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "See the discussion under the headings “Risk Factors” and “Forward-Looking Statements” below",
+   "why": "中文常啰嗦写“详见下文部分”，英文用See简洁、under the headings明确指向章节，符合SEC报告规范，中国人易写得模糊",
+   "when": "财务报告中交叉引用章节内容时使用",
+   "slot": "See the discussion under the headings “[…]” and “[…]” below",
+   "swap": [
+    "Refer to the discussion in the sections titled “Risk Factors” and “Forward-Looking Statements” below（Refer to更正式，sections侧重内容部分）",
+    "Please refer to the discussion under the headings “Risk Factors” and “Forward-Looking Statements” below（加Please更礼貌，适合监管报告）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1365135/000119312526061340/wu-20251231.htm"
+  },
+  {
+   "id": "ph_reg_subject_to_minimum_royalty",
+   "kind": "phrase",
+   "en": "subject to an annual, bi-annual or quarterly minimum royalty payment",
+   "why": "用并列的时间状语清晰限定最低许可费的支付周期，表述精准专业；中国人常写得冗长模糊，如“每年或每半年或每季度付最低许可费”不够凝练",
+   "when": "撰写许可协议的费用条款时",
+   "slot": "subject to an annual, bi-annual or quarterly minimum royalty payment for […]",
+   "swap": [
+    "with a minimum royalty payment due annually, semi-annually or quarterly for […]（bi-annual换为semi-annual，更通用）",
+    "subject to an annual, semi-annual or quarterly minimum royalty payment in […]（调整介词搭配，适配不同语境）"
+   ],
+   "dim": "misc",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1803914/000162828026018238/ply-20251231.htm"
+  },
+  {
+   "id": "ph_attr_exclusive_licensing_agent",
+   "kind": "phrase",
+   "en": "acts as our exclusive licensing agent for the Playboy brand trademarks and intellectual property",
+   "why": "用“exclusive licensing agent”明确代理的专属属性，表述严谨；中国人常写“是我们唯一的许可代理”，口语化且不够专业",
+   "when": "描述品牌代理关系时",
+   "slot": "acts as our exclusive licensing agent for […] brand trademarks and intellectual property",
+   "swap": [
+    "serves as our sole licensing agent for […] brand trademarks and intellectual property（exclusive换为sole，同义更简洁）",
+    "functions as our exclusive licensing representative for […] brand trademarks and intellectual property（agent换为representative，适配不同代理层级）"
+   ],
+   "dim": "reg",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1803914/000162828026018238/ply-20251231.htm"
+  },
+  {
+   "id": "ph_quant_calculated_as_percentage",
+   "kind": "phrase",
+   "en": "calculated as a percentage of net revenue from wholesale and/or retail sales",
+   "why": "用“calculated as a percentage of”清晰界定费用计算基数，表述具体；中国人常写“基于净收入”，未明确计算方式",
+   "when": "撰写许可费、分成等费用的计算规则时",
+   "slot": "calculated as a percentage of net revenue from […]",
+   "swap": [
+    "determined as a percentage of net revenue from […]（calculated换为determined，语气更正式）",
+    "computed as a percentage of net revenue from […]（calculated换为computed，适配技术类报告）"
+   ],
+   "dim": "misc",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1803914/000162828026018238/ply-20251231.htm"
+  },
+  {
+   "id": "ph_item1a_reference",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "in \"Item 1A. Risk Factors\" in this Annual Report on Form 10-K",
+   "why": "用规范格式引用SEC报告的具体章节，比中国人常写的“在本年报的风险因素部分”更符合专业报告的引用规范，清晰明确，便于读者定位。",
+   "when": "撰写SEC报告或专业年报的引用部分时套用。",
+   "slot": "in \"Item [X]. [Section Name]\" in this [Report Type, e.g., Annual Report on Form …-K]",
+   "swap": [
+    "within \"Item 1A. Risk Factors\" of this Annual Report on Form 10-K（within更正式，of更常用在所属关系）",
+    "in \"Item 1A. Risk Factors\" of this 10-K filing（filing比report更专业，语气更正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/2089661/000208966126000016/sunc-20251231.htm"
+  },
+  {
+   "id": "ph_respectively_461",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "revenues were $11.3 million and $8.7 million for 2025 and 2024, respectively",
+   "why": "用respectively清晰对应两个数值与两个年份，避免重复表述，逻辑严谨，中国人常重复写两个分句，不如此简洁对应",
+   "when": "财务报告中并列多组对应数据（如数值与年份、项目与期间）的场合",
+   "slot": "revenues were […] and […] for […] and […] , respectively",
+   "swap": [
+    "revenues stood at […] and […] in […] and […] respectively ：语气更正式，侧重“数值为”的表述",
+    "revenues totaled […] and […] for the years ended […] and […] respectively ：更贴合年报“截至某年度”的表述习惯"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1821175/000149315226009532/form10-k.htm"
+  },
+  {
+   "id": "ph_respectively_226",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "cost of revenues were $2.1 million and $3.2 million for 2025 and 2024, respectively",
+   "why": "用respectively明确对应时期与数值的关系，避免重复，比中国人常写的分述更简洁规范",
+   "when": "财务报告中并列对应多个报告期的财务数值时套用",
+   "slot": "cost of revenues were $[…] million and $[…] million for […] and […] respectively",
+   "swap": [
+    "cost of revenues amounted to $[…] million in […] and $[…] million in […]，缺少明确对应暗示，衔接稍弱",
+    "cost of revenues were $[…] million for […] and $[…] million for […]，未用respectively，易混淆对应关系"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1821175/000149315226009532/form10-k.htm"
+  },
+  {
+   "id": "ph_contained_item_risk_factors",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "is contained in Item 1A. \"Risk Factors\" in this Annual Report",
+   "why": "用被动语态+明确章节编号指引，是英文正式报告中指引内容来源的标准写法，严谨准确，符合SEC报告格式要求。中国人常直译“is in the Risk Factors part of this annual report”，不够正式规范。",
+   "when": "正式报告中指引某内容的具体位置时套用。",
+   "slot": "is contained in Item 1A. […] in this Annual Report",
+   "swap": [
+    "is included in Item 1A. \"Risk Factors\" in this Annual Report → 用included替换contained，更侧重内容的包含而非容纳；",
+    "appears in Item 1A. \"Risk Factors\" of this Annual Report → 用appears替换is contained，更侧重内容的呈现状态"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/78814/000162828026009921/pbi-20251231.htm"
+  },
+  {
+   "id": "ph_available_sources_for_services",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "available sources for services, components, supplies, logistics and manufacturing",
+   "why": "用“available sources for”明确限定资源范围，列举清晰严谨，符合财务报告精准性要求，中国人写英文时常直接罗列却未限定范围",
+   "when": "描述可获取的各类资源范围时套用",
+   "slot": "available sources for […], components, supplies, logistics and manufacturing",
+   "swap": [
+    "accessible sources for services, components, supplies, logistics and manufacturing（侧重资源可接触性，与原词“可获取性”不同）",
+    "available resources for services, components, supplies, logistics and manufacturing（侧重资源本身，而非来源渠道）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/78814/000162828026009921/pbi-20251231.htm"
   }
  ]
 }
