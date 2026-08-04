@@ -553,7 +553,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
       跟主屏图标同一个病、同一个药：URL 上挂**按内容算的版本号**，
       内容一变 URL 就变，缓存自然失效；内容没变则不变，不会白刷。
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
-const BANKV = '61d88435';
+const BANKV = 'aeedd328';
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
 /* 🚨 Gemini 免费额度是 **每天 × 每个模型** 分开算的
@@ -1363,31 +1363,49 @@ function saveApi(o){
 }
 function apiOn(){ return !!(S.api && S.api.url); }
 
+// 🚨 后端跑在 serverless 上，**空闲会缩到零**，之后第一发请求要等实例冷启动。
+//    实测这一发常常拿到 502/504，而它其实什么毛病都没有 —— 再打一次就好了。
+//    所以这类「短暂不可用」必须重试，不然他练着练着就莫名其妙报一次错。
+//    ⚠️ 只重试**短暂**的那几种；401（口令不对）、400（请求本身有问题）
+//    重试一百次也一样，重试它们只会让人多等。
+const RETRY_STATUS = [0, 408, 429, 500, 502, 503, 504];
+
 async function backend(prompt, temp, wantJson){
   const cfg = S.api || {};
   const url = String(cfg.url || '').replace(/\/+$/, '') + '/api/llm';
-  let r;
-  try {
-    r = await fetch(url, {method:'POST',
-      headers: Object.assign({'Content-Type':'application/json'},
-                             cfg.pass ? {'X-Alex-Pass': cfg.pass} : {}),
-      body: JSON.stringify({
-        messages: [{role:'system',
-                    content:'严格输出一个 JSON 对象，不要解释、不要围栏。'},
-                   {role:'user', content: prompt}],
-        temperature: temp, json: wantJson !== false, max_tokens: 8000})});
-  } catch(e){
-    throw new Error('连不上后端（' + (cfg.url || '没填地址') + '）—— ' +
-                    '检查地址对不对、后端是不是开着');
+  const body = JSON.stringify({
+    messages: [{role:'system',
+                content:'严格输出一个 JSON 对象，不要解释、不要围栏。'},
+               {role:'user', content: prompt}],
+    temperature: temp, want_json: wantJson !== false,
+    json: wantJson !== false, max_tokens: 8000});
+  let last = '';
+  for (let i = 0; i < 3; i++){
+    if (i) await new Promise(f => setTimeout(f, i * 1200));   // 冷启动给点时间
+    let r;
+    try {
+      r = await fetch(url, {method:'POST',
+        headers: Object.assign({'Content-Type':'application/json'},
+                               cfg.pass ? {'X-Alex-Pass': cfg.pass} : {}),
+        body});
+    } catch(e){
+      last = '连不上后端（' + (cfg.url || '没填地址') + '）—— ' +
+             '检查地址对不对、后端是不是开着';
+      continue;                       // 网络层失败也可能是冷启动，再试
+    }
+    if (r.status === 401)
+      throw new Error('后端口令不对，去「我的 → 后端」改一下');
+    if (!r.ok){
+      const t = await r.text().catch(()=> '');
+      last = '后端 ' + r.status + ' ' + t.slice(0, 120);
+      if (RETRY_STATUS.indexOf(r.status) < 0) throw new Error(last);
+      continue;
+    }
+    const j = await r.json().catch(()=> null);
+    if (j && j.text) return j.text;
+    last = '后端返回空';
   }
-  if (r.status === 401) throw new Error('后端口令不对，去「我的 → 后端」改一下');
-  if (!r.ok){
-    const t = await r.text().catch(()=> '');
-    throw new Error('后端 ' + r.status + ' ' + t.slice(0, 120));
-  }
-  const j = await r.json();
-  if (!j.text) throw new Error('后端返回空');
-  return j.text;
+  throw new Error(last + '（已重试 3 次）');
 }
 
 function pick(need){
