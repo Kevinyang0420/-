@@ -17780,6 +17780,503 @@
    "src": "SEC 10-K",
    "srcen": "SEC 10-K filing",
    "url": "https://www.sec.gov/Archives/edgar/data/1755347/000107997326000647/certiplex_10k.htm"
+  },
+  {
+   "id": "ph_designed_to_engage",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "designed to engage partners who provide value-added services",
+   "why": "用过去分词短语作后置定语，紧凑说明项目设计目的，比中文拆分表述更简洁，符合英文正式报告的凝练要求",
+   "when": "介绍项目、计划或流程设计目的的正式场景",
+   "slot": "designed to engage […] who provide […] services",
+   "swap": [
+    "created to attract partners that deliver value-added services（侧重创建动作，原短语更贴合官方设计初衷）",
+    "intended to engage partners offering value-added services（用现在分词简化定语，语气较灵活，原短语更正式）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_verify_end_customer",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "verify the end customer's identification before accepting such orders",
+   "why": "用‘verify sth before doing sth’结构明确合规流程，比中文直译更符合英文审计/合规报告的正式表述，逻辑清晰",
+   "when": "描述合规审核、流程验证的正式场景，如财务尽职调查、审计报告",
+   "slot": "verify the […] before accepting such orders",
+   "swap": [
+    "confirm the end customer's identity prior to accepting such orders（更正式但稍生硬，原短语更自然）",
+    "check the end customer's identification before accepting such orders（语气较随意，不符合正式报告要求）"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_a_temporary_10_levy_on_imports",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "a temporary 10% levy on all global imports",
+   "why": "中文常直译“临时10%的关税对所有进口”，此处“a temporary [X] on [Y]”结构清晰限定了征税的范围和性质，避免歧义，符合财经报告精准表述要求。",
+   "when": "正式报告中描述征税、收费等具体事项的场合。",
+   "slot": "a temporary [...] on all global imports",
+   "swap": [
+    "a provisional 10% levy on all global imports（provisional侧重临时的不确定性，不如temporary准确）",
+    "a temporary 10% duty on all global imports（duty侧重国内税，通用性弱于levy）"
+   ],
+   "src": "BBC 商业",
+   "srcen": "BBC Business",
+   "url": "https://www.bbc.co.uk/news/articles/cy4kp8jd0ppo?at_medium=RSS&at_campaign=rss"
+  },
+  {
+   "id": "ph_key_components_including",
+   "kind": "phrase",
+   "en": "Our products rely on key components, including merchant silicon, integrated circuit components and power supplies",
+   "why": "用名词化结构（rely on + 名词短语）替代直译的动宾结构，更符合英文正式报告的书面语风格，避免口语化；中国人常直接写‘Our products depend on...’，此处用rely on更贴合‘核心依赖’的程度，表述更精准。",
+   "when": "撰写正式财务报告中关于产品核心组件依赖情况的说明时套用。",
+   "slot": "Our products rely on key components, including […], integrated circuit components and power supplies",
+   "swap": [
+    "Our products depend on key components, including […], integrated circuit components and power supplies（depend on语气稍弱，无法体现‘核心依赖’的程度）",
+    "Our products are reliant on key components, including […], integrated circuit components and power supplies（被动结构正式度略低，主动结构更清晰）"
+   ],
+   "dim": "nom",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_neither_nor_agreement",
+   "kind": "phrase",
+   "en": "neither we nor our contract manufacturers have a written agreement with these component providers",
+   "why": "用neither...nor并列否定两个主体，避免重复主语，逻辑严谨，符合英文正式报告的书面表达习惯；中国人常分开写‘We have no written agreement... Our contract manufacturers also have no...’，表述更啰嗦。",
+   "when": "撰写正式报告中关于多个主体共同不具备某项条件的说明时套用。",
+   "slot": "neither we nor our […] have a written agreement with these component providers",
+   "swap": [
+    "both we and our […] lack a written agreement with these component providers（both...and语气肯定，不如neither...nor的否定并列精准）",
+    "neither our […] nor we hold a written agreement with these component providers（语序调整后重点后置，正式度稍降）"
+   ],
+   "dim": "reg",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_typically_do_not_impose",
+   "kind": "phrase",
+   "en": "typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts",
+   "why": "用模糊限制语typically限定动作的普遍性，避免绝对化表述，符合SEC合规报告的谨慎性原则；中国人常直接写‘do not impose’，缺乏限定，表述不够严谨。",
+   "when": "撰写正式报告中关于合同条款的普遍性说明时套用。",
+   "slot": "[...] typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts",
+   "swap": [
+    "generally do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts（generally语气更宽泛，不如typically贴合特定商业场景的常规情况）",
+    "usually do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts（usually偏向日常语境，正式度低于typically）"
+   ],
+   "dim": "reg",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_marks_the_start_of_2018_19_tariff_hikes",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "marks the start of the 2018-19 U.S.-China tariff hikes",
+   "why": "中文常直译“标志着2018-19年美中关税上调的开始”，此处用“marks the start of + 事件”的结构，简洁清晰建立事件时间逻辑，适合报告中关键节点的界定，帮助读者明确事件的时间意义。",
+   "when": "用于财务尽调、审计报告中说明关键事件的时间节点，如重大交易、政策变动的时间界定。",
+   "slot": "marks the start of the […]",
+   "swap": [
+    "signals the beginning of […]（同义，语气稍弱，适合非核心事件）",
+    "indicates the onset of […]（更偏向负面事件，适合审计中风险事件的时间说明）"
+   ],
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_nom_dual_mandate",
+   "kind": "phrase",
+   "en": "dual mandate of maximum employment and price stability",
+   "why": "使用“dual mandate”这一财经政策领域的标准术语，简洁准确，体现专业性；中国人常写“two main goals”，表述冗余且不够正式。",
+   "when": "撰写货币政策、监管类报告，描述双重核心目标时套用。",
+   "slot": "dual mandate of […] and […]",
+   "swap": [
+    "two core objectives of […] and […]（更通用，不如dual mandate具备官方政策属性）",
+    "dual goals of […] and […]（语气稍弱，mandate更具法定/官方约束力）"
+   ],
+   "dim": "reg",
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
+  },
+  {
+   "id": "ph_link_example",
+   "kind": "phrase",
+   "en": "such as the emergence of a pandemic, the start of a war, or a sudden breakthrough in technological advancement",
+   "why": "用“such as”引出平行结构的多个例子，逻辑清晰，符合英文正式文体的举例规范；中国人常写“like a pandemic, a war, or a tech breakthrough”，用like过于口语化，且例子结构不平行。",
+   "when": "撰写报告时，列举某类事物的具体实例时套用。",
+   "slot": "such as the emergence of […], the start of […], or a sudden breakthrough in […]",
+   "swap": [
+    "including the emergence of […], the start of […], or a sudden breakthrough in […]（including更强调全部包含，语气过重）",
+    "for example, the emergence of […], the start of […], or a sudden breakthrough in […]（for example更侧重单个例子，不适合多例列举）"
+   ],
+   "dim": "reg",
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
+  },
+  {
+   "id": "ph_001",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "in a virtual as well as on-demand format",
+   "why": "中文常说“在虚拟和按需的形式中”，表述不够正式且平行结构不清晰；该短语用“as well as”明确并列两种交付模式，更符合正式报告的专业语气。",
+   "when": "描述服务、项目或产品的交付格式时使用，适用于年报、合规报告等正式文件。",
+   "slot": "in a […] as well as […] format",
+   "swap": [
+    "in both […] and […] format (语气比原文更随意，不够正式)",
+    "in […] or […] format (含义侧重二选一，与原文的并列包含不同)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_002",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "gain valuable feedback and suggestions on improvements to our culture and strategy",
+   "why": "中文常说“获取有用的反馈和建议来改善我们的文化和战略”，“获取”不如“gain”专业，“来改善”的介词搭配不如“on improvements to”精准；该表达更贴合正式报告中收集反馈的语境。",
+   "when": "描述从员工或利益相关方处收集反馈时使用，适用于公司年报、尽职调查报告等。",
+   "slot": "gain valuable feedback and suggestions on improvements to our […] and […]",
+   "swap": [
+    "obtain valuable feedback and suggestions for improving our […] and […] (“obtain”比“gain”更生硬，不够自然)",
+    "receive useful feedback and suggestions about improvements to our […] and […] (“useful”不如“valuable”专业，“about”搭配不够精准)"
+   ],
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_with_specific_interest",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "with a specific interest in local tax reform and urban economic development",
+   "why": "中文常用直白的“我对…有特别的兴趣”，此句用伴随状语结构，简洁正式，避免句子冗余，符合学术写作的正式性要求。",
+   "when": "学术报告、论文自我介绍等正式写作中，用于说明自身研究兴趣方向。",
+   "slot": "with a specific interest in […] and […]",
+   "swap": [
+    "having a particular focus on […] and […]（更突出研究的核心聚焦性）",
+    "with special attention paid to […] and […]（更强调对相关领域的关注度）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_make_it_difficult_to_convince",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "make it difficult to convince national brands to return or invest in Detroit",
+   "why": "用it作形式宾语避免主语过长，符合正式报告流畅性，中文常直接写“很难说服…”，英文该结构更自然。",
+   "when": "正式报告中表达难以说服某主体做某事的场合",
+   "slot": "make it difficult to convince […] to […]",
+   "swap": [
+    "pose a challenge to convincing […] to […]（语气更正式，侧重挑战而非直接困难）",
+    "make it hard to persuade […] to […]（语气偏口语化，不如前者正式）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_driven_by_highest_property_taxes",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "driven by the highest property taxes in the state",
+   "why": "过去分词短语作后置定语，简洁紧凑避免从句冗长，适合正式报告简洁表达，中文常直接写“由…导致的”。",
+   "when": "正式报告中解释某名词的原因，作为后置定语修饰前面的名词",
+   "slot": "driven by the highest […] in the […]",
+   "swap": [
+    "resulting from the highest property taxes in the state（现在分词侧重主动因果，driven更侧重被动驱动，更客观）",
+    "caused by the highest property taxes in the state（语气偏口语化，不如driven正式）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_extent_to_which",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "the extent to which Chinese-owned firms benefited from",
+   "why": "用“the extent to which”精准限定研究的程度，中国人常直接写“how much”，不够正式，学术/报告中更显严谨",
+   "when": "在报告中需要明确研究某主体在特定场景下的受益程度时使用",
+   "slot": "the extent to which […] benefited from",
+   "swap": [
+    "the degree to which […] benefited from → 更偏向具体程度量化，正式度略逊于原表达",
+    "to what extent […] benefited from → 更口语化，正式度不足",
+    "the magnitude to which […] benefited from → 侧重规模，适用场景较窄"
+   ],
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_making_retailers_reluctant",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "making retailers more reluctant to expand or relocate in Detroit",
+   "why": "中文常直接用“导致”连接因果，用现在分词作结果状语更简洁紧凑，符合英文正式报告表达习惯",
+   "when": "用于描述前一情况引发的后续结果",
+   "slot": "making […] more reluctant to […] or […] in […]",
+   "swap": [
+    "leading […] to be more reluctant to […] or […] in […]（侧重引导性结果）",
+    "causing […] to be more reluctant to […] or […] in […]（更直接的因果表述）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_top_of_mind",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "this challenge is top of mind for me",
+   "why": "中文常直接写“这件事是我最关心的”，而用“top of mind”是财经报告里地道的正式表达，简洁贴合专业语境，避免口语化。",
+   "when": "正式报告中表达某事项为首要关注内容时使用。",
+   "slot": "[…] is top of mind for me",
+   "swap": [
+    "this is my top priority（语气更直接，强调优先级）",
+    "this is the most critical issue for me（语气更强烈，突出重要性）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/cook20260715a.htm"
+  },
+  {
+   "id": "ph_quant_gap",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "1.7 percentage points above our 2 percent target",
+   "why": "中文常直接写“比目标高1.7个百分点”，而用“1.7 percentage points above”是量化表述的规范写法，精准严谨，避免歧义，符合专业报告要求。",
+   "when": "正式报告中量化描述数值与目标的差距时使用。",
+   "slot": "[…] percentage points above our […] percent target",
+   "swap": [
+    "is 1.7% above our 2 percent target（省略“percentage points”，更简洁但稍弱严谨性）",
+    "stands at 1.7 percentage points over our 2 percent target（“over”替换“above”，语气稍口语化）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/cook20260715a.htm"
+  },
+  {
+   "id": "ph_explain_concept",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "meaning they take a larger percentage of earnings from low-income residents",
+   "why": "该句用现在分词短语meaning引导解释性分句，精准衔接前文“regressive”的定义，逻辑清晰且简洁，中文常直接用冒号或“即”引出解释，英文用meaning更符合正式书面语的衔接习惯，避免冗余。",
+   "when": "正式财经报告中，需要解释前文专业术语（如税种特性）的含义时使用。",
+   "slot": "meaning they take a larger percentage of earnings from […] residents",
+   "swap": [
+    "which means they take a larger share of income from low-income groups（share比percentage更口语化，适合非正式报告）",
+    "implying they extract a bigger portion of earnings from lower-income residents（extract比take更正式，适合学术报告）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_outlook_employment_output_subdued",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "the outlook for employment and output was subdued",
+   "why": "用名词“outlook”作主语，搭配形容词“subdued”，正式凝练，符合财经报告风格；中国人常直接用动词开头的表达，不够简洁正式。",
+   "when": "用于财务或经济报告中描述核心指标的前景状态。",
+   "slot": "the outlook for […] and […] was subdued",
+   "swap": [
+    "the outlook for […] and […] was weak（语气更侧重疲软程度，正式度稍低）",
+    "the outlook for […] and […] was muted（语气更正式，侧重温和低迷）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/cook20260715a.htm"
+  },
+  {
+   "id": "ph_though_labor_market_solid",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Though the labor market had been fairly solid through that spring",
+   "why": "用“Though”引导让步状语，自然衔接前后逻辑，流畅不生硬；中国人常直接用“However”转折，破坏报告连贯性。",
+   "when": "用于报告中描述与预期相反的现状或数据。",
+   "slot": "Though the […] had been fairly solid through that […]",
+   "swap": [
+    "While the […] had been fairly solid through that […]（语气更中性，侧重对比关系）",
+    "Although the […] had been fairly solid through that […]（语气更正式，书面感更强）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/cook20260715a.htm"
+  },
+  {
+   "id": "ph_001_347",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "One simple way to visualize the monetary policy decision-making process",
+   "why": "这个写法用清晰结构引出分析方法，比中文常直译的“一个简单的方法是…”更自然流畅，符合英文报告正式逻辑衔接要求",
+   "when": "写报告中介绍分析思路或方法框架的场合",
+   "slot": "One simple way to visualize the […] process",
+   "swap": [
+    "An easy approach to illustrate the monetary policy decision-making process → 语气更口语化，适合非正式报告",
+    "A straightforward method to depict the monetary policy decision-making process → 更简洁，适合精简的正式报告"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/cook20260715a.htm"
+  },
+  {
+   "id": "ph_002_247",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "the risks to our employment mandate sitting on one side",
+   "why": "用现在分词“sitting”作后置定语，让比喻更形象具体，比中文常直译的“我们就业目标的风险在一侧”更有画面感，符合英文报告具象化表达要求",
+   "when": "写报告中用比喻说明复杂概念的场合",
+   "slot": "the risks to our […] sitting on one side",
+   "swap": [
+    "the risks associated with our employment mandate lying on one side → 用“associated with”替代“to”，更强调风险与目标的关联",
+    "the risks for our employment mandate resting on one side → 用“resting”替代“sitting”，语气更正式"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/cook20260715a.htm"
+  },
+  {
+   "id": "ph_dictate_mortgage",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "dictate mortgage rates, wage growth and daily household budgets",
+   "why": "用正式动词dictate准确表达“直接决定”的含义，比中国人常用的determine或decide更具书面正式感，契合财经报告语境",
+   "when": "财务尽职调查或审计报告中，描述某一事项对具体指标的直接影响时使用",
+   "slot": "dictate […], […] and […]",
+   "swap": [
+    "determine […]（通用动词，语气较平淡，正式度稍弱）",
+    "set […]（侧重“设定”，仅适用于可主动调整的指标，适用范围窄）"
+   ],
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/americans-feel-the-sting-of-high-prices-every-day-so-why-does-the-fed-need-so-many-ways-to-measure-inflation-287559"
+  },
+  {
+   "id": "ph_co_movement_between",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "co-movement between commodity prices and country risk premia",
+   "why": "这个短语是财经领域描述变量协同联动的专业术语，中国人写英文常直译成“common movement”，但“co-movement”更精准贴合学术写作的规范表达。",
+   "when": "撰写大宗商品价格与风险、经济变量联动分析类的报告时套用。",
+   "slot": "co-movement between […] and […]",
+   "swap": [
+    "comovement between […] and […]（无连字符，非正式程度更高）",
+    "joint movement between […] and […]（侧重联合行动而非协同变动）"
+   ],
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/monetary-policy-stance-and-commodity-cycles-in-emerging-economies-20260731.html"
+  },
+  {
+   "id": "ph_decision_rests_with",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "the decision of when and how to innovate rests with each bank and its management",
+   "why": "这个写法以名词短语“the decision”作主语，避免用第一人称“we”，更客观中立，符合专业报告正式语气；中国人常直接写“we decide when and how to innovate”，主观性过强。",
+   "when": "撰写金融监管或企业治理类英文报告，表述决策归属时套用。",
+   "slot": "the decision of when and how to […] rests with […] and its management",
+   "swap": [
+    "it is each bank and its management that decides when and how to innovate 用强调句突出决策主体，语气更鲜明",
+    "each bank and its management is responsible for deciding when and how to innovate 用“responsible for”明确责任，语气更务实直接"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/bowman20260714a.htm"
+  },
+  {
+   "id": "ph_it_is_important_to_be_clear",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "it is important to be clear about what that role is—and what it is not",
+   "why": "用it作形式主语，将真正主语后置，避免句子头重脚轻，符合英文正式文体结构；中国人常写“we should be clear about what that role is and what it is not”，结构失衡。",
+   "when": "撰写专业报告或政策解读类英文内容，表述明确界定范围时套用。",
+   "slot": "it is important to be clear about what that […] is—and what it is not",
+   "swap": [
+    "it is essential to be explicit about what that role is and what it is not 用“explicit”替代“clear”，更强调表述精准性，语气偏严谨",
+    "it is critical to be unambiguous about what that role is and what it is not 用“unambiguous”替代“clear”，更突出无歧义要求，语气偏强硬"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/bowman20260714a.htm"
+  },
+  {
+   "id": "ph_in_the_spirit_of",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "in the spirit of Bastourre et al. (2012)",
+   "why": "该短语用于衔接前人研究，比中文写作常用的“根据”更具学术严谨性，明确体现“遵循研究思路/精神”的意味，避免生硬的引用表述。",
+   "when": "撰写学术报告、实证研究时引用前人文献的语境套用。",
+   "slot": "in the spirit of […] et al. ([year])",
+   "swap": [
+    "\"following the approach of […] et al. ([year])\"（侧重方法层面的遵循，比原短语更具体）",
+    "\"based on the work of […] et al. ([year])\"（侧重基于前人成果，语气更平实）"
+   ],
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/monetary-policy-stance-and-commodity-cycles-in-emerging-economies-20260731.html"
+  },
+  {
+   "id": "ph_in_the_spirit_of_121",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "in the spirit of Ouliaris and Rochon (2026)",
+   "why": "这个短语是学术写作中引用研究框架的地道衔接表达，比中国人常用的“according to”更显严谨且贴合学术语境，避免生硬直白",
+   "when": "撰写学术报告、论文引用相关研究框架时套用",
+   "slot": "in the spirit of […] ([年份])",
+   "swap": [
+    "following the approach of […] (更侧重方法层面的效仿，语气更具体)",
+    "drawing inspiration from […] (更侧重启发而非直接沿用，语气更灵活)"
+   ],
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/monetary-policy-stance-and-commodity-cycles-in-emerging-economies-20260731.html"
+  },
+  {
+   "id": "ph_sound_practices_ai",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Sound Practices for Responsible Adoption of Artificial Intelligence (AI)",
+   "why": "使用国际金融监管领域通用术语“Sound Practices”描述行业准则，比中国人常直译的“好的实践”更专业规范，符合国际报告的术语体系。",
+   "when": "财务尽职调查报告、合规报告中描述行业准则或监管要求的场合。",
+   "slot": "Sound Practices for Responsible Adoption of […]",
+   "swap": [
+    "Good Practices for Responsible Implementation of […]（语气偏通用，不如“Sound”贴合监管语境）",
+    "Standard Practices for Proper Adoption of […]（更侧重标准而非准则的权威性）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/bowman20260714a.htm"
+  },
+  {
+   "id": "ph_balanced_examination",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "a balanced examination of both AI's potential benefits and the risks financial institutions need to manage",
+   "why": "用名词短语作同位语补充说明报告内容，比中国人常写的定语从句结构更紧凑简洁，符合英文正式报告的凝练风格，避免冗余。",
+   "when": "正式报告中补充说明文件内容的场合，如审计报告、政策研究报告的内容介绍部分。",
+   "slot": "a balanced examination of both […] and the risks […] need to manage",
+   "swap": [
+    "a comprehensive review of both AI's potential advantages and the risks financial institutions must control（语气侧重全面，少了“平衡”的核心意涵）",
+    "a thorough assessment of both AI's potential benefits and the risks financial institutions should address（语气侧重深入，未体现“平衡”的表述）"
+   ],
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/bowman20260714a.htm"
   }
  ]
 }
