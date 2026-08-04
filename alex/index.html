@@ -1402,10 +1402,42 @@ async function backend(prompt, temp, wantJson){
       continue;
     }
     const j = await r.json().catch(()=> null);
-    if (j && j.text) return j.text;
+    if (j && j.text) return j.text;              // 同步模式（本机直连）
+    if (j && j.job) return await poll(j.job, cfg);// 异步模式（云端网关）
     last = '后端返回空';
   }
   throw new Error(last + '（已重试 3 次）');
+}
+
+// 🚨 云端那个 API 网关**只要上游响应慢过约 0.1 秒就回 504**（实测：一个
+//    只 sleep 100ms、什么都不做的接口照样 504，而路由超时写的是 30 秒）。
+//    所以后端改成「下单立刻返回 job id，结果另开一个接口取」，
+//    两边都在 100ms 内答完，绕开这个毛病。这里就是取结果那半。
+async function poll(job, cfg){
+  const base = String(cfg.url || '').replace(/\/+$/, '');
+  const hdr = cfg.pass ? {'X-Alex-Pass': cfg.pass} : {};
+  const t0 = Date.now();
+  let wait = 350;
+  while (Date.now() - t0 < 150000){               // 最多等 150 秒
+    await new Promise(f => setTimeout(f, wait));
+    wait = Math.min(wait * 1.25, 2000);           // 慢慢退避，别把网关刷爆
+    let r;
+    try {
+      r = await fetch(base + '/api/job?id=' + encodeURIComponent(job),
+                      {headers: hdr});
+    } catch(e){ continue; }                       // 网络抖动就再问一次
+    if (r.status === 404) throw new Error('后端把这次结果弄丢了，再试一次');
+    if (!r.ok){
+      const t = await r.text().catch(()=> '');
+      // 502 是后端把模型的错原样带回来了，这种重试没用
+      if (r.status === 502) throw new Error('模型出错：' + t.slice(0, 140));
+      continue;
+    }
+    const j = await r.json().catch(()=> null);
+    if (j && j.done && j.text) return j.text;
+    if (j && j.done && !j.text) throw new Error('后端返回空');
+  }
+  throw new Error('等了 150 秒还没出结果');
 }
 
 function pick(need){
