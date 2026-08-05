@@ -1733,14 +1733,30 @@ async function askBackendAudio(part){
     + 'then decide. Also judge his pronunciation and intonation from the audio '
     + 'itself (not just the words) and put that in "sound" in Chinese.');
   const url = String(cfg.url || '').replace(/\/+$/, '') + '/api/audio';
-  const r = await fetch(url, {method:'POST',
-    headers: Object.assign({'Content-Type':'application/json'},
-                           cfg.pass ? {'X-Alex-Pass': cfg.pass} : {}),
-    body: JSON.stringify({audio: await b64(part.blob),
-                          format: (part.mime.split('/')[1] || 'wav'),
-                          prompt: prompt, max_tokens: 8000})});
-  if (r.status === 401) throw new Error('后端口令不对，去「我的 → 后端」改一下');
-  if (!r.ok) throw new Error('后端 ' + r.status + ' ' + (await r.text()).slice(0,120));
+  const body = JSON.stringify({audio: await b64(part.blob),
+                               format: (part.mime.split('/')[1] || 'wav'),
+                               prompt: prompt, max_tokens: 8000});
+  // 🚨 这一发**必须重试**，跟文字那条一样。上传音频体积大（几十上百 KB），
+  //    serverless 冷启动时最容易撞上网关那个 504 ——
+  //    而这里原来是裸 fetch，一撞就直接报错，他看到的就是
+  //    「说完没反应」后面跟一句看不懂的 504。
+  //    文字路径早就有重试了，音频这条漏了 —— **同一个决定又只落了一半。**
+  let r = null, last = '';
+  for (let i = 0; i < 3; i++){
+    if (i) await new Promise(f => setTimeout(f, 1500 * i));
+    try {
+      r = await fetch(url, {method:'POST',
+        headers: Object.assign({'Content-Type':'application/json'},
+                               cfg.pass ? {'X-Alex-Pass': cfg.pass} : {}),
+        body});
+    } catch(e){ last = '连不上后端'; r = null; continue; }
+    if (r.status === 401) throw new Error('后端口令不对，去「我的 → 后端」改一下');
+    if (r.ok) break;
+    last = '后端 ' + r.status + ' ' + (await r.text()).slice(0,100);
+    if (RETRY_STATUS.indexOf(r.status) < 0) throw new Error(last);
+    r = null;
+  }
+  if (!r) throw new Error(last + '（已重试 3 次）');
   const j = await r.json();
   const txt = j.job ? await poll(j.job, cfg) : j.text;
   const d = firstJson(txt);
@@ -2359,8 +2375,9 @@ async function down(e){
      按下和松开都只认 pick('audio') 这一个判断。 */
   // 🚨 一个可用通道都没有时，别让他按了没反应，直接说清楚
   if (!pick('audio')){
-    $('#err').innerHTML = '说话需要一把 Gemini key（DeepSeek 收不了录音）。'
-      + '点下面的<b>「key」</b>加一把，或者先用<b>「打字」</b>和<b>「🎧 听力」</b>。';
+    $('#err').innerHTML = '说话这条路现在没有可用通道。'
+      + '正常应该走<b>后端</b>（豆包，免费）—— 去「我的 → 🛰 后端」看看连上没有；'
+      + '实在不行先用<b>「打字」</b>和<b>「🎧 听力」</b>。';
     return false;
   }
   $('#err').textContent = '';
@@ -2663,17 +2680,32 @@ async function selfTest(){
     ? '⚠️ 不是 http/https —— iOS 上这类协议常禁跨域请求，很可能就是 Load failed 的原因'
     : '✅ 正常网页来源');
 
-  for (const [name, url] of [
-      ['Google/Gemini', 'https://generativelanguage.googleapis.com/v1beta/models'],
-      ['DeepSeek',      'https://api.deepseek.com/chat/completions'],
-      ['一个普通网站',   'https://www.bing.com/favicon.ico']]){
+  // 🚨 自检要测**他实际在用的那条路**。原来这里测的是 Google/Gemini 和
+  //    DeepSeek 通不通 —— 那是接后端之前的老架构，现在跑的是火山豆包，
+  //    界面却满屏 Gemini，看起来像根本没换过来。**界面必须说实话。**
+  if (apiOn()){
     const t0 = Date.now();
     try {
-      await fetch(url, {method:'GET', mode:'no-cors', cache:'no-store'});
-      push(`✅ ${name} 可达 (${Date.now()-t0}ms)`);
+      const r = await fetch(S.api.url + '/api/health', {cache:'no-store'});
+      const d = await r.json();
+      push(`✅ 后端可达 (${Date.now()-t0}ms)`);
+      push('实际在用  : ' + ({plan:'豆包（Agent Plan 订阅包，不另计费）',
+                             doubao:'豆包（按量计费）',
+                             deepseek:'DeepSeek（兜底）'}[d.provider] || d.provider || '未知'));
+      push('说话转写  : ' + (d.audio ? '后端 ASR（套餐内，免费）' : '手机自带识别'));
+      if (d.checked_at) push('后端自检于: ' + d.checked_at);
     } catch(e){
-      push(`❌ ${name} 打不开 — ${e.name}: ${e.message} (${Date.now()-t0}ms)`);
+      push(`❌ 后端连不上 — ${e.name}: ${e.message} (${Date.now()-t0}ms)`);
+      push('   （serverless 空闲会缩到零，第一发常超时，点一下重试通常就好）');
     }
+  } else {
+    push('⚠️ 没配后端 —— 去「我的 → 🛰 后端」填地址和口令');
+  }
+  {
+    const t0 = Date.now();
+    try { await fetch('https://www.bing.com/favicon.ico', {mode:'no-cors', cache:'no-store'});
+          push(`✅ 网络正常 (${Date.now()-t0}ms)`); }
+    catch(e){ push(`❌ 网络不通 — ${e.message}`); }
   }
 
   push('麦克风    : ' + (navigator.mediaDevices?.getUserMedia ? '接口在' : '❌ 没有'));
@@ -2682,8 +2714,8 @@ async function selfTest(){
 
   push('\n结论：');
   if (weird) push('  · 把这个文件放到一个 https 网址上打开，本地文件在 iOS 上跑不了。');
-  push('  · 若上面三家全打不开 = 网络问题（飞机 WiFi 常见）。');
-  push('  · 若只有 Google 打不开 = 需要梯子，或点「换 key」改用 DeepSeek。');
+  push('  · 后端连不上但网络正常 = 多半是冷启动，再点一次自检。');
+  push('  · 「实际在用」不是豆包 = 后端环境变量的 key 配错了。');
 }
 $('#diag').onclick = selfTest;
 /* 底栏原来 6 个按钮挤成两行、占掉 293px（大半屏）。
