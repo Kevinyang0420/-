@@ -4408,6 +4408,8 @@ function showMe(){
                    goTab('me'); })
       .catch(() => { toast('连不上，地址再检查一下'); goTab('me'); });
   });
+  // 访客（分享链接进来的）根本不需要 key，别拿这堆选项吓他们
+  if (!(S.api && S.api.guest))
   row('🔑','换 / 加 API key（老路）','没配后端时才用得上；配了后端这里可以留空', () => {
     $('#feed').innerHTML = ''; $('#setup').hidden = false; $('#sub').textContent = '设置 key';
   });
@@ -4481,7 +4483,32 @@ SCENARIOS.push(...customScns());     // 宝石点播出来的专属场景
 loadModel();
 try { const d = localStorage.getItem('alex_dens');
       if (d !== null) S.density = +d; } catch(_){}                    // 恢复今天走通的那个模型，别重撞已用尽的
-S.api = loadApi();               // 后端地址 + 口令（配了它就不用任何 key）
+/* ───────── 分享链接：点开就能用 ─────────
+   🚨 Kevin 2026-08-05：「做一个我可以分享出去的版本…点进去就可以用…
+      你搞的那些 DeepSeek、Gemini 界面太多操作了，他们也很难去配合操作」
+
+   链接形如  …/alex/#try=<base64(地址|口令)>
+   打开时自动存好配置、把 hash 抹掉（免得别人从地址栏抄走），直接进主页。
+
+   为什么把配置放 hash 而不是写死在页面里：写死等于**公开挂在 GitHub Pages 上**，
+   任何人爬到就能用他的额度。放 hash 只有拿到链接的人有；配合后端那把
+   **单独的访客口令 + 每日上限**，链接万一被转发也烧不掉多少，还能一键作废。 */
+function eatShareLink(){
+  const m = (location.hash || '').match(/[#&]try=([A-Za-z0-9+/=_-]+)/);
+  if (!m) return null;
+  try {
+    const raw = atob(m[1].replace(/-/g,'+').replace(/_/g,'/'));
+    const [url, pass] = decodeURIComponent(escape(raw)).split('|');
+    if (!url) return null;
+    const cfg = {url: url.replace(/\/+$/,''), pass: pass || '', guest: true};
+    localStorage.setItem(LSB, JSON.stringify(cfg));
+    // 抹掉 hash：地址栏里别留着口令
+    history.replaceState(null, '', location.pathname + location.search);
+    return cfg;
+  } catch(e){ return null; }
+}
+
+S.api = eatShareLink() || loadApi();   // 后端地址 + 口令（配了它就不用任何 key）
 S.keys = loadKeys();
 S.key = S.keys.gemini || S.keys.deepseek || '';
 S.backend = localStorage.getItem(LS.be) ||
