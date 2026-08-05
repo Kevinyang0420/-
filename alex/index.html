@@ -4384,9 +4384,18 @@ document.querySelectorAll('#tabbar button').forEach(b =>
 /* 「我的」：把打卡、历史、声音、备份这些收在一处，首页就不用挂一堆入口了 */
 function showMe(){
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
-  $('#sub').textContent = '我的';
+  // 🚨 访客要知道自己在用别人的额度、以及额度是有限的。
+  //    不说清楚的话，朋友练到一半被每日上限拦下来会一头雾水，
+  //    而 Kevin 那边只会收到一句「你那个 App 又坏了」。
+  $('#sub').textContent = (S.api && S.api.guest) ? '我的 · 体验版' : '我的';
   const st = loadST() || ST, f = $('#feed');
-  f.innerHTML = `<div class="stats">
+  const guestNote = (S.api && S.api.guest)
+    ? `<div class="card" style="background:var(--soft)">
+         <div class="hd"><span class="role">🎁 体验版</span></div>
+         <div class="sit">你在用朋友分享的额度，不用自己配任何 key。
+           每天有次数上限，用完了第二天会恢复。</div>
+       </div>` : '';
+  f.innerHTML = guestNote + `<div class="stats">
       <div class="col"><div class="n">${streak()}</div><div class="l">连续天数</div></div>
       <div class="col"><div class="n">${st.turns||0}</div><div class="l">累计轮数</div></div>
       <div class="col"><div class="n">${Object.keys(st.book||{}).length}</div>

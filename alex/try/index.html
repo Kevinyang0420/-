@@ -1,0 +1,45 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Alex 英语陪练 · 体验版</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;color:#fff;
+    font:16px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC",system-ui,sans-serif}
+  .box{height:100%;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:14px;padding:24px;text-align:center}
+  .m{font-size:44px;font-weight:800;letter-spacing:-1px}
+  .t{opacity:.6;font-size:14px}
+  a{color:#fff}
+</style>
+<div class="box">
+  <div class="m">Alex</div>
+  <div class="t" id="s">正在进入…</div>
+  <noscript><div class="t">请用浏览器打开这个链接。</div></noscript>
+</div>
+<script>
+/* 体验版入口：把后端配置写好，再跳主程序。
+   Kevin 2026-08-05：「这个分享链接能不能做成简化一点的…直接可以发一个微信链接？」
+
+   🚨 这里用的是**访客口令**，不是他自己那把：
+      · 访客口令能单独作废（改云函数环境变量 ALEX_GUEST_PASS 即可），
+        不用动他手机上的配置
+      · 后端对访客有**每天 400 次**上限，链接被转发也烧不掉他的月包
+      · 所以这把口令写在这个公开页面里是**可接受**的：它本来就是给人分享的，
+        真正的控制手段是「上限 + 可作废」，不是「藏起来」。
+        （藏在 hash 里其实也一样公开——只要链接被转发。别自欺欺人。） */
+(function(){
+  var CFG = {
+    url:  'https://sqg75i2mlmanf4sqde6nh.apigateway-cn-beijing.volceapi.com',
+    pass: 'try-2e7c44bb41',
+    guest: true
+  };
+  try {
+    localStorage.setItem('alex_backend_cfg', JSON.stringify(CFG));
+  } catch(e){
+    // 微信/QQ 内置浏览器的无痕模式会禁 localStorage
+    document.getElementById('s').textContent =
+      '这个浏览器不让存设置。请点右上角「···」→ 用系统浏览器打开。';
+    return;
+  }
+  location.replace('../');
+})();
+</script>
