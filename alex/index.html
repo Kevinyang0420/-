@@ -1210,11 +1210,47 @@ function firstJson(text){
     else if (c === '}'){
       depth--;
       if (depth === 0){
-        try { return JSON.parse(s.slice(start, i + 1)); } catch(_){ return null; }
+        try { return JSON.parse(s.slice(start, i + 1)); }
+        catch(_){ return repairJson(s); }      // 先试修补，别直接判死
       }
     }
   }
   return null;   // 花括号没闭合 = 真被截断了
+}
+
+/* 🚨 兜底修补：模型最常见的坏 JSON 是**在字符串值里用了没转义的英文双引号**。
+   实测样本：
+     "alex_zh":"你说的 "We was very appreciate..." 里有两处语法错误：…"
+                     ↑ 这里 JSON 就断了
+   只要它引用用户原句就会中招，所以这不是偶发、是系统性的。
+
+   提示词那边已经禁掉了（唯一出口在后端 core.py），这里再加一层：
+   把「一个字符串值内部、后面不是 , 或 } 或 : 的那些引号」补上转义。
+   判据保守 —— 只在 JSON.parse 已经失败时才动手，成功的一律不碰。 */
+function repairJson(text){
+  const s = String(text || '');
+  const a = s.indexOf('{');
+  if (a < 0) return null;
+  let out = '', inStr = false, esc = false;
+  for (let i = a; i < s.length; i++){
+    const c = s[i];
+    if (esc){ out += c; esc = false; continue; }
+    if (c === '\\'){ out += c; esc = true; continue; }
+    if (c === '"'){
+      if (!inStr){ inStr = true; out += c; continue; }
+      // 在字符串里遇到引号：看它后面（跳过空白）是不是真正的结束位置
+      let j = i + 1;
+      while (j < s.length && /\s/.test(s[j])) j++;
+      if (j >= s.length || ',}:]'.indexOf(s[j]) >= 0){ inStr = false; out += c; }
+      else out += '\\"';        // 不是结束 → 是内容里的引号，补转义
+      continue;
+    }
+    // 字符串里出现真实换行也是非法的，一并转义
+    if (inStr && (c === '\n' || c === '\r')){ out += '\\n'; continue; }
+    out += c;
+  }
+  try { return JSON.parse(out.slice(0, out.lastIndexOf('}') + 1)); }
+  catch(_){ return null; }
 }
 
 /* ───────── 闸门：纯算术，跟桌面版 alex_gate.py 同一套 ───────── */
