@@ -7,8 +7,7 @@
   .box{height:100%;display:flex;flex-direction:column;align-items:center;
     justify-content:center;gap:14px;padding:24px;text-align:center}
   .m{font-size:44px;font-weight:800;letter-spacing:-1px}
-  .t{opacity:.6;font-size:14px}
-  a{color:#fff}
+  .t{opacity:.6;font-size:14px;max-width:20em}
 </style>
 <div class="box">
   <div class="m">Alex</div>
@@ -16,30 +15,48 @@
   <noscript><div class="t">请用浏览器打开这个链接。</div></noscript>
 </div>
 <script>
-/* 体验版入口：把后端配置写好，再跳主程序。
-   Kevin 2026-08-05：「这个分享链接能不能做成简化一点的…直接可以发一个微信链接？」
+/* 体验版入口：现取当天令牌 → 配好 → 跳主程序。
+   Kevin 2026-08-05：「这个分享链接能不能做成简化一点的…直接发微信链接？」
 
-   🚨 这里用的是**访客口令**，不是他自己那把：
-      · 访客口令能单独作废（改云函数环境变量 ALEX_GUEST_PASS 即可），
-        不用动他手机上的配置
-      · 后端对访客有**每天 400 次**上限，链接被转发也烧不掉他的月包
-      · 所以这把口令写在这个公开页面里是**可接受**的：它本来就是给人分享的，
-        真正的控制手段是「上限 + 可作废」，不是「藏起来」。
-        （藏在 hash 里其实也一样公开——只要链接被转发。别自欺欺人。） */
+   🚨 这个页面里**不放任何长期有效的口令**。
+      上一版把访客口令写死在这儿，我的理由是「藏起来也没用，链接一转发就公开」——
+      那半句没错，但它掩盖了另一半：**写死的口令永远有效**，
+      有人存下来一年后还能用他的额度。
+      现在改成点开时向后端现取「当天令牌」，过了今天自动失效。
+
+   安全不靠藏，靠三条：**当天失效 + 每日次数上限 + 一键作废**。 */
 (function(){
-  var CFG = {
-    url:  'https://sqg75i2mlmanf4sqde6nh.apigateway-cn-beijing.volceapi.com',
-    pass: 'try-2e7c44bb41',
-    guest: true
-  };
-  try {
-    localStorage.setItem('alex_backend_cfg', JSON.stringify(CFG));
-  } catch(e){
-    // 微信/QQ 内置浏览器的无痕模式会禁 localStorage
-    document.getElementById('s').textContent =
-      '这个浏览器不让存设置。请点右上角「···」→ 用系统浏览器打开。';
-    return;
+  var API = 'https://sqg75i2mlmanf4sqde6nh.apigateway-cn-beijing.volceapi.com';
+  var msg = document.getElementById('s');
+
+  function go(pass){
+    try {
+      localStorage.setItem('alex_backend_cfg',
+        JSON.stringify({url: API, pass: pass, guest: true}));
+    } catch(e){
+      // 微信/QQ 内置浏览器的无痕模式会禁 localStorage —— 说清楚怎么办
+      msg.textContent = '这个浏览器不让存设置。点右上角「···」→「在浏览器中打开」。';
+      return;
+    }
+    location.replace('../');
   }
-  location.replace('../');
+
+  // 🚨 要重试：serverless 空闲会缩到零，第一发常被网关掐掉。
+  //    一次不成就放弃的话，朋友看到的是一个永远停在「正在进入」的黑屏。
+  var n = 0;
+  (function grab(){
+    n++;
+    fetch(API + '/api/guestpass', {cache: 'no-store'})
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d && d.pass) go(d.pass);
+        else throw new Error('no pass');
+      })
+      .catch(function(){
+        if (n < 4){ msg.textContent = '正在唤醒服务…（' + n + '/3）';
+                    setTimeout(grab, 1500 * n); }
+        else msg.textContent = '服务暂时连不上，过一会儿再点这个链接试试。';
+      });
+  })();
 })();
 </script>
