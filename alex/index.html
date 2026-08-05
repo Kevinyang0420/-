@@ -2349,21 +2349,15 @@ async function getRec(){
 async function down(e){
   e.preventDefault();
   if (busy || !S.scn) return false;
-  /* 🚨 配了后端之后，说话这条路**不再需要能收音频的模型**：
-     用手机自带的识别转成文字，再把文字交给后端判官。
-     这是把「Gemini 额度」这件事连根拔掉的关键一步 —— 原来只有 Gemini
-     能一次做完转写+判断，所以额度一断整个陪练就废了。 */
-  if (apiOn()){
-    unlockTTS();
-    $('#err').textContent = '';
-    $('#mic').classList.add('rec');
-    $('#mic').innerHTML = '停止<br>并发送';
-    $('#hint').textContent = '在听…说完点一下停止';
-    try { S.srPromise = listenOnce(); }
-    catch(err){ $('#err').textContent = err.message; resetMic(); return false; }
-    return true;
-  }
-  // 🚨 DeepSeek 收不了音频。只有 DeepSeek key 时别让他按了没反应，直接说清楚
+  /* 🚨 这里原来有个 `if (apiOn())` 的**早退分支**：一配后端就无条件用手机
+     自带识别，直接 return —— 走不到下面 pick('audio') 那个判断。
+     而 up() 已经改成按 pick 走，于是「按下开的是设备识别、松开去停录音机」，
+     松开时发现没在录音，**什么都不做就返回**，永远卡在「在听」。
+     Kevin 2026-08-05 实际踩到：说完 5 分钟没反应。
+
+     **同一个决定散在两个函数里，改一处就是这个下场。** 现在删掉早退分支，
+     按下和松开都只认 pick('audio') 这一个判断。 */
+  // 🚨 一个可用通道都没有时，别让他按了没反应，直接说清楚
   if (!pick('audio')){
     $('#err').innerHTML = '说话需要一把 Gemini key（DeepSeek 收不了录音）。'
       + '点下面的<b>「key」</b>加一把，或者先用<b>「打字」</b>和<b>「🎧 听力」</b>。';
