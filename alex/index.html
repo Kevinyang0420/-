@@ -1484,11 +1484,14 @@ function pick(need){
   //    前端一直卡在「正在转写」，两三分钟后才超时。
   //    **能力不匹配要在选路时就拦住，不能等它超时。**
   if (need === 'audio'){
-    // 后端**明说**自己能收音频时才走后端（health 里的 audio 字段）。
-    // 🚨 不能因为「配了后端」就假设它什么都能干 —— 上一版就是这么写的，
-    //    结果录音发给一个只收文字的后端，永远回不来，卡在「正在转写」。
-    //    **能力要问出来，不能推定。**
-    if (S.api && S.api.audio) return 'backend';
+    // 🚨 后端是**用户明确配置的通道**，优先级高于 localStorage 里躺着的 key。
+    //    只有后端**明说** audio:false 才退到别处；「还没问出来」(undefined)
+    //    也走后端 —— 因为探测失败最常见的原因是冷启动被网关掐，
+    //    而不是后端真不会。
+    //    上一版写成「明说会才走」，结果探测一失败就掉到 gemini，
+    //    而那把 key 早就废了 → 请求石沉大海，界面只显示「在听」。
+    //    **不确定时该退到用户配的那条，不是退到最不可靠的那条。**
+    if (apiOn() && S.api.audio !== false) return 'backend';
     if (S.keys.gemini) return 'gemini';
     if (SRAvail()) return 'deepseek';   // 退回手机自带的语音识别
     return null;
@@ -4487,10 +4490,23 @@ bindApiSave();
 //    Gemini key**（哪怕是几个月前试的），它就赢了路由，然后请求发出去石沉大海。
 //    实测：干净浏览器里 pick('audio') 返回 'gemini'，而那把 key 只有 17 个字符、
 //    早就废了。**能力要在启动时问出来，不能等用户重新填一次后端才知道。**
-if (apiOn()){
-  fetch(S.api.url + '/api/health', {cache:'no-store'})
-    .then(r => r.json()).then(noteCaps).catch(()=>{});
+// 🚨 探测必须**重试**。serverless 空闲会缩到零，冷启动那一发常被网关掐掉
+//    （实测 `upstream request timeout`）。一次不成就放弃的话，
+//    S.api.audio 永远学不到，路由一直是错的 —— 而用户什么提示都看不到。
+async function probeCaps(){
+  for (let i = 0; i < 4; i++){
+    if (i) await new Promise(f => setTimeout(f, 1200 * i));
+    try {
+      const r = await fetch(S.api.url + '/api/health', {cache:'no-store'});
+      if (!r.ok) continue;
+      const d = await r.json();
+      noteCaps(d);
+      return d;
+    } catch(e){ /* 冷启动，再试 */ }
+  }
+  return null;
 }
+if (apiOn()) probeCaps();
 
 if (S.key || apiOn()){
   if (!S.backend) S.backend = 'gemini';        // 先按最常见的走
