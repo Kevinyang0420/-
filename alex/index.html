@@ -2356,7 +2356,9 @@ async function down(e){
   $('#mic').classList.add('rec');
   $('#mic').innerHTML = '停止<br>并发送';
   $('#hint').textContent = '在听…说完点一下停止';
-  if (S.backend === 'deepseek'){
+  // 🚨 按下和松开必须用**同一个**判断，否则按下开了录音、松开去读识别结果，
+  //    两边对不上，表现就是「一直在听、没反应」。
+  if (pick('audio') === 'deepseek'){
     // 手机自带识别是「说完自己停」，没有松手即停的概念，
     // 所以这里按下就开始听，松手时读结果
     try { S.srPromise = listenOnce(); }
@@ -2404,12 +2406,16 @@ function resetMic(){
 function up(e){
   e.preventDefault();
   resetMic();
-  if (apiOn() || S.backend === 'deepseek'){
-    try { window.__sr && window.__sr.stop(); } catch(_) {}
-    if (S.srPromise) sendText(S.srPromise);
+  // 🚨 按 pick('audio') 的结果分流，别再用 apiOn() 一刀切。
+  //    后端现在能收录音（Agent Plan 的 ASR，免费），它还能给出语速、
+  //    停顿、语气 —— 走设备识别就只剩一行光秃秃的文字，白丢。
+  const how = pick('audio');
+  if (how === 'backend' || how === 'gemini'){
+    if (rec && rec.state === 'recording') rec.stop();   // 触发 send()
     return;
   }
-  if (rec && rec.state === 'recording') rec.stop();
+  try { window.__sr && window.__sr.stop(); } catch(_) {}
+  if (S.srPromise) sendText(S.srPromise);
 }
 
 async function sendText(promise){
@@ -2417,7 +2423,12 @@ async function sendText(promise){
   $('#hint').innerHTML = '<span class="dots">在想</span>';
   try {
     const said = await promise;
-    await render(await askDeepSeek(said));
+    // 🚨 这里原来写死 askDeepSeek() —— 它**直接调 DeepSeek 的 key**，
+    //    不看后端。配了后端、没有 DeepSeek key 的人，点完说话就永远卡在
+    //    「在想」，而且一句报错都没有。
+    //    askDeepSeekOrGeminiText() 走 textCall()，会按 apiOn() 选后端。
+    //    同一个决定散在两个函数里，改一处等于没改 —— 又一次。
+    await render(await askDeepSeekOrGeminiText(said));
   } catch(e){ $('#err').textContent = e.message; }
   finally {
     busy = false; $('#mic').disabled = false;
@@ -4426,6 +4437,36 @@ S.backend = localStorage.getItem(LS.be) ||
    Kevin 手快，key 存下时探测还没回来，backend 被写成空字符串，
    下次打开又弹设置页 —— 他反馈「每次都要输 key」就是这个竞态。
    现在：有 key 就用，backend 缺了就在后台补探，探完自动切。 */
+// 🚨 「连后端」的点击处理**必须无条件绑定**。
+//    原来它写在下面的 else 分支里（只在「首次打开、什么都没配」时才绑），
+//    可这个面板还能从「我的 → 🔑 换/加 key」叫出来 —— 那条路进来时
+//    按钮没有任何 onclick，点了完全没反应，表现就是「保存不上」。
+//    **UI 元素的行为不该取决于它是从哪条路被显示出来的。**
+function bindApiSave(){
+  const ab = $('#apisave');
+  if (!ab || ab._bound) return;
+  ab._bound = true;
+  ab.onclick = () => {
+    const u = ($('#apiurl').value || '').trim().replace(/\/+$/, '');
+    if (!u) return alert('先填后端地址');
+    saveApi({url: u, pass: ($('#apipass').value || '').trim()});
+    toast('正在连…');
+    fetch(u + '/api/health', {cache:'no-store'}).then(r => r.json()).then(d => {
+      noteCaps(d);
+      if (d && d.ok){
+        toast('连上了 · ' + backendLabel(d));
+        $('#setup').hidden = true;
+        $('#sub').textContent = '已连后端 · 不占任何免费额度';
+        goTab('home');
+      } else alert('连上了，但后端说没有可用的 key');
+    }).catch(() => alert('连不上这个地址，检查一下'));
+  };
+  // 配了后端就不需要 Gemini key 了，把这一格的措辞说清楚
+  const kb = $('#apiurl') && document.querySelector('#setup input[placeholder*="API key"]');
+  if (kb && apiOn()) kb.placeholder = '（已连后端，这里可以留空）';
+}
+bindApiSave();
+
 if (S.key || apiOn()){
   if (!S.backend) S.backend = 'gemini';        // 先按最常见的走
   goTab('home');
@@ -4437,18 +4478,6 @@ if (S.key || apiOn()){
   if (!localStorage.getItem(LS.be)) detectBackend().catch(()=>{});
 } else {
   $('#setup').hidden = false;
-  const ab = $('#apisave');
-  if (ab) ab.onclick = () => {
-    const u = ($('#apiurl').value || '').trim().replace(/\/+$/, '');
-    if (!u) return alert('先填后端地址');
-    saveApi({url: u, pass: ($('#apipass').value || '').trim()});
-    fetch(u + '/api/health', {cache:'no-store'}).then(r => r.json()).then(d => {
-      noteCaps(d);
-      if (d && d.ok){ toast('连上了 · ' + backendLabel(d));
-                      $('#setup').hidden = true; goTab('home'); }
-      else alert('连上了，但后端说没有可用的 key');
-    }).catch(() => alert('连不上这个地址，检查一下'));
-  };
   detectBackend().catch(()=>{});
 }
 
