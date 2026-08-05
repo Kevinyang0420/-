@@ -1317,6 +1317,15 @@ function keyKind(k){
   if (/^sk-/.test(s)) return 'deepseek';
   return null;                      // 认不出来的交给探测
 }
+// 🚨 长度明显不对的 key 直接当没有。留着它只会赢走路由然后请求失败，
+//    而用户完全看不出「是那把废 key 在挡路」。
+function keyLooksReal(k, kind){
+  k = (k || '').trim();
+  if (kind === 'gemini') return /^AIza[\w-]{30,}$/.test(k);
+  if (kind === 'deepseek') return /^sk-[\w-]{20,}$/.test(k);
+  return !!k;
+}
+
 function loadKeys(){
   let o = {};
   try { o = JSON.parse(localStorage.getItem(LS.key) || '{}'); } catch(_){}
@@ -1327,6 +1336,12 @@ function loadKeys(){
     const k = keyKind(legacy) || localStorage.getItem(LS.be) || 'gemini';
     o = {[k]: legacy};
     localStorage.setItem(LS.key, JSON.stringify(o));
+  }
+  // 🚨 长度/形状明显不对的 key 直接丢掉。实测他浏览器里躺着一把 17 字符的
+  //    Gemini key（早就废了），它照样赢走音频路由，请求发出去石沉大海，
+  //    而界面上完全看不出是这把废 key 在挡路。
+  for (const k of ['gemini', 'deepseek']){
+    if (o[k] && !keyLooksReal(o[k], k)) delete o[k];
   }
   return o;
 }
@@ -4466,6 +4481,16 @@ function bindApiSave(){
   if (kb && apiOn()) kb.placeholder = '（已连后端，这里可以留空）';
 }
 bindApiSave();
+
+// 🚨 开机就问一次后端「你会什么」。不问的话 S.api.audio 一直是 undefined，
+//    pick('audio') 就会掉到下一档 —— 而 localStorage 里但凡躺着一把**过期的
+//    Gemini key**（哪怕是几个月前试的），它就赢了路由，然后请求发出去石沉大海。
+//    实测：干净浏览器里 pick('audio') 返回 'gemini'，而那把 key 只有 17 个字符、
+//    早就废了。**能力要在启动时问出来，不能等用户重新填一次后端才知道。**
+if (apiOn()){
+  fetch(S.api.url + '/api/health', {cache:'no-store'})
+    .then(r => r.json()).then(noteCaps).catch(()=>{});
+}
 
 if (S.key || apiOn()){
   if (!S.backend) S.backend = 'gemini';        // 先按最常见的走
