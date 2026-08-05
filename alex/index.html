@@ -1370,6 +1370,19 @@ function apiOn(){ return !!(S.api && S.api.url); }
 //    重试一百次也一样，重试它们只会让人多等。
 const RETRY_STATUS = [0, 408, 429, 500, 502, 503, 504];
 
+// 后端在用哪一档，说人话。
+// 🚨 只看 provider（**正在用**的那个），不看 providers（**配了**哪几把 key）。
+//    两者混为一谈会让「配了 DeepSeek 兜底」看起来像「在用 DeepSeek」。
+function backendLabel(d){
+  const who = (d && d.provider) || '';
+  const name = {plan: 'Agent Plan 订阅包（豆包）',
+                doubao: '豆包（按量计费）',
+                deepseek: 'DeepSeek（兜底）'}[who] || who || '未知';
+  const extra = (d && d.billing) ? '' : '';
+  const spare = (d && d.configured || []).filter(x => x !== who);
+  return name + extra + (spare.length ? '　备用：' + spare.join('、') : '');
+}
+
 async function backend(prompt, temp, wantJson){
   const cfg = S.api || {};
   const url = String(cfg.url || '').replace(/\/+$/, '') + '/api/llm';
@@ -4259,8 +4272,13 @@ function showMe(){
     // 🚨 存完立刻探一次 —— 不探的话地址填错要等他真去练一句才发现
     fetch(S.api.url + '/api/health', {cache:'no-store'})
       .then(r => r.json())
-      .then(d => { toast(d && d.ok ? '连上了：' + (d.providers || []).join('/')
-                                   : '连上了，但后端说没有可用的 key');
+      // 🚨 显示**正在用哪个**（provider），不是**配了哪几把 key**（providers）。
+      //    上一版显示后者，于是配了 DeepSeek 兜底就会写成「plan/deepseek」，
+      //    看起来像在用 DeepSeek —— Kevin 就是这么被误导的。
+      //    「配了」和「在用」是两回事，界面上只该说后者。
+      .then(d => { toast(d && d.ok
+                           ? '连上了 · ' + backendLabel(d)
+                           : '连上了，但后端说没有可用的 key');
                    goTab('me'); })
       .catch(() => { toast('连不上，地址再检查一下'); goTab('me'); });
   });
@@ -4365,7 +4383,8 @@ if (S.key || apiOn()){
     if (!u) return alert('先填后端地址');
     saveApi({url: u, pass: ($('#apipass').value || '').trim()});
     fetch(u + '/api/health', {cache:'no-store'}).then(r => r.json()).then(d => {
-      if (d && d.ok){ $('#setup').hidden = true; goTab('home'); }
+      if (d && d.ok){ toast('连上了 · ' + backendLabel(d));
+                      $('#setup').hidden = true; goTab('home'); }
       else alert('连上了，但后端说没有可用的 key');
     }).catch(() => alert('连不上这个地址，检查一下'));
   };
