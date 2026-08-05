@@ -486,11 +486,13 @@ html.booting{background:#000}
       <div id="probe" style="margin:10px 0;padding:9px 11px;border-radius:8px;
            background:var(--soft);font-size:12.5px">正在探测网络…</div>
       <div id="hintG" hidden>
-        Gemini（能直接听音频，效果最好）：<a href="https://aistudio.google.com/apikey"
+        <b>Gemini</b>（免费；能直接听录音，可以点评发音。<b>但每天每个模型约 20 次</b>，
+        且国内要梯子）：<a href="https://aistudio.google.com/apikey"
         target="_blank" rel="noopener">aistudio.google.com/apikey</a>，<b>别绑卡</b>。
       </div>
       <div id="hintD" hidden>
-        DeepSeek（国内直连不用梯子，用手机自带的语音识别）：<a
+        <b>DeepSeek</b>（推荐给国内用：直连不用梯子、没有每天次数限制、按量计费很便宜。
+        说话用手机自带识别转文字，<b>不评发音</b>）：<a
         href="https://platform.deepseek.com/api_keys" target="_blank"
         rel="noopener">platform.deepseek.com</a>
       </div>
@@ -1614,13 +1616,22 @@ async function detectBackend(){
     probe('https://generativelanguage.googleapis.com/v1beta/models/'+MODELS[0]+':generateContent'),
     probe('https://api.deepseek.com/chat/completions'),
   ]);
-  if (g){
-    S.backend = 'gemini'; $('#hintG').hidden = false;
-    box.innerHTML = '✅ 能连 Google —— 用 <b>Gemini</b>，可以直接听你的录音，效果最好。';
-  } else if (d){
+  // 🚨 这里原来一探到能连 Google 就写「用 Gemini，效果最好」——
+  //    对国内用户是**误导**：Gemini 免费额度是「每天 × 每个模型」分开算的，
+  //    flash-latest 一天只有 20 次，Kevin 就是一天用完才逼出了后端这条路。
+  //    「能连」≠「够用」。两条各有代价，摊开说，让人自己选。
+  if (d){
     S.backend = 'deepseek'; $('#hintD').hidden = false;
-    box.innerHTML = '⚠️ 连不上 Google（没挂梯子）—— 改用 <b>DeepSeek</b>，'+
-      '语音识别交给手机自带的，判断走 DeepSeek。';
+    if (g) $('#hintG').hidden = false;
+    box.innerHTML = '推荐 <b>DeepSeek</b>：国内直连不用梯子，按量计费很便宜，'
+      + '说话用手机自带识别转文字（秒出）。'
+      + (g ? '<br>也能连 Google —— <b>Gemini</b> 免费，而且能直接听录音、'
+           + '可以点评发音；代价是<b>每天每个模型只有约 20 次</b>，很容易当天用完。'
+           : '');
+  } else if (g){
+    S.backend = 'gemini'; $('#hintG').hidden = false;
+    box.innerHTML = '只能连 <b>Gemini</b>：免费、能直接听录音评发音，'
+      + '但<b>每天每个模型约 20 次</b>就没了。够用一阵，长期建议配后端或 DeepSeek。';
   } else {
     S.backend = null;
     box.innerHTML = '❌ 两家都连不上。检查一下手机网络。';
