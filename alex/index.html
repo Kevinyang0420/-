@@ -1361,6 +1361,14 @@ function saveApi(o){
   try { localStorage.setItem(LSB, JSON.stringify(o)); } catch(_){}
   S.api = o;
 }
+// 后端说了自己能干什么，就记下来（health 返回的 audio 字段）。
+// 🚨 存进 localStorage 一起持久化 —— 否则每次刷新都当它不会音频，
+//    要等下一次 health 才恢复，中间录的那几句又走回手机识别。
+function noteCaps(d){
+  if (!S.api || !d) return;
+  S.api.audio = !!d.audio;
+  try { localStorage.setItem(LSB, JSON.stringify(S.api)); } catch(_){}
+}
 function apiOn(){ return !!(S.api && S.api.url); }
 
 // 🚨 后端跑在 serverless 上，**空闲会缩到零**，之后第一发请求要等实例冷启动。
@@ -1461,6 +1469,11 @@ function pick(need){
   //    前端一直卡在「正在转写」，两三分钟后才超时。
   //    **能力不匹配要在选路时就拦住，不能等它超时。**
   if (need === 'audio'){
+    // 后端**明说**自己能收音频时才走后端（health 里的 audio 字段）。
+    // 🚨 不能因为「配了后端」就假设它什么都能干 —— 上一版就是这么写的，
+    //    结果录音发给一个只收文字的后端，永远回不来，卡在「正在转写」。
+    //    **能力要问出来，不能推定。**
+    if (S.api && S.api.audio) return 'backend';
     if (S.keys.gemini) return 'gemini';
     if (SRAvail()) return 'deepseek';   // 退回手机自带的语音识别
     return null;
@@ -1686,6 +1699,34 @@ async function askGemini(part){
   ], 0.3);
   const d = firstJson(txt);
   if (!d) throw new Error('返回里没有完整的决策 JSON：' + txt.slice(0, 100));
+  return d;
+}
+
+/* ───────── 后端（音频）─────────
+   🚨 这条路走的是**按量付费**的豆包音频理解，Agent Plan 订阅包不含音频
+      （实测：plan 端点报 `audio input is not supported`）。
+      Kevin 定的规矩是「豆包只许用在口语练习」—— 这就是那个场景，
+      也是全项目**唯一**允许花钱的地方。后端有每日硬上限兜着。
+      一句话（7 秒录音）约 ¥0.00095，一天 30 句 3 分钱。 */
+async function askBackendAudio(part){
+  const cfg = S.api || {};
+  const prompt = buildPrompt(
+    '\nThe attached audio is what he just said. Transcribe it into "said", '
+    + 'then decide. Also judge his pronunciation and intonation from the audio '
+    + 'itself (not just the words) and put that in "sound" in Chinese.');
+  const url = String(cfg.url || '').replace(/\/+$/, '') + '/api/audio';
+  const r = await fetch(url, {method:'POST',
+    headers: Object.assign({'Content-Type':'application/json'},
+                           cfg.pass ? {'X-Alex-Pass': cfg.pass} : {}),
+    body: JSON.stringify({audio: await b64(part.blob),
+                          format: (part.mime.split('/')[1] || 'wav'),
+                          prompt: prompt, max_tokens: 8000})});
+  if (r.status === 401) throw new Error('后端口令不对，去「我的 → 后端」改一下');
+  if (!r.ok) throw new Error('后端 ' + r.status + ' ' + (await r.text()).slice(0,120));
+  const j = await r.json();
+  const txt = j.job ? await poll(j.job, cfg) : j.text;
+  const d = firstJson(txt);
+  if (!d) throw new Error('返回里没有完整的决策 JSON：' + String(txt).slice(0, 100));
   return d;
 }
 
@@ -2429,7 +2470,10 @@ async function send(){
     const blob = new Blob(chunks, {type: rec?.mimeType || ''});
     const mine = keepRec(blob, (Date.now() - (MYREC.t0 || Date.now())) / 1000);
     const part = await toAudioPart(blob);
-    const d = await askGemini(part);
+    // 🚨 按 pick 的结果走，别写死。写死 askGemini 的话，
+    //    后端明明能听也用不上，而且没 Gemini key 时直接报错。
+    const d = pick('audio') === 'backend' ? await askBackendAudio(part)
+                                          : await askGemini(part);
     await render(d, mine);
   } catch(e){
     // 「Load failed」这种话等于没说，补上它可能是什么、下一步点哪
@@ -4291,7 +4335,8 @@ function showMe(){
       //    上一版显示后者，于是配了 DeepSeek 兜底就会写成「plan/deepseek」，
       //    看起来像在用 DeepSeek —— Kevin 就是这么被误导的。
       //    「配了」和「在用」是两回事，界面上只该说后者。
-      .then(d => { toast(d && d.ok
+      .then(d => { noteCaps(d);
+                   toast(d && d.ok
                            ? '连上了 · ' + backendLabel(d)
                            : '连上了，但后端说没有可用的 key');
                    goTab('me'); })
@@ -4398,6 +4443,7 @@ if (S.key || apiOn()){
     if (!u) return alert('先填后端地址');
     saveApi({url: u, pass: ($('#apipass').value || '').trim()});
     fetch(u + '/api/health', {cache:'no-store'}).then(r => r.json()).then(d => {
+      noteCaps(d);
       if (d && d.ok){ toast('连上了 · ' + backendLabel(d));
                       $('#setup').hidden = true; goTab('home'); }
       else alert('连上了，但后端说没有可用的 key');
