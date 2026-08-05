@@ -1454,10 +1454,25 @@ async function poll(job, cfg){
 }
 
 function pick(need){
+  // 🚨 音频**必须**先判，不能落到后端。
+  //    后端走的是火山 Agent Plan 订阅包，那条路**只能收文字**（语音识别是
+  //    套餐外的另一个产品）。而这一行原来写在 apiOn() 后面，于是
+  //    「配了后端」就把录音也发给后端 —— 那一发永远回不来，
+  //    前端一直卡在「正在转写」，两三分钟后才超时。
+  //    **能力不匹配要在选路时就拦住，不能等它超时。**
+  if (need === 'audio'){
+    if (S.keys.gemini) return 'gemini';
+    if (SRAvail()) return 'deepseek';   // 退回手机自带的语音识别
+    return null;
+  }
   if (apiOn()) return 'backend';
-  if (need === 'audio') return S.keys.gemini ? 'gemini' : null;
   if (S.keys.gemini) return 'gemini';
   return S.keys.deepseek ? 'deepseek' : null;
+}
+
+// 这台设备有没有系统自带的语音识别（Safari/Chrome 都有，iOS 上尤其好用）
+function SRAvail(){
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 }
 /* 文字活统一走这里：Gemini 优先，**只有在额度真的全撞光时**才落到 DeepSeek。
    其它错误（key 不对、网络）不触发兜底 —— 换一家也一样会错，白等一分钟。 */
