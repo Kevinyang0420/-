@@ -1958,7 +1958,8 @@ var Render = {
     var bossRef = null;
     if (game) {
       for (var bi2 = 0; bi2 < game.entities.length; bi2++) {
-        if (game.entities[bi2].type === 'timedevourer') { bossRef = game.entities[bi2]; break; }
+        var bt2 = game.entities[bi2].type;
+        if (bt2 === 'timedevourer' || bt2 === 'gianttimedevourer' || bt2 === 'emperorsnake' || bt2 === 'threeheadsnake') { bossRef = game.entities[bi2]; break; }
       }
     }
     if (bossRef) {
@@ -1966,10 +1967,17 @@ var Render = {
       for (var ai2 = 0; ai2 < game.entities.length; ai2++) {
         if (game.entities[ai2].type === 'ally' && game.entities[ai2].alive) alliesN++;
       }
-      var label = bossRef.phase === 2
-        ? ('第二阶段·按 B 召唤队友 ' + alliesN + '/' + MAX_ALLIES)
-        : '把光头强打到生气，就能召唤队友！';
-      this.strokeText(ctx, label, VIEW.W / 2, VIEW.H - 100, 26,
+      var bossLabel;
+      if (bossRef.type === 'emperorsnake') {
+        bossLabel = bossRef.phase === 2 ? '帝王蛇怪·暴怒阶段' : '帝王蛇怪——用原子弹和氢弹轰它！';
+      } else if (bossRef.type === 'threeheadsnake') {
+        bossLabel = bossRef.phase === 2 ? '三头帝王蛇·终极暴怒！盟友 ' + alliesN + ' 人' : '三头帝王蛇——和盟友一起击败它！';
+      } else {
+        bossLabel = bossRef.phase === 2
+          ? ('第二阶段·按 B 召唤队友 ' + alliesN + '/' + MAX_ALLIES)
+          : '把光头强打到生气，就能召唤队友！';
+      }
+      this.strokeText(ctx, bossLabel, VIEW.W / 2, VIEW.H - 100, 26,
         bossRef.phase === 2 ? '#ffd94a' : '#9ad0ff', '#000', 5);
     }
     // 第 4 幕：击杀计数 X/60
@@ -2412,5 +2420,344 @@ var Render = {
       ctx.restore();
       this.strokeText(ctx, '穿过云层，降落地球…', W / 2, 75, 39, '#fff', '#000', 6);
     }
+  },
+
+  // ===== 帝王蛇怪系列渲染 =====
+
+  // 蛇咬攻击：快速飞行的蛇头冲撞
+  snakebite: function (ctx, e, cam) {
+    var x = e.x - cam.x, y = e.y;
+    ctx.save();
+    var dir = e.vx > 0 ? 1 : -1;
+    ctx.translate(x + e.w / 2, y + e.h / 2);
+    ctx.scale(dir, 1);
+    // 蛇头轮廓
+    ctx.fillStyle = '#1a4a2a';
+    ctx.beginPath();
+    ctx.moveTo(-e.w / 2, -e.h / 2 + 8);
+    ctx.quadraticCurveTo(e.w / 2, -e.h / 2, e.w / 2, 0);
+    ctx.quadraticCurveTo(e.w / 2, e.h / 2, -e.w / 2, e.h / 2 - 8);
+    ctx.closePath();
+    ctx.fill();
+    // 上下颚分界
+    ctx.strokeStyle = '#0a2a18';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-e.w / 2, 0);
+    ctx.lineTo(e.w / 2 - 6, 0);
+    ctx.stroke();
+    // 獠牙
+    ctx.fillStyle = '#fff8e0';
+    ctx.beginPath();
+    ctx.moveTo(e.w / 2 - 14, -2);
+    ctx.lineTo(e.w / 2 - 4, -2);
+    ctx.lineTo(e.w / 2 - 10, 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(e.w / 2 - 14, 2);
+    ctx.lineTo(e.w / 2 - 4, 2);
+    ctx.lineTo(e.w / 2 - 10, -12);
+    ctx.closePath();
+    ctx.fill();
+    // 眼睛
+    ctx.fillStyle = '#ff2020';
+    ctx.beginPath(); ctx.arc(e.w / 4, -e.h / 3, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  },
+
+  // 毒液弹
+  snakevenom: function (ctx, e, cam) {
+    var x = e.x - cam.x, y = e.y;
+    ctx.save();
+    ctx.translate(x + e.r, y + e.r);
+    ctx.rotate(e.spin);
+    // 外层
+    var g = ctx.createRadialGradient(0, 0, 2, 0, 0, e.r);
+    g.addColorStop(0, '#b4ff20');
+    g.addColorStop(0.6, '#5aa820');
+    g.addColorStop(1, '#2a6010');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 0, e.r, 0, Math.PI * 2); ctx.fill();
+    // 飞溅小点
+    ctx.fillStyle = '#d4ff40';
+    for (var i = 0; i < 5; i++) {
+      var a = (i / 5) * Math.PI * 2 + e.spin;
+      ctx.beginPath(); ctx.arc(Math.cos(a) * e.r * 0.7, Math.sin(a) * e.r * 0.7, 2.5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  },
+
+  // 缠绕攻击：扩散的蛇身圆环
+  snakeconstrict: function (ctx, e, cam) {
+    var x = e.x - cam.x, y = e.y;
+    var alpha = e.t < e.dur * 0.5 ? 1 : 1 - (e.t - e.dur * 0.5) / (e.dur * 0.5);
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.7;
+    // 蛇身螺旋
+    ctx.strokeStyle = '#1a4a2a';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    for (var a = 0; a < Math.PI * 4; a += 0.15) {
+      var rr = e.r * (a / (Math.PI * 4));
+      var px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr;
+      if (a === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    // 内层亮线
+    ctx.strokeStyle = '#3a8a4a';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    for (var a2 = 0; a2 < Math.PI * 4; a2 += 0.15) {
+      var rr2 = e.r * (a2 / (Math.PI * 4));
+      var px2 = x + Math.cos(a2) * rr2, py2 = y + Math.sin(a2) * rr2;
+      if (a2 === 0) ctx.moveTo(px2, py2); else ctx.lineTo(px2, py2);
+    }
+    ctx.stroke();
+    ctx.restore();
+  },
+
+  // 帝王蛇怪（一般形态）
+  emperorsnake: function (ctx, e, cam, t) {
+    var x = e.x - cam.x, y = e.y;
+    var cx = x + e.w / 2;
+    var dir = e.dir || 1;
+    ctx.save();
+    if (!e.alive) {
+      var fall = Math.min(1, e.fallT / 1.0);
+      ctx.translate(cx, y + e.h);
+      ctx.rotate(dir * fall * 1.2);
+      ctx.globalAlpha = Math.max(0.2, 1 - e.fallT * 0.35);
+      ctx.translate(-cx, -(y + e.h));
+    }
+    // 蛇身波动
+    var wave = e.alive ? Math.sin(e.anim) : 0;
+    var wave2 = e.alive ? Math.sin(e.anim + 1.5) : 0;
+    // 受伤闪白
+    if (e.hurtT > 0) { ctx.globalAlpha = 0.7 + 0.3 * Math.sin(e.hurtT * 30); }
+    // 变身闪光
+    if (e.transitionT > 0) { ctx.globalAlpha = 0.5 + 0.5 * Math.sin(e.transitionT * 20); }
+
+    // ----- 蛇身（盘绕的曲线）-----
+    ctx.strokeStyle = '#1a4a2a';
+    ctx.lineWidth = 38;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx - e.w * 0.35, y + e.h - 20);
+    ctx.quadraticCurveTo(cx - e.w * 0.15 + wave * 10, y + e.h * 0.5, cx + wave * 15, y + e.h * 0.3);
+    ctx.quadraticCurveTo(cx + e.w * 0.2 + wave2 * 10, y + 40, cx + e.w * 0.35, y + 20);
+    ctx.stroke();
+    // 亮色腹部
+    ctx.strokeStyle = '#3a8a4a';
+    ctx.lineWidth = 24;
+    ctx.beginPath();
+    ctx.moveTo(cx - e.w * 0.35, y + e.h - 20);
+    ctx.quadraticCurveTo(cx - e.w * 0.15 + wave * 10, y + e.h * 0.5, cx + wave * 15, y + e.h * 0.3);
+    ctx.quadraticCurveTo(cx + e.w * 0.2 + wave2 * 10, y + 40, cx + e.w * 0.35, y + 20);
+    ctx.stroke();
+    // 金色花纹
+    ctx.strokeStyle = '#d4a030';
+    ctx.lineWidth = 4;
+    for (var i = 0; i < 4; i++) {
+      var seg = i / 4;
+      var sx = cx - e.w * 0.35 + seg * (e.w * 0.7);
+      var sy = y + e.h - 20 - seg * (e.h - 40) + Math.sin(e.anim + seg * 3) * 8;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 8, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // ----- 蛇头 -----
+    var headX = cx + dir * e.w * 0.35;
+    var headY = y + 20;
+    ctx.save();
+    ctx.translate(headX, headY);
+    ctx.scale(dir, 1);
+    // 头部三角
+    ctx.fillStyle = '#1a4a2a';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 55, 35, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // 亮色头部
+    ctx.fillStyle = '#2d6a3e';
+    ctx.beginPath();
+    ctx.ellipse(0, -4, 45, 26, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // 眼睛（血红）
+    ctx.fillStyle = '#ff2020';
+    ctx.beginPath(); ctx.arc(15, -12, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(15, 12, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.arc(17, -12, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(17, 12, 3, 0, Math.PI * 2); ctx.fill();
+    // 獠牙
+    ctx.fillStyle = '#fff8e0';
+    ctx.beginPath();
+    ctx.moveTo(35, -6); ctx.lineTo(50, -6); ctx.lineTo(42, 12);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(35, 6); ctx.lineTo(50, 6); ctx.lineTo(42, -12);
+    ctx.closePath(); ctx.fill();
+    // 舌头
+    if (e.alive) {
+      ctx.strokeStyle = '#ff4040';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(50, 0); ctx.lineTo(68, 0);
+      ctx.moveTo(68, 0); ctx.lineTo(73, -3);
+      ctx.moveTo(68, 0); ctx.lineTo(73, 3);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // ----- HP 条 -----
+    if (e.alive) {
+      var frac = e.maxHp > 0 ? e.hp / e.maxHp : 0;
+      var bw = 220, bh = 14;
+      var bx = cx - bw / 2, by = y - 16;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      Util.roundRect(ctx, bx - 2, by - 2, bw + 4, bh + 4, 6); ctx.fill();
+      ctx.fillStyle = '#3a1a1a';
+      Util.roundRect(ctx, bx, by, bw, bh, 4); ctx.fill();
+      var hpCol = frac > 0.5 ? '#5ed85e' : frac > 0.25 ? '#ffd94a' : '#ff5e5e';
+      ctx.fillStyle = hpCol;
+      Util.roundRect(ctx, bx, by, bw * frac, bh, 4); ctx.fill();
+      this.text(ctx, '帝王蛇怪', cx, by - 12, 16, '#fff', 'center', true);
+    }
+    ctx.restore();
+  },
+
+  // 三头帝王蛇（终极形态）
+  threeheadsnake: function (ctx, e, cam, t) {
+    var x = e.x - cam.x, y = e.y;
+    var cx = x + e.w / 2;
+    var dir = e.dir || 1;
+    ctx.save();
+    if (!e.alive) {
+      var fall = Math.min(1, e.fallT / 1.0);
+      ctx.translate(cx, y + e.h);
+      ctx.rotate(dir * fall * 1.4);
+      ctx.globalAlpha = Math.max(0.15, 1 - e.fallT * 0.3);
+      ctx.translate(-cx, -(y + e.h));
+    }
+    var wave = e.alive ? Math.sin(e.anim) : 0;
+    if (e.hurtT > 0) ctx.globalAlpha = 0.7 + 0.3 * Math.sin(e.hurtT * 30);
+    if (e.transitionT > 0) ctx.globalAlpha = 0.5 + 0.5 * Math.sin(e.transitionT * 20);
+
+    // ----- 巨大蛇身 -----
+    ctx.strokeStyle = '#0d2a18';
+    ctx.lineWidth = 52;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx - e.w * 0.4, y + e.h - 30);
+    ctx.quadraticCurveTo(cx - e.w * 0.2 + wave * 15, y + e.h * 0.5, cx + wave * 20, y + e.h * 0.35);
+    ctx.quadraticCurveTo(cx + e.w * 0.15 + wave * 10, y + e.h * 0.15, cx + e.w * 0.4, y + 30);
+    ctx.stroke();
+    // 亮色身体
+    ctx.strokeStyle = '#1a4a2a';
+    ctx.lineWidth = 34;
+    ctx.beginPath();
+    ctx.moveTo(cx - e.w * 0.4, y + e.h - 30);
+    ctx.quadraticCurveTo(cx - e.w * 0.2 + wave * 15, y + e.h * 0.5, cx + wave * 20, y + e.h * 0.35);
+    ctx.quadraticCurveTo(cx + e.w * 0.15 + wave * 10, y + e.h * 0.15, cx + e.w * 0.4, y + 30);
+    ctx.stroke();
+
+    // ----- 三头 -----
+    var headDefs = [
+      { x: cx - e.w * 0.32, y: y + 50, color: '#1a4a2a', light: '#2d6a3e', name: '帝王蛇', eyeCol: '#ff2020' },
+      { x: cx, y: y + 10, color: '#a07010', light: '#d4a030', name: '眼镜王蛇', eyeCol: '#ffcc00', hood: true },
+      { x: cx + e.w * 0.32, y: y + 70, color: '#1a1a1a', light: '#2a2a2a', name: '黑曼巴', eyeCol: '#ff4040', narrow: true }
+    ];
+    for (var hi = 0; hi < 3; hi++) {
+      if (!e.headAlive[hi]) continue;
+      var hd = headDefs[hi];
+      ctx.save();
+      ctx.translate(hd.x, hd.y);
+      // 头部朝向
+      var hDir = (hi === 0) ? -1 : (hi === 2) ? 1 : dir;
+      ctx.scale(hDir, 1);
+      // 头部主体
+      ctx.fillStyle = hd.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 48, 32, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = hd.light;
+      ctx.beginPath();
+      ctx.ellipse(0, -3, 40, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // 眼镜王蛇：颈部展开
+      if (hd.hood) {
+        ctx.fillStyle = hd.color;
+        ctx.beginPath();
+        ctx.ellipse(-20, 0, 25, 45, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#c09010';
+        ctx.beginPath();
+        ctx.moveTo(-20, -15); ctx.lineTo(-20, 15);
+        ctx.moveTo(-30, 0); ctx.lineTo(-10, 0);
+        ctx.strokeStyle = '#806000';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+      // 黑曼巴：窄头
+      if (hd.narrow) {
+        ctx.fillStyle = hd.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 55, 20, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // 眼睛
+      ctx.fillStyle = hd.eyeCol;
+      ctx.beginPath(); ctx.arc(12, -10, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(12, 10, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.arc(14, -10, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(14, 10, 2.5, 0, Math.PI * 2); ctx.fill();
+      // 獠牙
+      ctx.fillStyle = '#fff8e0';
+      ctx.beginPath();
+      ctx.moveTo(30, -5); ctx.lineTo(42, -5); ctx.lineTo(36, 10);
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(30, 5); ctx.lineTo(42, 5); ctx.lineTo(36, -10);
+      ctx.closePath(); ctx.fill();
+      // 舌头
+      if (e.alive) {
+        ctx.strokeStyle = '#ff4040';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(42, 0); ctx.lineTo(58, 0);
+        ctx.moveTo(58, 0); ctx.lineTo(63, -3);
+        ctx.moveTo(58, 0); ctx.lineTo(63, 3);
+        ctx.stroke();
+      }
+      ctx.restore();
+      // 各头 HP 小条
+      if (e.alive) {
+        var hFrac = e.headMaxHp[hi] > 0 ? e.headHp[hi] / e.headMaxHp[hi] : 0;
+        var hbw = 70, hbh = 6;
+        var hbx = hd.x - hbw / 2, hby = hd.y - 40;
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        Util.roundRect(ctx, hbx - 1, hby - 1, hbw + 2, hbh + 2, 3); ctx.fill();
+        ctx.fillStyle = hFrac > 0.5 ? '#5ed85e' : '#ff5e5e';
+        Util.roundRect(ctx, hbx, hby, hbw * hFrac, hbh, 3); ctx.fill();
+      }
+    }
+
+    // ----- 总 HP 条 -----
+    if (e.alive) {
+      var frac = e.maxHp > 0 ? e.hp / e.maxHp : 0;
+      var bw = 280, bh = 16;
+      var bx = cx - bw / 2, by = y - 22;
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      Util.roundRect(ctx, bx - 3, by - 3, bw + 6, bh + 6, 7); ctx.fill();
+      ctx.fillStyle = '#2a1a1a';
+      Util.roundRect(ctx, bx, by, bw, bh, 5); ctx.fill();
+      var hpCol = frac > 0.5 ? '#5ed85e' : frac > 0.25 ? '#ffd94a' : '#ff5e5e';
+      ctx.fillStyle = hpCol;
+      Util.roundRect(ctx, bx, by, bw * frac, bh, 5); ctx.fill();
+      this.text(ctx, '三头帝王蛇', cx, by - 14, 18, '#fff', 'center', true);
+    }
+    ctx.restore();
   }
 };

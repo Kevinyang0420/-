@@ -24,7 +24,7 @@ var MAX_ALLIES = 2;            // 最多同时召唤的宇航员队友数（飞�
 var SUMMON_CD = 0.7;           // 召唤冷却（秒），避免一次按出一群
 
 // 可玩幕为 idx 0~13（共 14 幕）；到 idx 14 进 win（「飞回地球」是返航过场 + 胜利画面）
-var LAST_STAGE = 14;
+var LAST_STAGE = 16;
 
 function Game() {
   this.canvas = null;
@@ -192,6 +192,8 @@ Game.prototype.loadStage = function (i) {
       : bt === 'devilbeast' ? Entities.devilbeast(s.boss.x, s.groundY)
       : bt === 'crabbeast' ? Entities.crabbeast(s.boss.x, s.groundY)
       : bt === 'midspider' ? Entities.midspider(s.boss.x, s.groundY)
+      : bt === 'emperorsnake' ? Entities.emperorsnake(s.boss.x, s.groundY)
+      : bt === 'threeheadsnake' ? Entities.threeheadsnake(s.boss.x, s.groundY)
       : Entities.spiderboss(s.boss.x, s.groundY);
     // 死亡重来时接着上次的残血打（bossHp 按幕记录，首次进关为满血）
     var saved = this.bossHp[i];
@@ -398,7 +400,7 @@ Game.prototype.updatePlaying = function (dt) {
     if (e.type === 'poopbeast') return e.alive || e.deadT < 0.4;
     if (e.type === 'snotbeast' || e.type === 'sockbeast') return e.alive || e.deadT < 0.4;
     if (e.type === 'hornbeast' || e.type === 'rollbeast' || e.type === 'snotworm') return e.alive || e.deadT < 0.4;
-    if (e.type === 'spiderboss' || e.type === 'timedevourer' || e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'spiderling' || e.type === 'gianttimedevourer') return e.alive || e.fallT < 2.6;
+    if (e.type === 'spiderboss' || e.type === 'timedevourer' || e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'spiderling' || e.type === 'gianttimedevourer' || e.type === 'emperorsnake' || e.type === 'threeheadsnake') return e.alive || e.fallT < 2.6;
     if (e.type === 'bullet' || e.type === 'fireball' || e.type === 'missile') return e.alive;
     if (e.type === 'devilfire') return e.alive;
     if (e.type === 'atombomb' || e.type === 'hydrogenbomb' || e.type === 'explosion') return e.alive;
@@ -617,6 +619,20 @@ Game.prototype._updateEntity = function (e, dt, f, s) {
     this._updateTimeDevourer(e, dt, f, s);
   } else if (e.type === 'gianttimedevourer') {
     this._updateTimeDevourer(e, dt, f, s);
+  } else if (e.type === 'emperorsnake') {
+    this._updateEmperorSnake(e, dt, f, s);
+  } else if (e.type === 'threeheadsnake') {
+    this._updateThreeHeadSnake(e, dt, f, s);
+  } else if (e.type === 'snakebite') {
+    e.x += e.vx * f; e.life -= dt;
+    if (e.life <= 0 || e.x + e.w < 0 || e.x > s.width) e.alive = false;
+  } else if (e.type === 'snakevenom') {
+    e.vy += s.gravity * 0.5 * f; e.x += e.vx * f; e.y += e.vy * f; e.spin += 0.2 * f; e.life -= dt;
+    if (e.y + e.h >= s.groundY && e.vy > 0) { e.y = s.groundY - e.h; e.vy = -3; }
+    if (e.life <= 0 || e.x + e.w < 0 || e.x > s.width) e.alive = false;
+  } else if (e.type === 'snakeconstrict') {
+    e.t += dt; e.r = 20 + (e.maxR - 20) * Math.min(1, e.t / (e.dur * 0.5));
+    if (e.t >= e.dur) e.alive = false;
   } else if (e.type === 'devilbeast') {
     this._updateDevil(e, dt, f, s);
   } else if (e.type === 'crabbeast') {
@@ -1156,7 +1172,7 @@ Game.prototype._updateAlly = function (e, dt, f, s) {
   var boss = null;
   for (var i = 0; i < this.entities.length; i++) {
     var b = this.entities[i];
-    if ((b.type === 'timedevourer' || b.type === 'gianttimedevourer') && b.alive) { boss = b; break; }
+    if ((b.type === 'timedevourer' || b.type === 'gianttimedevourer' || b.type === 'emperorsnake' || b.type === 'threeheadsnake') && b.alive) { boss = b; break; }
   }
   // 跟随玩家，站在其侧后方（side 决定左右）
   var targetX = p.x + e.side * 78;
@@ -1204,7 +1220,7 @@ Game.prototype._hitAlly = function (al) {
 Game.prototype._getBoss = function () {
   for (var i = 0; i < this.entities.length; i++) {
     var e = this.entities[i];
-    if ((e.type === 'spiderboss' || e.type === 'timedevourer' || e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'gianttimedevourer') && e.alive) return e;
+    if ((e.type === 'spiderboss' || e.type === 'timedevourer' || e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'gianttimedevourer' || e.type === 'emperorsnake' || e.type === 'threeheadsnake') && e.alive) return e;
   }
   return null;
 };
@@ -1259,12 +1275,12 @@ Game.prototype._damageBoss = function (e, dmg) {
   this.score += 50;
   Sfx.bossHit();
   this._dust(e.x + e.w / 2, e.y + e.h / 2, 5, '#c05a8a');
-  // 最终 Boss 光头强：血量过半 → 进入第二阶段（生气），攻击明显变猛
-  if ((e.type === 'timedevourer' || e.type === 'gianttimedevourer') && e.phase === 1 && e.hp <= e.maxHp * BOSS_PHASE2_FRAC) {
+  // Boss 血量过半 → 进入第二阶段（暴怒），攻击频率翻倍
+  if ((e.type === 'timedevourer' || e.type === 'gianttimedevourer' || e.type === 'emperorsnake' || e.type === 'threeheadsnake') && e.phase === 1 && e.hp <= e.maxHp * BOSS_PHASE2_FRAC) {
     e.phase = 2;
-    e.transitionT = 1.2;       // 短暂变身：停手 + 闪光 + 冒蒸汽
-    e.axeT = 1.2; e.shockT = 1.6; e.blinkT = 1.6;  // 变身一结束立刻猛攻
-    e.dashCd = 3.0;
+    e.transitionT = 1.2;
+    e.biteT = 1.0; e.constrictT = 2.5; e.tailT = 3.5;
+    if (e.type === 'threeheadsnake') { e.venomT = 1.6; e.mambaT = 2.0; }
     this.phaseBannerT = 2.4;
     this.shake = Math.max(this.shake, 10);
     Sfx.angry();
@@ -1292,8 +1308,165 @@ Game.prototype._bossDie = function (e) {
     : e.type === 'devilbeast' ? '魔鬼兽'
     : e.type === 'crabbeast' ? '大螃蟹兽'
     : e.type === 'midspider' ? '终极蜘蛛怪'
+    : e.type === 'emperorsnake' ? '帝王蛇怪'
+    : e.type === 'threeheadsnake' ? '三头帝王蛇'
     : '光头强';
   Sfx.bossDie();
+};
+
+// ===== 帝王蛇怪 AI =====
+Game.prototype._updateEmperorSnake = function (e, dt, f, s) {
+  if (!e.alive) {
+    e.fallT += dt;
+    return;
+  }
+  e.anim += dt * 1.2;
+  if (e.hurtT > 0) e.hurtT -= dt;
+  if (e.transitionT > 0) { e.transitionT -= dt; return; }
+
+  var p = this.player;
+  var spd = e.phase === 2 ? 1.8 : 1.1;
+
+  // 朝玩家方向缓慢移动
+  if (e.biting || e.constricting) {
+    e.vx *= 0.85;
+  } else {
+    if (p.x + p.w / 2 < e.x + e.w / 2 - 40) { e.vx = -spd; e.dir = -1; }
+    else if (p.x + p.w / 2 > e.x + e.w / 2 + 40) { e.vx = spd; e.dir = 1; }
+    else e.vx *= 0.85;
+  }
+  e.x += e.vx * f;
+  if (e.x < e.x1) { e.x = e.x1; e.vx = 0; }
+  if (e.x + e.w > e.x2) { e.x = e.x2 - e.w; e.vx = 0; }
+
+  // 咬击
+  e.biteT -= dt;
+  if (e.biteT <= 0 && !e.biting && !e.constricting) {
+    e.biting = true;
+    e.windupT = 0.5;
+  }
+  if (e.biting) {
+    e.windupT -= dt;
+    if (e.windupT <= 0) {
+      // 发射咬击
+      var bx = e.dir > 0 ? e.x + e.w - 20 : e.x + 20;
+      this.entities.push(Entities.snakebite(bx, e.y + 60, e.dir));
+      Sfx.shoot();
+      e.biting = false;
+      e.biteT = e.phase === 2 ? 1.5 : 2.8;
+    }
+  }
+
+  // 缠绕
+  e.constrictT -= dt;
+  if (e.constrictT <= 0 && !e.biting && !e.constricting) {
+    e.constricting = true;
+    e.windupT = 0.7;
+  }
+  if (e.constricting) {
+    e.windupT -= dt;
+    if (e.windupT <= 0) {
+      this.entities.push(Entities.snakeconstrict(e.x + e.w / 2, s.groundY));
+      this.shake = Math.max(this.shake, 6);
+      e.constricting = false;
+      e.constrictT = e.phase === 2 ? 3.5 : 6.0;
+    }
+  }
+};
+
+// ===== 三头帝王蛇 AI =====
+Game.prototype._updateThreeHeadSnake = function (e, dt, f, s) {
+  if (!e.alive) {
+    e.fallT += dt;
+    return;
+  }
+  e.anim += dt * 1.5;
+  if (e.hurtT > 0) e.hurtT -= dt;
+  if (e.transitionT > 0) { e.transitionT -= dt; return; }
+
+  // 自动召唤盟友（光头强、童童、飞飞）
+  if (!e.alliesSummoned) {
+    e.alliesSummoned = true;
+    var allyDefs = [
+      { name: '光头强', suit: '#3f7a34', trim: '#e8d8b0' },
+      { name: '飞飞', suit: '#3a6fd9', trim: '#aadcff' },
+      { name: '童童', suit: '#2fae6a', trim: '#bff0d0' }
+    ];
+    for (var ai = 0; ai < allyDefs.length; ai++) {
+      var al = Entities.ally(this.player.x - 60 - ai * 45, s.spawn.y, allyDefs[ai], -1);
+      al.facing = 1;
+      this.entities.push(al);
+    }
+    this.phaseBannerT = 3.0;
+    this.shake = Math.max(this.shake, 8);
+  }
+
+  var p = this.player;
+  var spd = e.phase === 2 ? 1.2 : 0.8;
+
+  // 缓慢追踪玩家
+  if (p.x + p.w / 2 < e.x + e.w / 2 - 60) { e.vx = -spd; e.dir = -1; }
+  else if (p.x + p.w / 2 > e.x + e.w / 2 + 60) { e.vx = spd; e.dir = 1; }
+  else e.vx *= 0.85;
+  e.x += e.vx * f;
+  if (e.x < e.x1) { e.x = e.x1; e.vx = 0; }
+  if (e.x + e.w > e.x2) { e.x = e.x2 - e.w; e.vx = 0; }
+
+  // 帝王蛇头(0)：咬击
+  if (e.headAlive[0]) {
+    e.biteT -= dt;
+    if (e.biteT <= 0 && !e.biting) {
+      e.biting = true; e.windupT = 0.4;
+    }
+    if (e.biting) {
+      e.windupT -= dt;
+      if (e.windupT <= 0) {
+        var bx = e.dir > 0 ? e.x + e.w - 20 : e.x + 20;
+        this.entities.push(Entities.snakebite(bx, e.y + 100, e.dir));
+        Sfx.shoot();
+        e.biting = false;
+        e.biteT = e.phase === 2 ? 1.8 : 3.0;
+      }
+    }
+  }
+
+  // 眼镜王蛇头(1)：毒液弹
+  if (e.headAlive[1]) {
+    e.venomT -= dt;
+    if (e.venomT <= 0) {
+      var vx = e.dir > 0 ? e.x + e.w - 30 : e.x + 30;
+      this.entities.push(Entities.snakevenom(vx, e.y + 80, e.dir));
+      Sfx.shoot();
+      e.venomT = e.phase === 2 ? 2.0 : 3.5;
+    }
+  }
+
+  // 黑曼巴头(2)：快速连咬
+  if (e.headAlive[2]) {
+    e.mambaT -= dt;
+    if (e.mambaT <= 0) {
+      e.mambaBurst = 3; // 连续 3 发
+      e.mambaT = e.phase === 2 ? 3.0 : 5.0;
+    }
+    if (e.mambaBurst > 0) {
+      e.windupT -= dt;
+      if (e.windupT <= 0) {
+        var mx = e.dir > 0 ? e.x + e.w - 20 : e.x + 20;
+        this.entities.push(Entities.snakebite(mx, e.y + 140, e.dir));
+        Sfx.shoot();
+        e.mambaBurst--;
+        e.windupT = 0.25;
+      }
+    }
+  }
+
+  // 缠绕
+  e.constrictT -= dt;
+  if (e.constrictT <= 0) {
+    this.entities.push(Entities.snakeconstrict(e.x + e.w / 2, s.groundY));
+    this.shake = Math.max(this.shake, 8);
+    e.constrictT = e.phase === 2 ? 5.0 : 8.0;
+  }
 };
 
 // 投射物消灭小怪：复用踩头的死亡动画与分值
@@ -1331,7 +1504,7 @@ Game.prototype._explode = function (cx, cy, r, dmg) {
       e.alive = false;
       this.score += 25;
       this._dust(ex, ey, 6, '#e8e8f0');
-    } else if (e.type === 'spiderboss' || e.type === 'timedevourer' || e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'gianttimedevourer') {
+    } else if (e.type === 'spiderboss' || e.type === 'timedevourer' || e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'gianttimedevourer' || e.type === 'emperorsnake' || e.type === 'threeheadsnake') {
       this._damageBoss(e, dmg);
     }
   }
@@ -1372,7 +1545,7 @@ Game.prototype._projectileHits = function (s) {
           }
           break;
         }
-      } else if (e.type === 'spiderboss' || e.type === 'timedevourer' || e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'gianttimedevourer') {
+      } else if (e.type === 'spiderboss' || e.type === 'timedevourer' || e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'gianttimedevourer' || e.type === 'emperorsnake' || e.type === 'threeheadsnake') {
         if (Util.aabb(px, py, pw, ph, e.x + 14, e.y + 10, e.w - 28, e.h - 18)) {
           if (isBomb) this._explodeBomb(pr);
           else {
@@ -1590,6 +1763,16 @@ Game.prototype._collisions = function (s) {
     } else if (e.type === 'devilfire' && e.alive) {
       // 魔鬼兽的火焰弹：碰到玩家扣 1 心
       if (Util.aabb(px, py, pw, ph, e.x + 2, e.y + 2, e.w - 4, e.h - 4)) this.hitPlayer();
+    } else if (e.type === 'snakebite' && e.alive && !e.hit) {
+      // 帝王蛇咬击：碰到扣 1 心
+      if (Util.aabb(px, py, pw, ph, e.x + 8, e.y + 6, e.w - 16, e.h - 10)) { e.hit = true; e.alive = false; this.hitPlayer(); }
+    } else if (e.type === 'snakevenom' && e.alive) {
+      // 毒液弹：碰到扣 1 心
+      if (Util.aabb(px, py, pw, ph, e.x + 2, e.y + 2, e.w - 4, e.h - 4)) { e.alive = false; this.hitPlayer(); }
+    } else if (e.type === 'snakeconstrict' && e.alive && !e.applied && e.t >= e.dur * 0.4) {
+      // 缠绕：范围达到后扣 1 心 + 减速
+      var cdx = (px + pw / 2) - e.x, cdy = (py + ph / 2) - e.y;
+      if (cdx * cdx + cdy * cdy < e.r * e.r) { e.applied = true; this.hitPlayer(); this.player.slowT = 1.2; }
     } else if (e.type === 'spiderboss' && e.alive) {
       // 庞大的身体（含扑过来时）：碰到扣 1 心；命中盒略小于视觉（腿尖不算）
       if (Util.aabb(px, py, pw, ph, e.x + 24, e.y + 26, e.w - 48, e.h - 30)) {
@@ -1599,7 +1782,7 @@ Game.prototype._collisions = function (s) {
       if (Util.aabb(px, py, pw, ph, e.x + 14, e.y + 10, e.w - 28, e.h - 16)) {
         this.hitPlayer();
       }
-    } else if ((e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'gianttimedevourer') && e.alive) {
+    } else if ((e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'gianttimedevourer' || e.type === 'emperorsnake' || e.type === 'threeheadsnake') && e.alive) {
       // 新 Boss 庞大的身体：碰到扣 1 心（命中盒略小于视觉）
       if (Util.aabb(px, py, pw, ph, e.x + 14, e.y + 10, e.w - 28, e.h - 16)) {
         this.hitPlayer();
@@ -1619,7 +1802,7 @@ Game.prototype._collisions = function (s) {
         this._hitAlly(al);
       } else if (b.type === 'timeshock' && Util.aabb(al.x + 4, al.y + 4, al.w - 8, al.h - 8, b.x + 6, b.y + 6, b.w - 12, b.h - 6)) {
         this._hitAlly(al);
-      } else if ((b.type === 'timedevourer' || b.type === 'gianttimedevourer') && Util.aabb(al.x + 7.5, al.y + 6, al.w - 15, al.h - 9, b.x + 14, b.y + 10, b.w - 28, b.h - 16)) {
+      } else if ((b.type === 'timedevourer' || b.type === 'gianttimedevourer' || b.type === 'emperorsnake' || b.type === 'threeheadsnake') && Util.aabb(al.x + 7.5, al.y + 6, al.w - 15, al.h - 9, b.x + 14, b.y + 10, b.w - 28, b.h - 16)) {
         this._hitAlly(al);
       }
     }
@@ -1857,6 +2040,11 @@ Game.prototype._drawScene = function (ctx) {
     }
     else if (e2.type === 'devilbeast') Render.devilbeast(ctx, e2, this.camera, this.time);
     else if (e2.type === 'crabbeast') Render.crabbeast(ctx, e2, this.camera, this.time);
+    else if (e2.type === 'emperorsnake') Render.emperorsnake(ctx, e2, this.camera, this.time);
+    else if (e2.type === 'threeheadsnake') Render.threeheadsnake(ctx, e2, this.camera, this.time);
+    else if (e2.type === 'snakebite' && e2.alive) Render.snakebite(ctx, e2, this.camera);
+    else if (e2.type === 'snakevenom' && e2.alive) Render.snakevenom(ctx, e2, this.camera);
+    else if (e2.type === 'snakeconstrict' && e2.alive) Render.snakeconstrict(ctx, e2, this.camera);
     else if (e2.type === 'ally') Render.ally(ctx, e2, this.camera);
     else if (e2.type === 'bullet' && e2.alive) Render.bullet(ctx, e2, this.camera);
     else if (e2.type === 'fireball' && e2.alive) Render.fireball(ctx, e2, this.camera);

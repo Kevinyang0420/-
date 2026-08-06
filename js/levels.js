@@ -445,8 +445,71 @@ var STAGES = [
     ship: null,
     castle: null,
     boss: { x: 850, kind: 'gianttimedevourer' },
-    final: true,                   // 打败他之后：乘外星飞船飞回地球（返航过场）→ 胜利
     goal: 'boss',
-    tip: '最终大魔王——巨化的光头强！先用弱难度削他，血量过半他会生气（第二阶段更猛）——这时按 B 召唤宇航员队友一起打！小心电锯和木屑气浪'
+    tip: '最终大魔王——巨化的光头强！先用弱难度削他，血量过半他会生气（第二阶段更猛）——这时按 B 召唤宇航员队友一起打！打败他后发现他竟然是被控制的好人……真正的幕后黑手是帝王蛇怪！'
+  },
+  {
+    // 第 15 幕：帝王蛇怪（一般形态）——600 米高的巨蛇
+    name: '第 15 幕 帝王蛇怪',
+    theme: 'mars',
+    width: 2000,
+    gravity: 0.62,
+    jumpVel: 18.4,
+    groundY: 693,
+    spawn: { x: 105, y: 600 },
+    platforms: [
+      { x: 380, y: 480, w: 180, h: 24 },
+      { x: 900, y: 420, w: 180, h: 24 },
+      { x: 1420, y: 480, w: 180, h: 24 }
+    ],
+    snowRate: null,
+    houseDist: 0,
+    poopBeasts: [],
+    snotBeasts: [],
+    sockBeasts: [],
+    hornBeasts: [],
+    snotWorms: [],
+    slimes: [],
+    rocket: null,
+    flags: [],
+    flag: null,
+    ship: null,
+    castle: null,
+    boss: { x: 1000, kind: 'emperorsnake' },
+    goal: 'boss',
+    tip: '光头强恢复理智了！他告诉你们：一切都是帝王蛇怪在背后操控！一条 600 米的巨蛇出现在眼前——它会突然咬过来、还会缠绕缠住你！灵活走位躲开，用原子弹和氢弹猛轰它！'
+  },
+  {
+    // 第 16 幕（最终幕）：三头帝王蛇——1000 米高三头终极巨蛇
+    name: '第 16 幕 三头帝王蛇（终极决战）',
+    theme: 'mars',
+    width: 2200,
+    gravity: 0.62,
+    jumpVel: 18.4,
+    groundY: 693,
+    spawn: { x: 105, y: 600 },
+    platforms: [
+      { x: 350, y: 450, w: 180, h: 24 },
+      { x: 850, y: 380, w: 180, h: 24 },
+      { x: 1350, y: 450, w: 180, h: 24 },
+      { x: 1850, y: 500, w: 180, h: 24 }
+    ],
+    snowRate: null,
+    houseDist: 0,
+    poopBeasts: [],
+    snotBeasts: [],
+    sockBeasts: [],
+    hornBeasts: [],
+    snotWorms: [],
+    slimes: [],
+    rocket: null,
+    flags: [],
+    flag: null,
+    ship: null,
+    castle: null,
+    boss: { x: 1100, kind: 'threeheadsnake' },
+    final: true,
+    goal: 'boss',
+    tip: '帝王蛇怪变身了！1000 米高的三头帝王蛇——帝王蛇头会咬击、眼镜王蛇头吐毒液、黑曼巴头快速连咬！光头强、童童、飞飞一起来帮你！用氢弹轰它，打败它就能通关回家！'
   }
 ];

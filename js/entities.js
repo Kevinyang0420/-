@@ -347,5 +347,73 @@ var Entities = {
       dashCd: 5.0, dashing: 0, dashDir: 1,
       hurtT: 0, fallT: 0, alive: true
     };
+  },
+
+  // ===== 帝王蛇怪系列 Boss =====
+
+  // 蛇咬攻击：帝王蛇怪的头部突然前伸咬向玩家（快速直线冲撞）
+  snakebite: function (x, y, dir) {
+    return {
+      type: 'snakebite', x: x, y: y, vx: dir * 8.5, vy: 0, w: 70, h: 50,
+      life: 0.9, alive: true, hit: false
+    };
+  },
+
+  // 毒液弹：三头蛇的头部吐出的毒液球，抛物线飞来，落地留毒摊
+  snakevenom: function (x, y, dir) {
+    return {
+      type: 'snakevenom', x: x, y: y, vx: dir * 4.5, vy: -7, w: 30, h: 30, r: 15,
+      spin: 0, life: 4, alive: true
+    };
+  },
+
+  // 缠绕攻击：帝王蛇怪身体膨胀的约束圈，范围逐渐扩大，罩住后扣血+减速
+  snakeconstrict: function (cx, groundY) {
+    return {
+      type: 'snakeconstrict', x: cx, y: groundY - 120, vx: 0, vy: 0, r: 20, maxR: 220,
+      t: 0, dur: 1.5, applied: false, alive: true
+    };
+  },
+
+  // 帝王蛇怪（一般形态）：600 米高的巨蛇。深绿色鳞片，金色腹部花纹，血红眼睛。
+  // 攻击模式：①突然咬击（头伸长冲撞）②缠绕约束（范围圈）③甩尾冲击波
+  // 血量 220，血量过半进入暴怒（攻击频率翻倍）
+  emperorsnake: function (x, groundY) {
+    return {
+      type: 'emperorsnake', x: x - 150, y: groundY - 300, vx: 0, vy: 0, w: 300, h: 300,
+      hp: 220, maxHp: 220, dir: -1,
+      x1: x - 500, x2: x + 500,
+      anim: 0, biteT: 2.5, constrictT: 5.0, tailT: 7.0,
+      windupT: 0, biting: false, constricting: false,
+      phase: 1, transitionT: 0,
+      hurtT: 0, fallT: 0, alive: true
+    };
+  },
+
+  // 三头帝王蛇（终极形态）：1000 米高三头巨蛇。
+  // 三头：帝王蛇(绿)、眼镜王蛇(金)、黑曼巴(黑)，各自独立攻击。
+  // 每个头有独立血量，三个头全灭才能击杀主体。
+  // 攻击：帝王蛇头咬击、眼镜王蛇头吐毒液、黑曼巴头快速连咬+毒液
+  threeheadsnake: function (x, groundY) {
+    return {
+      type: 'threeheadsnake', x: x - 220, y: groundY - 420, vx: 0, vy: 0, w: 440, h: 420,
+      hp: 400, maxHp: 400, dir: -1,
+      x1: x - 600, x2: x + 600,
+      // 三头独立血量
+      headHp: [80, 80, 80], headMaxHp: [80, 80, 80], headAlive: [true, true, true],
+      anim: 0,
+      // 帝王蛇头(0)：咬击
+      biteT: 2.8, biting: false, windupT: 0,
+      // 眼镜王蛇头(1)：毒液弹
+      venomT: 3.2,
+      // 黑曼巴头(2)：快速连咬
+      mambaT: 4.0, mambaBurst: 0,
+      // 缠绕
+      constrictT: 8.0, constricting: false,
+      phase: 1, transitionT: 0,
+      hurtT: 0, fallT: 0, alive: true,
+      // 盟友自动召唤标记
+      alliesSummoned: false
+    };
   }
 };
