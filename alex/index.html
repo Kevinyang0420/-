@@ -570,7 +570,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
       跟主屏图标同一个病、同一个药：URL 上挂**按内容算的版本号**，
       内容一变 URL 就变，缓存自然失效；内容没变则不变，不会白刷。
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
-const BANKV = 'c7b2681b';
+const BANKV = '789656db';
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
 /* 🚨 Gemini 免费额度是 **每天 × 每个模型** 分开算的
@@ -2287,7 +2287,7 @@ async function showNews(){
   try { nb = await loadNews(); }
   catch(e){ f.innerHTML = `<div class="note">${esc(e.message)}</div>`; return; }
   f.innerHTML = '<div class="note">真实的 BBC 6 Minute English，每集约 6 分钟。'
-    + '音频直接来自 BBC，我们不转存。题目按段落出，答错可以只回听那 20 秒。</div>';
+    + '音频直接来自 BBC，我们不转存。<br>两种题：<b>点听题</b>只考一小段（答错可以只回听那几十秒）；<b>段落题</b>要听完一整段，再说他到底讲了哪几点、重点在哪。</div>';
   /* 🚨 做过的排到后面去。Kevin 2026-08-08：「我这些做过的题，就不要老是放在最顶上了…
      既然是实时听力，做过的题你就把它放到后面去。」
      只加个「做过」标签不够 —— 他每次打开还是先看到那几集，得往下翻才有新的。
@@ -3512,28 +3512,58 @@ function listenItem(){
   const hd = document.createElement('div');
   hd.className = 'grp';
   hd.textContent = `第 ${LSN.i+1} / ${LSN.items.length} 题 · 答对 ${LSN.right}`
+    + (LSN.items[LSN.i] && LSN.items[LSN.i].kind === 'para' ? ' · 段落题' : '')
     + (LSN.i === 0 && LSN.recycled ? '（这一档的题你都做过了，重新抽一轮）' : '');
   f.appendChild(hd);
+
+  /* 段落题：听一整段（45-120 秒），考的是「他到底说了些什么」，
+     不是某个数字。Kevin 2026-08-09 要的。 */
+  const isPara = it.kind === 'para';
+  const secs = Math.max(0, (it.end || 0) - (it.start || 0));
 
   // 播放区：原文这时候一个字都不给
   const pl = document.createElement('div');
   pl.className = 'better';
-  pl.innerHTML = '<div class="lb">先听</div>';
-  pl.appendChild(player(it, true));
+  pl.innerHTML = isPara
+    ? '<div class="lb">先把这一整段听完（约 ' + secs + ' 秒）</div>' +
+      '<div style="font-size:13px;color:var(--muted);margin-bottom:6px">' +
+      '不用抠某个词，听他<b>一共说了哪几点、重点落在哪</b>。' +
+      '听完再看题。</div>'
+    : '<div class="lb">先听</div>';
+  /* 🚨 段落题不自动播。一分多钟的音频一进页面就响，他还没准备好 ——
+     而且这一题的重点是「完整听一遍」，从中间开始听就废了。 */
+  pl.appendChild(player(it, !isPara));
   f.appendChild(pl);
 
   const q = document.createElement('div');
   q.className = 'turn alex';
   q.innerHTML = `<div class="who">Alex 问</div><div class="bub">${esc(it.q)}</div>`;
-  f.appendChild(q);
 
+  const opts = document.createElement('div');
   it.opt.forEach((o, k) => {
     const c = document.createElement('div');
     c.className = 'card';
     c.textContent = 'ABCDE'[k] + '. ' + o;
     c.onclick = () => answerListen(k);
-    f.appendChild(c);
+    opts.appendChild(c);
   });
+
+  if (isPara){
+    /* 🚨 选项先藏起来。摆在眼前他会边听边比对选项 ——
+       那练的是「找关键词」，不是「琢磨他想表达什么」。 */
+    const gate = document.createElement('button');
+    gate.className = 'play';
+    gate.style.marginTop = '12px';
+    gate.textContent = '我听完了，看题';
+    gate.onclick = () => {
+      gate.remove();
+      f.appendChild(q); f.appendChild(opts);
+      q.scrollIntoView({behavior:'smooth', block:'center'});
+    };
+    f.appendChild(gate);
+  } else {
+    f.appendChild(q); f.appendChild(opts);
+  }
   f.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
