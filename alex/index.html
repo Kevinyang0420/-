@@ -555,7 +555,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
       跟主屏图标同一个病、同一个药：URL 上挂**按内容算的版本号**，
       内容一变 URL 就变，缓存自然失效；内容没变则不变，不会白刷。
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
-const BANKV = 'aeedd328';
+const BANKV = '571b78ef';
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
 /* 🚨 Gemini 免费额度是 **每天 × 每个模型** 分开算的
@@ -3758,10 +3758,48 @@ function openRead(c){
     const a = document.createElement('a');
     a.className = 'play'; a.target = '_blank'; a.rel = 'noopener';
     a.href = c.url; a.style.textDecoration = 'none'; a.style.marginLeft = '8px';
-    a.textContent = '🔗 看原文';
+    a.textContent = '🔗 原文出处';
     box.appendChild(a);
   }
   f.appendChild(box);
+
+  /* 🚨 原文段落**直接摊在这里**，不让他去几百页的年报里找。
+     Kevin 2026-08-08：「你现在是直接 refer 到了整个年报，但年报很长，
+     有几百甚至几千页，我没办法从这几千页里面去找到你引用的那个句子。
+     你能不能把你引用的关键段落给摘抄出来？我看到它怎么说的就行了。」
+     —— 一个指向几百页文件的链接，等于没有出处。 */
+  /* 🚨 段落是**点开才取**的（web/reading_para.json，0.84 MB）。
+     跟场景库分片同一个道理：列表页不该为了「点开才看得到的东西」先下 1.7 MB。 */
+  if (!c.para && !READ._para){
+    READ._para = fetch('reading_para.json?v=' + (window.BANKV || 'dev'))
+      .then(r => r.json()).catch(() => ({}));
+  }
+  if (!c.para && READ._para){
+    READ._para.then(m => {
+      const hit = m && m[c.id];
+      if (hit && READ.cur === c){ c.para = hit.p; c.srctitle = hit.t; openRead(c); }
+    });
+  }
+  if (c.para){
+    const pb = document.createElement('div');
+    pb.className = 'card';
+    const i = c.para.toLowerCase().indexOf((c.en || '').toLowerCase());
+    let html;
+    if (i >= 0){
+      // 把他学的那句在段落里**高亮**出来，一眼看到上下文
+      html = esc(c.para.slice(0, i))
+           + '<mark style="background:#fff2a8;padding:0 2px">'
+           + esc(c.para.slice(i, i + c.en.length)) + '</mark>'
+           + esc(c.para.slice(i + c.en.length));
+    } else {
+      html = esc(c.para);
+    }
+    pb.innerHTML = '<div class="lb">原文段落'
+      + (c.srctitle ? ' · ' + esc(String(c.srctitle).slice(0, 46)) : '')
+      + '</div><div style="font-size:14px;line-height:1.85;opacity:.92">'
+      + html + '</div>';
+    f.appendChild(pb);
+  }
 
   if (c.kind === 'phrase'){
     const w = document.createElement('div');
