@@ -2284,10 +2284,30 @@ async function showNews(){
   catch(e){ f.innerHTML = `<div class="note">${esc(e.message)}</div>`; return; }
   f.innerHTML = '<div class="note">真实的 BBC 6 Minute English，每集约 6 分钟。'
     + '音频直接来自 BBC，我们不转存。题目按段落出，答错可以只回听那 20 秒。</div>';
-  nb.eps.forEach(ep => {
+  /* 🚨 做过的排到后面去。Kevin 2026-08-08：「我这些做过的题，就不要老是放在最顶上了…
+     既然是实时听力，做过的题你就把它放到后面去。」
+     只加个「做过」标签不够 —— 他每次打开还是先看到那几集，得往下翻才有新的。
+     组内保持原顺序（新的仍然在前），只是整体分成「没做过 / 做过」两段。 */
+  const _done = newsDone();
+  const _eps = nb.eps.slice().sort((a, b) =>
+    (_done.has(a.title) ? 1 : 0) - (_done.has(b.title) ? 1 : 0));
+  const _fresh = _eps.filter(e => !_done.has(e.title)).length;
+  if (_fresh === 0 && _eps.length){
+    const n = document.createElement('div');
+    n.className = 'note';
+    n.textContent = '这一批都练过了 —— 明早会自动抓新的一集。再练一遍也行。';
+    f.appendChild(n);
+  }
+  _eps.forEach((ep, _i) => {
     const c = document.createElement('div');
     c.className = 'card';
-    const done = newsDone().has(ep.title);
+    const done = _done.has(ep.title);
+    if (done && _i === _fresh && _fresh > 0){
+      const sep = document.createElement('div');
+      sep.className = 'note';
+      sep.textContent = '—— 下面是练过的 ——';
+      f.appendChild(sep);
+    }
     c.innerHTML = `<div class="hd"><span class="role">${esc(ep.title)}</span>
         ${done ? '<span class="done">做过</span>' : ''}</div>
       <div class="sit">${esc(ep.gist || '')}</div>
