@@ -358,11 +358,11 @@ button{font-family:inherit}
   border-bottom-width:4px;color:var(--fg-strong)}
 .tile.t-read .ds,
 .tile.t-write .ds{color:var(--muted)}
-#wtext{width:100%;box-sizing:border-box;min-height:190px;margin-top:14px;
+#wtext,#etext{width:100%;box-sizing:border-box;min-height:190px;margin-top:14px;
   padding:13px 14px;border:2px solid var(--line);border-radius:10px;
   font-size:15px;line-height:1.65;font-family:inherit;color:var(--fg-strong);
   background:var(--card);resize:vertical}
-#wtext:focus{outline:none;border-color:var(--brand)}
+#wtext:focus,#etext:focus{outline:none;border-color:var(--brand)}
 #feed .better ul{padding-left:22px}
 
 /* ═══ 打卡：路线图 / 领取按钮 / 宝石商店 ═══ */
@@ -566,7 +566,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
       跟主屏图标同一个病、同一个药：URL 上挂**按内容算的版本号**，
       内容一变 URL 就变，缓存自然失效；内容没变则不变，不会白刷。
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
-const BANKV = '3a554d30';
+const BANKV = '4f5dcc2c';
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
 /* 🚨 Gemini 免费额度是 **每天 × 每个模型** 分开算的
@@ -3655,10 +3655,52 @@ let TAB_CUR = 'home';
      passage  一小段职业英文范文，逐句注解写法
    两类都挂同一套写法维度（归因/模态/名词化/衔接/语域…），跟写作模块判的是同一套，
    所以「拿这句去练写作」能直接把句式塞进那边的目标表达里。 */
-const READ = {items: [], page: 0, filter: 'all', cur: null};
+const READ = {items: [], page: 0, filter: 'all', cur: null, mode:'essay', q:'', _t:0};
 const RDIM = {attr:'归因', modal:'模态', nom:'名词化', link:'衔接',
               reg:'语域', quant:'量化', scope:'范围', hedge:'软化',
               misc:'表达'};
+
+/* ═══ 范文精读 ═══
+   Kevin 2026-08-08：「目前的阅读材料太碎片化了…可以每天提供一些优秀的范文，
+   而不是只给孤立的句子。」「写作最难的是表达方式——如何以书面的形式，
+   把要讲的话干净利落、毫无歧义地表达出来，这才是关键。」
+
+   🚨 这一块跟句式卡的根本区别：句式卡教「这句好在哪」，范文教「**整篇怎么搭**」。
+      所以详情页最上面那块是**逐段结构**（这一段在干什么），不是词汇注解。
+      他缺的不是句子，是结构。 */
+const ESSAY = {items: [], cur: null, page: 0, task: 'all'};
+
+const ETASK = {finding:'Finding', query:'管理层问询', exec:'执行摘要',
+               chart:'图表解读', chase:'催办邮件', caveat:'范围限制',
+               valuation:'估值说明', escalate:'内部升级', dispute:'分歧沟通'};
+
+async function loadEssays(){
+  if (ESSAY.items.length) return ESSAY.items;
+  try {
+    const r = await fetch(bankURL('essays.json'), {cache:'no-cache'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const b = await r.json();
+    // 🚨 过滤条件要跟生成端的判据对齐：缺 structure 的渲染出来是个空壳，
+    //    宁可不显示也不给他一个「点进去什么都没有」的卡。
+    ESSAY.items = (b.items || []).filter(c =>
+      c && c.id && c.en && c.scene &&
+      Array.isArray(c.structure) && c.structure.length >= 3);
+  } catch(_){ ESSAY.items = []; }
+  return ESSAY.items;
+}
+
+/* 范文读过几篇，跟句式收藏分开记 */
+function eDone(id){
+  try { return (JSON.parse(localStorage.getItem('alex_edone') || '{}'))[id] || 0; }
+  catch(_){ return 0; }
+}
+function eMark(id){
+  try {
+    const d = JSON.parse(localStorage.getItem('alex_edone') || '{}');
+    d[id] = (d[id] || 0) + 1;
+    localStorage.setItem('alex_edone', JSON.stringify(d));
+  } catch(_){}
+}
 
 async function loadReading(){
   if (READ.items.length) return READ.items;
@@ -3689,41 +3731,156 @@ const isKept = id => kept().some(x => x.id === id);
 
 async function showRead(){
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
-  $('#sub').textContent = '读别人怎么写，再自己写';
   const f = $('#feed');
   f.innerHTML = '<div class="note">正在取…</div>';
-  const all = await loadReading();
-  if (!all.length){
-    f.innerHTML = '<div class="note">阅读素材还没下下来，检查一下网络再进来。</div>';
+  /* 🚨 两条腿一起取。范文是主线，句式卡降权成工具 ——
+     Kevin 2026-08-08：「目前的阅读材料太碎片化了…可以每天提供一些优秀的范文」 */
+  const [es, all] = await Promise.all([loadEssays(), loadReading()]);
+
+  if (READ.mode === 'phrase') return showPhrases(all, es);
+
+  $('#sub').textContent = '一天一篇，看别人怎么把话说清楚';
+  if (!es.length){
+    f.innerHTML = '<div class="note">范文还没下下来，检查一下网络再进来。</div>';
+    if (all.length){
+      const b = document.createElement('button');
+      b.className = 'play'; b.style.marginTop = '12px';
+      b.textContent = '先去看句式速查（' + all.length + ' 条）';
+      b.onclick = () => { READ.mode = 'phrase'; showRead(); };
+      f.appendChild(b);
+    }
     return;
   }
-  const pool = all.filter(c => READ.filter === 'all' ? true
-                             : READ.filter === 'real' ? !!c.url
-                             : c.kind === READ.filter);
+
+  const pool = ESSAY.task === 'all' ? es : es.filter(c => c.task === ESSAY.task);
+  /* 排序：没读过的在前，读过的沉底 —— 跟听力那边同一个道理，
+     Kevin 2026-08-08：「做过的题你就把它放到后面去」 */
   const sorted = pool.slice().sort((a, b) => {
-    const d = (isKept(a.id) ? 1 : 0) - (isKept(b.id) ? 1 : 0);
+    const d = (eDone(a.id) ? 1 : 0) - (eDone(b.id) ? 1 : 0);
     if (d) return d;
-    /* 🚨 真实披露排前面、Alex 自己写的范文沉底。
-       Kevin 2026-08-04 要的是「从专业点的财经频道摘」—— 那么默认看到的
-       就该是真材料，范文只是补充。有出处链接的（url）就是真的。 */
+    const h = x => [...x].reduce((k, c) => (k * 31 + c.charCodeAt(0)) % 9973, 7);
+    return h(a.id + DAYSEED) - h(b.id + DAYSEED);
+  });
+  const PAGE = 5;
+  const from = (ESSAY.page * PAGE) % Math.max(sorted.length, 1);
+  const show = [];
+  for (let k = 0; k < Math.min(PAGE, sorted.length); k++)
+    show.push(sorted[(from + k) % sorted.length]);
+
+  const cnt = {};
+  es.forEach(c => { cnt[c.task] = (cnt[c.task] || 0) + 1; });
+  const chip = (v, nm) => '<button class="rchip' +
+    (ESSAY.task === v ? ' on' : '') + '" data-t="' + v + '">' + nm + '</button>';
+  f.innerHTML =
+    '<div class="tabs" style="margin-bottom:10px;flex-wrap:wrap">' +
+      chip('all', '全部 ' + es.length) +
+      Object.keys(ETASK).filter(k => cnt[k])
+        .map(k => chip(k, ETASK[k] + ' ' + cnt[k])).join('') +
+    '</div>' +
+    show.map(c => {
+      const n = eDone(c.id);
+      const w = (c.en || '').split(/\s+/).filter(Boolean).length;
+      return '<div class="card" data-id="' + c.id + '"><div class="hd">' +
+        '<span class="ct" style="font-size:11.5px;color:var(--brand-dark);' +
+        'font-weight:800">' + esc(ETASK[c.task] || c.task) +
+        '<span style="color:var(--faint);font-weight:600"> · ' + w + ' 词 · ' +
+        (c.len === 'long' ? '长篇' : '短篇') + '</span></span>' +
+        (n ? '<span class="done">读过 ' + n + '</span>' : '') + '</div>' +
+        '<div class="en" style="margin-top:2px;font-size:15px">' +
+        esc(c.t || '') + '</div>' +
+        '<div class="sit" style="margin-top:6px">' +
+        esc(((c.scene || {}).goal) || '') + '</div>' +
+        '<div style="margin-top:7px;display:flex;gap:5px;flex-wrap:wrap">' +
+        (c.structure || []).slice(0, 6).map(s =>
+          '<span style="font-size:10.5px;padding:1.5px 6px;border-radius:99px;' +
+          'background:var(--brand-soft);color:var(--brand-dark);font-weight:700">' +
+          esc(s.role || '') + '</span>').join('') +
+        '</div></div>';
+    }).join('');
+
+  document.querySelectorAll('#feed .rchip').forEach(b =>
+    b.onclick = () => { ESSAY.task = b.dataset.t; ESSAY.page = 0; showRead(); });
+  document.querySelectorAll('#feed .card').forEach(el =>
+    el.onclick = () => {
+      const c = es.find(x => x.id === el.dataset.id);
+      if (c) go(() => openEssay(c), '范文精读');
+    });
+
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;margin-top:14px';
+  if (sorted.length > PAGE){
+    const more = document.createElement('button');
+    more.className = 'play'; more.style.flex = '1';
+    more.textContent = '换一批（共 ' + sorted.length + ' 篇）';
+    more.onclick = () => { ESSAY.page++; showRead(); };
+    row.appendChild(more);
+  }
+  const ph = document.createElement('button');
+  ph.className = 'play'; ph.style.flex = '1';
+  ph.textContent = '🔍 句式速查 ' + all.length;
+  ph.onclick = () => { READ.mode = 'phrase'; READ.page = 0; showRead(); };
+  row.appendChild(ph);
+  f.appendChild(row);
+}
+
+/* 搜到了要看得出**为什么命中**。
+   🚨 原来长段落一律截前 88 字符，命中词在后面就完全看不见 ——
+      搜「provision」出来 8 条，其中 6 条卡面上一个 provision 都没有，
+      看起来像搜错了。截取窗口要跟着命中位置走，并且高亮。 */
+function snippet(text, q, len){
+  len = len || 88;
+  const t = text || '';
+  const i = q ? t.toLowerCase().indexOf(q.toLowerCase()) : -1;
+  if (i < 0) return esc(t.slice(0, len)) + (t.length > len ? '…' : '');
+  const from = Math.max(0, i - Math.floor(len / 3));
+  const part = t.slice(from, from + len);
+  const j = part.toLowerCase().indexOf(q.toLowerCase());
+  return (from ? '…' : '') + esc(part.slice(0, j)) +
+    '<mark style="background:#fff2a8;color:#000;padding:0 2px">' +
+    esc(part.slice(j, j + q.length)) + '</mark>' +
+    esc(part.slice(j + q.length)) + (from + len < t.length ? '…' : '');
+}
+
+/* 句式速查 —— 1553 张老卡降权保留（Kevin 2026-08-08 拍板）。
+   🚨 不删：他练过的收藏记录还挂在这些 id 上，删了就失效。
+   它现在是**工具**：写东西时来搜一下，不再是每日主线。 */
+function showPhrases(all, es){
+  const f = $('#feed');
+  $('#sub').textContent = '写东西时来搜一句';
+  const q = (READ.q || '').trim().toLowerCase();
+  const pool = all.filter(c => {
+    if (READ.filter === 'real' && !c.url) return false;
+    if (READ.filter === 'kept' && !isKept(c.id)) return false;
+    if (!q) return true;
+    return (c.en || '').toLowerCase().includes(q) ||
+           (c.slot || '').toLowerCase().includes(q) ||
+           (c.when || '').includes(q) || (c.t || '').includes(q);
+  });
+  const sorted = pool.slice().sort((a, b) => {
     const r = (b.url ? 1 : 0) - (a.url ? 1 : 0);
     if (r) return r;
     const h = x => [...x].reduce((k, c) => (k * 31 + c.charCodeAt(0)) % 9973, 7);
     return h(a.id + DAYSEED) - h(b.id + DAYSEED);
   });
-  const PAGE = 5;
+  const PAGE = 8;
   const from = (READ.page * PAGE) % Math.max(sorted.length, 1);
   const show = [];
   for (let k = 0; k < Math.min(PAGE, sorted.length); k++)
     show.push(sorted[(from + k) % sorted.length]);
   const chip = (v, nm) => '<button class="rchip' + (READ.filter === v ? ' on' : '') +
     '" data-f="' + v + '">' + nm + '</button>';
-  f.innerHTML = '<div class="tabs" style="margin-bottom:10px">' +
+
+  f.innerHTML =
+    '<input id="rq" placeholder="搜一个说法…（英文或中文场景）" ' +
+    'style="width:100%;padding:10px 12px;border:1px solid var(--line);' +
+    'border-radius:12px;font-size:14px;background:var(--card);color:var(--fg);' +
+    'margin-bottom:10px" value="' + esc(READ.q || '') + '">' +
+    '<div class="tabs" style="margin-bottom:10px">' +
       chip('all', '全部 ' + all.length) +
       chip('real', '真实披露 ' + all.filter(c => c.url).length) +
-      chip('phrase', '句式 ' + all.filter(c => c.kind === 'phrase').length) +
-      chip('passage', '范文段 ' + all.filter(c => c.kind === 'passage').length) +
+      chip('kept', '我收藏的 ' + all.filter(c => isKept(c.id)).length) +
     '</div>' +
+    (sorted.length ? '' : '<div class="note">没搜到，换个词试试。</div>') +
     show.map(c => '<div class="card" data-id="' + c.id + '"><div class="hd">' +
       '<span class="ct" style="font-size:11.5px;color:var(--brand-dark);' +
       'font-weight:800">' + (RDIM[c.dim] || c.dim) +
@@ -3731,28 +3888,50 @@ async function showRead(){
                esc(c.src) + '</span>' : '') + '</span>' +
       (isKept(c.id) ? '<span class="done">已收藏</span>' : '') + '</div>' +
       '<div class="en" style="margin-top:2px">' +
-      esc(c.kind === 'phrase' ? c.en : (c.t || '') ) + '</div>' +
+      esc(c.kind === 'phrase' ? c.en : (c.t || '')) + '</div>' +
       (c.kind === 'passage'
         ? '<div class="sit" style="margin-top:6px">' +
-          esc(c.en.slice(0, 88)) + '…</div>' : '') +
+          snippet(c.en, q) + '</div>' : '') +
       '</div>').join('');
+
+  const inp = $('#rq');
+  if (inp){
+    // 🚨 输入时不整页重绘（重绘会让输入框失焦，打一个字就掉出来）——
+    //    只在停手 300ms 后重绘，且重绘完把焦点和光标位置还回去。
+    inp.oninput = () => {
+      clearTimeout(READ._t);
+      READ._t = setTimeout(() => {
+        READ.q = inp.value; READ.page = 0;
+        showPhrases(all, es);
+        const n = $('#rq');
+        if (n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+      }, 300);
+    };
+  }
   document.querySelectorAll('#feed .rchip').forEach(b =>
-    b.onclick = () => { READ.filter = b.dataset.f; READ.page = 0; showRead(); });
+    b.onclick = () => { READ.filter = b.dataset.f; READ.page = 0;
+                        showPhrases(all, es); });
   document.querySelectorAll('#feed .card').forEach(el =>
-    // 🚨 走 go() 而不是直接调 openRead ——
-    //    直接调不进导航栈，左上角的「← 返回」就不出现。
-    //    Kevin 2026-08-08：「阅读这个 section 点进去之后，它没有返回按钮」
     el.onclick = () => {
       const c = all.find(x => x.id === el.dataset.id);
-      if (c) go(() => openRead(c), '阅读');
+      if (c) go(() => openRead(c), '句式');
     });
+
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;margin-top:14px';
   if (sorted.length > PAGE){
     const more = document.createElement('button');
-    more.className = 'play'; more.style.marginTop = '14px';
+    more.className = 'play'; more.style.flex = '1';
     more.textContent = '换一批（共 ' + sorted.length + ' 条）';
-    more.onclick = () => { READ.page++; showRead(); };
-    f.appendChild(more);
+    more.onclick = () => { READ.page++; showPhrases(all, es); };
+    row.appendChild(more);
   }
+  const bk = document.createElement('button');
+  bk.className = 'play'; bk.style.flex = '1';
+  bk.textContent = '📖 回到范文' + (es.length ? ' ' + es.length : '');
+  bk.onclick = () => { READ.mode = 'essay'; READ.page = 0; showRead(); };
+  row.appendChild(bk);
+  f.appendChild(row);
 }
 
 function copyBtn(text, label){
@@ -3914,6 +4093,283 @@ function openRead(c){
   markDaily('read');
 }
 
+
+/* ═══ 范文精读详情页 ═══
+   顺序是有讲究的，从「整体」走到「局部」再走到「自己动手」：
+     ① 场景  —— 谁写给谁、要达成什么、有什么约束（不知道读者是谁就学不到表达）
+     ② 范文  —— 每一段左边标着它在干什么（抛结论 / 给证据 / 限定范围 …）
+     ③ 好在哪 —— 三处具体的词，说清换一种写法会被误读成什么
+     ④ 带走  —— 可套用句式，每条都逐字出自本篇（生成端已校验）
+     ⑤ 改烂句 —— 给一段写得含糊的，他改完再看范文怎么处理
+   Kevin 2026-08-08：「写作最难的是表达方式——如何以书面的形式，
+   把要讲的话干净利落、毫无歧义地表达出来，这才是关键。」 */
+
+const ENORM = s => (s || '').replace(/[’‘]/g, "'").replace(/[“”]/g, '"')
+                            .replace(/\s+/g, ' ').trim().toLowerCase();
+
+function essayParas(c){
+  /* 把正文切段，并给每段配上它的 role。
+     🚨 配对靠「这一段以哪条 structure.q 开头」——
+        不能按下标一一对应：模型偶尔会给 4 段正文 3 条 structure，
+        按下标配就会把「限定范围」的标签贴到「给证据」那段上，
+        而且**不会报错**，只是教错了。 */
+  const paras = (c.en || '').split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+  const st = (c.structure || []).slice();
+  return paras.map(p => {
+    const np = ENORM(p);
+    const i = st.findIndex(s => s && s.q && np.startsWith(ENORM(s.q)));
+    const hit = i >= 0 ? st.splice(i, 1)[0] : null;
+    return {text: p, role: hit ? hit.role : '', why: hit ? hit.why : ''};
+  });
+}
+
+const ERULES =
+  '你是英语写作教练 Alex，只看**英语表达方式**，不评价专业判断。\n' +
+  '使用者是中国人，做财务尽职调查，正在练商务英语写作。\n\n' +
+  '任务背景：{scene}\n' +
+  '他刚读过一篇范文，那篇的段落结构是：{struct}\n\n' +
+  '现在给了他一段**写得含糊**的英文，让他改清楚。原始含糊版是：\n' +
+  '"""{bad}"""\n\n' +
+  '他改成了：\n"""{text}"""\n\n' +
+  '严格输出这个 JSON，不要任何解释：\n' +
+  '{"level":"error|polish|fine",' +
+  '"fixed":["中文，他这次改对了的地方，每条一句，最多 3 条"],' +
+  '"points":[{"quote":"原样摘出他写的还有问题的片段",' +
+  '"issue":"从这六个里挑一个：还是含糊/主语不清/结论藏太深/该给数字没给/' +
+  '程度词堆砌/语域偏了",' +
+  '"native":"母语者写报告时这一小段会怎么写"}],' +
+  '"better":"把他这一版再改写成可以直接抄进报告的英文，保留他的事实和结构"}\n\n' +
+  '规矩：\n' +
+  '- points 最多 4 条；他改得好就给 0 条、level 填 fine\n' +
+  '- quote 必须是他原文里**一字不差**的片段\n' +
+  '- 🚨 重点看他有没有把话**说清楚**：谁做的、多少钱、什么期间、结论在不在第一句\n' +
+  '- 🚨 只讲英语。不许写「证据不足不该下结论」这类专业判断。';
+
+function openEssay(c){
+  if (!c) return;
+  ESSAY.cur = c;
+  const f = $('#feed');
+  $('#sub').textContent = (ETASK[c.task] || '范文') +
+    ' · ' + (c.len === 'long' ? '长篇' : '短篇');
+  f.innerHTML = '';
+
+  // ① 场景卡
+  const sc = c.scene || {};
+  const scb = document.createElement('div');
+  scb.className = 'better';
+  scb.innerHTML = '<div class="lb">' + esc(c.t || '范文') + '</div>' +
+    [['你是', sc.who], ['写给', sc.to], ['要达成', sc.goal], ['约束', sc.limit]]
+      .filter(x => x[1])
+      .map(x => '<div style="font-size:13.5px;line-height:1.7;display:flex;gap:8px">' +
+        '<span style="color:var(--faint);font-weight:700;flex:0 0 44px">' +
+        x[0] + '</span><span>' + esc(cleanZh(x[1])) + '</span></div>').join('');
+  f.appendChild(scb);
+
+  // ② 范文全文 —— 每段左边标它在干什么
+  const paras = essayParas(c);
+  const eb = document.createElement('div');
+  eb.className = 'better'; eb.style.marginTop = '12px';
+  eb.innerHTML = '<div class="lb">范文 · ' +
+    (c.en || '').split(/\s+/).filter(Boolean).length + ' 词</div>' +
+    paras.map(p =>
+      '<div style="padding:10px 0;border-top:1px solid var(--line)">' +
+      (p.role ? '<div style="display:flex;align-items:center;gap:7px;' +
+        'margin-bottom:5px"><span style="font-size:10.5px;padding:2px 8px;' +
+        'border-radius:99px;background:var(--brand);color:var(--on-accent);' +
+        'font-weight:800">' + esc(p.role) + '</span>' +
+        (p.why ? '<span style="font-size:12px;color:var(--muted);flex:1">' +
+          esc(cleanZh(p.why)) + '</span>' : '') + '</div>' : '') +
+      '<div class="en" style="font-size:15px;line-height:1.8;white-space:pre-wrap">' +
+      esc(p.text) + '</div></div>').join('');
+  const sp = document.createElement('button');
+  sp.className = 'play'; sp.textContent = '🔊 听一遍';
+  sp.onclick = () => { unlockTTS(); sp.classList.add('on');
+    say((c.en || '').replace(/\n+/g, ' '), 'en')
+      .then(() => sp.classList.remove('on')); };
+  eb.appendChild(sp);
+  eb.appendChild(copyBtn(c.en || '', '📋 复制全文'));
+  f.appendChild(eb);
+
+  // ③ 好在哪
+  if (Array.isArray(c.why) && c.why.length){
+    const wb = document.createElement('div');
+    wb.className = 'better'; wb.style.marginTop = '12px';
+    wb.innerHTML = '<div class="lb">为什么这么写</div>' +
+      c.why.map(x => '<div style="padding:9px 0;border-top:1px solid var(--line)">' +
+        '<div class="en" style="font-size:13.5px">' + esc((x || {}).q || '') + '</div>' +
+        '<div style="font-size:13px;color:var(--muted);margin-top:4px">' +
+        esc(cleanZh((x || {}).note || '')) + '</div>' +
+        ((x || {}).alt ? '<div style="font-size:12.5px;color:var(--faint);' +
+          'margin-top:4px">换个写法 · ' + esc(cleanZh(x.alt)) + '</div>' : '') +
+        '</div>').join('');
+    f.appendChild(wb);
+  }
+
+  // ④ 可以带走的句式
+  if (Array.isArray(c.take) && c.take.length){
+    const tb = document.createElement('div');
+    tb.className = 'better'; tb.style.marginTop = '12px';
+    tb.innerHTML = '<div class="lb">可以带走的句式</div>';
+    c.take.forEach(x => {
+      const slot = (x || {}).slot || '';
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:9px 0;border-top:1px solid var(--line);' +
+        'display:flex;align-items:center;gap:8px';
+      row.innerHTML = '<span style="flex:1"><span class="en" ' +
+        'style="font-size:13.5px">' + esc(slot) + '</span></span>';
+      row.appendChild(copyBtn(slot, '📋'));
+      tb.appendChild(row);
+    });
+    f.appendChild(tb);
+  }
+
+  // ⑤ 改烂句 —— 学表达最快的一条路
+  if (c.bad) essayRewrite(f, c);
+
+  // 收藏 / 拿去写
+  const act = document.createElement('div');
+  act.style.cssText = 'display:flex;gap:8px;margin-top:14px';
+  const kb = document.createElement('button');
+  kb.className = 'play'; kb.style.flex = '1';
+  kb.textContent = isKept(c.id) ? '★ 已收藏' : '☆ 记下来';
+  kb.onclick = () => { kb.textContent = keepToggle(c) ? '★ 已收藏' : '☆ 记下来'; };
+  const gb = document.createElement('button');
+  gb.className = 'play'; gb.style.flex = '1';
+  gb.textContent = '✍️ 拿去练写作';
+  gb.onclick = () => {
+    /* 🚨 打通阅读与写作（PRD 2.3）：把整篇的**结构**带过去，不只是一句句式。
+       他缺的是结构，只带一句话过去等于又退回碎片化。 */
+    WRITE.hint = {en: c.en,
+                  slot: ((c.take || [])[0] || {}).slot || '',
+                  essay: c.id, t: c.t,
+                  struct: (c.structure || []).map(s => s.role).join(' → ')};
+    WRITE.page = 0;
+    go(showWrite, '报告写作');
+    toast('照着刚才那篇的结构写：' +
+          (c.structure || []).map(s => s.role).join(' → '));
+  };
+  act.appendChild(kb); act.appendChild(gb);
+  f.appendChild(act);
+
+  eMark(c.id);
+  markDaily('read');
+}
+
+function essayRewrite(f, c){
+  const box = document.createElement('div');
+  box.className = 'better'; box.style.marginTop = '12px';
+  box.innerHTML = '<div class="lb">改烂句 · 把下面这段改清楚</div>' +
+    '<div style="font-size:13.5px;line-height:1.75;opacity:.78;' +
+    'font-style:italic;padding:8px 0">' + esc(c.bad) + '</div>';
+  const ta = document.createElement('textarea');
+  ta.id = 'etext';
+  ta.placeholder = '改写成清楚、没有歧义的版本…（改不动就先照范文的结构搭个架子）';
+  box.appendChild(ta);
+  const btn = document.createElement('button');
+  btn.className = 'play'; btn.id = 'ego'; btn.textContent = '交给 Alex 看';
+  const err = document.createElement('div');
+  err.id = 'eerr';
+  err.style.cssText = 'color:var(--rec);font-size:13px;margin-top:8px';
+  const rev = document.createElement('button');
+  rev.className = 'play'; rev.style.marginLeft = '8px';
+  rev.textContent = '👀 直接看毛病在哪';
+  rev.onclick = () => {
+    rev.remove();
+    const w = document.createElement('div');
+    w.style.cssText = 'font-size:13px;color:var(--muted);line-height:1.7;' +
+      'margin-top:10px;padding-top:10px;border-top:1px solid var(--line)';
+    w.innerHTML = '<b>这一版糟在哪：</b>' + esc(cleanZh(c.badwhy || ''));
+    box.appendChild(w);
+  };
+
+  btn.onclick = async () => {
+    const text = ta.value.trim();
+    err.textContent = '';
+    if (text.split(/\s+/).filter(Boolean).length < 12){
+      err.textContent = '先写够一段（至少十几个词），太短了看不出改没改清楚。';
+      return;
+    }
+    btn.disabled = true; btn.textContent = 'Alex 在看…';
+    let d = null;
+    try {
+      const sc = c.scene || {};
+      const p = ERULES
+        .replace('{scene}', [sc.who, sc.to, sc.goal].filter(Boolean).join('；'))
+        .replace('{struct}', (c.structure || []).map(s => s.role).join(' → '))
+        .replace('{bad}', c.bad)
+        .replace('{text}', text);
+      d = firstJson(await textCall(p, 0.3));
+    } catch(e){
+      err.textContent = '没看成：' + (e.message || e);
+      btn.disabled = false; btn.textContent = '交给 Alex 看';
+      return;
+    }
+    btn.disabled = false; btn.textContent = '再改一遍';
+    if (!d){ err.textContent = '返回的东西读不出来，再点一次。'; return; }
+    renderRewrite(box, d, c);
+  };
+  box.appendChild(btn);
+  box.appendChild(rev);
+  box.appendChild(err);
+  f.appendChild(box);
+}
+
+function renderRewrite(box, d, c){
+  const old = box.querySelector('.rw-out');
+  if (old) old.remove();
+  const out = document.createElement('div');
+  out.className = 'rw-out';
+  out.style.cssText = 'margin-top:12px;padding-top:12px;' +
+    'border-top:1px solid var(--line)';
+  const lv = d.level === 'fine' ? '✅ 改清楚了'
+           : d.level === 'polish' ? '💡 清楚了，还能更像报告' : '✍️ 还有几处含糊';
+  out.innerHTML = '<div class="lb">' + lv + '</div>' +
+    (Array.isArray(d.fixed) && d.fixed.length
+      ? '<div style="font-size:13px;color:var(--muted);margin-bottom:8px">' +
+        d.fixed.slice(0, 3).map(x => '· ' + esc(cleanZh(x))).join('<br>') +
+        '</div>' : '');
+  (Array.isArray(d.points) ? d.points.slice(0, 4) : []).forEach(p => {
+    if (!p || !p.quote) return;
+    const row = document.createElement('div');
+    row.className = 'card'; row.style.margin = '8px 0 0';
+    row.innerHTML =
+      '<div class="hd"><span class="ct" style="font-size:12px;color:var(--muted)">' +
+      esc(p.issue || '') + '</span></div>' +
+      '<div style="font-size:13.5px;text-decoration:line-through;color:var(--muted)">' +
+      esc(p.quote) + '</div>' +
+      '<div class="en" style="margin-top:6px">' + esc(p.native || '') + '</div>';
+    out.appendChild(row);
+    // 错题本共用一套，别开第二个
+    try {
+      const e = ST.book[p.quote] || (ST.book[p.quote] =
+        {pat: p.quote, n: 0, hits: 0, hitDays: [], state: 'practising',
+         ex: [], first: TODAY(), from: 'rewrite'});
+      e.n++; e.last = TODAY(); e.dim = p.issue || e.dim; e.better = p.native;
+      e.state = 'practising';
+    } catch(_){}
+  });
+  if (d.better){
+    const b2 = document.createElement('div');
+    b2.className = 'better'; b2.style.marginTop = '10px';
+    b2.innerHTML = '<div class="lb">再往前一步的写法</div>' +
+      '<div class="en">' + esc(d.better) + '</div>';
+    b2.appendChild(copyBtn(d.better, '📋 复制'));
+    out.appendChild(b2);
+  }
+  // 🚨 交完才亮出「原版糟在哪」—— 先看答案就没有练到
+  if (c.badwhy){
+    const w = document.createElement('div');
+    w.style.cssText = 'font-size:13px;color:var(--muted);line-height:1.7;' +
+      'margin-top:10px';
+    w.innerHTML = '<b>原来那一版糟在哪：</b>' + esc(cleanZh(c.badwhy));
+    out.appendChild(w);
+  }
+  box.appendChild(out);
+  checkIn(); saveST();
+  markDaily('write');
+  out.scrollIntoView({block: 'end', behavior: 'smooth'});
+}
+
 /* ═══ 英文报告写作练习 ═══
    Kevin 2026-07-31：「我好久没有写英文报告了，技能也有点生疏了…从教学维度来说，
    也是需要去练一下的。」
@@ -4040,8 +4496,18 @@ function startWrite(w){
     hb.className = 'better';
     hb.style.cssText = 'margin-top:12px;border-color:var(--brand);' +
       'background:var(--brand-soft)';
-    hb.innerHTML = '<div class="lb">这次试着用上（刚读到的）</div>' +
-      '<div class="en">' + esc(WRITE.hint.slot) + '</div>';
+    /* 🚨 从范文过来时，带的是**整篇的结构**，不只是一句句式（PRD 2.3）。
+       只带一句过去等于又退回碎片化 —— 他缺的是结构不是句子。 */
+    hb.innerHTML = '<div class="lb">' +
+      (WRITE.hint.struct ? '照着刚读的《' + esc(WRITE.hint.t || '范文') + '》来写'
+                         : '这次试着用上（刚读到的）') + '</div>' +
+      (WRITE.hint.struct
+        ? '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px">' +
+          WRITE.hint.struct.split(' → ').map((r, i) =>
+            '<span style="font-size:10.5px;padding:2px 8px;border-radius:99px;' +
+            'background:var(--brand);color:var(--on-accent);font-weight:800">' +
+            (i + 1) + '. ' + esc(r) + '</span>').join('') + '</div>' : '') +
+      (WRITE.hint.slot ? '<div class="en">' + esc(WRITE.hint.slot) + '</div>' : '');
     const x = document.createElement('button');
     x.className = 'play'; x.textContent = '不用了';
     x.onclick = () => { WRITE.hint = null; hb.remove(); };
@@ -4079,8 +4545,17 @@ async function submitWrite(){
     const p = WRULES.replace('{brief}', w.brief)
                     .replace('{facts}', w.facts.map(x => '- ' + x).join('\n'))
                     .replace('{tgt}', ((w.tgt || []).concat(
-                       WRITE.hint ? ['（他刚读到的写法，这次特别想练：' +
-                                     WRITE.hint.slot + '）'] : [])).join(' / '))
+                       WRITE.hint ? [
+                         (WRITE.hint.struct
+                            ? '（他刚读过一篇范文，段落结构是：' +
+                              WRITE.hint.struct +
+                              '。请**对照这个结构**看他这段——哪一段该干的事没干、' +
+                              '或者顺序反了，直接指出来）'
+                            : '') +
+                         (WRITE.hint.slot
+                            ? '（他刚读到的写法，这次特别想练：' +
+                              WRITE.hint.slot + '）' : '')
+                       ] : [])).join(' / '))
                     .replace('{text}', text);
     d = firstJson(await textCall(p, 0.3));
   } catch(e){
