@@ -3771,7 +3771,10 @@ function openRead(c){
   /* 🚨 段落是**点开才取**的（web/reading_para.json，0.84 MB）。
      跟场景库分片同一个道理：列表页不该为了「点开才看得到的东西」先下 1.7 MB。 */
   if (!c.para && !READ._para){
-    READ._para = fetch('reading_para.json?v=' + (window.BANKV || 'dev'))
+    // 🚨 用 BANKV 本身，不是 window.BANKV —— 它是 const，不挂在 window 上，
+    //    写成 window.BANKV 恒为 undefined，缓存参数等于没加，
+    //    段落更新了他还会拿到旧的。**「看起来加了」比没加更坑。**
+    READ._para = fetch('reading_para.json?v=' + BANKV)
       .then(r => r.json()).catch(() => ({}));
   }
   if (!c.para && READ._para){
