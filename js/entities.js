@@ -24,16 +24,21 @@ var Entities = {
     };
   },
 
-  // 宇航员队友：被玩家召唤来一起打光头强（AI 跟随 + 朝 Boss 射子弹）。
-  // 有 3 颗心，会被光头强的攻击打到；被打倒后消失，可再次召唤补位。
+  // 宇航员队友：被玩家召唤来一起打 Boss（AI 跟随 + 朝 Boss 射子弹）。
+  // 有 3 颗心，会被 Boss 的攻击打到；被打倒后消失，可再次召唤补位。
+  // allyType === 'guangtouqiang' 时为光头强本人：体型更大、用专属画法（不是小宇航员）。
   ally: function (x, y, def, side) {
+    var isGTQ = def && def.allyType === 'guangtouqiang';
     return {
-      type: 'ally', x: x, y: y, vx: 0, vy: 0, w: 39, h: 63,
+      type: 'ally', x: x, y: y, vx: 0, vy: 0,
+      w: isGTQ ? 60 : 39, h: isGTQ ? 96 : 63,
       hearts: 3, maxHearts: 3, facing: 1, onGround: false,
       invincible: 0, anim: 0, alive: true, deadT: 0,
       shootT: Util.rand(0.4, 1.2),
       name: def.name, suit: def.suit, trim: def.trim,
-      side: side || 1
+      side: side || 1,
+      allyType: def.allyType || null,
+      hurtT: 0
     };
   },
 

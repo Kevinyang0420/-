@@ -2253,15 +2253,147 @@ var Render = {
     ctx.restore();
   },
 
-  // ===== 光头强进入第二阶段横幅 =====
-  phaseBanner: function (ctx, t) {
+  // ===== 光头强（作为盟友出场：橙黄毛线帽 + 绿工装 + 大鼻子，体型比宇航员大，专属画法）=====
+  guangtouqiangAlly: function (ctx, e, cam) {
+    var x = e.x - cam.x, y = e.y;
+    var cx = x + e.w / 2;
+    var dir = e.facing || 1;
+    var H = e.h;
+    ctx.save();
+    if (!e.alive) {
+      var fall = Math.min(1, e.deadT / 0.5);
+      ctx.translate(cx, y + H);
+      ctx.rotate((e.side >= 0 ? 1 : -1) * fall * 1.5);
+      ctx.globalAlpha = Math.max(0.2, 1 - e.deadT * 1.6);
+      ctx.translate(-cx, -(y + H));
+    } else if (e.invincible > 0 && Math.floor(e.invincible * 16) % 2 === 0) {
+      ctx.restore();
+      return;
+    }
+    // 受击闪白
+    if (e.hurtT > 0) {
+      ctx.globalAlpha = Math.min(0.75, e.hurtT * 5);
+    }
+    var step = e.onGround ? Math.sin(e.anim) * 4 : 0;
+    // 棕色大工靴
+    ctx.fillStyle = '#5a3a1e';
+    ctx.fillRect(cx - 20 + step, y + H - 11, 18, 11);
+    ctx.fillRect(cx + 2 - step, y + H - 11, 18, 11);
+    ctx.fillStyle = '#3a2410';
+    ctx.fillRect(cx - 20 + step, y + H - 3, 18, 3);
+    ctx.fillRect(cx + 2 - step, y + H - 3, 18, 3);
+    // 绿色工装裤
+    ctx.fillStyle = '#3f7a34';
+    ctx.fillRect(cx - 17 + step * 0.6, y + H - 46, 16, 36);
+    ctx.fillRect(cx + 1 - step * 0.6, y + H - 46, 16, 36);
+    // 手臂（浅色卷袖 + 手）
+    ctx.fillStyle = '#e8d8b0';
+    ctx.fillRect(cx - 35, y + H - 64 + step * 0.4, 11, 28);
+    ctx.fillRect(cx + 24, y + H - 64 - step * 0.4, 11, 28);
+    ctx.fillStyle = '#f0c090';
+    ctx.beginPath(); ctx.arc(cx - 29, y + H - 38 + step * 0.4, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 30, y + H - 38 - step * 0.4, 6, 0, Math.PI * 2); ctx.fill();
+    // 浅色 T 恤 + 绿色背带工装身
+    ctx.fillStyle = '#e9dcc0';
+    Util.roundRect(ctx, cx - 26, y + H - 74, 52, 44, 10);
+    ctx.fillStyle = '#3f7a34';
+    Util.roundRect(ctx, cx - 22, y + H - 62, 44, 32, 5);
+    // 背带（两条肩带）
+    ctx.fillStyle = '#357029';
+    ctx.fillRect(cx - 17, y + H - 74, 8, 18);
+    ctx.fillRect(cx + 9, y + H - 74, 8, 18);
+    // 工装口袋 + 铜扣
+    ctx.strokeStyle = '#2c5a22'; ctx.lineWidth = 2;
+    ctx.strokeRect(cx - 11, y + H - 52, 22, 16);
+    ctx.fillStyle = '#f2c84a';
+    ctx.beginPath(); ctx.arc(cx - 14, y + H - 46, 2.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 14, y + H - 46, 2.5, 0, Math.PI * 2); ctx.fill();
+    // 手里的电锯（光头强招牌武器）
+    ctx.save();
+    ctx.translate(cx + 36, y + H - 52 - step * 0.4);
+    ctx.rotate(-0.15 + (e.onGround ? Math.sin(e.anim * 0.5) * 0.1 : 0));
+    if (dir < 0) ctx.scale(-1, 1);
+    ctx.fillStyle = '#e8642a';
+    Util.roundRect(ctx, -10, -10, 18, 16, 4);
+    ctx.fillStyle = '#2a2a2a';
+    Util.roundRect(ctx, -12, -15, 8, 8, 2);
+    ctx.fillStyle = '#b8bcc8';
+    Util.roundRect(ctx, 6, -5, 24, 6, 2);
+    ctx.fillStyle = '#7a7e8a';
+    for (var gi = 0; gi < 5; gi++) {
+      ctx.beginPath();
+      ctx.moveTo(9 + gi * 5, 1); ctx.lineTo(12 + gi * 5, 1); ctx.lineTo(10.5 + gi * 5, 5);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+    // 头（皮肤色，光头顶）
+    ctx.fillStyle = '#f2c99a';
+    ctx.beginPath(); ctx.arc(cx, y + H - 82, 21, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.beginPath(); ctx.ellipse(cx - 8, y + H - 90, 5, 3, -0.5, 0, Math.PI * 2); ctx.fill();
+    // 两侧黑色短发（从毛线帽下露出来）
+    ctx.fillStyle = '#211a12';
+    ctx.beginPath(); ctx.ellipse(cx - 19, y + H - 78, 5, 8, 0.25, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx + 19, y + H - 78, 5, 8, -0.25, 0, Math.PI * 2); ctx.fill();
+    // 络腮胡茬（青色胡渣）
+    ctx.fillStyle = 'rgba(90,70,50,0.8)';
+    ctx.beginPath();
+    ctx.arc(cx, y + H - 74, 17, 0.08 * Math.PI, 0.92 * Math.PI);
+    ctx.arc(cx, y + H - 78, 11, 0.92 * Math.PI, 0.08 * Math.PI, true);
+    ctx.closePath(); ctx.fill();
+    // 大鼻子
+    ctx.fillStyle = '#e8a878';
+    ctx.beginPath(); ctx.ellipse(cx + dir * 2, y + H - 76, 6, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.beginPath(); ctx.arc(cx + dir * 2 - 2, y + H - 78, 1.6, 0, Math.PI * 2); ctx.fill();
+    // 眼 + 凶眉
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx - 8, y + H - 86, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 8, y + H - 86, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#1a1a1a';
+    ctx.beginPath(); ctx.arc(cx - 8 + dir * 2, y + H - 85, 2.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + 8 + dir * 2, y + H - 85, 2.5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#211a12'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(cx - 15, y + H - 93); ctx.lineTo(cx - 3, y + H - 89); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 15, y + H - 93); ctx.lineTo(cx + 3, y + H - 89); ctx.stroke();
+    // 橙黄色毛线帽
+    ctx.fillStyle = '#f2a01e';
+    ctx.beginPath(); ctx.arc(cx, y + H - 94, 19, Math.PI, 0); ctx.closePath(); ctx.fill();
+    ctx.fillRect(cx - 19, y + H - 98, 38, 6);
+    ctx.fillStyle = '#d9860e';
+    ctx.fillRect(cx - 20, y + H - 92, 40, 4);
+    // 帽顶小绒球
+    ctx.fillStyle = '#ffd06a';
+    ctx.beginPath(); ctx.arc(cx, y + H - 104, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+    // 名字牌
+    this.text(ctx, e.name || '光头强', cx, y - 8, 15, '#fff', 'center', true);
+    // 小血条
+    if (e.alive && e.maxHearts) {
+      var bw2 = 46, bx2 = cx - bw2 / 2, by2 = y - 24;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      Util.roundRect(ctx, bx2 - 2, by2 - 2, bw2 + 4, 8, 3);
+      ctx.fillStyle = '#3a2a2a';
+      Util.roundRect(ctx, bx2, by2, bw2, 4, 2);
+      ctx.fillStyle = '#5ad06a';
+      Util.roundRect(ctx, bx2, by2, Math.max(3, bw2 * (e.hearts / e.maxHearts)), 4, 2);
+    }
+    ctx.restore();
+  },
+
+  // ===== Boss 进入第二阶段 / 盟友出场横幅（标题随 Boss 类型变化）=====
+  phaseBanner: function (ctx, t, msg) {
     var a = Math.min(1, Math.min(t / 0.4, (2.4 - t) / 0.4) + 0.2);
+    var title = msg || '光头强生气了！';
+    var isSnake = /蛇/.test(title);
     ctx.save();
     ctx.globalAlpha = a;
-    ctx.fillStyle = 'rgba(120,10,10,0.55)';
+    ctx.fillStyle = isSnake ? 'rgba(10,60,20,0.6)' : 'rgba(120,10,10,0.55)';
     ctx.fillRect(0, 250, VIEW.W, 150);
-    this.strokeText(ctx, '光头强生气了！', VIEW.W / 2, 300, 64, '#ff5a3a', '#2a0000', 10);
-    this.strokeText(ctx, '第二阶段 · 按 B 召唤宇航员队友一起打！', VIEW.W / 2, 372, 32, '#ffe14a', '#2a0000', 7);
+    this.strokeText(ctx, title, VIEW.W / 2, 300, 60, isSnake ? '#7dff7d' : '#ff5a3a', '#06200c', 10);
+    var sub = isSnake ? '第二阶段 · 攻击更猛烈，用原子弹和氢弹轰它！' : '第二阶段 · 按 B 召唤队友一起打！';
+    if (/盟友出场/.test(title)) sub = '光头强、飞飞、童童加入战斗！';
+    this.strokeText(ctx, sub, VIEW.W / 2, 372, 30, '#ffe14a', '#2a0000', 7);
     ctx.restore();
   },
 
@@ -2538,33 +2670,43 @@ var Render = {
     // 变身闪光
     if (e.transitionT > 0) { ctx.globalAlpha = 0.5 + 0.5 * Math.sin(e.transitionT * 20); }
 
-    // ----- 蛇身（盘绕的曲线）-----
-    ctx.strokeStyle = '#1a4a2a';
-    ctx.lineWidth = 38;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(cx - e.w * 0.35, y + e.h - 20);
-    ctx.quadraticCurveTo(cx - e.w * 0.15 + wave * 10, y + e.h * 0.5, cx + wave * 15, y + e.h * 0.3);
-    ctx.quadraticCurveTo(cx + e.w * 0.2 + wave2 * 10, y + 40, cx + e.w * 0.35, y + 20);
-    ctx.stroke();
-    // 亮色腹部
-    ctx.strokeStyle = '#3a8a4a';
-    ctx.lineWidth = 24;
-    ctx.beginPath();
-    ctx.moveTo(cx - e.w * 0.35, y + e.h - 20);
-    ctx.quadraticCurveTo(cx - e.w * 0.15 + wave * 10, y + e.h * 0.5, cx + wave * 15, y + e.h * 0.3);
-    ctx.quadraticCurveTo(cx + e.w * 0.2 + wave2 * 10, y + 40, cx + e.w * 0.35, y + 20);
-    ctx.stroke();
-    // 金色花纹
-    ctx.strokeStyle = '#d4a030';
-    ctx.lineWidth = 4;
-    for (var i = 0; i < 4; i++) {
-      var seg = i / 4;
-      var sx = cx - e.w * 0.35 + seg * (e.w * 0.7);
-      var sy = y + e.h - 20 - seg * (e.h - 40) + Math.sin(e.anim + seg * 3) * 8;
+    // ----- 蛇身（多段盘绕，真实蛇形）-----
+    var segN = 26;
+    var tailX = cx - e.w * 0.38, tailY = y + e.h - 16;
+    var neckX = cx + dir * e.w * 0.32, neckY = y + 45;
+    for (var si = 0; si < segN; si++) {
+      var f = si / segN;
+      // 身体路径：底部盘旋 + 正弦波蜿蜒上升
+      var coil = si < 8 ? Math.sin(f * Math.PI * 0.9) * (1 - f) * 42 : 0;
+      var waveHoriz = Math.sin(f * Math.PI * 2.8 + e.anim * 1.4) * (16 + f * 8);
+      var sx = tailX + (neckX - tailX) * f + coil * (si < 4 ? 0.7 - f * 0.7 : 0) + waveHoriz;
+      // 垂直方向也加波动，让身体不是直线
+      var waveVert = Math.cos(f * Math.PI * 3.2 + e.anim * 1.2) * (1 - f) * 10;
+      var sy = tailY + (neckY - tailY) * f + waveVert;
+      // 尾部逐渐变细
+      var sr = 19 - f * 3;
+      if (si < 4) sr = 10 + si * 2.5;  // 尾部尖细
+      // 深色外层
+      ctx.fillStyle = '#1a4a2a';
       ctx.beginPath();
-      ctx.arc(sx, sy, 8, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.arc(sx, sy, sr + 1, 0, Math.PI * 2);
+      ctx.fill();
+      // 亮色内层
+      ctx.fillStyle = '#2d6a3e';
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+      // 金色菱形鳞片（每隔一段）
+      if (si % 3 === 0 && si > 1 && si < segN - 2) {
+        ctx.fillStyle = '#d4a030';
+        ctx.beginPath();
+        ctx.moveTo(sx, sy - sr * 0.55);
+        ctx.lineTo(sx + sr * 0.38, sy);
+        ctx.lineTo(sx, sy + sr * 0.55);
+        ctx.lineTo(sx - sr * 0.38, sy);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
 
     // ----- 蛇头 -----
@@ -2644,23 +2786,67 @@ var Render = {
     if (e.hurtT > 0) ctx.globalAlpha = 0.7 + 0.3 * Math.sin(e.hurtT * 30);
     if (e.transitionT > 0) ctx.globalAlpha = 0.5 + 0.5 * Math.sin(e.transitionT * 20);
 
-    // ----- 巨大蛇身 -----
-    ctx.strokeStyle = '#0d2a18';
-    ctx.lineWidth = 52;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(cx - e.w * 0.4, y + e.h - 30);
-    ctx.quadraticCurveTo(cx - e.w * 0.2 + wave * 15, y + e.h * 0.5, cx + wave * 20, y + e.h * 0.35);
-    ctx.quadraticCurveTo(cx + e.w * 0.15 + wave * 10, y + e.h * 0.15, cx + e.w * 0.4, y + 30);
-    ctx.stroke();
-    // 亮色身体
-    ctx.strokeStyle = '#1a4a2a';
-    ctx.lineWidth = 34;
-    ctx.beginPath();
-    ctx.moveTo(cx - e.w * 0.4, y + e.h - 30);
-    ctx.quadraticCurveTo(cx - e.w * 0.2 + wave * 15, y + e.h * 0.5, cx + wave * 20, y + e.h * 0.35);
-    ctx.quadraticCurveTo(cx + e.w * 0.15 + wave * 10, y + e.h * 0.15, cx + e.w * 0.4, y + 30);
-    ctx.stroke();
+    // ----- 巨大蛇身（多段盘绕 + 三颈分支）-----
+    var segN2 = 30;
+    var tailX2 = cx - e.w * 0.4, tailY2 = y + e.h - 24;
+    var midX = cx, midY = y + e.h * 0.36;
+    // 主躯干：底部巨大盘旋 → 中部上升
+    for (var si2 = 0; si2 < segN2; si2++) {
+      var f2 = si2 / segN2;
+      var coil2 = si2 < 10 ? Math.sin(f2 * Math.PI * 0.85) * (1 - f2) * 55 : 0;
+      var waveH2 = Math.sin(f2 * Math.PI * 2.4 + e.anim * 1.0) * (20 + f2 * 6);
+      var sx2 = tailX2 + (midX - tailX2) * f2 + coil2 * (si2 < 5 ? 0.6 - f2 * 0.6 : 0) + waveH2;
+      var waveV2 = Math.cos(f2 * Math.PI * 2.8 + e.anim * 0.9) * (1 - f2) * 14;
+      var sy2 = tailY2 + (midY - tailY2) * f2 + waveV2;
+      var sr2 = 27 - f2 * 5;
+      if (si2 < 5) sr2 = 14 + si2 * 2.8;
+      // 深色外层
+      ctx.fillStyle = '#0d2a18';
+      ctx.beginPath();
+      ctx.arc(sx2, sy2, sr2 + 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      // 亮色内层
+      ctx.fillStyle = '#1a4a2a';
+      ctx.beginPath();
+      ctx.arc(sx2, sy2, sr2 * 0.68, 0, Math.PI * 2);
+      ctx.fill();
+      // 金色鳞片
+      if (si2 % 3 === 0 && si2 > 1 && si2 < segN2 - 2) {
+        ctx.fillStyle = '#b08020';
+        ctx.beginPath();
+        ctx.moveTo(sx2, sy2 - sr2 * 0.5);
+        ctx.lineTo(sx2 + sr2 * 0.35, sy2);
+        ctx.lineTo(sx2, sy2 + sr2 * 0.5);
+        ctx.lineTo(sx2 - sr2 * 0.35, sy2);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    // 三条颈部分支：从躯干顶端连到各头部
+    var neckTargets = [
+      { x: cx - e.w * 0.32, y: y + 50 },
+      { x: cx, y: y + 10 },
+      { x: cx + e.w * 0.32, y: y + 70 }
+    ];
+    for (var ni = 0; ni < 3; ni++) {
+      if (!e.headAlive[ni]) continue;
+      var nt = neckTargets[ni];
+      var neckSegs = 12;
+      for (var ns = 0; ns < neckSegs; ns++) {
+        var nf = ns / neckSegs;
+        var nx = midX + (nt.x - midX) * nf + Math.sin(nf * Math.PI * 1.5 + ni + e.anim * 1.5) * 6;
+        var ny = midY + (nt.y - midY) * nf;
+        var nr = 12 - nf * 4;
+        ctx.fillStyle = '#0d2a18';
+        ctx.beginPath();
+        ctx.arc(nx, ny, nr + 1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#1a4a2a';
+        ctx.beginPath();
+        ctx.arc(nx, ny, nr * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
 
     // ----- 三头 -----
     var headDefs = [

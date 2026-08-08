@@ -52,7 +52,8 @@ function Game() {
   this.bossHp = {};               // Boss 剩余血量（按幕记录）：跨死亡重来保留（不惩罚小朋友辛苦削的血）
   this.bossClearT = 0;            // >0：Boss 已被打死，胜利小节倒计时
   this.bossClearName = '';
-  this.phaseBannerT = 0;         // >0：光头强进入第二阶段横幅倒计时
+  this.phaseBannerT = 0;         // >0：Boss 进入第二阶段横幅倒计时
+  this.phaseBannerMsg = '';       // 第二阶段横幅的标题（按 Boss 类型区分）
   this.summonCd = 0;             // 召唤冷却
   this.summonMsg = '';           // 召唤提示（如「先打到生气」）
   this.summonMsgT = 0;           // 提示显示倒计时
@@ -1282,6 +1283,9 @@ Game.prototype._damageBoss = function (e, dmg) {
     e.biteT = 1.0; e.constrictT = 2.5; e.tailT = 3.5;
     if (e.type === 'threeheadsnake') { e.venomT = 1.6; e.mambaT = 2.0; }
     this.phaseBannerT = 2.4;
+    this.phaseBannerMsg = (e.type === 'emperorsnake') ? '帝王蛇怪发怒了！'
+      : (e.type === 'threeheadsnake') ? '三头帝王蛇·终极暴怒！'
+      : '光头强生气了！';
     this.shake = Math.max(this.shake, 10);
     Sfx.angry();
   }
@@ -1388,7 +1392,7 @@ Game.prototype._updateThreeHeadSnake = function (e, dt, f, s) {
   if (!e.alliesSummoned) {
     e.alliesSummoned = true;
     var allyDefs = [
-      { name: '光头强', suit: '#3f7a34', trim: '#e8d8b0' },
+      { name: '光头强', suit: '#3f7a34', trim: '#e8d8b0', allyType: 'guangtouqiang' },
       { name: '飞飞', suit: '#3a6fd9', trim: '#aadcff' },
       { name: '童童', suit: '#2fae6a', trim: '#bff0d0' }
     ];
@@ -1398,6 +1402,7 @@ Game.prototype._updateThreeHeadSnake = function (e, dt, f, s) {
       this.entities.push(al);
     }
     this.phaseBannerT = 3.0;
+    this.phaseBannerMsg = '盟友出场！光头强、飞飞、童童一起打三头帝王蛇！';
     this.shake = Math.max(this.shake, 8);
   }
 
@@ -2045,7 +2050,10 @@ Game.prototype._drawScene = function (ctx) {
     else if (e2.type === 'snakebite' && e2.alive) Render.snakebite(ctx, e2, this.camera);
     else if (e2.type === 'snakevenom' && e2.alive) Render.snakevenom(ctx, e2, this.camera);
     else if (e2.type === 'snakeconstrict' && e2.alive) Render.snakeconstrict(ctx, e2, this.camera);
-    else if (e2.type === 'ally') Render.ally(ctx, e2, this.camera);
+    else if (e2.type === 'ally') {
+      if (e2.allyType === 'guangtouqiang') Render.guangtouqiangAlly(ctx, e2, this.camera);
+      else Render.ally(ctx, e2, this.camera);
+    }
     else if (e2.type === 'bullet' && e2.alive) Render.bullet(ctx, e2, this.camera);
     else if (e2.type === 'fireball' && e2.alive) Render.fireball(ctx, e2, this.camera);
     else if (e2.type === 'devilfire' && e2.alive) Render.devilfire(ctx, e2, this.camera);
@@ -2072,7 +2080,7 @@ Game.prototype._drawScene = function (ctx) {
   }
   // 光头强进入第二阶段横幅
   if (this.phaseBannerT > 0) {
-    Render.phaseBanner(ctx, this.phaseBannerT);
+    Render.phaseBanner(ctx, this.phaseBannerT, this.phaseBannerMsg);
   }
   // 召唤提示 / 消息
   if (this.summonMsgT > 0) {
