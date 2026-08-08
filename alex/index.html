@@ -3708,7 +3708,13 @@ async function showRead(){
   document.querySelectorAll('#feed .rchip').forEach(b =>
     b.onclick = () => { READ.filter = b.dataset.f; READ.page = 0; showRead(); });
   document.querySelectorAll('#feed .card').forEach(el =>
-    el.onclick = () => openRead(all.find(x => x.id === el.dataset.id)));
+    // 🚨 走 go() 而不是直接调 openRead ——
+    //    直接调不进导航栈，左上角的「← 返回」就不出现。
+    //    Kevin 2026-08-08：「阅读这个 section 点进去之后，它没有返回按钮」
+    el.onclick = () => {
+      const c = all.find(x => x.id === el.dataset.id);
+      if (c) go(() => openRead(c), '阅读');
+    });
   if (sorted.length > PAGE){
     const more = document.createElement('button');
     more.className = 'play'; more.style.marginTop = '14px';
@@ -3780,6 +3786,8 @@ function openRead(c){
   if (!c.para && READ._para){
     READ._para.then(m => {
       const hit = m && m[c.id];
+      // 🚨 这是「段落异步到货后重绘」，**不能再 go()** ——
+      //    再入一次栈的话，返回要按两次才出得去。
       if (hit && READ.cur === c){ c.para = hit.p; c.srctitle = hit.t; openRead(c); }
     });
   }
@@ -3955,7 +3963,11 @@ async function showWrite(){
       lvlDots(w.lvl) + '</div><div class="sit">' + esc(w.brief) + '</div></div>';
   }).join('');
   document.querySelectorAll('#feed .card').forEach(c =>
-    c.onclick = () => startWrite(all.find(x => x.id === c.dataset.id)));
+    // 🚨 同上：写作点进去也要进栈，否则没有返回按钮。
+    c.onclick = () => {
+      const it = all.find(x => x.id === c.dataset.id);
+      if (it) go(() => startWrite(it), '写作');
+    });
   if (sorted.length > PAGE){
     const more = document.createElement('button');
     more.className = 'play'; more.style.marginTop = '14px';
