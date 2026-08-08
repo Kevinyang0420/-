@@ -971,6 +971,28 @@ HARD RULES
   V4 NEVER explain what the character could show.
   V5 A break is at most 3 sentences of Chinese, then hand the turn back IN CHARACTER
      with the character re-posing the question.
+  V6 说话时卡壳、重复词、填充音，**不是语法错误，不许当 D1 报**。
+     Kevin 2026-08-08：「我输入的一些口语化表达，在说话思考时可能会连续说几个
+     相同的单词。这种重复的词不要直接当成语法错误去修改，也不要只是简单地把
+     两个相同单词浓缩成一个、然后给出『地道的英国人会怎么说』——
+     这其实并没有太多建设性的意见。」
+
+     形态：the the / I I think / we we need、is is、um、uh、重启一句话说到一半。
+     这是**思考占位**，母语者一样会这样，不是他英语差。
+
+     ✅ 该做的：如果这种卡壳**频繁到影响听感**才提，而且只提**怎么争取时间**——
+        给他现成的、可以照念的过渡说法，让他把「重复词」换成「有意义的停顿」：
+          Let me rephrase that.
+          What I mean is …
+          Let me put it another way —
+          Bear with me, I want to get the number right.
+          So, to put it simply, …
+        点评措辞示例：「你刚才 the the 重复了两次，那是在找词——
+        母语者这时候会说 What I mean is …，把停顿说出来，比硬憋着自然。」
+     ❌ 不许做的：
+        · 把它当 D1 语法错误报
+        · 只把两个词并成一个、然后说「地道说法是 X」（他要的不是这个）
+        · 一次卡壳就提（偶尔重复完全正常，**别为它花掉这次的 permit**）
 
 D7 · 归因和语气的**英语说法** —— 注意这是一个措辞维度，不是判断维度。
   这些是他行业里现成的固定说法，他要的是「这句英文该怎么措辞」，
@@ -1308,14 +1330,36 @@ function encodeWav(buf, rate){
 /* iOS 录的是 mp4/aac，decodeAudioData 在它上面会抛 "Decoding failed"。
    转不动就别硬转 —— 直接把原始录音连同它自己的 mime 发出去，
    Gemini 认 aac/mp3/ogg/flac/wav 好几种。转成 WAV 只是为了统一，不是必须。 */
+/* 🚨 降到 16kHz 再编码。
+   Kevin 2026-08-08：「说话稍微长了一点，小程序就无法解读并报错了…连续三次都提示无效」
+   根因就在这儿：原来按手机的原始采样率（48kHz）编 WAV = 96 KB/秒，
+   base64 再涨 33% —— 说 30 秒就是 3.8 MB、60 秒 7.7 MB，
+   上传那一发被网关掐掉，重试 3 次全挂，于是「连续三次都提示无效」。
+   而语音识别本来只吃 16kHz，多出来的三倍纯属浪费，降下来不损音质。 */
+function to16k(buf, rate){
+  if (rate <= 16000) return {buf: buf, rate: rate};
+  const ratio = rate / 16000, n = Math.floor(buf.length / ratio);
+  const out = new Float32Array(n);
+  for (let i = 0; i < n; i++){
+    const x = i * ratio, j = x | 0, f = x - j;
+    out[i] = buf[j] * (1 - f) + (buf[j + 1] || buf[j]) * f;   // 线性插值，语音够用
+  }
+  return {buf: out, rate: 16000};
+}
+
 async function toAudioPart(blob){
   try {
     const ac = new (window.AudioContext||window.webkitAudioContext)();
     const decoded = await ac.decodeAudioData(await blob.arrayBuffer());
-    const wav = encodeWav(decoded.getChannelData(0), decoded.sampleRate);
+    const d = to16k(decoded.getChannelData(0), decoded.sampleRate);
+    const wav = encodeWav(d.buf, d.rate);
     ac.close();
+    // 🚨 这里原来有个 4MB 的硬拦（「说得太长，分成两三句说」）。**去掉了** ——
+    //    Kevin 明确不要时长限制，而分片流式发之后长音频本来就该能转。
+    //    真出问题时后端会返回一句人话，不需要前端先把人挡住。
     return {blob: wav, mime: 'audio/wav'};
   } catch(e) {
+    if (/说得太长/.test(e.message)) throw e;      // 这条是给人看的，别被下面吞掉
     const t = (blob.type || '').split(';')[0].toLowerCase();
     const map = {'audio/mp4':'audio/aac', 'audio/x-m4a':'audio/aac',
                  'audio/aac':'audio/aac', 'audio/mpeg':'audio/mp3',
@@ -2444,6 +2488,20 @@ async function down(e){
   try {
     const r = await getRec(); chunks = []; r.start();
     MYREC.t0 = Date.now();             // 时长靠起停时刻算，不用去解码音频
+    /* 🚨 **不设时长上限**。Kevin 2026-08-08：「有时候一句话就是要超过 60 秒的…
+       你分了三句话，机器没那么聪明，不知道你要分开三句。它肯定是你一说 part 1，
+       它就跟着 part 1 先给你出修改意见…这不符合正常交流对话的场景。」
+       他说得对：切段说会让点评也跟着切碎，那不是对话。
+       所以长音频要**真的能转**，而不是把人限制住 ——
+       后端已改成按 200ms 分片流式发（原来是一帧塞完，96 秒就静默不回）。
+       这里只留一个很宽的兜底，防止手机忘了停：5 分钟。 */
+    clearTimeout(window.__recCap);
+    window.__recCap = setTimeout(() => {
+      if (rec && rec.state === 'recording'){
+        $('#hint').textContent = '录了 5 分钟，先发出去。';
+        rec.stop();
+      }
+    }, 300000);
     return true;
   } catch(err){
     resetMic();
@@ -2481,6 +2539,7 @@ function resetMic(){
 }
 function up(e){
   e.preventDefault();
+  clearTimeout(window.__recCap);
   resetMic();
   // 🚨 按 pick('audio') 的结果分流，别再用 apiOn() 一刀切。
   //    后端现在能收录音（Agent Plan 的 ASR，免费），它还能给出语速、
@@ -4554,6 +4613,20 @@ function eatShareLink(){
 }
 
 S.api = eatShareLink() || loadApi();   // 后端地址 + 口令（配了它就不用任何 key）
+
+/* 🚨 App 已经开着时再点一次配置链接，浏览器只改 hash、**不重新加载页面**，
+   于是 eatShareLink() 不会再跑一次 —— 表现成「点了链接没反应，还是连不上」。
+   实测过：同一个标签页里换 hash，localStorage 一个字都没变。
+   地址每次隧道重开都会变、他多半就是在 App 开着的时候点那条新链接，
+   正好撞上这条路。所以补一个 hashchange。 */
+addEventListener('hashchange', () => {
+  const cfg = eatShareLink();
+  if (!cfg) return;
+  S.api = cfg;
+  try { detectBackend && detectBackend(); } catch(_){}
+  const e = $('#err');
+  if (e) e.textContent = '已换上新的后端地址，可以继续练了。';
+});
 S.keys = loadKeys();
 S.key = S.keys.gemini || S.keys.deepseek || '';
 S.backend = localStorage.getItem(LS.be) ||
