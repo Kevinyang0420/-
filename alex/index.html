@@ -4665,6 +4665,39 @@ function eatShareLink(){
   } catch(e){ return null; }
 }
 
+/* ───────── 零配置：没配过就自动连上默认后端 ─────────
+   🚨 Kevin 2026-08-08：「我每次退出，然后再重新添加到主屏幕，它都会让我再填一个，
+      就很麻烦」——根因是 **iOS 上主屏 PWA 和 Safari 是两套独立的 localStorage**，
+      在 Safari 里填过的配置，主屏那个进程根本看不见。
+      发一条带 hash 的链接也治不了：manifest 的 start_url 是 "."，
+      PWA 启动会回到不带 hash 的地址。
+
+   所以改成**根本不需要配置**：没有存过配置时，自动连默认后端，
+   口令向 /api/guestpass 现取（当天有效、每天轮换）。
+   他要用自己那把无上限的口令，仍然可以在「我的 → 🛰 后端」里填。 */
+const DEFAULT_API = 'https://sqg75i2mlmanf4sqde6nh.apigateway-cn-beijing.volceapi.com';
+
+async function autoConnect(){
+  if (apiOn()) return;                       // 已经配过就不动
+  for (let i = 0; i < 4; i++){
+    if (i) await new Promise(f => setTimeout(f, 1200 * i));   // 冷启动重试
+    try {
+      const r = await fetch(DEFAULT_API + '/api/guestpass', {cache:'no-store'});
+      if (!r.ok) continue;
+      const d = await r.json();
+      if (!d || !d.pass) continue;
+      saveApi({url: DEFAULT_API, pass: d.pass, guest: true});
+      const h = await fetch(DEFAULT_API + '/api/health', {cache:'no-store'})
+                        .then(x => x.json()).catch(() => null);
+      if (h) noteCaps(h);
+      $('#setup').hidden = true;
+      $('#sub').textContent = '已连后端 · 不占任何免费额度';
+      if (typeof goTab === 'function') goTab('home');
+      return;
+    } catch(e){ /* 再试 */ }
+  }
+}
+
 S.api = eatShareLink() || loadApi();   // 后端地址 + 口令（配了它就不用任何 key）
 
 /* 🚨 App 已经开着时再点一次配置链接，浏览器只改 hash、**不重新加载页面**，
@@ -4754,6 +4787,7 @@ if (S.key || apiOn()){
   if (!localStorage.getItem(LS.be)) detectBackend().catch(()=>{});
 } else {
   $('#setup').hidden = false;
+  autoConnect();
   detectBackend().catch(()=>{});
 }
 
