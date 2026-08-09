@@ -3582,7 +3582,11 @@ function newsMark(title, q, total){
     const k = qKey(q);
     if (e.done.indexOf(k) < 0) e.done.push(k);
     localStorage.setItem('alex_news_prog', JSON.stringify(p));
-  } catch(_){}
+  } catch(_){
+    // 🚨 存不下要出声。否则他答完一堆题，下次进来进度还停在原处，
+    //    而当时界面一切正常 —— 又是一个静默丢失。
+    try { toast('进度没存住（存储可能满了）'); } catch(__){}
+  }
 }
 /* 返回 {state:'none'|'doing'|'done', done:n, total:m} */
 function newsState(ep){
@@ -3601,6 +3605,8 @@ function newsState(ep){
      done 就可能超过总题数、把「正在做」误判成「已做过」。
      换 key 一定要想到旧数据还在。 */
   const n = Math.min(e.done.length, tot);
+  // 🚨 空题集时 0 >= 0 会判成 done，谎报「已做过」
+  if (!tot) return {state: 'none', done: 0, total: 0};
   return {state: n >= tot ? 'done' : 'doing', done: n, total: tot};
 }
 function newsBadge(ep){
@@ -3679,7 +3685,12 @@ function listenItem(){
 function renderUnitQs(box, unit){
   box.innerHTML = '';
   const state = unit.qs.map(() => null);      // 每题选了哪个
-  unit.qs.forEach((it, qi) => {
+  /* 🚨 题目数据是外部喂的。缺 opt 会让 `it.opt.forEach` 抛 TypeError，
+     整个题目区渲染中断留个空盒子 —— 他会以为「点了我听完了什么都没出来」。 */
+  unit.qs.filter(it => it && Array.isArray(it.opt) && it.opt.length &&
+                       typeof it.ans === 'number' &&
+                       it.ans >= 0 && it.ans < it.opt.length)
+         .forEach((it, qi) => {
     const wrap = document.createElement('div');
     wrap.style.marginTop = '14px';
     const q = document.createElement('div');
@@ -4506,7 +4517,12 @@ async function makeGuide(sent, ctx){
   let last = null;
   for (let i = 0; i < 3; i++){
     let g = null;
-    let p = GUIDE_RULES.replace('{sent}', sent).replace('{ctx}', ctx || '商务写作');
+    /* 🚨 用函数式替换：`String.replace` 的**替换串**里 `$&` `$'` 等会被特殊解释，
+       而 sent 是他划选的原文（财务文本里 `$` 很常见）。一旦命中，
+       prompt 会被静默塞进 GUIDE_RULES 自己的片段，模型返回废卡，
+       他只看到「这句没拆成」。 */
+    let p = GUIDE_RULES.replace('{sent}', () => sent)
+                       .replace('{ctx}', () => ctx || '商务写作');
     if (last){
       p += '\n\n🚨 你上一次的输出被判废了，原因是：' + last +
            '\n这一次务必避开。特别提醒：parts 里每个 q 都必须是上面那句原文里' +
@@ -4539,9 +4555,16 @@ function splitSents(p){
     if (!'.?!'.includes(t[i])) continue;
     const nx = t.slice(i + 1, i + 3);
     if (!/^\s/.test(nx)) continue;                 // 后面不是空格 → 不是句末
-    if (/\d$/.test(buf.slice(0, -1))) continue;    // 12.4 这种小数
-    if (/\b(No|Mr|Mrs|Ms|Dr|Inc|Ltd|Co|e\.g|i\.e|vs|approx)\.$/i.test(buf.trim()))
-      continue;                                    // 缩写
+    /* 🚨 小数判定必须**点前点后都看**。原来只判「点前是数字」，
+       于是 `EBITDA margin was 8.4. This compares…` 里第二个点也被当成小数，
+       两句粘成一句 —— 而这正是这个 App 最核心的场景（财务文本划选收藏）。
+       `see note 4. The company…` 同理。（2026-08-09 复审抓到，实测属实。） */
+    if (/\d$/.test(buf.slice(0, -1)) && /\d/.test(t[i + 1] || '')) continue;
+    /* 缩写表：财务/尽调文本里 U.S. / Corp. / etc. 很常见，漏了会在这儿假断句，
+       断出来的前半不足 4 词又被过滤掉，等于把主语弄丢了。 */
+    if (/\b(No|Mr|Mrs|Ms|Dr|Inc|Ltd|Co|Corp|U\.S|e\.g|i\.e|etc|vs|approx|St|Jr|Sr|Vol|pp|Fig|Sec)\.$/i
+        .test(buf.trim()))
+      continue;
     out.push(buf.trim()); buf = '';
   }
   if (buf.trim()) out.push(buf.trim());
@@ -4554,16 +4577,29 @@ const sentId = (eid, s) => eid + '#' +
 /* 收藏一句。
    🚨 顺序很讲究：**先把句子存进去，再去要指南**。
       反过来的话模型一挂，他点了半天什么都没收藏到（PRD B8）。 */
-async function keepSent(essay, sent, el){
+/* 返回 'added' | 'removed' | 'full'（存不下）| 'gone'（中途被取消）。
+   🚨 调用方**必须看返回值**再决定给什么反馈。原来它什么都不返回，
+      浮条那边无条件弹「✅ 收下了」——于是配额满时会同时出现
+      「存不下了」和「收下了，一共 N 条」两条自相矛盾的提示；
+      而「再点一次=取消收藏」时也照样弹「收下了」。
+      （2026-08-09 复审抓到，属实。） */
+async function keepSent(essay, sent, el, onSaved){
   const id = sentId(essay.id, sent);
   const k = kept();
   const i = k.findIndex(x => x.id === id);
+  /* 🚨 还在提炼中的不许被「再点一次」取消：指南要几秒才回来，
+     这期间他重新选同一句再点，会走进删除分支把它删了，
+     而 await 回来的那一半只看到 `j < 0` 就默默 return —— 净效果是
+     「弹了收下了，句子却没了，还没有任何提示」。同一个动作做两次
+     不该等于没做过。 */
+  if (i >= 0 && k[i].pending) { toast('这句正在提炼，稍等一下'); return 'added'; }
   if (i >= 0){                       // 再点一次 = 取消收藏
     k.splice(i, 1);
-    try { localStorage.setItem('alex_kept', JSON.stringify(k)); } catch(_){}
+    try { localStorage.setItem('alex_kept', JSON.stringify(k)); }
+    catch(e){ toast('改不动收藏（存储满了）'); return 'full'; }
     if (el) el.classList.remove('kept');
     toast('已从收藏里去掉');
-    return;
+    return 'removed';
   }
   const rec = {id: id, en: sent, from: essay.id, t: essay.t,
                task: essay.task, on: TODAY(), pending: true};
@@ -4574,9 +4610,13 @@ async function keepSent(essay, sent, el){
   try { localStorage.setItem('alex_kept', JSON.stringify(k.slice(0, 400))); }
   catch(e){
     toast('存不下了（浏览器存储满），先去收藏页删几条');
-    return;
+    return 'full';
   }
   if (el) el.classList.add('kept');
+  /* 🚨 确认必须**立刻**给。它挂在整个 promise 上的话要等指南算完
+     （好几秒）才弹 —— 而「点了收藏当场看得见」正是它存在的全部意义。
+     这里写盘已经成功了，就是可以确认的时刻。 */
+  if (onSaved) onSaved('added');
   toast('收下了，Alex 正在拆这一句…');
 
   const sc = essay.scene || {};
@@ -4587,12 +4627,17 @@ async function keepSent(essay, sent, el){
   // 🚨 重新读一遍再写 —— 中途他可能又收藏了别的，拿旧数组覆盖会把那条抹掉
   const k2 = kept();
   const j = k2.findIndex(x => x.id === id);
-  if (j < 0) return;                       // 他已经取消收藏了，别再写回去
+  if (j < 0) return 'gone';                // 他已经取消收藏了，别再写回去
   k2[j].pending = false;
   if (g){ k2[j].guide = g; k2[j].slot = g.slot; }
   else k2[j].err = err;
-  try { localStorage.setItem('alex_kept', JSON.stringify(k2)); } catch(_){}
+  /* 🚨 这里原来是 `catch(_){}` 全吞。指南已经算出来了却存不下，
+     记录永远停在 pending，他下次看到「正在提炼…」再点重试，又白调一次模型。
+     开头刻意把配额错误抛给他看，结尾又吞掉 —— 同一个函数里两套口径。 */
+  try { localStorage.setItem('alex_kept', JSON.stringify(k2)); }
+  catch(e2){ toast('拆好了但存不下（存储满了），先去收藏页删几条'); return 'full'; }
   toast(g ? '拆好了，去「收藏」里看' : '这句没拆成：' + err.slice(0, 40));
+  return 'added';
 }
 
 /* ═══ 收藏详情 = 应用指南 ═══ */
@@ -4860,13 +4905,15 @@ function selBarInit(essay, box){
     try { window.getSelection().removeAllRanges(); } catch(_){}
     selBarHide();
     SELBAR.text = '';
-    keepSent(es, t, null);
-    // 高亮刷新：收藏后正文里那几句要变黄
-    if (SELBAR.box) markKeptSents(SELBAR.box, es);
+    // 🚨 按返回状态给反馈，别无条件弹「收下了」
+    keepSent(es, t, null, st => {
+      if (st === 'added') kbarShow();                  // 立刻确认
+      if (SELBAR.box) markKeptSents(SELBAR.box, es);   // 高亮刷新
+    });
     /* 🚨 收完要**当场看得见**。他反馈「点完收藏在收藏 tab 里没反映」——
        其中一半是没反馈：详情页上没有那两个 tab，他得先返回才看得到。
        这里直接给一条「已收 N 条 · 去收藏页看」，点一下就过去。 */
-    kbarShow();
+
   };
   /* 🚨 selectionchange 在 iOS 上是选择过程中一直触发的，
      所以只更新条上的字数，不做别的重活。 */
