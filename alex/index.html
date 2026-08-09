@@ -358,6 +358,15 @@ button{font-family:inherit}
   border-bottom-width:4px;color:var(--fg-strong)}
 .tile.t-read .ds,
 .tile.t-write .ds{color:var(--muted)}
+#kbar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
+  z-index:10000;display:none;align-items:center;gap:10px;padding:10px 12px;
+  border-radius:14px;background:var(--accent);color:var(--on-accent);
+  box-shadow:0 8px 30px rgba(0,0,0,.3);font-size:13.5px;font-weight:700}
+#kbar.on{display:flex}
+#kbar span{flex:1}
+#kbar button{padding:8px 12px;border-radius:10px;border:0;font-weight:800;
+  font-size:13.5px;background:var(--on-accent);color:var(--accent);
+  cursor:pointer;font-family:inherit}
 #selbar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
   z-index:9999;display:none;align-items:center;gap:10px;padding:10px 12px;
   border-radius:14px;background:var(--card);border:1px solid var(--line);
@@ -4788,7 +4797,9 @@ function selClean(t){
                   .replace(/[\s,;:]+$/, '');             // 结尾别停在逗号上
 }
 
-const SELBAR = {el: null, essay: null, box: null};
+/* 🚨 `text` 是这里的关键：选区一变就抓下来。
+   不能等到点按钮时再读 window.getSelection() —— iOS 上那时候选区已经没了。 */
+const SELBAR = {el: null, essay: null, box: null, text: ''};
 
 function selBarInit(essay, box){
   SELBAR.essay = essay; SELBAR.box = box;
@@ -4804,15 +4815,32 @@ function selBarInit(essay, box){
     try { window.getSelection().removeAllRanges(); } catch(_){}
     selBarHide();
   };
+  /* iOS：手指按下去就会清选区，所以按下的那一刻先把文字定住，
+     并且不让默认行为去改选区。 */
+  ['pointerdown', 'mousedown', 'touchstart'].forEach(ev =>
+    b.addEventListener(ev, e => {
+      const live = selClean(String(window.getSelection() || ''));
+      if (selWords(live) >= 3) SELBAR.text = live;
+      e.preventDefault();
+    }, {passive: false}));
   b.querySelector('.sb-go').onclick = () => {
-    const t = selClean(String(window.getSelection() || ''));
-    if (selWords(t) < 3) return;
+    // 优先用按下那一刻抓到的；实在没有再读一次实时选区（桌面上够用）
+    const t = SELBAR.text || selClean(String(window.getSelection() || ''));
+    if (selWords(t) < 3){
+      toast('没读到选中的文字，再长按选一次');
+      return;
+    }
     const es = SELBAR.essay;
     try { window.getSelection().removeAllRanges(); } catch(_){}
     selBarHide();
+    SELBAR.text = '';
     keepSent(es, t, null);
     // 高亮刷新：收藏后正文里那几句要变黄
     if (SELBAR.box) markKeptSents(SELBAR.box, es);
+    /* 🚨 收完要**当场看得见**。他反馈「点完收藏在收藏 tab 里没反映」——
+       其中一半是没反馈：详情页上没有那两个 tab，他得先返回才看得到。
+       这里直接给一条「已收 N 条 · 去收藏页看」，点一下就过去。 */
+    kbarShow(es);
   };
   /* 🚨 selectionchange 在 iOS 上是选择过程中一直触发的，
      所以只更新条上的字数，不做别的重活。 */
@@ -4839,12 +4867,34 @@ function selBarSync(){
     }
   } catch(_){}
   if (!inside || n < 3) return selBarHide();
+  SELBAR.text = t;                       // 🚨 存住，别等点的时候再读
   b.querySelector('.sb-n').textContent = '已选 ' + n + ' 词';
   b.classList.add('on');
 }
 
 function selBarHide(){
   if (SELBAR.el) SELBAR.el.classList.remove('on');
+}
+
+/* 收藏成功后的确认条：告诉他收进去了，并给一个直接过去看的入口。 */
+function kbarShow(essay){
+  let k = document.getElementById('kbar');
+  if (!k){
+    k = document.createElement('div');
+    k.id = 'kbar';
+    document.body.appendChild(k);
+  }
+  const n = kept().length;
+  k.innerHTML = '<span>✅ 收下了，一共 ' + n + ' 条</span>' +
+                '<button>去「收藏」看 →</button>';
+  k.querySelector('button').onclick = () => {
+    k.classList.remove('on');
+    READ.top = 'fav'; READ.page = 0;
+    go(showRead, '阅读');
+  };
+  k.classList.add('on');
+  clearTimeout(SELBAR._kt);
+  SELBAR._kt = setTimeout(() => k.classList.remove('on'), 6000);
 }
 
 /* 点一句 = 把这一句选上（不直接收藏）。他可以接着拖手柄改范围。 */
