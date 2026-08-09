@@ -1509,9 +1509,65 @@ function apiOn(){ return !!(S.api && S.api.url); }
 // 🚨 后端跑在 serverless 上，**空闲会缩到零**，之后第一发请求要等实例冷启动。
 //    实测这一发常常拿到 502/504，而它其实什么毛病都没有 —— 再打一次就好了。
 //    所以这类「短暂不可用」必须重试，不然他练着练着就莫名其妙报一次错。
+//    ⚠️ 只重试**短暂**的那几种；400（请求本身有问题）重试一百次也一样。
+//    401 是特例：访客令牌隔天失效那种，换一张就好了（见下面 guestRefresh），
+//    换不到才报错 —— 但**绝不按 RETRY_STATUS 那样傻重试**。
+const RETRY_STATUS = [0, 408, 429, 500, 502, 503, 504];
+
+/* ═══ 访客令牌隔天失效 —— 自己换，别叫他去改口令 ═══
+   🚨 Kevin 2026-08-09 11:04 撞到：点「这句怎么用」报
+      「后端口令不对，去『我的 → 后端』改一下」。**他根本没设过口令**，无从改起。
+   机制：后端的访客口令是**当天令牌**（`day_token()` = HMAC(种子, 当天日期)，
+   实测把令牌改一个字符就 401）。`autoConnect()` 装好那天取一张存进 localStorage
+   当固定口令用，而它自己开头就是 `if (apiOn()) return` —— **存过就再也不去取**。
+   于是装好当天能用，第二天起每一发都 401，而且天天如此。
+   （8/8 上线 autoConnect 修「每次都要重填」时带进来的，一天后才发作。）
+   修法两半：① 开机时日期变了先换一张；② 真撞上 401 再自己换一张重试一次。
+   🚨 只对**访客**这么做 —— 他手填的口令绝不能被悄悄改掉，那种 401 是真的填错了。*/
+// 后端按北京时间切日（服务器 strftime），前端不能用 toISOString 的 UTC 日期 ——
+// 北京 00:00–08:00 那 8 小时里两边日期不一样，会漏判。
+const CNDAY = () => new Date(Date.now() + 8 * 3600 * 1000)
+                      .toISOString().slice(0, 10);
+// 🚨 口令要**每次现读 S.api**：guestRefresh 换的是一个新对象，
+//    函数开头 `const cfg = S.api` 拿到的是旧的那个，照它发就还是旧令牌。
+function passHdr(){
+  const p = (S.api || {}).pass;
+  return p ? {'X-Alex-Pass': p} : {};
+}
+let _gfetch = null;                       // 并发的几发共用同一次取号
+async function guestRefresh(){
+  const cfg = S.api || {};
+  if (!cfg.url || !cfg.guest) return false;
+  if (_gfetch) return _gfetch;
+  _gfetch = (async () => {
+    try {
+      const r = await fetch(String(cfg.url).replace(/\/+$/, '') + '/api/guestpass',
+                            {cache: 'no-store'});
+      if (!r.ok) return false;
+      const d = await r.json();
+      if (!d || !d.pass) return false;
+      saveApi(Object.assign({}, cfg, {pass: d.pass, guest: true, day: CNDAY()}));
+      return true;
+    } catch(e){ return false; }
+    finally { setTimeout(() => { _gfetch = null; }, 0); }
+  })();
+  return _gfetch;
+}
+/* 开机这一道：日期变了就先换一张，别等第一发请求先失败一次。
+   🚨 只此一个入口（[[feedback_fix_once_single_config_point]]）——
+      第一版我把它写进了 `autoConnect()` 的开头，而 autoConnect **只在
+      「什么都没配过」那条分支里被调用**，配过的人（也就是所有正在用的人）
+      一次都跑不到。写完真的拿坏状态刷了一次页面才发现是死代码。 */
+function guestDayCheck(){
+  if (!(apiOn() && S.api.guest && S.api.day !== CNDAY())) return Promise.resolve(false);
+  return guestRefresh();
+}
+
+// 🚨 后端跑在 serverless 上，**空闲会缩到零**，之后第一发请求要等实例冷启动。
+//    实测这一发常常拿到 502/504，而它其实什么毛病都没有 —— 再打一次就好了。
+//    所以这类「短暂不可用」必须重试，不然他练着练着就莫名其妙报一次错。
 //    ⚠️ 只重试**短暂**的那几种；401（口令不对）、400（请求本身有问题）
 //    重试一百次也一样，重试它们只会让人多等。
-const RETRY_STATUS = [0, 408, 429, 500, 502, 503, 504];
 
 // 后端在用哪一档，说人话。
 // 🚨 只看 provider（**正在用**的那个），不看 providers（**配了**哪几把 key）。
@@ -1535,22 +1591,24 @@ async function backend(prompt, temp, wantJson){
                {role:'user', content: prompt}],
     temperature: temp, want_json: wantJson !== false,
     json: wantJson !== false, max_tokens: 8000});
-  let last = '';
+  let last = '', gtry = false;
   for (let i = 0; i < 3; i++){
     if (i) await new Promise(f => setTimeout(f, i * 1200));   // 冷启动给点时间
     let r;
     try {
       r = await fetch(url, {method:'POST',
-        headers: Object.assign({'Content-Type':'application/json'},
-                               cfg.pass ? {'X-Alex-Pass': cfg.pass} : {}),
+        headers: Object.assign({'Content-Type':'application/json'}, passHdr()),
         body});
     } catch(e){
       last = '连不上后端（' + (cfg.url || '没填地址') + '）—— ' +
              '检查地址对不对、后端是不是开着';
       continue;                       // 网络层失败也可能是冷启动，再试
     }
-    if (r.status === 401)
+    if (r.status === 401){
+      // 访客令牌隔天失效 —— 自己换一张再来（只换一次，换不到才报错）
+      if (!gtry && await guestRefresh()){ gtry = true; i--; continue; }
       throw new Error('后端口令不对，去「我的 → 后端」改一下');
+    }
     if (!r.ok){
       const t = await r.text().catch(()=> '');
       last = '后端 ' + r.status + ' ' + t.slice(0, 120);
@@ -1571,17 +1629,23 @@ async function backend(prompt, temp, wantJson){
 //    两边都在 100ms 内答完，绕开这个毛病。这里就是取结果那半。
 async function poll(job, cfg){
   const base = String(cfg.url || '').replace(/\/+$/, '');
-  const hdr = cfg.pass ? {'X-Alex-Pass': cfg.pass} : {};
   const t0 = Date.now();
-  let wait = 350;
+  let wait = 350, gtry = false;
   while (Date.now() - t0 < 150000){               // 最多等 150 秒
     await new Promise(f => setTimeout(f, wait));
     wait = Math.min(wait * 1.25, 2000);           // 慢慢退避，别把网关刷爆
     let r;
     try {
+      // 🚨 口令现读：轮询期间可能跨过零点、令牌被换掉，
+      //    抓死的旧令牌会让这边一路 401 空转到 150 秒超时。
       r = await fetch(base + '/api/job?id=' + encodeURIComponent(job),
-                      {headers: hdr});
+                      {headers: passHdr()});
     } catch(e){ continue; }                       // 网络抖动就再问一次
+    if (r.status === 401){
+      // 取结果这半也会撞上隔天失效 —— 原来它不认 401，会闷头轮询到 150 秒超时
+      if (!gtry && await guestRefresh()){ gtry = true; continue; }
+      throw new Error('后端口令不对，去「我的 → 后端」改一下');
+    }
     if (r.status === 404) throw new Error('后端把这次结果弄丢了，再试一次');
     if (!r.ok){
       const t = await r.text().catch(()=> '');
@@ -1870,16 +1934,18 @@ async function askBackendAudio(part){
   //    而这里原来是裸 fetch，一撞就直接报错，他看到的就是
   //    「说完没反应」后面跟一句看不懂的 504。
   //    文字路径早就有重试了，音频这条漏了 —— **同一个决定又只落了一半。**
-  let r = null, last = '';
+  let r = null, last = '', gtry = false;
   for (let i = 0; i < 3; i++){
     if (i) await new Promise(f => setTimeout(f, 1500 * i));
     try {
       r = await fetch(url, {method:'POST',
-        headers: Object.assign({'Content-Type':'application/json'},
-                               cfg.pass ? {'X-Alex-Pass': cfg.pass} : {}),
+        headers: Object.assign({'Content-Type':'application/json'}, passHdr()),
         body});
     } catch(e){ last = '连不上后端'; r = null; continue; }
-    if (r.status === 401) throw new Error('后端口令不对，去「我的 → 后端」改一下');
+    if (r.status === 401){
+      if (!gtry && await guestRefresh()){ gtry = true; i--; r = null; continue; }
+      throw new Error('后端口令不对，去「我的 → 后端」改一下');
+    }
     if (r.ok) break;
     last = '后端 ' + r.status + ' ' + (await r.text()).slice(0,100);
     if (RETRY_STATUS.indexOf(r.status) < 0) throw new Error(last);
@@ -6059,7 +6125,12 @@ function eatShareLink(){
 const DEFAULT_API = 'https://sqg75i2mlmanf4sqde6nh.apigateway-cn-beijing.volceapi.com';
 
 async function autoConnect(){
-  if (apiOn()) return;                       // 已经配过就不动
+  if (apiOn()){
+    // 🚨 配过也要管一件事：访客那张是**当天令牌**，日期一变必须先换。
+    //    原来这里直接 return，于是「装好那天能用、第二天起全 401」。
+    await guestDayCheck();
+    return;
+  }
   for (let i = 0; i < 4; i++){
     if (i) await new Promise(f => setTimeout(f, 1200 * i));   // 冷启动重试
     try {
@@ -6067,7 +6138,7 @@ async function autoConnect(){
       if (!r.ok) continue;
       const d = await r.json();
       if (!d || !d.pass) continue;
-      saveApi({url: DEFAULT_API, pass: d.pass, guest: true});
+      saveApi({url: DEFAULT_API, pass: d.pass, guest: true, day: CNDAY()});
       const h = await fetch(DEFAULT_API + '/api/health', {cache:'no-store'})
                         .then(x => x.json()).catch(() => null);
       if (h) noteCaps(h);
@@ -6155,7 +6226,10 @@ async function probeCaps(){
   }
   return null;
 }
-if (apiOn()) probeCaps();
+if (apiOn()){
+  probeCaps();
+  guestDayCheck();      // 访客那张是当天令牌，隔天先换一张再练
+}
 
 if (S.key || apiOn()){
   if (!S.backend) S.backend = 'gemini';        // 先按最常见的走
