@@ -4868,7 +4868,10 @@ function selBarSync(){
   } catch(_){}
   if (!inside || n < 3) return selBarHide();
   SELBAR.text = t;                       // 🚨 存住，别等点的时候再读
-  b.querySelector('.sb-n').textContent = '已选 ' + n + ' 词';
+  /* 选太长会让指南变得很泛（它是给**一个句式**用的）——提示但不拦着，
+     选多长是他的自由，我只负责让他知道代价。 */
+  b.querySelector('.sb-n').textContent = '已选 ' + n + ' 词' +
+    (n > 60 ? '（偏长，指南会比较泛）' : '');
   b.classList.add('on');
 }
 
