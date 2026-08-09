@@ -16,8 +16,9 @@ var Entities = {
     return {
       type: 'player', x: x, y: y, vx: 0, vy: 0, w: 39, h: 63,
       hearts: 3, maxHearts: 3, facing: 1, onGround: false,
-      invincible: 0, anim: 0, alive: true, jumpCut: false,
+      invincible: 0, anim: 0,       alive: true, jumpCut: false,
       slowT: 0, dizzyT: 0, bubbleAcc: 0,
+      grabbed: false,                        // 被蛇怪缠绕卷住时锁定操作（由蛇 AI 接管位置）
       hasWeapons: false,                     // 五种必杀技（第 4 幕登船解锁，跨关保留，由 Game 回填）
       cd: { bullet: 0, fireball: 0, missile: 0, atombomb: 0, hydrogenbomb: 0 },   // 各武器独立冷却
       spawnX: x, spawnY: y, prevBottom: y + 63
@@ -390,6 +391,9 @@ var Entities = {
       x1: x - 500, x2: x + 500,
       anim: 0, biteT: 2.5, constrictT: 5.0, tailT: 7.0,
       windupT: 0, biting: false, constricting: false,
+      // 巡逻 / 接触缠绕
+      wanderDir: 0, wanderT: 0,
+      grabbing: false, grabT: 0, grabSqueeze: 0,
       phase: 1, transitionT: 0,
       hurtT: 0, fallT: 0, alive: true
     };
@@ -415,10 +419,29 @@ var Entities = {
       mambaT: 4.0, mambaBurst: 0,
       // 缠绕
       constrictT: 8.0, constricting: false,
+      // 巡逻 / 接触缠绕
+      wanderDir: 0, wanderT: 0,
+      grabbing: false, grabT: 0, grabSqueeze: 0,
       phase: 1, transitionT: 0,
       hurtT: 0, fallT: 0, alive: true,
       // 盟友自动召唤标记
       alliesSummoned: false
+    };
+  },
+
+  // 小蛇：蛇山之路上的阻碍。地面来回爬行，玩家靠近时扑咬；可踩头消灭，也可被武器打掉。
+  // 触碰玩家扣 1 心（与其它地面小怪一致）。big=true 为「蛇将」：体型更大、更快、需多下命中。
+  // 格式：littlesnake(x1, x2, groundY, { big: true })
+  littlesnake: function (x1, x2, groundY, opts) {
+    opts = opts || {};
+    var big = !!opts.big;
+    var w = big ? 84 : 54, h = big ? 36 : 22;
+    var x = (x1 + x2) / 2;
+    return {
+      type: 'littlesnake', x: x, y: groundY - h, vx: 0, vy: 0, w: w, h: h,
+      x1: x1, x2: x2, dir: 1, speed: big ? 2.6 : 1.8, anim: Util.rand(0, 6.28),
+      big: big, hp: big ? 3 : 1, maxHp: big ? 3 : 1,
+      lungeT: Util.rand(1.2, 3.0), lunging: 0, hurtT: 0, alive: true, deadT: 0
     };
   }
 };

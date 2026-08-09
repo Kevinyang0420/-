@@ -2554,6 +2554,80 @@ var Render = {
     }
   },
 
+  // ===== 过场：光头强带路，从火星前往蛇山（寻找幕后黑手）=====
+  cutsceneToSnakeMountain: function (ctx, prog, t, shake) {
+    var W = VIEW.W, H = VIEW.H;
+    // 火星荒原天空
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#3a1f12'); g.addColorStop(1, '#9a4a2a');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // 远处蛇山（山形 + 盘绕的蛇影）
+    var mProg = Util.clamp((prog - 0.15) / 0.7, 0, 1);
+    var mx = W * 0.5, my = H * 0.95;
+    var mh = 260 * mProg;
+    ctx.fillStyle = '#5a2f1e';
+    ctx.beginPath();
+    ctx.moveTo(mx - 360, my);
+    ctx.lineTo(mx - 120, my - mh);
+    ctx.lineTo(mx + 60, my - mh * 0.82);
+    ctx.lineTo(mx + 200, my - mh * 1.0);
+    ctx.lineTo(mx + 360, my);
+    ctx.closePath(); ctx.fill();
+    // 蛇山顶端的蛇影（三头剪影）
+    if (mProg > 0.4) {
+      ctx.save();
+      ctx.globalAlpha = (mProg - 0.4) * 1.4;
+      ctx.strokeStyle = '#1a4a2a'; ctx.lineWidth = 16;
+      ctx.beginPath();
+      for (var a = 0; a < Math.PI * 3; a += 0.2) {
+        var rr = 36 + a * 6;
+        var px = mx + Math.cos(a) * rr, py = my - mh - 10 + Math.sin(a) * rr * 0.5;
+        if (a === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+    // 光头强 + 杨御风 并肩走向蛇山（左下 → 中）
+    var walk = Math.min(1, prog / 0.85);
+    var px2 = W * 0.12 + walk * W * 0.32;
+    var py2 = H * 0.86 - Math.abs(Math.sin(t * 6)) * 8;
+    // 光头强（橙帽绿衣大鼻子）
+    this._cutsceneWalker(ctx, px2, py2, '#3f7a34', '#e8a040', t);
+    // 杨御风（蓝红战甲）
+    this._cutsceneWalker(ctx, px2 + 46, py2, '#2a4fd0', '#d83a3a', t + 0.5);
+    // 文案
+    if (prog < 0.35) {
+      this.strokeText(ctx, '光头强醒悟了：「是帝王蛇怪控制了俺！」', W / 2, 90, 36, '#ffe14a', '#5a2a00', 7);
+    } else if (prog < 0.72) {
+      this.strokeText(ctx, '光头强带路，前往蛇山！', W / 2, 90, 40, '#fff', '#000', 7);
+    } else {
+      this.strokeText(ctx, '过五关斩六将，找到三头帝王蛇！', W / 2, 90, 34, '#ffd94a', '#5a2a00', 7);
+    }
+  },
+
+  // 过场里的小人（capsule 身体 + 圆头 + 帽子）
+  _cutsceneWalker: function (ctx, x, y, suit, hat, t) {
+    var bob = Math.abs(Math.sin(t * 6)) * 4;
+    ctx.save();
+    ctx.translate(x, y - bob);
+    // 身体
+    ctx.fillStyle = suit;
+    Util.roundRect(ctx, -12, -34, 24, 34, 8); ctx.fill();
+    // 头
+    ctx.fillStyle = '#f0c89a';
+    ctx.beginPath(); ctx.arc(0, -44, 12, 0, Math.PI * 2); ctx.fill();
+    // 帽子
+    ctx.fillStyle = hat;
+    ctx.beginPath(); ctx.arc(0, -50, 12, Math.PI, 0); ctx.fill();
+    ctx.fillRect(-12, -50, 24, 4);
+    // 腿（简单摆动）
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 4;
+    var sw = Math.sin(t * 6) * 6;
+    ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(-5 + sw, 10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(5, 0); ctx.lineTo(5 - sw, 10); ctx.stroke();
+    ctx.restore();
+  },
+
   // ===== 帝王蛇怪系列渲染 =====
 
   // 蛇咬攻击：快速飞行的蛇头冲撞
@@ -2643,6 +2717,73 @@ var Render = {
     for (var a2 = 0; a2 < Math.PI * 4; a2 += 0.15) {
       var rr2 = e.r * (a2 / (Math.PI * 4));
       var px2 = x + Math.cos(a2) * rr2, py2 = y + Math.sin(a2) * rr2;
+      if (a2 === 0) ctx.moveTo(px2, py2); else ctx.lineTo(px2, py2);
+    }
+    ctx.stroke();
+    ctx.restore();
+  },
+
+  // 小蛇：蛇山之路上的阻碍。big 为「蛇将」，画得更大更亮。
+  littlesnake: function (ctx, e, cam, t) {
+    var x = e.x - cam.x, y = e.y;
+    var dir = e.dir || 1;
+    ctx.save();
+    if (e.hurtT > 0) ctx.globalAlpha = 0.6 + 0.4 * Math.sin(e.hurtT * 30);
+    var segN = e.big ? 10 : 7;
+    var baseCol = e.big ? '#7a3a1a' : '#1a4a2a';
+    var liteCol = e.big ? '#c8702a' : '#2d6a3e';
+    for (var si = 0; si < segN; si++) {
+      var f = si / segN;
+      var wob = Math.sin(e.anim * 2 + si * 0.8) * (e.lunging > 0 ? 7 : 3);
+      // 头朝 dir 方向：整体偏移让蛇头在移动前方
+      var sx = x + (dir > 0 ? f * 0.85 : (1 - f) * 0.85) * e.w + 0.075 * e.w;
+      var sy = y + e.h / 2 + wob;
+      var sr = (e.big ? 15 : 10) * (1 - f * 0.45);
+      if (si === 0) sr = (e.big ? 11 : 7); // 尾尖
+      ctx.fillStyle = baseCol;
+      ctx.beginPath(); ctx.arc(sx, sy, sr + 1, 0, Math.PI * 2); ctx.fill();
+      if (si % 2 === 0) {
+        ctx.fillStyle = liteCol;
+        ctx.beginPath(); ctx.arc(sx, sy, sr * 0.6, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    // 蛇头
+    var hx = dir > 0 ? x + e.w - 6 : x + 6;
+    ctx.save();
+    ctx.translate(hx, y + e.h / 2);
+    ctx.scale(dir, 1);
+    ctx.fillStyle = baseCol;
+    ctx.beginPath(); ctx.ellipse(0, 0, e.big ? 16 : 11, e.big ? 11 : 8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ff3030';
+    ctx.beginPath(); ctx.arc(6, -4, 2.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(6, 4, 2.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    ctx.restore();
+  },
+
+  // 玩家被蛇怪「缠绕卷死」时，身上的缠绞蛇身（与蛇怪同色）
+  snakecoil: function (ctx, p, cam, t) {
+    var x = p.x - cam.x, y = p.y;
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = '#1a4a2a';
+    ctx.lineWidth = 12;
+    ctx.beginPath();
+    var loops = 3;
+    for (var a = 0; a <= Math.PI * 2 * loops; a += 0.2) {
+      var rr = 22 + Math.sin(a * 1.5 + t * 8) * 5;
+      var px = x + p.w / 2 + Math.cos(a) * rr;
+      var py = y + p.h / 2 + Math.sin(a) * rr * 0.8;
+      if (a === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = '#3a8a4a';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    for (var a2 = 0; a2 <= Math.PI * 2 * loops; a2 += 0.2) {
+      var rr2 = 22 + Math.sin(a2 * 1.5 + t * 8) * 5;
+      var px2 = x + p.w / 2 + Math.cos(a2) * rr2;
+      var py2 = y + p.h / 2 + Math.sin(a2) * rr2 * 0.8;
       if (a2 === 0) ctx.moveTo(px2, py2); else ctx.lineTo(px2, py2);
     }
     ctx.stroke();

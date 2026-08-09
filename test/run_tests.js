@@ -53,7 +53,7 @@ test('脚本全部加载并实例化 window.game', function () {
   assert.strictEqual(game.state, 'menu', '初始状态应为 menu');
   assert.strictEqual(global.VIEW.W, 1440, 'VIEW.W 应为 1440');
   assert.strictEqual(global.VIEW.H, 810, 'VIEW.H 应为 810');
-  assert.strictEqual(global.STAGES.length, 14, '应有 14 个可玩幕（原版火星主线 8 幕 + 新增月球续集 6 幕）');
+  assert.strictEqual(global.STAGES.length, 17, '应有 17 个可玩幕（原版火星主线 8 幕 + 新增月球续集 6 幕 + 蛇山终章 3 幕）');
 });
 
 test('只读状态字段齐全（含 hasWeapons / killCount）', function () {
@@ -654,16 +654,16 @@ test('巨型时间吞噬者血量跨死亡持久化；被打死进入返航过�
   game.retry();
   boss = findEntity('gianttimedevourer');
   assert.strictEqual(boss.hp, 100, '死亡重来应接着 100 点残血打');
-  // 打死 → 胜利小节 → 返航过场 → win
+  // 打死 → 胜利小节 → 「光头强带路去蛇山」过场 → 第 15 幕 蛇山之路
   game._damageBoss(boss, boss.hp);
   assert.strictEqual(boss.alive, false);
   assert.strictEqual(game.bossClearName, '光头强');
   stepFrames(150);   // > 2s 胜利小节
-  assert.strictEqual(game.state, 'cutscene', '最终 Boss 死后应进入返航过场');
-  assert.strictEqual(game.cutscene.type, 'return');
-  stepFrames(300);   // > 4.5s 返航过场
-  assert.strictEqual(game.state, 'win', '返航过场结束应进入胜利');
-  assert.strictEqual(game.stageIndex, 14, 'win 时 stageIndex 应为 14（LAST_STAGE）');
+  assert.strictEqual(game.state, 'cutscene', '光头强死后应进入「带路去蛇山」过场');
+  assert.strictEqual(game.cutscene.type, 'toSnakeMountain');
+  stepFrames(320);   // > 5s 过场
+  assert.strictEqual(game.state, 'playing', '过场结束应进入第 15 幕（蛇山之路）');
+  assert.strictEqual(game.stageIndex, 14, '过场结束应进入第 15 幕（idx 14）');
 });
 
 // ===== 流程 =====
@@ -751,26 +751,44 @@ test('14 幕依序真实推进到 win（原版火星主线 + 新增月球续集�
   killBoss(11, 'crabbeast', 12, '中级蜘蛛兽（骷髅头）');
   killBoss(12, 'midspider', 13, '巨型时间吞噬者（光头强）');
 
-  // ===== 第 14 幕 巨型时间吞噬者（最终）→ 返航过场 → win =====
+  // ===== 第 14 幕 巨型时间吞噬者（光头强）被打败 → 光头强带路过场 → 第 15 幕 蛇山之路 =====
   game.debugGotoStage(13);
-  var finalBoss = findEntity('gianttimedevourer');
-  assert.ok(finalBoss, '第 14 幕应有巨型时间吞噬者');
-  game._damageBoss(finalBoss, finalBoss.hp);
+  var gtq = findEntity('gianttimedevourer');
+  assert.ok(gtq, '第 14 幕应有巨型时间吞噬者');
+  game._damageBoss(gtq, gtq.hp);
+  stepFrames(150);
+  assert.strictEqual(game.state, 'cutscene', '光头强死后进入「带路去蛇山」过场');
+  assert.strictEqual(game.cutscene.type, 'toSnakeMountain');
+  stepFrames(320);
+  assert.strictEqual(game.stageIndex, 14, '过场结束应进入第 15 幕（蛇山之路）');
+
+  // ===== 第 15 幕 蛇山之路：走到终点旗 → 第 16 幕 帝王蛇怪 =====
+  reachFlag(14, 4650);
+  assert.strictEqual(game.stageIndex, 15, '蛇山之路终点旗 → 第 16 幕（帝王蛇怪）');
+
+  // ===== 第 16 幕 帝王蛇怪（boss）→ 第 17 幕 三头帝王蛇 =====
+  killBoss(15, 'emperorsnake', 16, '三头帝王蛇');
+
+  // ===== 第 17 幕 三头帝王蛇（最终）→ 返航过场 → win =====
+  game.debugGotoStage(16);
+  var finalSnake = findEntity('threeheadsnake');
+  assert.ok(finalSnake, '第 17 幕应有三头帝王蛇');
+  game._damageBoss(finalSnake, finalSnake.hp);
   stepFrames(150);
   assert.strictEqual(game.state, 'cutscene', '最终 Boss 死后进入返航过场');
   assert.strictEqual(game.cutscene.type, 'return');
   stepFrames(320);
   assert.strictEqual(game.state, 'win', '返航过场结束应进入胜利');
-  assert.strictEqual(game.stageIndex, 14, 'win 时 stageIndex 应为 LAST_STAGE(14)');
+  assert.strictEqual(game.stageIndex, 17, 'win 时 stageIndex 应为 LAST_STAGE(17)');
 });
 
-test('debugGotoStage 辅助可用（n>=14 进 win）', function () {
-  game.debugGotoStage(13);
-  assert.strictEqual(game.stageIndex, 13);
+test('debugGotoStage 辅助可用（n>=LAST_STAGE 进 win）', function () {
+  game.debugGotoStage(15);
+  assert.strictEqual(game.stageIndex, 15);
   assert.strictEqual(game.state, 'playing');
-  game.debugGotoStage(14);
+  game.debugGotoStage(17);
   assert.strictEqual(game.state, 'win');
-  assert.strictEqual(game.stageIndex, 14);
+  assert.strictEqual(game.stageIndex, 17);
 });
 
 test('扣光心进入 gameover 且能重开', function () {

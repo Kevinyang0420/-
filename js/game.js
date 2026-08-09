@@ -12,7 +12,8 @@ var SHOOTABLE = {
   sockbeast: [150, '#7a8aaa'],
   hornbeast: [100, '#e07830'],
   rollbeast: [150, '#3aa8a0'],
-  snotworm: [50, '#b8d84a']
+  snotworm: [50, '#b8d84a'],
+  littlesnake: [80, '#9ad04a']
 };
 
 // 五种必杀技的直接命中伤害（原子弹/氢弹的伤害由爆炸 AoE 结算）
@@ -23,8 +24,9 @@ var BOSS_PHASE2_FRAC = 0.5;
 var MAX_ALLIES = 2;            // 最多同时召唤的宇航员队友数（飞飞、童童）
 var SUMMON_CD = 0.7;           // 召唤冷却（秒），避免一次按出一群
 
-// 可玩幕为 idx 0~13（共 14 幕）；到 idx 14 进 win（「飞回地球」是返航过场 + 胜利画面）
-var LAST_STAGE = 16;
+// 可玩幕为 idx 0~16（共 17 幕）：原版火星主线 8 幕 + 月球续集 6 幕 + 蛇山之路/帝王蛇怪/三头帝王蛇 3 幕
+// 到 idx 17 进 win（「飞回地球」是返航过场 + 胜利画面）
+var LAST_STAGE = 17;
 
 function Game() {
   this.canvas = null;
@@ -181,6 +183,11 @@ Game.prototype.loadStage = function (i) {
     var sw = s.snotWorms[k];
     this.entities.push(Entities.snotworm(sw[0], sw[1], s.groundY));
   }
+  // 蛇山之路：小蛇阻碍（可带 big:true 作为「蛇将」）
+  for (k = 0; k < (s.littleSnakes || []).length; k++) {
+    var ls = s.littleSnakes[k];
+    this.entities.push(Entities.littlesnake(ls[0], ls[1], s.groundY, ls[2] || {}));
+  }
   // 关卡预设的黏液：长期存在
   for (k = 0; k < s.slimes.length; k++) {
     this.entities.push(Entities.slime(s.slimes[k] - 45, s.groundY - 14, 9999));
@@ -285,6 +292,8 @@ Game.prototype.updatePlaying = function (dt) {
   }
 
   // ----- 输入：移动（晕眩时左右反向）-----
+  // 被蛇怪「缠绕卷死」抓住时锁定一切操作，位置由蛇 AI 接管
+  if (!p.grabbed) {
   var move = 0;
   if (Input.action('left')) move -= 1;
   if (Input.action('right')) move += 1;
@@ -383,6 +392,7 @@ Game.prototype.updatePlaying = function (dt) {
 
   // 掉出底部
   if (p.y > s.groundY + 360) { this.fellOff(); return; }
+  } // end if (!p.grabbed)
 
   // ----- 相机 -----
   var targetCam = Util.clamp(p.x - VIEW.W * 0.375, 0, Math.max(0, s.width - VIEW.W));
@@ -400,7 +410,7 @@ Game.prototype.updatePlaying = function (dt) {
     if (e.type === 'house') return e.alive;
     if (e.type === 'poopbeast') return e.alive || e.deadT < 0.4;
     if (e.type === 'snotbeast' || e.type === 'sockbeast') return e.alive || e.deadT < 0.4;
-    if (e.type === 'hornbeast' || e.type === 'rollbeast' || e.type === 'snotworm') return e.alive || e.deadT < 0.4;
+    if (e.type === 'hornbeast' || e.type === 'rollbeast' || e.type === 'snotworm' || e.type === 'littlesnake') return e.alive || e.deadT < 0.4;
     if (e.type === 'spiderboss' || e.type === 'timedevourer' || e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'spiderling' || e.type === 'gianttimedevourer' || e.type === 'emperorsnake' || e.type === 'threeheadsnake') return e.alive || e.fallT < 2.6;
     if (e.type === 'bullet' || e.type === 'fireball' || e.type === 'missile') return e.alive;
     if (e.type === 'devilfire') return e.alive;
@@ -501,6 +511,30 @@ Game.prototype._updateEntity = function (e, dt, f, s) {
     if (e.alive) {
       e.anim += dt * 6;
       e.x += e.vx * f;
+      if (e.x < e.x1) { e.x = e.x1; e.vx = Math.abs(e.vx); }
+      if (e.x + e.w > e.x2) { e.x = e.x2 - e.w; e.vx = -Math.abs(e.vx); }
+    } else {
+      e.deadT += dt;
+    }
+  } else if (e.type === 'littlesnake') {
+    if (e.alive) {
+      e.anim += dt * 8;
+      if (e.hurtT > 0) e.hurtT = Math.max(0, e.hurtT - dt);
+      var lsp = this.player;
+      e.dir = (lsp.x + lsp.w / 2) < (e.x + e.w / 2) ? -1 : 1;
+      if (e.lunging > 0) {
+        // 扑咬：短暂加速冲向玩家
+        e.lunging -= dt;
+        e.x += e.dir * (e.big ? 6.0 : 4.4) * f;
+      } else {
+        e.x += e.dir * e.speed * f;
+        e.lungeT -= dt;
+        if (e.lungeT <= 0) {
+          var ldist = Math.abs(lsp.x - e.x);
+          if (ldist < (e.big ? 520 : 420)) e.lunging = 0.5;
+          e.lungeT = Util.rand(1.4, 3.0);
+        }
+      }
       if (e.x < e.x1) { e.x = e.x1; e.vx = Math.abs(e.vx); }
       if (e.x + e.w > e.x2) { e.x = e.x2 - e.w; e.vx = -Math.abs(e.vx); }
     } else {
@@ -1305,6 +1339,11 @@ Game.prototype._bossDie = function (e) {
   e.windupT = 0;
   e.blinkOut = 0;
   e.blinkIn = 0;
+  e.grabbing = false;   // 若正缠着玩家，立刻放开
+  if (this.player && this.player.grabbed) {
+    this.player.grabbed = false;
+    this.player.invincible = 1.6;
+  }
   this.score += 1000;
   this.shake = Math.max(this.shake, 12);
   this.bossClearT = 2.0;      // 胜利小节：放完「打败了 xx！」再进下一幕
@@ -1318,6 +1357,86 @@ Game.prototype._bossDie = function (e) {
   Sfx.bossDie();
 };
 
+// ===== 蛇怪通用：来回跑动巡逻（不再停在玩家身边）=====
+Game.prototype._snakePatrol = function (e, dt, f, s, p, spd) {
+  if (e.biting || e.constricting || e.grabbing) {
+    // 出招 / 抓取时减速但仍保持惯性，不会完全僵住
+    e.vx *= 0.85;
+  } else {
+    e.wanderT -= dt;
+    if (e.wanderT <= 0) {
+      // 多数时候朝玩家，偶尔反向 → 看起来在场地里来回跑动
+      var toP = (p.x + p.w / 2) < (e.x + e.w / 2) ? -1 : 1;
+      e.wanderDir = (Math.random() < 0.6) ? toP : (e.wanderDir >= 0 ? -1 : 1);
+      e.wanderT = Util.rand(1.0, 2.2);
+    }
+    e.vx = e.wanderDir * spd;
+    e.dir = e.wanderDir;
+  }
+  e.x += e.vx * f;
+  if (e.x < e.x1) { e.x = e.x1; e.wanderDir = 1; e.vx = spd; }
+  if (e.x + e.w > e.x2) { e.x = e.x2 - e.w; e.wanderDir = -1; e.vx = -spd; }
+};
+
+// ===== 蛇怪通用：来回跑动时撞到玩家 → 缠绕卷住（卷死）=====
+Game.prototype._snakeGrab = function (e, dt, f, s, p) {
+  // 安全兜底：Boss 死了但玩家还被缠着 → 立刻放开
+  if (!e.alive && p.grabbed) {
+    p.grabbed = false; p.invincible = 1.6;
+    return;
+  }
+  if (!e.grabbing && !p.grabbed && p.invincible <= 0) {
+    var sbx = e.x + 14, sby = e.y + 10, sbw = e.w - 28, sbh = e.h - 16;
+    if (Util.aabb(p.x, p.y, p.w, p.h, sbx, sby, sbw, sbh)) {
+      e.grabbing = true; e.grabT = 0; e.grabSqueeze = 0;
+      p.grabbed = true; p.vx = 0; p.vy = 0;
+      p.facing = e.dir >= 0 ? -1 : 1;
+      this.shake = Math.max(this.shake, 9);
+      Sfx.stomp();
+    }
+  }
+  if (e.grabbing) {
+    // 把玩家拖到蛇身底部（被缠住卷着一起走）
+    p.x = e.x + e.w / 2 - p.w / 2;
+    p.y = s.groundY - p.h;
+    p.vx = 0; p.vy = 0;
+    p.facing = e.dir >= 0 ? -1 : 1;
+    e.grabT += dt;
+    // 挤压两次：0.5s 与 1.1s 各扣 1 心（无视无敌帧，这是被「卷死」）
+    if (e.grabSqueeze < 2) {
+      var squeezeAt = e.grabSqueeze === 0 ? 0.5 : 1.1;
+      if (e.grabT >= squeezeAt) {
+        e.grabSqueeze++;
+        this._crushPlayer(1);
+        this.shake = Math.max(this.shake, 10);
+        this._dust(p.x + p.w / 2, p.y + p.h / 2, 10, '#9ad04a');
+      }
+    }
+    // 1.7s 后放开，把玩家弹开并给予短暂无敌
+    if (e.grabT >= 1.7) {
+      e.grabbing = false;
+      p.grabbed = false;
+      p.invincible = 1.6;
+      p.vy = -11; p.vx = -e.dir * 5;
+      e.wanderT = 0.5;
+    }
+  }
+};
+
+// 被蛇怪「卷死」缠绕：无视常规无敌帧、可一次扣多心的挤压伤害
+Game.prototype._crushPlayer = function (hearts) {
+  var p = this.player;
+  if (!p || !p.alive) return;
+  p.hearts -= hearts;
+  Sfx.hurt();
+  this._dust(p.x + p.w / 2, p.y + p.h / 2, 10, '#ff8a8a');
+  if (p.hearts <= 0) {
+    p.hearts = 0; p.alive = false; p.grabbed = false;
+    this.state = 'gameover';
+    Sfx.gameover();
+  }
+};
+
 // ===== 帝王蛇怪 AI =====
 Game.prototype._updateEmperorSnake = function (e, dt, f, s) {
   if (!e.alive) {
@@ -1329,23 +1448,13 @@ Game.prototype._updateEmperorSnake = function (e, dt, f, s) {
   if (e.transitionT > 0) { e.transitionT -= dt; return; }
 
   var p = this.player;
-  var spd = e.phase === 2 ? 1.8 : 1.1;
-
-  // 朝玩家方向缓慢移动
-  if (e.biting || e.constricting) {
-    e.vx *= 0.85;
-  } else {
-    if (p.x + p.w / 2 < e.x + e.w / 2 - 40) { e.vx = -spd; e.dir = -1; }
-    else if (p.x + p.w / 2 > e.x + e.w / 2 + 40) { e.vx = spd; e.dir = 1; }
-    else e.vx *= 0.85;
-  }
-  e.x += e.vx * f;
-  if (e.x < e.x1) { e.x = e.x1; e.vx = 0; }
-  if (e.x + e.w > e.x2) { e.x = e.x2 - e.w; e.vx = 0; }
+  // 来回跑动（之前是半固定、几乎不动，玩家躲旁边就打不到）
+  var spd = e.phase === 2 ? 3.0 : 2.0;
+  this._snakePatrol(e, dt, f, s, p, spd);
 
   // 咬击
   e.biteT -= dt;
-  if (e.biteT <= 0 && !e.biting && !e.constricting) {
+  if (e.biteT <= 0 && !e.biting && !e.constricting && !e.grabbing) {
     e.biting = true;
     e.windupT = 0.5;
   }
@@ -1361,9 +1470,9 @@ Game.prototype._updateEmperorSnake = function (e, dt, f, s) {
     }
   }
 
-  // 缠绕
+  // 缠绕（范围圈，仍是次要招式，主要威胁改为「接触卷死」）
   e.constrictT -= dt;
-  if (e.constrictT <= 0 && !e.biting && !e.constricting) {
+  if (e.constrictT <= 0 && !e.biting && !e.constricting && !e.grabbing) {
     e.constricting = true;
     e.windupT = 0.7;
   }
@@ -1376,6 +1485,9 @@ Game.prototype._updateEmperorSnake = function (e, dt, f, s) {
       e.constrictT = e.phase === 2 ? 3.5 : 6.0;
     }
   }
+
+  // 接触缠绕：来回跑动撞到玩家 → 缠住卷死（替换原先「发个正弦波就结束」的无效盘绕）
+  this._snakeGrab(e, dt, f, s, p);
 };
 
 // ===== 三头帝王蛇 AI =====
@@ -1407,15 +1519,9 @@ Game.prototype._updateThreeHeadSnake = function (e, dt, f, s) {
   }
 
   var p = this.player;
-  var spd = e.phase === 2 ? 1.2 : 0.8;
-
-  // 缓慢追踪玩家
-  if (p.x + p.w / 2 < e.x + e.w / 2 - 60) { e.vx = -spd; e.dir = -1; }
-  else if (p.x + p.w / 2 > e.x + e.w / 2 + 60) { e.vx = spd; e.dir = 1; }
-  else e.vx *= 0.85;
-  e.x += e.vx * f;
-  if (e.x < e.x1) { e.x = e.x1; e.vx = 0; }
-  if (e.x + e.w > e.x2) { e.x = e.x2 - e.w; e.vx = 0; }
+  // 来回跑动（之前几乎是半固定的，玩家躲旁边就打不到）
+  var spd = e.phase === 2 ? 2.4 : 1.6;
+  this._snakePatrol(e, dt, f, s, p, spd);
 
   // 帝王蛇头(0)：咬击
   if (e.headAlive[0]) {
@@ -1472,6 +1578,9 @@ Game.prototype._updateThreeHeadSnake = function (e, dt, f, s) {
     this.shake = Math.max(this.shake, 8);
     e.constrictT = e.phase === 2 ? 5.0 : 8.0;
   }
+
+  // 接触缠绕：来回跑动撞到玩家 → 缠住卷死
+  this._snakeGrab(e, dt, f, s, p);
 };
 
 // 投射物消灭小怪：复用踩头的死亡动画与分值
@@ -1530,8 +1639,26 @@ Game.prototype._projectileHits = function (s) {
       if (SHOOTABLE[e.type]) {
         // 命中盒比视觉略小一点（对小朋友友好）
         if (Util.aabb(px, py, pw, ph, e.x + 4, e.y + 4, e.w - 8, e.h - 6)) {
-          if (isBomb) this._explodeBomb(pr);
-          else {
+          if (e.type === 'littlesnake') {
+            // 小蛇：普通一击死；蛇将（big）需多下命中
+            if (isBomb) {
+              this._explodeBomb(pr);
+            } else {
+              e.hp -= (WEAPON_DMG[pr.type] || 1);
+              e.hurtT = 0.12;
+              pr.alive = false;
+              this._dust(e.x + e.w / 2, e.y + e.h / 2, 6, '#9ad04a');
+              if (e.hp <= 0) {
+                e.alive = false; e.deadT = 0;
+                this.score += SHOOTABLE.littlesnake[0];
+                Sfx.stomp();
+                this._dust(e.x + e.w / 2, e.y + e.h / 2, 10, '#9ad04a');
+              }
+              if (pr.type !== 'bullet') this._dust(px + pw / 2, py + ph / 2, 10, '#ff9a3a');
+            }
+          } else if (isBomb) {
+            this._explodeBomb(pr);
+          } else {
             this._killEnemy(e, SHOOTABLE[e.type][0], SHOOTABLE[e.type][1]);
             pr.alive = false;
             if (pr.type !== 'bullet') this._dust(px + pw / 2, py + ph / 2, 10, '#ff9a3a');
@@ -1713,6 +1840,19 @@ Game.prototype._collisions = function (s) {
       } else if (Util.aabb(px, py, pw, ph, e.x + 4, e.y + 4, e.w - 8, e.h - 6)) {
         this.hitPlayer();
       }
+    } else if (e.type === 'littlesnake' && e.alive) {
+      if (this._isStomp(e)) {
+        if (e.big && e.hp > 1) {
+          // 蛇将：踩头只削一层，弹起但不死
+          e.hp--; e.hurtT = 0.12;
+          var lp = this.player; lp.vy = -13.5; lp.jumpCut = false;
+          Sfx.stomp(); this._dust(e.x + e.w / 2, e.y + e.h, 8, '#9ad04a');
+        } else {
+          this._doStomp(e, SHOOTABLE.littlesnake[0], '#9ad04a');
+        }
+      } else if (Util.aabb(px, py, pw, ph, e.x + 4, e.y + 4, e.w - 8, e.h - 6)) {
+        this.hitPlayer();
+      }
     } else if (e.type === 'snotbeast' && e.alive) {
       if (this._isStomp(e)) {
         this._doStomp(e, 150, '#a8c84a');
@@ -1787,7 +1927,13 @@ Game.prototype._collisions = function (s) {
       if (Util.aabb(px, py, pw, ph, e.x + 14, e.y + 10, e.w - 28, e.h - 16)) {
         this.hitPlayer();
       }
-    } else if ((e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'gianttimedevourer' || e.type === 'emperorsnake' || e.type === 'threeheadsnake') && e.alive) {
+    } else if ((e.type === 'emperorsnake' || e.type === 'threeheadsnake') && e.alive) {
+      // 蛇怪庞大的身体：碰到扣 1 心（命中盒略小于视觉）。
+      // 但被「缠绕卷死」抓住时伤害由 _snakeGrab 接管，这里跳过避免重复扣血。
+      if (!e.grabbing && Util.aabb(px, py, pw, ph, e.x + 14, e.y + 10, e.w - 28, e.h - 16)) {
+        this.hitPlayer();
+      }
+    } else if ((e.type === 'devilbeast' || e.type === 'crabbeast' || e.type === 'midspider' || e.type === 'gianttimedevourer') && e.alive) {
       // 新 Boss 庞大的身体：碰到扣 1 心（命中盒略小于视觉）
       if (Util.aabb(px, py, pw, ph, e.x + 14, e.y + 10, e.w - 28, e.h - 16)) {
         this.hitPlayer();
@@ -1837,6 +1983,11 @@ Game.prototype._checkGoal = function (s, dt) {
         if (s.final) {
           this.state = 'cutscene';
           this.cutscene = { type: 'return', t: 0, dur: 4.5 };
+          Sfx.returnFly();
+        } else if (s.bossLeadsToSnake) {
+          // 光头强恢复理智，带玩家前往蛇山寻找幕后黑手（插入过渡过场）
+          this.state = 'cutscene';
+          this.cutscene = { type: 'toSnakeMountain', t: 0, dur: 5.0 };
           Sfx.returnFly();
         } else {
           this.loadStage(this.stageIndex + 1);
@@ -1922,6 +2073,12 @@ Game.prototype.updateCutscene = function (dt) {
     this.shake = Math.max(this.shake, 4.5 * Math.sin(c.t * 4) * (1 - c.t / c.dur));
     if (c.t >= c.dur) {
       this.goWin();
+    }
+  } else if (c.type === 'toSnakeMountain') {
+    this.shake = Math.max(this.shake, 4 * Math.sin(c.t * 4) * (1 - c.t / c.dur));
+    if (c.t >= c.dur) {
+      this.loadStage(this.stageIndex + 1);
+      this.state = 'playing';
     }
   }
 };
@@ -2024,6 +2181,7 @@ Game.prototype._drawScene = function (ctx) {
     else if (e2.type === 'snotbeast') Render.snotbeast(ctx, e2, this.camera);
     else if (e2.type === 'snotball' && e2.alive) Render.snotball(ctx, e2, this.camera);
     else if (e2.type === 'snotworm') Render.snotworm(ctx, e2, this.camera);
+    else if (e2.type === 'littlesnake' && e2.alive) Render.littlesnake(ctx, e2, this.camera, this.time);
     else if (e2.type === 'sockbeast') Render.sockbeast(ctx, e2, this.camera);
     else if (e2.type === 'stink' && e2.alive) Render.stink(ctx, e2, this.camera);
     else if (e2.type === 'webball' && e2.alive) Render.webball(ctx, e2, this.camera);
@@ -2064,6 +2222,8 @@ Game.prototype._drawScene = function (ctx) {
   }
   // 玩家
   if (this.player) Render.player(ctx, this.player, this.camera);
+  // 被蛇怪缠绕卷住时，在玩家身上画一圈缠绞的蛇身
+  if (this.player && this.player.grabbed) Render.snakecoil(ctx, this.player, this.camera, this.time);
   // 粒子在最上层
   for (var m = 0; m < this.entities.length; m++) {
     var e3 = this.entities[m];
@@ -2122,6 +2282,8 @@ Game.prototype._drawCutscene = function (ctx) {
     Render.cutsceneEnterCastle(ctx, prog, this.time);
   } else if (c.type === 'return') {
     Render.cutsceneReturn(ctx, prog, this.time, this.shake, STAGES[this.stageIndex].groundY);
+  } else if (c.type === 'toSnakeMountain') {
+    Render.cutsceneToSnakeMountain(ctx, prog, this.time, this.shake);
   }
 };
 
