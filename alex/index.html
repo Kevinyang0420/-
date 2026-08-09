@@ -358,6 +358,20 @@ button{font-family:inherit}
   border-bottom-width:4px;color:var(--fg-strong)}
 .tile.t-read .ds,
 .tile.t-write .ds{color:var(--muted)}
+#selbar{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
+  z-index:9999;display:none;align-items:center;gap:10px;padding:10px 12px;
+  border-radius:14px;background:var(--card);border:1px solid var(--line);
+  box-shadow:0 8px 30px rgba(0,0,0,.28)}
+#selbar.on{display:flex}
+#selbar .sb-n{font-size:12.5px;color:var(--muted);flex:0 0 auto}
+#selbar button{flex:1;padding:9px 10px;border-radius:10px;font-size:14px;
+  font-weight:700;border:1px solid var(--line);background:var(--card);
+  color:var(--fg);cursor:pointer;font-family:inherit}
+#selbar .sb-go{background:var(--accent);color:var(--on-accent);border-color:var(--accent);flex:2}
+/* 🚨 正文必须可选中。`.sent` 原来只设了 cursor:pointer，
+   但父层若有 user-select:none 就长按不出手柄 —— 这里显式打开。 */
+.better .en,.sent{-webkit-user-select:text;user-select:text}
+.sent::selection{background:#fff2a8;color:#000}
 .sent{cursor:pointer;border-radius:4px;padding:1px 0;
   transition:background .12s;-webkit-tap-highlight-color:transparent}
 .sent:hover{background:var(--brand-soft)}
@@ -2992,11 +3006,13 @@ function showSession(se){
    结束后能在「历史」里翻回来看，包括当时 Alex 给的那句「该这么说」。 */
 const NAV = [];
 function go(render, title){
+  if (window.selBarHide) selBarHide();   // 🚨 换屏必收浮条：selectionchange 不会因为切页而触发
   NAV.push({render, title});
   render();
   paintNav();
 }
 function back(){
+  if (window.selBarHide) selBarHide();   // 🚨 换屏必收浮条：selectionchange 不会因为切页而触发
   onVoices = null;
   NAV.pop();
   const v = NAV[NAV.length - 1];
@@ -3905,6 +3921,7 @@ function bindTop(){
 }
 
 async function showRead(){
+  selBarHide();          // 换页先收浮条
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
   const f = $('#feed');
   f.innerHTML = '<div class="note">正在取…</div>';
@@ -4748,8 +4765,114 @@ function keptDrill(f, it, g){
   f.appendChild(box);
 }
 
+
+/* ═══ 划选收藏 ═══
+   Kevin 2026-08-09：「我想把范文里的某个句子单独选中（就像用苹果手机那样，
+   可以长按，把那一块的句子选中），然后直接点一下收藏，它就真的只收藏我
+   选中的这一个句子。」
+
+   🚨 原来是「点一句 = 直接收藏那一句」。问题有两个：
+     ① 句子边界是**我切的**，不是他要的。实测 15% 的句子超过 40 词、
+        最长 88 词（模型爱写分号列举的长句）—— 点一下就收下一大坨，
+        看起来就像把整段收了。
+     ② 他要的粒度可能是半句、也可能是跨句的两小节，**我切不出来**。
+   正解：交给他自己划。点一句只是**帮他把这句选上**（还能拖手柄调整），
+   真正的收藏动作统一走「选区 → 收藏」这一条路。 */
+
+function selWords(t){ return (t || '').trim().split(/\s+/).filter(Boolean).length; }
+
+/* 选中的文字要洗一遍：跨 span 选择会带进多余空白和换行 */
+function selClean(t){
+  return (t || '').replace(/\s+/g, ' ').trim()
+                  .replace(/^[^A-Za-z0-9“"'(]+/, '')     // 去掉开头的标点残渣
+                  .replace(/[\s,;:]+$/, '');             // 结尾别停在逗号上
+}
+
+const SELBAR = {el: null, essay: null, box: null};
+
+function selBarInit(essay, box){
+  SELBAR.essay = essay; SELBAR.box = box;
+  if (SELBAR.el) return;
+  const b = document.createElement('div');
+  b.id = 'selbar';
+  b.innerHTML = '<span class="sb-n"></span>' +
+    '<button class="sb-go">☆ 收藏选中的这句</button>' +
+    '<button class="sb-x">取消</button>';
+  document.body.appendChild(b);
+  SELBAR.el = b;
+  b.querySelector('.sb-x').onclick = () => {
+    try { window.getSelection().removeAllRanges(); } catch(_){}
+    selBarHide();
+  };
+  b.querySelector('.sb-go').onclick = () => {
+    const t = selClean(String(window.getSelection() || ''));
+    if (selWords(t) < 3) return;
+    const es = SELBAR.essay;
+    try { window.getSelection().removeAllRanges(); } catch(_){}
+    selBarHide();
+    keepSent(es, t, null);
+    // 高亮刷新：收藏后正文里那几句要变黄
+    if (SELBAR.box) markKeptSents(SELBAR.box, es);
+  };
+  /* 🚨 selectionchange 在 iOS 上是选择过程中一直触发的，
+     所以只更新条上的字数，不做别的重活。 */
+  document.addEventListener('selectionchange', selBarSync);
+}
+
+function selBarSync(){
+  const b = SELBAR.el;
+  if (!b || !SELBAR.box) return;
+  /* 🚨 容器已经被换掉（切了页）就必须收起来。
+     光判 `SELBAR.box.contains(node)` 不够 —— 页面重绘后那个 box 变成**游离节点**，
+     它的后代仍然 contains 得到，于是浮条会一直挂在下一屏上。
+     判据要加一条：这个容器**还在文档里**。 */
+  if (!document.body.contains(SELBAR.box)){ SELBAR.box = null; return selBarHide(); }
+  const sel = window.getSelection();
+  const t = selClean(String(sel || ''));
+  const n = selWords(t);
+  // 选区必须落在范文正文里 —— 选到界面别处的文字不该弹收藏
+  let inside = false;
+  try {
+    if (sel && sel.rangeCount){
+      const node = sel.getRangeAt(0).commonAncestorContainer;
+      inside = SELBAR.box.contains(node.nodeType === 1 ? node : node.parentNode);
+    }
+  } catch(_){}
+  if (!inside || n < 3) return selBarHide();
+  b.querySelector('.sb-n').textContent = '已选 ' + n + ' 词';
+  b.classList.add('on');
+}
+
+function selBarHide(){
+  if (SELBAR.el) SELBAR.el.classList.remove('on');
+}
+
+/* 点一句 = 把这一句选上（不直接收藏）。他可以接着拖手柄改范围。 */
+function selectNode(el){
+  try {
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    const s = window.getSelection();
+    s.removeAllRanges(); s.addRange(r);
+  } catch(_){}
+  selBarSync();
+}
+
+/* 收藏过的片段在正文里标黄。
+   🚨 按**文本包含**匹配，不按句子 id —— 他收的可能是半句，
+      落不到任何一个 .sent 上。 */
+function markKeptSents(box, essay){
+  const mine = kept().filter(x => x.from === essay.id).map(x => ENORM(x.en));
+  box.querySelectorAll('.sent').forEach(el => {
+    const t = ENORM(el.dataset.s || el.textContent);
+    el.classList.toggle('kept',
+      mine.some(m => m && (t.indexOf(m) >= 0 || m.indexOf(t) >= 0)));
+  });
+}
+
 function openEssay(c){
   if (!c) return;
+  selBarHide();          // 🚨 换页先收浮条，否则它会飘在下一屏上
   ESSAY.cur = c;
   const f = $('#feed');
   $('#sub').textContent = (ETASK[c.task] || '范文') +
@@ -4789,11 +4912,18 @@ function openEssay(c){
         '<span class="sent' + (isKept(sentId(c.id, x)) ? ' kept' : '') +
         '" data-s="' + esc(x) + '">' + esc(x) + '</span>').join(' ') +
       '</div></div>').join('');
+  /* 🚨 点一句 = **选中**这一句，不是直接收藏（Kevin 2026-08-09）。
+     句子边界是我切的，不一定是他要的那一块；选上之后他还能拖手柄改范围，
+     再点浮条上的收藏。所有收藏都走同一条路：选区 → 收藏。 */
+  selBarInit(c, eb);
   eb.querySelectorAll('.sent').forEach(el =>
-    el.onclick = () => keepSent(c, el.dataset.s, el));
+    el.onclick = () => selectNode(el));
+  markKeptSents(eb, c);
   const tip = document.createElement('div');
-  tip.style.cssText = 'font-size:12px;color:var(--faint);margin-top:8px';
-  tip.textContent = '👆 点任意一句就能收藏，Alex 会拆开告诉你怎么用';
+  tip.style.cssText = 'font-size:12px;color:var(--faint);margin-top:8px;line-height:1.6';
+  tip.innerHTML = '👆 <b>长按拖选</b>你想留的那一小段（点一句可以先整句选上，' +
+    '再拖两端的手柄微调），下面会浮出「收藏选中的这句」。' +
+    '收下来 Alex 会拆开告诉你它在干什么、什么时候能用、什么时候别用。';
   eb.appendChild(tip);
   const sp = document.createElement('button');
   sp.className = 'play'; sp.textContent = '🔊 听一遍';
@@ -5601,6 +5731,7 @@ function paintTabs(){
   }
 }
 function goTab(name){
+  if (window.selBarHide) selBarHide();   // 🚨 换屏必收浮条：selectionchange 不会因为切页而触发
   if (!TABS[name]) return;
   TAB_CUR = name;
   $('#bar').hidden = true; S.scn = null;
