@@ -3564,8 +3564,11 @@ function newsUnits(ep){
 
    🚨 原来 `startNews()` 一进门就 `newsDone().add(ep.title)` —— 跟答没答题
       完全无关。**埋点位置错了，不是文案错了**，所以只改文案没用。 */
-const qKey = q => [...(q.q || '')].reduce((k, c) =>
-  (k * 31 + c.charCodeAt(0)) % 99991, 7).toString(36);
+/* 🚨 别用小模数哈希当去重键。原来是 `% 99991`，按生日悖论约 370 道题
+   就有 50% 概率两题撞成同一个 key —— 撞了之后 `done` 少推一条，
+   `n >= tot` 永远不成立，那一集**永远停在「正在做」**，进不了「已做过」。
+   而这个错不会报任何东西。直接用题干原文当键，碰撞概率归零。 */
+const qKey = q => (q && q.q ? String(q.q) : '').replace(/\s+/g, ' ').trim();
 
 function newsProg(){
   try { return JSON.parse(localStorage.getItem('alex_news_prog') || '{}') || {}; }
@@ -3593,7 +3596,11 @@ function newsState(ep){
     return old.has(ep.title) ? {state:'doing', done:0, total:tot}
                              : {state:'none', done:0, total:tot};
   }
-  const n = e.done.length;
+  /* 🚨 封顶。2026-08-09 把 qKey 从「小模数哈希」换成「题干原文」之后，
+     旧数据里存的是哈希、新答的存原文 —— 同一道题会被记两次，
+     done 就可能超过总题数、把「正在做」误判成「已做过」。
+     换 key 一定要想到旧数据还在。 */
+  const n = Math.min(e.done.length, tot);
   return {state: n >= tot ? 'done' : 'doing', done: n, total: tot};
 }
 function newsBadge(ep){
@@ -3755,8 +3762,12 @@ function listenDone(){
      而它是最后一屏 —— 前面全做对了，结果卡在结算页。 */
   const nq = (LSN.units || []).reduce((n, u) => n + ((u.qs || []).length), 0)
              || (LSN.items || []).length;
-  ST.turns += nq; checkIn(); saveST();
-  markDaily(LSN.news ? 'news' : 'listen');   // 做完一组听力就算这一项
+  /* 🚨 结算页最不能崩 —— 前面全做对了却卡在这一屏，等于整组白做。
+     这里的每一步都可能因为状态没初始化而抛，统一兜住。 */
+  try {
+    ST.turns = (ST.turns || 0) + nq; checkIn(); saveST();
+    markDaily(LSN.news ? 'news' : 'listen');   // 做完一组听力就算这一项
+  } catch(_){}
   const d = document.createElement('div');
   d.className = 'turn alex';
   d.innerHTML = '<div class="who">这一组做完了</div>' +
@@ -4557,7 +4568,14 @@ async function keepSent(essay, sent, el){
   const rec = {id: id, en: sent, from: essay.id, t: essay.t,
                task: essay.task, on: TODAY(), pending: true};
   k.unshift(rec);
-  try { localStorage.setItem('alex_kept', JSON.stringify(k.slice(0, 400))); } catch(_){}
+  /* 🚨 存盘失败**必须让他知道**。原来是 `catch(_){}` 全吞 ——
+     配额满的时候界面照样弹「收下了」，而实际一条都没存，
+     这正是他反馈的那种「点了收藏，收藏页里没有」。 */
+  try { localStorage.setItem('alex_kept', JSON.stringify(k.slice(0, 400))); }
+  catch(e){
+    toast('存不下了（浏览器存储满），先去收藏页删几条');
+    return;
+  }
   if (el) el.classList.add('kept');
   toast('收下了，Alex 正在拆这一句…');
 
@@ -4610,9 +4628,15 @@ function openKept(it){
       try {
         const gg = await makeGuide(it.en, it.t || '商务写作');
         const k = kept(); const j = k.findIndex(x => x.id === it.id);
-        if (j >= 0){ k[j].guide = gg; k[j].slot = gg.slot; k[j].pending = false;
-                     delete k[j].err;
-                     localStorage.setItem('alex_kept', JSON.stringify(k)); }
+        if (j >= 0){
+          k[j].guide = gg; k[j].slot = gg.slot; k[j].pending = false;
+          delete k[j].err;
+          /* 🚨 存盘失败要跟「提炼失败」分开说。这句原来没包 try，
+             配额满时会被外层 catch 接住、提示「还是没成」——
+             而其实提炼成功了，只是没存住。报错报错了地方比不报还坏。 */
+          try { localStorage.setItem('alex_kept', JSON.stringify(k)); }
+          catch(e2){ toast('提炼好了但存不下（浏览器存储满了）'); }
+        }
         openKept(Object.assign({}, it, {guide: gg, pending: false}));
       } catch(e){
         rt.disabled = false; rt.textContent = '再提炼一次';
@@ -4815,14 +4839,16 @@ function selBarInit(essay, box){
     try { window.getSelection().removeAllRanges(); } catch(_){}
     selBarHide();
   };
-  /* iOS：手指按下去就会清选区，所以按下的那一刻先把文字定住，
-     并且不让默认行为去改选区。 */
+  /* iOS：手指按下去就会清选区，所以按下的那一刻先把文字定住。
+     🚨 **绝对不能在 touchstart 上 preventDefault** —— 按规范那会抑制后续的
+        兼容鼠标事件，**包括 click**，于是 iPhone 上这个按钮直接点不动，
+        比原来的 bug 还糟。定住文字本身就够了，不需要去拦默认行为。
+        （2026-08-09 Agent Plan 深审抓到，属实。） */
   ['pointerdown', 'mousedown', 'touchstart'].forEach(ev =>
-    b.addEventListener(ev, e => {
+    b.addEventListener(ev, () => {
       const live = selClean(String(window.getSelection() || ''));
       if (selWords(live) >= 3) SELBAR.text = live;
-      e.preventDefault();
-    }, {passive: false}));
+    }, {passive: true}));
   b.querySelector('.sb-go').onclick = () => {
     // 优先用按下那一刻抓到的；实在没有再读一次实时选区（桌面上够用）
     const t = SELBAR.text || selClean(String(window.getSelection() || ''));
@@ -4840,7 +4866,7 @@ function selBarInit(essay, box){
     /* 🚨 收完要**当场看得见**。他反馈「点完收藏在收藏 tab 里没反映」——
        其中一半是没反馈：详情页上没有那两个 tab，他得先返回才看得到。
        这里直接给一条「已收 N 条 · 去收藏页看」，点一下就过去。 */
-    kbarShow(es);
+    kbarShow();
   };
   /* 🚨 selectionchange 在 iOS 上是选择过程中一直触发的，
      所以只更新条上的字数，不做别的重活。 */
@@ -4880,7 +4906,7 @@ function selBarHide(){
 }
 
 /* 收藏成功后的确认条：告诉他收进去了，并给一个直接过去看的入口。 */
-function kbarShow(essay){
+function kbarShow(){
   let k = document.getElementById('kbar');
   if (!k){
     k = document.createElement('div');
@@ -4915,11 +4941,15 @@ function selectNode(el){
    🚨 按**文本包含**匹配，不按句子 id —— 他收的可能是半句，
       落不到任何一个 .sent 上。 */
 function markKeptSents(box, essay){
-  const mine = kept().filter(x => x.from === essay.id).map(x => ENORM(x.en));
+  /* 🚨 太短的片段会在好几句里都出现，全标黄就分不清哪句真收过了。
+     设个下限：至少 12 个字符才拿去做包含匹配。 */
+  const mine = kept().filter(x => x.from === essay.id)
+                     .map(x => ENORM(x.en))
+                     .filter(m => m && m.length >= 12);
   box.querySelectorAll('.sent').forEach(el => {
     const t = ENORM(el.dataset.s || el.textContent);
     el.classList.toggle('kept',
-      mine.some(m => m && (t.indexOf(m) >= 0 || m.indexOf(t) >= 0)));
+      mine.some(m => t.indexOf(m) >= 0 || m.indexOf(t) >= 0));
   });
 }
 
