@@ -2292,10 +2292,11 @@ async function showNews(){
      既然是实时听力，做过的题你就把它放到后面去。」
      只加个「做过」标签不够 —— 他每次打开还是先看到那几集，得往下翻才有新的。
      组内保持原顺序（新的仍然在前），只是整体分成「没做过 / 做过」两段。 */
-  const _done = newsDone();
-  const _eps = nb.eps.slice().sort((a, b) =>
-    (_done.has(a.title) ? 1 : 0) - (_done.has(b.title) ? 1 : 0));
-  const _fresh = _eps.filter(e => !_done.has(e.title)).length;
+  /* 🚨 三档排序：没做过 → 正在做 → 已做过。
+     「正在做」要排在已做过前面 —— 它是他真正该回去接着做的那一集。 */
+  const _rank = e => ({none:0, doing:1, done:2})[newsState(e).state];
+  const _eps = nb.eps.slice().sort((a, b) => _rank(a) - _rank(b));
+  const _fresh = _eps.filter(e => _rank(e) < 2).length;
   if (_fresh === 0 && _eps.length){
     const n = document.createElement('div');
     n.className = 'note';
@@ -2305,15 +2306,16 @@ async function showNews(){
   _eps.forEach((ep, _i) => {
     const c = document.createElement('div');
     c.className = 'card';
-    const done = _done.has(ep.title);
+    const _st = newsState(ep);
+    const done = _st.state === 'done';
     if (done && _i === _fresh && _fresh > 0){
       const sep = document.createElement('div');
       sep.className = 'note';
-      sep.textContent = '—— 下面是练过的 ——';
+      sep.textContent = '—— 下面是做完的 ——';
       f.appendChild(sep);
     }
     c.innerHTML = `<div class="hd"><span class="role">${esc(ep.title)}</span>
-        ${done ? '<span class="done">做过</span>' : ''}</div>
+        ${newsBadge(ep)}</div>
       <div class="sit">${esc(ep.gist || '')}</div>
       <div class="t">${esc(ep.src)} · ${esc(ep.pub)} · ${Math.round((ep.dur||0)/60)} 分钟 ·
         ${ep.items.length} 题</div>`;
@@ -2325,15 +2327,6 @@ function newsDone(){
   try { return new Set(JSON.parse(localStorage.getItem('alex_news_done') || '[]')); }
   catch(_){ return new Set(); }
 }
-function startNews(ep){
-  LSN.items = ep.items.map(x => Object.assign({}, x, {audio:null, url:ep.audio}));
-  LSN.i = 0; LSN.right = 0; LSN.scn = null; LSN.recycled = false;
-  LSN.news = ep;
-  const s = newsDone(); s.add(ep.title);
-  try { localStorage.setItem('alex_news_done', JSON.stringify([...s].slice(-100))); } catch(_){}
-  listenItem();
-}
-
 function showLevel(mode){
   $('#list').hidden = false;
   $('#feed').innerHTML = '';
@@ -3334,7 +3327,7 @@ $('#book').onclick = () => go(showBook, '错题本');
    Kevin：「路上说话不方便…连听都听不懂就更别提开口」。
    两条硬约束贯穿这块：**不用麦克风**（答题全靠点），**先听后看**（答完才给原文）。
    一次要一整组题，之后翻页不再请求网络 —— 地铁里断网也能把这组做完。 */
-const LSN = {items:[], i:0, right:0, scn:null, dropped:0};
+const LSN = {items:[], i:0, right:0, scn:null, dropped:0, units:null, u:0, answered:0};
 
 /* ═══ 听力题库（预生成）═══
    Kevin 2026-08-02 三条抱怨，根子是同一个：运行时现场出题 + 浏览器机器音。
@@ -3504,127 +3497,260 @@ async function listenPick(){
   listenItem();
 }
 
+/* ═══ 时事听力：按「听力单元」组织，不是按题 ═══
+   Kevin 2026-08-09：「正确的流程是：先让我听完一个完整的段落，然后再把题目
+   呈现出来让我选择。而不是像现在这样，系统帮我锁定在某一个位置，听完一句
+   就让我反应一下、选一下……真实场景下，人家肯定是把要说的话一字不落地全部
+   说出来，然后看听众能记住、理解多少。」
+
+   🚨 之前错在两处，都不是「少做了一点」，是**方向就不对**：
+     ① `LSN.items = ep.items` 按题库存储顺序排 → 点听题全在前面，
+        他要连答四道十几秒的才轮得到段落题，等于**根本走不到**长听力。
+     ② 同一段的三道题是三个独立单元 → 同一段要听三遍。
+        那也不是「一口气说完再看你记住多少」。
+   正解：**段落 = 一个单元**。整段听完 → 一次性给出这一段的全部题。 */
+
+function newsUnits(ep){
+  const paras = {}, spots = [];
+  (ep.items || []).forEach(x => {
+    const it = Object.assign({}, x, {audio: null, url: ep.audio});
+    /* 🚨 `url` 必须挂在**单元**上，不是只挂在题上 ——
+       player() 读的是传进去的那个对象的 url。只给题挂 url 的话，
+       单元这一层没有 url → player() 走「没有 mp3」的分支 → 退回浏览器合成，
+       而 say 又是 undefined → **整段一点声音都没有**，界面却完全正常。
+       （2026-08-09 我就是这么写的，真机上点了没反应才发现。） */
+    if (it.kind === 'para'){
+      const k = it.start + '-' + it.end;
+      (paras[k] = paras[k] ||
+        {kind:'para', start:it.start, end:it.end, url:it.url, qs:[]}).qs.push(it);
+    } else {
+      spots.push({kind:'spot', start:it.start, end:it.end, url:it.url, qs:[it]});
+    }
+  });
+  // 段落在前：他要练的是这个；点听题当补充放后面
+  return Object.keys(paras).map(k => paras[k])
+           .sort((a, b) => a.start - b.start)
+           .concat(spots.sort((a, b) => a.start - b.start));
+}
+
+/* ═══ 做题进度：三档 未做 / 正在做 N/M / 已做过 ═══
+   Kevin 2026-08-09：「我随便点开了一个题，没答题直接退出，系统就显示我
+   『已做过』，这不对。埋点应该设在『做完题』之后。」
+
+   🚨 原来 `startNews()` 一进门就 `newsDone().add(ep.title)` —— 跟答没答题
+      完全无关。**埋点位置错了，不是文案错了**，所以只改文案没用。 */
+const qKey = q => [...(q.q || '')].reduce((k, c) =>
+  (k * 31 + c.charCodeAt(0)) % 99991, 7).toString(36);
+
+function newsProg(){
+  try { return JSON.parse(localStorage.getItem('alex_news_prog') || '{}') || {}; }
+  catch(_){ return {}; }
+}
+function newsMark(title, q, total){
+  try {
+    const p = newsProg();
+    const e = p[title] = p[title] || {done: [], total: total};
+    e.total = total;                       // 题库涨了要跟着更新
+    const k = qKey(q);
+    if (e.done.indexOf(k) < 0) e.done.push(k);
+    localStorage.setItem('alex_news_prog', JSON.stringify(p));
+  } catch(_){}
+}
+/* 返回 {state:'none'|'doing'|'done', done:n, total:m} */
+function newsState(ep){
+  const tot = (ep.items || []).length;
+  const e = newsProg()[ep.title];
+  if (!e || !e.done || !e.done.length){
+    /* 🚨 兼容老数据：改版前只记了「这一集打开过」。
+       那批数据分不出「答过几题」，一律当**正在做** ——
+       宁可让他看到「正在做」再去确认，也不要谎报「已做过」。 */
+    const old = newsDone();
+    return old.has(ep.title) ? {state:'doing', done:0, total:tot}
+                             : {state:'none', done:0, total:tot};
+  }
+  const n = e.done.length;
+  return {state: n >= tot ? 'done' : 'doing', done: n, total: tot};
+}
+function newsBadge(ep){
+  const s = newsState(ep);
+  if (s.state === 'done') return '<span class="done">已做过</span>';
+  if (s.state === 'doing')
+    return '<span class="done" style="background:var(--brand-soft);' +
+           'color:var(--brand-dark)">正在做' +
+           (s.done ? ' ' + s.done + '/' + s.total : '') + '</span>';
+  return '';
+}
+
+function startNews(ep){
+  LSN.units = newsUnits(ep);
+  LSN.u = 0; LSN.right = 0; LSN.answered = 0;
+  LSN.scn = null; LSN.recycled = false;
+  LSN.news = ep;
+  // 🚨 这里**不再**标「做过」。埋点挪到了选项的 onclick 里：答一题记一题。
+  listenItem();
+}
+
 function listenItem(){
-  const it = LSN.items[LSN.i];
-  if (!it) return listenDone();
+  /* 兼容：口语/配音听力那条路仍然用 LSN.items（一题一单元）。
+     🚨 收口成同一套渲染，别开两份 —— 两份的话改一处等于没改。 */
+  if (!LSN.units){
+    const it = LSN.items && LSN.items[LSN.i];
+    if (!it) return listenDone();
+    LSN.units = LSN.items.map(x => ({kind:'spot', start:x.start, end:x.end, qs:[x]}));
+    LSN.u = LSN.i || 0;
+  }
+  const unit = LSN.units[LSN.u];
+  if (!unit) return listenDone();
   const f = $('#feed'); f.innerHTML = '';
+  const isPara = unit.kind === 'para';
+  const secs = Math.max(0, (unit.end || 0) - (unit.start || 0));
 
   const hd = document.createElement('div');
   hd.className = 'grp';
-  hd.textContent = `第 ${LSN.i+1} / ${LSN.items.length} 题 · 答对 ${LSN.right}`
-    + (LSN.items[LSN.i] && LSN.items[LSN.i].kind === 'para' ? ' · 段落题' : '')
-    + (LSN.i === 0 && LSN.recycled ? '（这一档的题你都做过了，重新抽一轮）' : '');
+  hd.textContent = (isPara ? '第 ' + (LSN.u + 1) + ' / ' + LSN.units.length +
+                             ' 段 · 本段 ' + unit.qs.length + ' 题'
+                           : '第 ' + (LSN.u + 1) + ' / ' + LSN.units.length + ' 题')
+    + ' · 答对 ' + LSN.right
+    + (LSN.u === 0 && LSN.recycled ? '（这一档的题你都做过了，重新抽一轮）' : '');
   f.appendChild(hd);
 
-  /* 段落题：听一整段（45-120 秒），考的是「他到底说了些什么」，
-     不是某个数字。Kevin 2026-08-09 要的。 */
-  const isPara = it.kind === 'para';
-  const secs = Math.max(0, (it.end || 0) - (it.start || 0));
-
-  // 播放区：原文这时候一个字都不给
   const pl = document.createElement('div');
   pl.className = 'better';
   pl.innerHTML = isPara
     ? '<div class="lb">先把这一整段听完（约 ' + secs + ' 秒）</div>' +
       '<div style="font-size:13px;color:var(--muted);margin-bottom:6px">' +
-      '不用抠某个词，听他<b>一共说了哪几点、重点落在哪</b>。' +
-      '听完再看题。</div>'
+      '一口气听完，不要中途停。不用抠某个词，' +
+      '听他<b>一共说了哪几点、重点落在哪、有没有转折</b>。' +
+      '听完之后本段的 ' + unit.qs.length + ' 道题会一起出来。</div>'
     : '<div class="lb">先听</div>';
-  /* 🚨 段落题不自动播。一分多钟的音频一进页面就响，他还没准备好 ——
-     而且这一题的重点是「完整听一遍」，从中间开始听就废了。 */
-  pl.appendChild(player(it, !isPara));
+  // 🚨 段落不自动播：一分多钟的音频一进页面就响，他还没准备好；
+  //    而且这一段的重点是「完整听一遍」，从中间开始听就废了。
+  pl.appendChild(player(unit, !isPara));
   f.appendChild(pl);
 
-  const q = document.createElement('div');
-  q.className = 'turn alex';
-  q.innerHTML = `<div class="who">Alex 问</div><div class="bub">${esc(it.q)}</div>`;
-
-  const opts = document.createElement('div');
-  it.opt.forEach((o, k) => {
-    const c = document.createElement('div');
-    c.className = 'card';
-    c.textContent = 'ABCDE'[k] + '. ' + o;
-    c.onclick = () => answerListen(k);
-    opts.appendChild(c);
-  });
-
+  const box = document.createElement('div');   // 题目区
   if (isPara){
-    /* 🚨 选项先藏起来。摆在眼前他会边听边比对选项 ——
-       那练的是「找关键词」，不是「琢磨他想表达什么」。 */
     const gate = document.createElement('button');
-    gate.className = 'play';
-    gate.style.marginTop = '12px';
-    gate.textContent = '我听完了，看题';
-    gate.onclick = () => {
-      gate.remove();
-      f.appendChild(q); f.appendChild(opts);
-      q.scrollIntoView({behavior:'smooth', block:'center'});
-    };
+    gate.className = 'play'; gate.style.marginTop = '12px';
+    gate.textContent = '我听完了，看这 ' + unit.qs.length + ' 道题';
+    gate.onclick = () => { gate.remove(); renderUnitQs(box, unit); };
     f.appendChild(gate);
-  } else {
-    f.appendChild(q); f.appendChild(opts);
   }
+  f.appendChild(box);
+  if (!isPara) renderUnitQs(box, unit);
   f.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
-function answerListen(k){
-  const it = LSN.items[LSN.i], right = k === it.ans;
-  if (right) LSN.right++;
-  // 记进错题本：听力是另一根轴，用 listen- 前缀，不跟表达的 pattern 混
-  if (!right){
+/* 一次性把这一段的所有题摆出来，各自作答、各自出解析。
+   🚨 不做成「答完一题自动跳下一题」—— 那又变回一题一屏，
+      他就看不出这几道题问的是**同一段**的不同侧面。 */
+function renderUnitQs(box, unit){
+  box.innerHTML = '';
+  const state = unit.qs.map(() => null);      // 每题选了哪个
+  unit.qs.forEach((it, qi) => {
+    const wrap = document.createElement('div');
+    wrap.style.marginTop = '14px';
+    const q = document.createElement('div');
+    q.className = 'turn alex';
+    q.innerHTML = '<div class="who">Alex 问' +
+      (unit.qs.length > 1 ? '（' + (qi + 1) + '/' + unit.qs.length + '）' : '') +
+      '</div><div class="bub">' + esc(it.q) + '</div>';
+    wrap.appendChild(q);
+    const cards = [];
+    it.opt.forEach((o, k) => {
+      const c = document.createElement('div');
+      c.className = 'card';
+      c.textContent = 'ABCDE'[k] + '. ' + o;
+      c.onclick = () => {
+        if (state[qi] !== null) return;        // 一题只算一次
+        state[qi] = k;
+        const right = k === it.ans;
+        if (right) LSN.right++;
+        LSN.answered = (LSN.answered || 0) + 1;
+        // 🚨 埋点在这儿 —— 答完才算做过（Kevin 2026-08-09 点名）
+        if (LSN.news) newsMark(LSN.news.title, it, (LSN.news.items || []).length);
+        cards.forEach((x, ki) => {
+          x.style.pointerEvents = 'none';
+          if (ki === it.ans) x.style.cssText +=
+            ';border-color:var(--ok,#0a0);background:var(--brand-soft)';
+          else if (ki === k) x.style.cssText +=
+            ';opacity:.55;text-decoration:line-through';
+        });
+        wrap.appendChild(qExplain(it, k, right));
+        if (!right) bookListen(it);
+        if (state.every(x => x !== null)) box.appendChild(unitNext());
+      };
+      cards.push(c);
+      wrap.appendChild(c);
+    });
+    box.appendChild(wrap);
+  });
+}
+
+function qExplain(it, k, right){
+  const d = document.createElement('div');
+  d.className = 'better'; d.style.marginTop = '10px';
+  d.innerHTML = '<div class="lb">' + (right ? '✅ 对了' : '❌ 不对') + '</div>' +
+    '<div style="font-size:13.5px;line-height:1.7">正确答案：' +
+    esc(it.opt[it.ans]) + (right ? '' : '<br>你选的：' + esc(it.opt[k])) +
+    '</div>' + (it.key ? '<div class="tags">' + esc(it.key) + '</div>' : '') +
+    (it.zh ? '<div class="tags">' + esc(it.zh) + '</div>' : '');
+  return d;
+}
+
+function bookListen(it){
+  try {
     checkIn();
-    const pat = 'listen-' + (LSN.scn ? LSN.scn.id : 'misc');
-    const e = ST.book[pat] ||= {pat, n:0, hits:0, hitDays:[], state:'practising',
-                               ex:[], first:TODAY()};
+    const pat = 'listen-' + (LSN.scn ? LSN.scn.id :
+                             (LSN.news ? 'news' : 'misc'));
+    const e = ST.book[pat] || (ST.book[pat] =
+      {pat: pat, n: 0, hits: 0, hitDays: [], state: 'practising',
+       ex: [], first: TODAY()});
     e.n++; e.last = TODAY(); e.dim = '听力'; e.sev = 'medium';
-    e.ex = [{said:it.q, better:it.say, alex:it.key, on:TODAY()}]
+    e.ex = [{said: it.q, better: it.opt[it.ans], alex: it.key, on: TODAY()}]
            .concat(e.ex).slice(0, 3);
     saveST();
-  }
-  const f = $('#feed'); f.innerHTML = '';
+  } catch(_){}
+}
 
-  const hd = document.createElement('div');
-  hd.className = 'turn alex';
-  hd.innerHTML = `<div class="who">${right ? '✅ 对了' : '❌ 不对'}</div>` +
-    `<div class="bub">${esc(it.q)}<br>正确答案：${esc(it.opt[it.ans])}` +
-    (right ? '' : `<br>你选的：${esc(it.opt[k])}`) + '</div>' +
-    (it.key ? `<div class="tags">${esc(it.key)}</div>` : '');
-  f.appendChild(hd);
-
-  // 现在才给原文 —— 对着字再听一遍，是这块最有用的一步
-  const box = document.createElement('div');
-  box.className = 'better';
-  box.innerHTML = `<div class="lb">原文</div><div class="en">${esc(it.say)}</div>` +
-                  (it.zh ? `<div class="tags">${esc(it.zh)}</div>` : '');
-  box.appendChild(player(it, false));   // 对着字再听，同一段真人录音
-  f.appendChild(box);
-
-  const next = document.createElement('button');
-  next.className = 'play'; next.style.marginTop = '16px';
-  next.textContent = LSN.i + 1 < LSN.items.length ? '下一题 →' : '看结果 →';
-  next.onclick = () => { LSN.i++; listenItem(); };
-  f.appendChild(next);
+function unitNext(){
+  const b = document.createElement('button');
+  b.className = 'play'; b.style.marginTop = '16px';
+  b.textContent = LSN.u + 1 < LSN.units.length
+    ? (LSN.units[LSN.u + 1].kind === 'para' ? '下一段 →' : '下一题 →')
+    : '看结果 →';
+  b.onclick = () => { LSN.u++; LSN.i = LSN.u; listenItem(); };
+  return b;
 }
 
 function listenDone(){
   const f = $('#feed'); f.innerHTML = '';
-  ST.turns += LSN.items.length; checkIn(); saveST();
+  /* 🚨 题数要从**单元**里数。改成按段分组之后 LSN.items 在时事这条路上
+     已经不存在了，还照旧写 `LSN.items.length` 的话这里会直接抛异常，
+     而它是最后一屏 —— 前面全做对了，结果卡在结算页。 */
+  const nq = (LSN.units || []).reduce((n, u) => n + ((u.qs || []).length), 0)
+             || (LSN.items || []).length;
+  ST.turns += nq; checkIn(); saveST();
   markDaily(LSN.news ? 'news' : 'listen');   // 做完一组听力就算这一项
   const d = document.createElement('div');
   d.className = 'turn alex';
   d.innerHTML = '<div class="who">这一组做完了</div>' +
-    `<div class="bub">${LSN.items.length} 题答对 ${LSN.right} 题。` +
-    (LSN.right === LSN.items.length ? '全对，换个更难的场景试试。'
+    `<div class="bub">${nq} 题答对 ${LSN.right} 题。` +
+    (LSN.right === nq ? '全对，换个更难的场景试试。'
      : '错的那几题已经进错题本，原文和关键点都留着了。') + '</div>';
   f.appendChild(d);
   const again = document.createElement('button');
   again.className = 'play'; again.style.marginRight = '8px';
-  again.textContent = '再来一组';
-  again.onclick = listenPick;          // 重新抽，优先没做过的
-  const back = document.createElement('button');
-  back.className = 'play'; back.textContent = '换难度';
-  back.onclick = back;                 // 退回上一层（难度选择）
-  f.appendChild(again); f.appendChild(back);
+  again.textContent = LSN.news ? '换一集' : '再来一组';
+  again.onclick = () => { LSN.units = null;
+                          if (LSN.news) go(showNews, '时事听力'); else listenPick(); };
+  const bk = document.createElement('button');
+  bk.className = 'play'; bk.textContent = '返回';
+  /* 🚨 原来写的是 `const back = ...; back.onclick = back;` ——
+     局部变量把导航函数 back() 遮住了，赋的是**按钮自己**，
+     点了当然没反应。改名 bk 才能真调到 back()。 */
+  bk.onclick = () => back();
+  f.appendChild(again); f.appendChild(bk);
 }
 $('#reset').onclick = () => {
   localStorage.removeItem(LS.key);
