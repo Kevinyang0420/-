@@ -15,6 +15,20 @@
 <!-- 🚨 跟启动页/主屏图标同一个底色 --brand-dark，三处必须一致，
      否则安卓启动 PWA 时会先闪一下别的颜色。 -->
 <meta name="theme-color" content="#000000">
+<!-- iOS 启动画面：点开图标到内容出来之间显示，避免闪白/闪黑
+       （由 make_splash.py 生成，机型分辨率对应）-->
+  <link rel="apple-touch-startup-image" href="splash-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="splash-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="splash-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="splash-1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="splash-1284x2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="splash-1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="splash-1206x2622.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="splash-1320x2868.png" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Alex 英语陪练</title>
 <style>
@@ -2573,9 +2587,33 @@ async function start(scn){
 
 /* ───────── 录音 ───────── */
 let rec = null, stream = null, chunks = [], busy = false;
+document.addEventListener('visibilitychange', () => onResumeMic());
 /* 🚨 iOS 上 MediaRecorder stop 之后不能复用（第二次 start 无声/不触发）。
    流可以留着，录音器每轮新建。 */
 let micPrimed = false;
+/* 🚨 iOS 对网页不保存麦克风权限：**每次重新打开 App 都会问一次**，
+   没有任何网页 API 能改掉它。但 Safari 有个全局开关能让它别再问 ——
+   授权成功后一次性告诉他（只弹一次，记在 localStorage）。 */
+function micPermaTip(){
+  try {
+    if (localStorage.getItem('alex_mic_tip')) return;
+    localStorage.setItem('alex_mic_tip', '1');
+  } catch(_){}
+  toast('想让 iOS 别每次都问麦克风：设置→Safari→麦克风→允许', 6000);
+}
+
+/* 🚨 锁屏 / 切后台再回来，iOS 会把麦克风流掐死（tracks 变 ended）。
+   不处理的话：下次一按录音，getRec 发现流死了要重新申请 ——
+   在**正在录音的当口**弹一次权限，最烦人。
+   回到前台就先把死掉的流清掉、并在他还没开口时悄悄重连好。 */
+function onResumeMic(){
+  if (document.visibilityState !== 'visible') return;
+  if (!S.scn) return;                       // 不在口语场景就不碰麦克风
+  if (stream && stream.active) return;      // 流还活着，什么都不用做
+  stream = null; micPrimed = false;
+  primeMic();                               // 趁他还没按，先把权限/流准备好
+}
+
 async function primeMic(){
   if (micPrimed || !pick('audio')) return;
   try {
@@ -2583,6 +2621,7 @@ async function primeMic(){
       {audio:{echoCancellation:true, noiseSuppression:true}});
     micPrimed = true;
     $('#hint').textContent = '点一下开始说，说完再点一下';
+    micPermaTip();          // 🚨 一次性告诉他怎么让 iOS 别再每次都问
   } catch(err){ micHelp(err); }
 }
 
@@ -5879,14 +5918,16 @@ async function orderScenario(){
 }
 
 /* 小提示条：领宝石、扣宝石、出题失败都靠它给个反馈 */
-function toast(msg){
+function toast(msg, ms){
+  /* 🚨 时长要能调。教「设置→Safari→麦克风→允许」这种一句话十几个字的提示，
+     2.2 秒根本读不完 —— 读不完的提示等于没提示。 */
   let t = document.getElementById('toast');
   if (!t){ t = document.createElement('div'); t.id = 'toast';
            document.body.appendChild(t); }
   t.textContent = msg;
   t.classList.add('on');
   clearTimeout(t._h);
-  t._h = setTimeout(() => t.classList.remove('on'), 2200);
+  t._h = setTimeout(() => t.classList.remove('on'), ms || 2200);
 }
 
 /* 落地页：四个大方框 */
