@@ -1519,6 +1519,13 @@ function noteCaps(d){
   try { localStorage.setItem(LSB, JSON.stringify(S.api)); } catch(_){}
 }
 function apiOn(){ return !!(S.api && S.api.url); }
+/* 🚨 后端地址的**唯一出口**。地址为空时兜到 DEFAULT_API ——
+   否则请求会打到相对路径（本地静态服务器直接 501），
+   而 ensurePass() 那时候还没跑到，补上的地址来不及用。
+   同一个决定散在四处 `String(cfg.url||'')` 的下场就是漏一处就断一条路。 */
+function apiBase(){
+  return String((S.api && S.api.url) || DEFAULT_API).replace(/\/+$/, '');
+}
 
 // 🚨 后端跑在 serverless 上，**空闲会缩到零**，之后第一发请求要等实例冷启动。
 //    实测这一发常常拿到 502/504，而它其实什么毛病都没有 —— 再打一次就好了。
@@ -1549,24 +1556,35 @@ function passHdr(){
   return p ? {'X-Alex-Pass': p} : {};
 }
 let _gfetch = null;                       // 并发的几发共用同一次取号
-async function guestRefresh(){
-  const cfg = S.api || {};
-  if (!cfg.url || !cfg.guest) return false;
+/* 🚨 **口令这件事永远不许惊动他**（Kevin 2026-08-10 明确要求）。
+   这是唯一入口：保证 S.api 有地址、有一把当天能用的口令。
+   任何一处撞上 401 都调它，取到就继续，取不到也**绝不**在界面上提「口令」。
+
+   🚨 这里**不再看 `cfg.guest` 标记**。原来写着「只对访客自动换，手填的不能动」——
+      可他从来没有「手填口令」这回事，那个守卫保护的是一个不存在的场景，
+      代价是：只要配置里 guest 标记丢了（重新添加主屏 / 旧配置），
+      自愈直接不启动，然后弹一句他根本没法照做的「去改一下」。
+      **守卫保护的场景不存在，它就只剩副作用。** */
+async function ensurePass(){
+  const cfg = Object.assign({}, S.api || {});
+  if (!cfg.url) cfg.url = DEFAULT_API;        // 地址都没有也自己兜上
   if (_gfetch) return _gfetch;
   _gfetch = (async () => {
     try {
-      const r = await fetch(String(cfg.url).replace(/\/+$/, '') + '/api/guestpass',
+      const r = await fetch(apiBase() + '/api/guestpass',
                             {cache: 'no-store'});
       if (!r.ok) return false;
       const d = await r.json();
       if (!d || !d.pass) return false;
-      saveApi(Object.assign({}, cfg, {pass: d.pass, guest: true, day: CNDAY()}));
+      saveApi(Object.assign(cfg, {pass: d.pass, guest: true, day: CNDAY()}));
       return true;
     } catch(e){ return false; }
     finally { setTimeout(() => { _gfetch = null; }, 0); }
   })();
   return _gfetch;
 }
+// 老名字留个别名，免得别处调用漏改（单一实现，两个名字）
+const guestRefresh = ensurePass;
 /* 开机这一道：日期变了就先换一张，别等第一发请求先失败一次。
    🚨 只此一个入口（[[feedback_fix_once_single_config_point]]）——
       第一版我把它写进了 `autoConnect()` 的开头，而 autoConnect **只在
@@ -1598,14 +1616,14 @@ function backendLabel(d){
 
 async function backend(prompt, temp, wantJson){
   const cfg = S.api || {};
-  const url = String(cfg.url || '').replace(/\/+$/, '') + '/api/llm';
+  const url = apiBase() + '/api/llm';
   const body = JSON.stringify({
     messages: [{role:'system',
                 content:'严格输出一个 JSON 对象，不要解释、不要围栏。'},
                {role:'user', content: prompt}],
     temperature: temp, want_json: wantJson !== false,
     json: wantJson !== false, max_tokens: 8000});
-  let last = '', gtry = false;
+  let last = '', ptry = 0;
   for (let i = 0; i < 3; i++){
     if (i) await new Promise(f => setTimeout(f, i * 1200));   // 冷启动给点时间
     let r;
@@ -1619,9 +1637,10 @@ async function backend(prompt, temp, wantJson){
       continue;                       // 网络层失败也可能是冷启动，再试
     }
     if (r.status === 401){
-      // 访客令牌隔天失效 —— 自己换一张再来（只换一次，换不到才报错）
-      if (!gtry && await guestRefresh()){ gtry = true; i--; continue; }
-      throw new Error('后端口令不对，去「我的 → 后端」改一下');
+      /* 🚨 401 一律自己换口令重来，最多 3 次；**永远不把「口令」摆给他**。
+         他没有任何「改口令」的动作可做 —— 让他去改等于让他干瞪眼。 */
+      if (ptry < 3 && await ensurePass()){ ptry++; i--; continue; }
+      throw new Error('后端连不上，等一下再试一次');
     }
     if (!r.ok){
       const t = await r.text().catch(()=> '');
@@ -1658,9 +1677,9 @@ async function backend(prompt, temp, wantJson){
 //    所以后端改成「下单立刻返回 job id，结果另开一个接口取」，
 //    两边都在 100ms 内答完，绕开这个毛病。这里就是取结果那半。
 async function poll(job, cfg, resubmit){
-  const base = String(cfg.url || '').replace(/\/+$/, '');
+  const base = apiBase();
   const t0 = Date.now();
-  let wait = 350, gtry = false, retried = false;
+  let wait = 350, ptry = 0, retried = false;
   while (Date.now() - t0 < 150000){               // 最多等 150 秒
     await new Promise(f => setTimeout(f, wait));
     wait = Math.min(wait * 1.25, 2000);           // 慢慢退避，别把网关刷爆
@@ -1672,9 +1691,9 @@ async function poll(job, cfg, resubmit){
                       {headers: passHdr()});
     } catch(e){ continue; }                       // 网络抖动就再问一次
     if (r.status === 401){
-      // 取结果这半也会撞上隔天失效 —— 原来它不认 401，会闷头轮询到 150 秒超时
-      if (!gtry && await guestRefresh()){ gtry = true; continue; }
-      throw new Error('后端口令不对，去「我的 → 后端」改一下');
+      // 取结果这半也会撞上隔天失效 —— 同样自己换，别惊动他
+      if (ptry < 3 && await ensurePass()){ ptry++; continue; }
+      throw new Error('后端连不上，等一下再试一次');
     }
     if (r.status === 404){
       /* 🚨 404 = 这个 job 在**当前这个实例**的内存里找不到。
@@ -1969,7 +1988,7 @@ async function askBackendAudio(part){
     '\nThe attached audio is what he just said. Transcribe it into "said", '
     + 'then decide. Also judge his pronunciation and intonation from the audio '
     + 'itself (not just the words) and put that in "sound" in Chinese.');
-  const url = String(cfg.url || '').replace(/\/+$/, '') + '/api/audio';
+  const url = apiBase() + '/api/audio';
   const body = JSON.stringify({audio: await b64(part.blob),
                                format: (part.mime.split('/')[1] || 'wav'),
                                prompt: prompt, max_tokens: 8000});
@@ -1978,7 +1997,7 @@ async function askBackendAudio(part){
   //    而这里原来是裸 fetch，一撞就直接报错，他看到的就是
   //    「说完没反应」后面跟一句看不懂的 504。
   //    文字路径早就有重试了，音频这条漏了 —— **同一个决定又只落了一半。**
-  let r = null, last = '', gtry = false;
+  let r = null, last = '', ptry = 0;
   for (let i = 0; i < 3; i++){
     if (i) await new Promise(f => setTimeout(f, 1500 * i));
     try {
@@ -1987,8 +2006,8 @@ async function askBackendAudio(part){
         body});
     } catch(e){ last = '连不上后端'; r = null; continue; }
     if (r.status === 401){
-      if (!gtry && await guestRefresh()){ gtry = true; i--; r = null; continue; }
-      throw new Error('后端口令不对，去「我的 → 后端」改一下');
+      if (ptry < 3 && await ensurePass()){ ptry++; i--; r = null; continue; }
+      throw new Error('后端连不上，等一下再试一次');
     }
     if (r.ok) break;
     last = '后端 ' + r.status + ' ' + (await r.text()).slice(0,100);
