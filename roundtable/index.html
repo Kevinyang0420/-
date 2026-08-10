@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0c0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="决策圆桌">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-180.5ad0c5bf.png">
+<title>AI 决策圆桌</title>
+<style>
+:root{
+  --bg:#0a0c0f; --panel:#12161b; --panel2:#171c23; --line:#232b34;
+  --fg:#e6edf3; --dim:#8b98a5; --dim2:#5d6b7a;
+  --acc:#4fd1c5; --warm:#f6ad55; --red:#fc8181; --grn:#68d391;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:16px/1.65 -apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;
+  padding:0 0 calc(24px + var(--safe-b));
+  padding-top:env(safe-area-inset-top,0px)}
+.wrap{max-width:680px;margin:0 auto;padding:18px 16px 40px}
+h1{font-size:20px;margin:0;letter-spacing:.5px}
+.sub{color:var(--dim);font-size:13px;line-height:1.6}
+.k{color:var(--acc);font-size:11px;letter-spacing:2.5px;text-transform:uppercase}
+.mut{color:var(--dim2)}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:15px 16px;margin:12px 0}
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+label.lbl{display:block;color:var(--dim);font-size:13px;margin:20px 0 7px}
+textarea,input{width:100%;background:#0e1216;color:var(--fg);border:1px solid var(--line);
+  border-radius:12px;padding:13px 14px;font:16px/1.6 inherit;resize:vertical;
+  -webkit-appearance:none}
+textarea:focus,input:focus{outline:none;border-color:var(--acc)}
+button{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
+  border-radius:12px;padding:12px 16px;font:15px inherit;cursor:pointer;
+  min-height:44px;touch-action:manipulation}
+button:active:not(:disabled){transform:scale(.97)}
+button:disabled{opacity:.4}
+button.go{background:var(--acc);color:#06231f;border-color:var(--acc);
+  font-weight:700;font-size:17px;width:100%;padding:15px;min-height:52px}
+button.sm{padding:9px 13px;font-size:14px;min-height:40px}
+.chip{border:1px solid var(--line);border-radius:22px;padding:9px 14px;font-size:14px;
+  color:var(--dim);user-select:none;cursor:pointer;min-height:40px;display:flex;
+  align-items:center;touch-action:manipulation}
+.chip.on{border-color:var(--acc);color:var(--acc);background:#0e2624}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;width:100%}
+.seg button{flex:1;border:0;border-radius:0;border-right:1px solid var(--line);font-size:14px}
+.seg button:last-child{border-right:0}
+.seg button.on{background:#0e2624;color:var(--acc)}
+
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:14px 15px;margin:10px 0}
+.pcard.waiting{border-style:dashed;color:var(--dim2)}
+.nm{font-weight:650}
+.tg{color:var(--dim);font-size:12px;margin-top:2px}
+.hd{margin-top:9px;font-weight:600;line-height:1.5}
+.ag{margin-top:7px;font-size:15px;color:#cbd5e0}
+.ex{margin-top:9px;font-size:13px;color:var(--dim);border-top:1px solid var(--line);padding-top:8px}
+.pill{display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;
+  border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.s-赞同{color:var(--grn);border-color:var(--grn)}
+.s-反对{color:var(--red);border-color:var(--red)}
+.s-未表态{color:var(--warm);border-color:var(--warm)}
+.s-缺席{color:var(--dim2);border-color:var(--dim2)}
+.dots::after{content:"";animation:dots 1.2s steps(4,end) infinite}
+@keyframes dots{0%{content:""}25%{content:"·"}50%{content:"··"}75%{content:"···"}}
+
+.phase{display:flex;align-items:center;gap:12px;margin:30px 0 12px}
+.phase .bar{flex:1;height:1px;background:var(--line)}
+.phase .t{font-size:12px;letter-spacing:2.5px;color:var(--acc)}
+.turn{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line);
+  border-radius:12px;padding:13px 15px;margin:10px 0;animation:in .3s ease}
+.turn.moved{border-left-color:var(--acc)}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.who{font-weight:650}
+.to{color:var(--acc);font-size:12px}
+.body{margin-top:7px;color:#cbd5e0;font-size:15px}
+
+.hero{background:linear-gradient(180deg,#152029,#111820);border:1px solid #2b3947;
+  border-radius:14px;padding:17px 18px;margin:12px 0}
+.hero .v{font-size:16px;line-height:1.65;margin-top:5px}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:8px 0;display:block;
+  overflow-x:auto;white-space:nowrap}
+th,td{border:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+th{background:#151b22;color:var(--dim);font-size:12px}
+td.wrap2{white-space:normal;min-width:150px}
+ul{padding-left:19px;margin:8px 0}li{margin:7px 0}
+.tally{display:flex;gap:8px;margin:12px 0}
+.tally div{flex:1;text-align:center;border:1px solid var(--line);border-radius:12px;padding:11px}
+.tally .n{font-size:26px;font-weight:700;line-height:1.2}
+
+.prog{position:sticky;top:0;z-index:9;background:rgba(10,12,15,.94);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line);
+  padding:11px 16px;margin:0 -16px 8px;font-size:13px;color:var(--dim)}
+.prog .track{height:3px;background:var(--line);border-radius:3px;margin-top:7px;overflow:hidden}
+.prog .fill{height:100%;background:var(--acc);width:0;transition:width .35s}
+.hist{border-top:1px solid var(--line);padding:13px 0;cursor:pointer}
+.ht{font-weight:600}
+.hd2{color:var(--dim);font-size:12.5px;margin-top:3px}
+.warnbox{border-color:#5a4520;background:#1d170c}
+.err{border-color:var(--red);background:#241214;color:#ffd7d7}
+.hide{display:none}
+.foot{color:var(--dim2);font-size:12px;margin-top:32px;border-top:1px solid var(--line);padding-top:14px}
+a{color:var(--acc)}
+.row a{text-decoration:none;flex:1}
+.row a button{width:100%}
+.toast{position:fixed;left:50%;bottom:calc(28px + var(--safe-b));transform:translateX(-50%);
+  background:#1c242c;border:1px solid var(--line);border-radius:22px;padding:11px 20px;
+  font-size:14px;z-index:50;opacity:0;transition:opacity .25s;pointer-events:none;max-width:88vw}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="row" style="justify-content:space-between;align-items:flex-start">
+  <div style="flex:1;min-width:0">
+    <h1>AI 决策圆桌</h1>
+    <div class="sub" style="margin-top:4px">先让每个人在看不到别人答案的情况下独立表态，再开放互相反驳。<br>
+      一个 AI 会顺着你说，六个立场不同的不会。</div>
+  </div>
+  <button id="btnNew" class="sm hide">再开一场</button>
+</div>
+
+<!-- ============ 配置 ============ -->
+<div id="setup">
+  <div id="keyBox"></div>
+
+  <label class="lbl">你要想清楚的事</label>
+  <textarea id="topic" rows="3" placeholder="例：我该不该接下这个项目？　要不要换个赛道？"></textarea>
+
+  <label class="lbl">补充背景（可以不写；写了他们会针对你的具体情况吵）</label>
+  <textarea id="context" rows="3" placeholder="例：报价 30 万，工期 6 周，团队只有两个人，同期还有另一个客户在排队。"></textarea>
+
+  <label class="lbl">阵容</label>
+  <div class="row" id="panelTabs"></div>
+  <div class="sub" id="panelDesc" style="margin-top:7px"></div>
+
+  <label class="lbl">上场的人（点掉不想要的）</label>
+  <div class="row" id="memberChips"></div>
+
+  <label class="lbl">自由辩论轮数</label>
+  <div class="seg" id="roundSeg">
+    <button data-r="1" class="on">1 轮 · 快</button>
+    <button data-r="2">2 轮 · 吵透</button>
+  </div>
+  <div class="sub" id="costHint" style="margin-top:9px"></div>
+
+  <div style="margin-top:22px"><button class="go" id="btnGo">开始</button></div>
+  <div class="sub" id="startMsg" style="margin-top:9px;min-height:20px"></div>
+
+  <div id="histBox" style="margin-top:36px">
+    <div class="k">开过的场</div>
+    <div id="hist"></div>
+  </div>
+</div>
+
+<!-- ============ 会场 ============ -->
+<div id="stage" class="hide">
+  <div class="prog" id="prog">
+    <div id="progTxt">准备中</div>
+    <div class="track"><div class="fill" id="progFill"></div></div>
+  </div>
+  <div class="card">
+    <div class="k">本场议题</div>
+    <div id="stTopic" style="font-size:17px;font-weight:600;margin-top:4px"></div>
+    <div class="sub" id="stMeta" style="margin-top:4px"></div>
+  </div>
+  <div id="live"></div>
+  <div id="stErr"></div>
+</div>
+
+<div class="foot">
+  内容由 AI 基于公开资料推演，只代表模拟思考，不代表这些人物的真实观点。<br>
+  你的 key 和记录只存在这台手机的浏览器里，不上传。
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   AI 决策圆桌 · 在线版（单文件、无后端、无内置凭证）
+
+   跟桌面那套（roundtable.py）是同一个协议：
+     ① 第一轮隔离独立亮票 ② 自由辩论 ③ 最终陈述 ④ 书记员出战报
+   两条不许改的设计（都是实测逼出来的，理由见各自注释）：
+     · 立场只能二选一，没有「有条件」
+     · 第一轮的提词构造函数**不接收同席名单**
+
+   🚨 为什么不用火山 Agent Plan：他套餐概览页写着「文本生成模型及向量化模型
+      不可用于 API 调用，在非 AI 工具中使用 Base URL 和 API Key 有可能被识别为
+      滥用/违规，会导致订阅停用或账号封禁」。网页调它正好踩这条，而且 key
+      还得放进浏览器。所以这里只支持 DeepSeek / Gemini，用户自己的 key。
+   ══════════════════════════════════════════════════════════════ */
+
+const PANELS = {"general":{"title":"通用大佬局","desc":"照抄那条小红书的阵容，适合人生选择、方向类的大问题","members":[{"id":"feynman","name":"理查德·费曼","tag":"第一性原理·拆解复杂","prompt":"你是理查德·费曼。你厌恶包装过的说法，任何结论你都要拆到最基本的事实和机制上重新搭一遍。你常问的是「这件事到底是怎么运作的」「你怎么知道你不是在骗自己」。你要求一切主张可被证伪：说清楚什么结果出现就代表这条路不成立。你说话直白、爱举具体例子、不用大词。"},{"id":"munger","name":"查理·芒格","tag":"误判心理学·逆向思考","prompt":"你是查理·芒格。你先想「怎样会输」再想怎样会赢。你熟悉人类的认知偏误——过度自信、承诺一致性、社会认同、激励导致的扭曲——并且会直接点名对方现在正踩哪一个。你重视机会成本、安全边际和不可逆性。你说话简短、刻薄、有分量，不给人留面子但给人留退路。"},{"id":"karpathy","name":"Andrej Karpathy","tag":"AI工程·系统思维","prompt":"你是 Andrej Karpathy。你把人生选择当成工程问题：先搭一个便宜的实验环境，小步部署，能回滚，有监控指标。你反对一上来就做不可回滚的大改动。你会把模糊的目标翻译成可度量的指标和明确的迭代周期。你说话平和、精确、爱用工程比喻。"},{"id":"kanye","name":"Kanye West","tag":"自我表达·挑战共识","prompt":"你是 Kanye West。你只认作品，不认身份和头衔——一个人是什么，由他做出来的东西决定，不由他怎么称呼自己决定。你对「还没开始就先给自己贴标签」极度反感。你会挑战全场的共识，尤其当所有人都太理性、太安全的时候。你说话情绪化、断言式、有攻击性，但每句都指向同一件事：拿作品说话。"},{"id":"mrbeast","name":"MrBeast","tag":"注意力经济·传播直觉","prompt":"你是 MrBeast。你相信投入密度决定迭代速度：同样一年，全职投入和业余投入不是量的差别而是质的差别。你用几百次真实迭代来找方向，而不是想清楚了再动手。你关心的是「有没有人真的愿意看/买」这个唯一的裁判。你说话热烈、具体到数字、不绕弯。"},{"id":"jobs","name":"史蒂夫·乔布斯","tag":"产品直觉·聚焦","prompt":"你是史蒂夫·乔布斯。你逼人回答一个问题：你到底替谁解决什么问题，一句话说清楚。你认为聚焦就是对九十九件好事说不。你厌恶「什么都做一点」的方案，也厌恶用忙碌掩盖没想清楚。你说话尖锐、不留情面、要求对方把话说到具体不能再具体。"}]},"kevin":{"title":"Kevin 局","desc":"贴你实际会遇到的决策：接不接这个项目、要不要换赛道、这笔投入值不值","members":[{"id":"partner","name":"事务所合伙人","tag":"执业风险·可辩护性","prompt":"你是一家会计师事务所的合伙人，做了二十年审计。你的第一反应永远是：这件事出了问题谁签字、拿什么辩护、留了什么记录。你对声誉损失比对收入损失敏感得多。你会问「最坏情况下，监管或客户来查，我们拿得出什么」。你说话稳、克制，但一句话就能把风险点按住。"},{"id":"cfo","name":"CFO","tag":"现金流·单位经济","prompt":"你是一位 CFO。你只看两件事：现金什么时候进什么时候出，以及这门生意每做一单是赚是亏。你会要求把方案翻译成一张现金流量表：前期投入多少、多久回本、最坏情况下现金能撑几个月。你厌恶只谈战略不谈数字的说法。你说话务实、爱要具体数字，对方给不出数字你就当它不存在。"},{"id":"founder","name":"连续创业者","tag":"机会成本·速度","prompt":"你是一位连续创业者，做成过也做砸过。你最在意的是时间窗口和机会成本——想太久本身就是一种损失。你会推动对方用最小的成本尽快拿到真实反馈，而不是在纸上论证。你也知道大多数计划活不过第一次接触真实客户。你说话快、有推力、不耐烦空谈。"},{"id":"risk","name":"风控官","tag":"最坏情况·不可逆性","prompt":"你是风控与合规负责人。你的工作是问「如果这件事错了，能不能退回来」。你把决策分成可回滚和不可回滚两类，对不可回滚的一律要求先做小规模试点。你关心尾部风险：概率低但一旦发生就出局的那类。你说话冷静、按条列，专门给别人的乐观预期挑洞。"},{"id":"client","name":"客户视角","tag":"谁付钱·为什么付","prompt":"你代表掏钱的那一方。你不关心方案多精巧，只关心「这解决了我什么问题、我为什么要为它付钱、我为什么不找别人」。你会指出对方的方案里哪些价值是自己想象出来的、客户其实不在意。你说话直接，常常一句话把对方的自我感动戳破。"},{"id":"future","name":"十年后的你","tag":"长期复利·后悔最小化","prompt":"你是十年后的当事人本人。你已经知道哪些当时觉得很大的事后来根本不重要，也知道哪些当时懒得做的事后来复利极高。你的判据是后悔最小化：十年后回头看，哪个选择会让我后悔。你会提醒对方，健康、关系和信誉这三样是不可逆的。你说话温和但不含糊，会说出对方不愿意听的那句。"}]}};
+const BUILD = '61ef418aae82';
+
+const LS = {key:'rt_keys', sess:'rt_sessions', panel:'rt_panel'};
+const STANCES = ['赞同','反对'];
+const NO_STANCE = '未表态';
+const DISCLAIMER = '内容由 AI 基于公开资料推演，只代表模拟思考。';
+
+const $ = s => document.querySelector(s);
+const el = (t,c,h) => { const e=document.createElement(t);
+  if(c)e.className=c; if(h!==undefined)e.innerHTML=h; return e; };
+const esc = s => String(s==null?'':s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+let S = {keys:{}, panelKey:'general', picked:new Set(), rounds:1, session:null, running:false};
+
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),2200);
+}
+
+/* ═══════════ key：按前缀自动认，跟 alex 同一套 ═══════════ */
+function keyKind(k){
+  const s=String(k||'').trim();
+  if(/^AIza/.test(s)) return 'gemini';
+  if(/^sk-/.test(s))  return 'deepseek';
+  return null;
+}
+/* 🚨 长度明显不对的 key 直接当没有。留着它只会赢走路由然后请求失败，
+      而用户完全看不出「是那把废 key 在挡路」。 */
+function keyOk(k,kind){
+  k=(k||'').trim();
+  if(kind==='gemini')   return /^AIza[\w-]{30,}$/.test(k);
+  if(kind==='deepseek') return /^sk-[\w-]{20,}$/.test(k);
+  return false;
+}
+function loadKeys(){
+  let o={}; try{ o=JSON.parse(localStorage.getItem(LS.key)||'{}'); }catch(_){}
+  if(!o||typeof o!=='object') o={};
+  for(const k of Object.keys(o)) if(!keyOk(o[k],k)) delete o[k];
+  S.keys=o;
+}
+function saveKeys(){ try{ localStorage.setItem(LS.key,JSON.stringify(S.keys)); }catch(_){} }
+function hasKey(){ return !!(S.keys.deepseek||S.keys.gemini); }
+
+function paintKeyBox(){
+  const box=$('#keyBox'); box.innerHTML='';
+  if(hasKey()){
+    const which=[S.keys.deepseek?'DeepSeek':'',S.keys.gemini?'Gemini':''].filter(Boolean).join(' + ');
+    const c=el('div','card',
+      `<div class="row" style="justify-content:space-between">
+         <div><div class="k">引擎</div><div style="margin-top:3px">${esc(which)}</div></div>
+         <button class="sm" id="btnKey">换 key</button></div>`);
+    box.appendChild(c);
+    $('#btnKey').onclick=()=>askKey(true);
+    return;
+  }
+  const c=el('div','card',
+    `<div class="k">先贴一把 key</div>
+     <div class="sub" style="margin:8px 0 12px">
+       用你自己的 API key，只存在这台手机的浏览器里，不会上传到任何地方。<br>
+       <b>DeepSeek</b>（<code>sk-</code> 开头，国内直连不用梯子，推荐）或
+       <b>Gemini</b>（<code>AIza</code> 开头，免费额度但要梯子）。
+     </div>
+     <input id="keyIn" type="password" placeholder="sk-… 或 AIza…" autocomplete="off"
+            autocapitalize="off" autocorrect="off" spellcheck="false">
+     <div class="row" style="margin-top:11px"><button class="sm" id="keySave">存起来</button></div>
+     <div class="sub" id="keyMsg" style="margin-top:8px"></div>`);
+  box.appendChild(c);
+  $('#keySave').onclick=()=>{
+    const v=$('#keyIn').value.trim(), kind=keyKind(v);
+    if(!kind){ $('#keyMsg').textContent='认不出这把 key —— DeepSeek 是 sk- 开头，Gemini 是 AIza 开头。'; return; }
+    if(!keyOk(v,kind)){ $('#keyMsg').textContent='这把 key 看着不完整，是不是少复制了一截？'; return; }
+    S.keys[kind]=v; saveKeys(); paintKeyBox(); hint(); toast('存好了，走的是 '+(kind==='gemini'?'Gemini':'DeepSeek'));
+  };
+}
+function askKey(reset){
+  if(reset){ S.keys={}; saveKeys(); }
+  paintKeyBox();
+  const i=$('#keyIn'); if(i) i.focus();
+}
+
+/* ═══════════ 模型调用 ═══════════ */
+const GEM_MODELS=['gemini-3.1-flash-lite','gemini-3.5-flash','gemini-3.1-flash'];
+let GI=0;
+
+async function callDeepSeek(system,user,maxTok){
+  const r=await fetch('https://api.deepseek.com/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.keys.deepseek},
+    body:JSON.stringify({model:'deepseek-v4-pro',
+      messages:[{role:'system',content:system},{role:'user',content:user}],
+      /* 🚨 v4-pro 是推理模型，**思考 token 也算在 max_tokens 里**。给小了会
+         finish_reason=length、正文停在半句，而半句 JSON 解析不出来 = 整步失败。 */
+      temperature:0.7, max_tokens:maxTok,
+      response_format:{type:'json_object'}})});
+  if(!r.ok){
+    const t=await r.text().catch(()=>'');
+    if(r.status===401) throw new Error('DeepSeek key 不对，点「换 key」重设');
+    if(r.status===429) throw new Error('DeepSeek 限流了，等一会再试');
+    throw new Error('HTTP '+r.status+' '+t.slice(0,110));
+  }
+  const j=await r.json();
+  return j.choices?.[0]?.message?.content||'';
+}
+
+async function callGemini(system,user,maxTok){
+  let last=null;
+  for(let n=0;n<GEM_MODELS.length;n++){
+    const m=GEM_MODELS[(GI+n)%GEM_MODELS.length];
+    let r;
+    try{
+      r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-goog-api-key':S.keys.gemini},
+        body:JSON.stringify({
+          system_instruction:{parts:[{text:system}]},
+          contents:[{role:'user',parts:[{text:user}]}],
+          /* 🚨 思考 token 和输出 token 共用 maxOutputTokens，超了正文停在半截
+             而 finishReason 仍报 STOP —— 光看 finishReason 判不出截断。 */
+          generationConfig:{temperature:0.7,maxOutputTokens:Math.max(maxTok,16384),
+                            responseMimeType:'application/json'}})});
+    }catch(e){ last=e; continue; }
+    if(r.ok){
+      GI=(GI+n)%GEM_MODELS.length;
+      const j=await r.json();
+      return (j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('');
+    }
+    const t=await r.text().catch(()=>'');
+    if(r.status===429||/quota|RESOURCE_EXHAUSTED/i.test(t)){ last=new Error('额度用完'); continue; }
+    if(r.status===401||r.status===403||(r.status===400&&/API key|api_key/i.test(t)))
+      throw new Error('Gemini key 不对或已失效，点「换 key」重设');
+    last=new Error('HTTP '+r.status+' '+t.slice(0,90));
+  }
+  throw last||new Error('Gemini 全部模型都没通');
+}
+
+/* 文字活优先 DeepSeek（国内直连、没有每天 20 次那种日限），没有再退 Gemini */
+async function callLLM(system,user,maxTok){
+  if(S.keys.deepseek) return callDeepSeek(system,user,maxTok);
+  if(S.keys.gemini)   return callGemini(system,user,maxTok);
+  throw new Error('还没有 key');
+}
+
+/* 🚨 抠 JSON 绝不能用 /\{[\s\S]*\}/ —— 贪婪到最后一个 }。这些模型经常在正文后
+   拖垃圾（重复括号碎片、markdown 围栏、一句中文），贪婪匹配把垃圾切进来必炸。
+   正解：按括号深度扫第一个完整对象，且要认字符串和转义。 */
+function firstJson(text){
+  const s=String(text||''); const start=s.indexOf('{');
+  if(start<0) return null;
+  let depth=0,inStr=false,esc=false;
+  for(let i=start;i<s.length;i++){
+    const c=s[i];
+    if(esc){esc=false;continue;}
+    if(c==='\\'){esc=true;continue;}
+    if(c==='"'){inStr=!inStr;continue;}
+    if(inStr) continue;
+    if(c==='{') depth++;
+    else if(c==='}'){ depth--; if(depth===0){
+      try{ return JSON.parse(s.slice(start,i+1)); }catch(_){ return null; } } }
+  }
+  return null;
+}
+
+const asText=v=>v==null?'':Array.isArray(v)?v.filter(x=>x!=null).map(asText).join('\n')
+  :typeof v==='object'?Object.values(v).map(asText).join('\n'):String(v).trim();
+const asList=v=>v==null?[]:Array.isArray(v)?v.filter(x=>x!=null&&String(x).trim())
+  :typeof v==='object'?Object.values(v):(String(v).trim()?[String(v).trim()]:[]);
+
+/* 🚨 否定词要先判：「不同意」里面含着「同意」，顺序反了会把反对读成赞同。
+      读不出来就如实记「未表态」，不许随便塞一边 —— 那是在编数据。 */
+function normStance(v,extra){
+  const s=asText(v);
+  if(s.includes('反对')) return '反对';
+  if(s.includes('赞同')) return '赞同';
+  const t=s+' '+asText(extra||'');
+  for(const w of ['不同意','不该','不建议','不要','先别','别急','别'])  if(t.includes(w)) return '反对';
+  for(const w of ['同意','支持','应该','赞成','可以'])                 if(t.includes(w)) return '赞同';
+  return NO_STANCE;
+}
+
+/* ═══════════ 提词 ═══════════ */
+function sysPrompt(m){
+  return m.prompt+'\n\n你正在参加一场决策圆桌，和另外几位立场不同的人一起帮当事人想清楚一个选择。'
+    +'全程用中文，用标准白话，不要文绉绉的书面腔，也不要 AI 腔的套话。保持你自己的说话方式，别当和事佬。';
+}
+function topicBlock(topic,ctx){
+  let b='【议题】'+topic;
+  if((ctx||'').trim()) b+='\n\n【当事人补充的背景】\n'+ctx.trim();
+  return b;
+}
+/* 🚨 这个函数**故意不接收同席名单** —— 隔离不能靠「我记得别传」，要靠参数里
+      根本没有这个东西。改签名把名单传进来就是破坏机制。 */
+function votePrompt(topic,ctx){
+  return topicBlock(topic,ctx)+'\n\n这是第一轮：你还看不到其他人怎么想，先独立表态。\n'
+    +'🚨 只能选赞同或反对，不许骑墙、不许说「看情况」。你的保留意见写进 condition 字段，但立场必须落到一边。\n'
+    +'只输出一个 JSON：\n'
+    +'{"stance":"赞同 或 反对，二选一","headline":"一句话立场，20 字以内",'
+    +'"argument":"3 到 5 句，说清你为什么这么判断，要有你自己的角度",'
+    +'"condition":"你这一票的附加条件或保留意见，一句话；没有就写「无」",'
+    +'"key_risk":"你认为当事人现在最大的风险或盲点，一句话",'
+    +'"evidence":"出现什么证据，你会改变立场，一句话，要具体到可以验证"}';
+}
+function debatePrompt(topic,ctx,tr,r,total){
+  return topicBlock(topic,ctx)+'\n\n【目前为止的全部发言】\n'+tr
+    +`\n\n这是自由辩论第 ${r} 轮（共 ${total} 轮）。轮到你发言。\n规矩：\n`
+    +'1. 必须点名回应至少一位同席的具体论点，写清你回应的是谁的哪句话。\n'
+    +'2. 同意就说同意，但要补一条对方没说到的；不同意就直接反驳，说清哪里不成立。\n'
+    +'3. 不要为了反驳而反驳，也不要复述自己上一轮说过的话。\n'
+    +'4. 如果别人说服了你，就明说你改变了立场，这不丢人。\n'
+    +'5. 立场仍然只能是赞同或反对，不许骑墙。\n只输出一个 JSON：\n'
+    +'{"replies_to":"你主要回应谁，写名字","stance":"赞同 或 反对，二选一（你现在的立场）",'
+    +'"changed":true 或 false,"say":"你的发言，3 到 6 句，口语，有锋芒"}';
+}
+function finalPrompt(topic,ctx,tr){
+  return topicBlock(topic,ctx)+'\n\n【全部辩论记录】\n'+tr
+    +'\n\n辩论结束，轮到你做最终陈述。把你现在真正的判断说出来，可以吸收别人说服了你的部分。'
+    +'给当事人一句他能记住并且照着做的话。立场仍然只能是赞同或反对。\n只输出一个 JSON：\n'
+    +'{"stance":"赞同 或 反对，二选一","say":"最终陈述，3 到 5 句","one_line":"给当事人的一句话，20 字以内"}';
+}
+const DEBRIEF_SYS='你是这场圆桌的书记员。你不站队、不添加任何没人说过的新观点，'
+  +'只负责把大家吵出来的东西整理成当事人能用的结论。全程中文，标准白话，不要文绉绉，不要 AI 腔的空话套话。'
+  +'所有行动建议都必须写清可验证的判据——什么数字、多长时间、什么算通过，'
+  +'不许写「加强关注」「持续观察」这种没法判断做没做到的话。';
+function debriefPrompt(topic,ctx,tr){
+  return topicBlock(topic,ctx)+'\n\n【全场记录】\n'+tr+'\n\n整理成一份战报。只输出一个 JSON：\n'
+    +'{"reframed":"圆桌把这个问题重新定义成了什么，一句话。如果没有被重新定义就照原样写",'
+    +'"conclusion":"最终结论，2 到 3 句，当事人下一步该做什么",'
+    +'"blind_spot":"当事人自己最可能没看到的那一点，一句话，要具体、要扎人",'
+    +'"insights":["核心洞察，3 到 5 条，每条一句，必须是场上真的有人说过的"],'
+    +'"consensus":["大家达成一致的地方，2 到 4 条"],'
+    +'"disputes":[{"point":"分歧点","sides":"谁站哪边，各自的理由"}],'
+    +'"decision_rule":"出现什么证据之后，这个决定才算成立。一句话，要能验证",'
+    +'"actions":[{"what":"具体做什么","when":"多久之内","pass":"什么结果算通过、什么结果算这条路不成立"}]}';
+}
+const DEBRIEF_KEYS=['reframed','conclusion','blind_spot','insights','consensus','disputes','decision_rule','actions'];
+
+/* ═══════════ 调用封装 ═══════════ */
+async function ask(m,user,maxTok){
+  /* 🚨 退避是必须的：并发几路时会撞到瞬时失败，紧挨着重试等于在同一个坏时刻试两次。 */
+  for(const [n,wait] of [[1,2000],[2,5000],[3,0]]){
+    try{
+      const txt=await callLLM(sysPrompt(m),user,n<3?maxTok:Math.round(maxTok*1.5));
+      const d=firstJson(txt);
+      if(d) return d;
+    }catch(e){
+      if(/key 不对|已失效/.test(e.message)) throw e;   // key 的问题重试多少次都没用
+    }
+    if(wait) await sleep(wait);
+  }
+  return null;
+}
+/* 🚨 判据必须挂「有没有拿到内容」，不是「有没有拿到一个对象」。
+   桌面版实测踩过：返回了一个字典所以 if(d) 放行，可里面一个预期字段都没有，
+   一份全空的战报被当成功写了出去，全程零告警。 */
+async function askDebrief(topic,ctx,tr){
+  for(const [n,budget,wait] of [[1,16000,2000],[2,24000,4000],[3,32000,0]]){
+    let d=null;
+    try{ d=firstJson(await callLLM(DEBRIEF_SYS,debriefPrompt(topic,ctx,tr),budget)); }
+    catch(e){ if(/key 不对|已失效/.test(e.message)) throw e; }
+    if(d&&DEBRIEF_KEYS.some(k=>d[k]&&(!Array.isArray(d[k])||d[k].length))) return d;
+    if(wait) await sleep(wait);
+  }
+  return null;
+}
+/* 并发池：手机上别一次开六路，容易撞限流 */
+async function pool(items,fn,n){
+  const out=new Array(items.length); let i=0;
+  await Promise.all(Array.from({length:Math.min(n,items.length)},async()=>{
+    while(i<items.length){ const k=i++; out[k]=await fn(items[k],k); }
+  }));
+  return out;
+}
+
+function renderTranscript(s){
+  const L=['== 第一轮·各自独立表态（互相看不见） =='];
+  s.votes.forEach(v=>{ if(v.absent) return;
+    const c=(v.condition&&v.condition!=='无')?`（他的保留意见：${v.condition}）`:'';
+    L.push(`[${v.name}·${v.tag}] 立场：${v.stance}。${v.headline}\n${v.argument}\n${c}（他认为最大的风险：${v.key_risk}）`); });
+  s.debate.forEach(r=>{ L.push(`\n== 自由辩论 第 ${r.round} 轮 ==`);
+    r.turns.forEach(t=>{ if(t.absent) return;
+      L.push(`[${t.name}] 回应 ${t.replies_to}，立场：${t.stance}${t.changed?'（立场改了）':''}\n${t.say}`); }); });
+  (s.finals||[]).forEach(f=>{ if(f.absent) return;
+    L.push(`\n[${f.name}·最终陈述] 立场：${f.stance}\n${f.say}`); });
+  let t=L.join('\n');
+  if(t.length>24000) t=t.slice(0,12000)+'\n\n……（中间略）……\n\n'+t.slice(-12000);
+  return t;
+}
+
+/* ═══════════ 主流程 ═══════════ */
+let STEP=0, STEPS=1;
+function step(txt){
+  STEP++;
+  $('#progTxt').textContent=`${txt}　${STEP}/${STEPS}`;
+  $('#progFill').style.width=Math.min(100,STEP/STEPS*100)+'%';
+}
+
+async function runSession(topic,ctx){
+  const panel=PANELS[S.panelKey];
+  const members=panel.members.filter(m=>S.picked.has(m.id));
+  const rounds=S.rounds;
+  STEP=0; STEPS=members.length*(2+rounds)+1;
+
+  const s={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    topic, context:ctx, panel:S.panelKey, panel_title:panel.title,
+    started:new Date().toLocaleString('zh-CN',{hour12:false}).slice(0,16),
+    rounds, engine:S.keys.deepseek?'DeepSeek':'Gemini', build:BUILD,
+    members:members.map(m=>({id:m.id,name:m.name,tag:m.tag})),
+    votes:[], debate:[], finals:[], debrief:null, warnings:[]};
+  S.session=s;
+
+  openStage(topic);
+  $('#stMeta').textContent=`${panel.title} · ${members.length} 位嘉宾 · 辩论 ${rounds} 轮 · ${s.engine}`;
+  const L=$('#live');
+
+  /* ── 第一轮：隔离 ── */
+  phase('第一轮 · 独立思考');
+  const grid=el('div'); L.appendChild(grid);
+  const cards={};
+  members.forEach(m=>{
+    const c=el('div','pcard waiting',
+      `<div class="nm">${esc(m.name)}</div><div class="tg">${esc(m.tag)}</div>
+       <div class="hd dots" style="color:#5d6b7a;font-weight:400">正在独立思考</div>`);
+    cards[m.id]=c; grid.appendChild(c);
+  });
+  const roster=members.map(m=>m.name);
+  await pool(members, async m=>{
+    const user=votePrompt(topic,ctx);
+    /* 🚨 真检查：把当事人自己写的背景剔掉之后，提词里不该出现任何同席的名字。
+       哪天有人把名单传进 votePrompt，这里当场炸，而不是悄悄退化成「假隔离」。 */
+    const probe=ctx?user.split(ctx).join(''):user;
+    const leak=roster.filter(n=>n!==m.name&&probe.includes(n));
+    if(leak.length) throw new Error('第一轮隔离被破坏：提词里出现了同席 '+leak.join('、'));
+    const d=await ask(m,user,12000);
+    const v=d?{id:m.id,name:m.name,tag:m.tag,stance:normStance(d.stance,asText(d.headline)),
+        headline:asText(d.headline),argument:asText(d.argument),condition:asText(d.condition),
+        key_risk:asText(d.key_risk),evidence:asText(d.evidence)}
+      :{id:m.id,name:m.name,tag:m.tag,absent:true,stance:'缺席',headline:'本轮没有返回',
+        argument:'',condition:'',key_risk:'',evidence:''};
+    s.votes.push(v);
+    if(v.absent) s.warnings.push(v.name+' 第一轮没返回');
+    else if(v.stance===NO_STANCE) s.warnings.push(v.name+' 第一轮没肯选边，票型里记成未表态');
+    paintVote(cards[m.id],v); step('亮票');
+  },3);
+  s.votes.sort((a,b)=>members.findIndex(m=>m.id===a.id)-members.findIndex(m=>m.id===b.id));
+
+  const tally={}; STANCES.forEach(k=>tally[k]=s.votes.filter(v=>v.stance===k).length);
+  [NO_STANCE,'缺席'].forEach(k=>{ const n=s.votes.filter(v=>v.stance===k).length; if(n) tally[k]=n; });
+  s.tally=tally;
+  const tb=el('div','tally');
+  Object.entries(tally).forEach(([k,v])=>tb.appendChild(
+    el('div','',`<div class="n s-${k}" style="border:0">${v}</div><div class="sub">${k}</div>`)));
+  L.appendChild(tb);
+
+  /* ── 第二轮：辩论 ── */
+  for(let r=1;r<=rounds;r++){
+    phase(`自由辩论 · 第 ${r} 轮`);
+    const rec={round:r,turns:[]}; s.debate.push(rec);
+    const order=members.slice((r-1)%members.length).concat(members.slice(0,(r-1)%members.length));
+    for(const m of order){
+      const d=await ask(m,debatePrompt(topic,ctx,renderTranscript(s),r,rounds),12000);
+      const t=d?{id:m.id,name:m.name,tag:m.tag,replies_to:asText(d.replies_to),
+          stance:normStance(d.stance,asText(d.say)),changed:!!d.changed,say:asText(d.say)}
+        :{id:m.id,name:m.name,tag:m.tag,absent:true,replies_to:'',stance:'缺席',
+          changed:false,say:'本轮没有返回'};
+      if(t.absent) s.warnings.push(`${m.name} 辩论第 ${r} 轮没返回`);
+      rec.turns.push(t); paintTurn(t); step('辩论');
+    }
+  }
+
+  /* ── 最终陈述 ── */
+  phase('最终陈述');
+  const tr=renderTranscript(s);
+  await pool(members, async m=>{
+    const d=await ask(m,finalPrompt(topic,ctx,tr),12000);
+    const f=d?{id:m.id,name:m.name,tag:m.tag,stance:normStance(d.stance,asText(d.one_line)),
+        say:asText(d.say),one_line:asText(d.one_line)}
+      :{id:m.id,name:m.name,tag:m.tag,absent:true,stance:'缺席',say:'本轮没有返回',one_line:''};
+    s.finals.push(f); if(f.absent) s.warnings.push(m.name+' 最终陈述没返回');
+    step('陈述');
+  },3);
+  s.finals.sort((a,b)=>members.findIndex(m=>m.id===a.id)-members.findIndex(m=>m.id===b.id));
+  s.finals.forEach(paintFinal);
+
+  const first={},last={};
+  s.votes.forEach(v=>first[v.id]=v.stance); s.finals.forEach(f=>last[f.id]=f.stance);
+  s.shifts=members.map(m=>({id:m.id,name:m.name,tag:m.tag,
+    before:first[m.id]||'—',after:last[m.id]||'—',moved:first[m.id]!==last[m.id]}));
+
+  /* ── 战报 ── */
+  phase('圆桌收官 · 战报');
+  const d=await askDebrief(topic,ctx,renderTranscript(s));
+  if(d) s.debrief={reframed:asText(d.reframed),conclusion:asText(d.conclusion),
+    blind_spot:asText(d.blind_spot),insights:asList(d.insights).map(asText),
+    consensus:asList(d.consensus).map(asText),
+    disputes:asList(d.disputes).map(x=>typeof x==='object'&&x?{point:asText(x.point),sides:asText(x.sides)}:{point:asText(x),sides:''}),
+    decision_rule:asText(d.decision_rule),
+    actions:asList(d.actions).map(x=>typeof x==='object'&&x?{what:asText(x.what),when:asText(x.when),pass:asText(x.pass)}:{what:asText(x),when:'',pass:''})};
+  else s.warnings.push('战报没生成出来，但全场发言都在，可以自己看记录');
+  step('战报');
+  paintShifts(s); paintDebrief(s.debrief);
+
+  s.finished=new Date().toLocaleString('zh-CN',{hour12:false}).slice(0,16);
+  saveSession(s); paintDone(s);
+  return s;
+}
+
+/* ═══════════ 画面 ═══════════ */
+function phase(t){ $('#live').appendChild(el('div','phase',
+  `<div class="t">${esc(t)}</div><div class="bar"></div>`)); }
+function paintVote(c,d){
+  c.className='pcard';
+  c.innerHTML=`<div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div style="flex:1;min-width:0"><div class="nm">${esc(d.name)}</div><div class="tg">${esc(d.tag)}</div></div>
+      <span class="pill s-${esc(d.stance)}">${esc(d.stance)}</span></div>
+    <div class="hd">${esc(d.headline)}</div><div class="ag">${esc(d.argument)}</div>
+    ${d.condition&&d.condition!=='无'?`<div class="ex">他这一票的保留意见：${esc(d.condition)}</div>`:''}
+    ${d.key_risk?`<div class="ex">他看到的最大风险：${esc(d.key_risk)}</div>`:''}
+    ${d.evidence?`<div class="ex" style="border:0;padding-top:4px">什么能让他改立场：${esc(d.evidence)}</div>`:''}`;
+}
+function paintTurn(d){
+  $('#live').appendChild(el('div','turn'+(d.changed?' moved':''),
+    `<div class="row" style="justify-content:space-between;align-items:flex-start">
+       <div style="flex:1;min-width:0"><span class="who">${esc(d.name)}</span>
+         ${d.replies_to?`<div class="to">→ 回应 ${esc(d.replies_to)}</div>`:''}</div>
+       <div><span class="pill s-${esc(d.stance)}">${esc(d.stance)}</span>
+         ${d.changed?'<span class="pill" style="color:#4fd1c5;border-color:#4fd1c5;margin-left:5px">改立场了</span>':''}</div>
+     </div><div class="body">${esc(d.say)}</div>`));
+}
+function paintFinal(d){
+  $('#live').appendChild(el('div','turn',
+    `<div class="row" style="justify-content:space-between">
+       <span class="who">${esc(d.name)}</span>
+       <span class="pill s-${esc(d.stance)}">${esc(d.stance)}</span></div>
+     <div class="body">${esc(d.say)}</div>
+     ${d.one_line?`<div class="hd" style="color:#4fd1c5">「${esc(d.one_line)}」</div>`:''}`));
+}
+function paintShifts(s){
+  let h='<div class="k">立场变化</div><table><tr><th>角色</th><th>第一轮</th><th>最终</th><th>变了吗</th></tr>';
+  (s.shifts||[]).forEach(x=>{ h+=`<tr><td>${esc(x.name)}</td>
+    <td class="s-${esc(x.before)}">${esc(x.before)}</td>
+    <td class="s-${esc(x.after)}">${esc(x.after)}</td>
+    <td>${x.moved?'<span style="color:#4fd1c5">被说服了</span>':'—'}</td></tr>`; });
+  $('#live').appendChild(el('div','card',h+'</table>'));
+}
+function paintDebrief(d){
+  const L=$('#live');
+  if(!d){ L.appendChild(el('div','card warnbox','战报没生成出来，但上面的发言都在，可以自己看。')); return; }
+  const hero=(k,v)=>v?`<div class="hero"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>`:'';
+  let h=hero('圆桌把问题改写成',d.reframed)
+    +`<div class="hero"><div class="k">最终结论</div><div class="v">${
+       d.conclusion?esc(d.conclusion):'没生成出来，往上看发言记录。'}</div></div>`
+    +hero('真正的盲区',d.blind_spot)+hero('什么时候这个决定才成立',d.decision_rule);
+  const ul=(t,a)=>a&&a.length?`<div class="card"><div class="k">${t}</div><ul>${
+    a.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:'';
+  h+=ul('核心洞察',d.insights)+ul('达成共识',d.consensus);
+  if(d.disputes&&d.disputes.length)
+    h+=`<div class="card"><div class="k">仍有分歧</div><ul>${d.disputes.map(x=>
+      `<li><b>${esc(x.point)}</b> —— ${esc(x.sides)}</li>`).join('')}</ul></div>`;
+  if(d.actions&&d.actions.length)
+    h+=`<div class="card"><div class="k">落地行动</div><table>
+      <tr><th>做什么</th><th>多久</th><th>什么算通过</th></tr>${d.actions.map(x=>
+      `<tr><td class="wrap2">${esc(x.what)}</td><td class="wrap2">${esc(x.when)}</td>
+       <td class="wrap2">${esc(x.pass)}</td></tr>`).join('')}</table></div>`;
+  L.appendChild(el('div','',h));
+}
+function paintDone(s){
+  const L=$('#live');
+  if(s.warnings.length) L.appendChild(el('div','card warnbox',
+    `<div class="k" style="color:#f6ad55">本场的毛病</div><ul>${
+      s.warnings.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>`));
+  const c=el('div','card',`<div class="k">拿走</div>
+    <div class="row" style="margin-top:11px">
+      <button class="sm" id="btnShare">分享 / 导出</button>
+      <button class="sm" id="btnCopy">复制 Markdown</button>
+    </div>`);
+  L.appendChild(c);
+  $('#btnShare').onclick=()=>shareMd(s);
+  $('#btnCopy').onclick=()=>copyMd(s);
+  $('#progTxt').textContent='开完了 · '+(s.debrief?'战报已出':'战报没出来');
+  $('#progFill').style.width='100%';
+  S.running=false;
+}
+
+/* ═══════════ 导出 ═══════════ */
+function buildMd(s){
+  const d=s.debrief||{}, o=[];
+  o.push('# '+s.topic,'');
+  o.push(`> ${s.panel_title}（${s.members.map(m=>m.name).join('、')}）｜辩论 ${s.rounds} 轮｜${s.started}`);
+  o.push(`> 第一轮票型：${Object.entries(s.tally||{}).map(([k,v])=>k+' '+v).join('，')}`);
+  o.push('> '+DISCLAIMER,'');
+  if(s.context) o.push('**我给的背景**：'+s.context,'');
+  if(d.reframed) o.push('**圆桌把问题改写成**：'+d.reframed,'');
+  o.push('**最终结论**：'+(d.conclusion||'（没生成出来）'),'');
+  if(d.blind_spot) o.push('**真正的盲区**：'+d.blind_spot,'');
+  if(d.decision_rule) o.push('**什么时候这个决定才成立**：'+d.decision_rule,'');
+  const sec=(t,a)=>{ if(a&&a.length){ o.push('## '+t); a.forEach(x=>o.push('- '+x)); o.push(''); } };
+  sec('核心洞察',d.insights); sec('达成共识的地方',d.consensus);
+  if(d.disputes&&d.disputes.length){ o.push('## 仍有分歧的地方');
+    d.disputes.forEach(x=>o.push(`- **${x.point}** —— ${x.sides}`)); o.push(''); }
+  if(d.actions&&d.actions.length){ o.push('## 落地行动（带验收判据）','',
+    '| # | 做什么 | 多久之内 | 什么算通过 |','|---|---|---|---|');
+    d.actions.forEach((x,i)=>o.push(`| ${i+1} | ${x.what} | ${x.when} | ${x.pass} |`)); o.push(''); }
+  o.push('## 立场变化表','','| 角色 | 第一轮 | 最终 | 变了吗 |','|---|---|---|---|');
+  (s.shifts||[]).forEach(x=>o.push(`| ${x.name} | ${x.before} | ${x.after} | ${x.moved?'被说服了':'—'} |`));
+  o.push('','## 第一轮 · 独立亮票（互相看不见）','');
+  s.votes.forEach(v=>{ o.push(`### ${v.name}　\`${v.stance}\``,`*${v.tag}*`,'',
+    '**'+v.headline+'**','',v.argument,'');
+    if(v.condition&&v.condition!=='无') o.push('- 他这一票的保留意见：'+v.condition);
+    if(v.key_risk) o.push('- 他看到的最大风险：'+v.key_risk);
+    if(v.evidence) o.push('- 什么证据能让他改立场：'+v.evidence);
+    o.push(''); });
+  s.debate.forEach(r=>{ o.push(`## 自由辩论 · 第 ${r.round} 轮`,'');
+    r.turns.forEach(t=>{ o.push(`**${t.name}**${t.replies_to?' → 回应 '+t.replies_to:''}　\`${t.stance}\`${
+      t.changed?'　**（改立场了）**':''}`,'',t.say,''); }); });
+  o.push('## 最终陈述','');
+  s.finals.forEach(f=>{ o.push(`**${f.name}**　\`${f.stance}\``,'',f.say,'');
+    if(f.one_line) o.push('> '+f.one_line,''); });
+  if(s.warnings.length){ o.push('## 本场的毛病',''); s.warnings.forEach(w=>o.push('- '+w)); o.push(''); }
+  o.push('---',`*AI 决策圆桌 ${s.id} ｜ ${s.engine}*`);
+  return o.join('\n');
+}
+async function shareMd(s){
+  const md=buildMd(s);
+  if(navigator.share){
+    try{ await navigator.share({title:'圆桌：'+s.topic, text:md}); return; }catch(_){}
+  }
+  copyMd(s);
+}
+async function copyMd(s){
+  const md=buildMd(s);
+  try{ await navigator.clipboard.writeText(md); toast('Markdown 复制好了'); }
+  catch(_){
+    /* iOS 上非用户手势触发的 clipboard 会被拒 —— 兜底给一个可以手动全选的框，
+       别让他点了没反应还不知道为什么 */
+    const ta=el('textarea'); ta.value=md;
+    ta.style.cssText='position:fixed;inset:8% 5%;width:90%;height:80%;z-index:99';
+    document.body.appendChild(ta); ta.select();
+    toast('复制不了，长按全选这段文字');
+    ta.onblur=()=>ta.remove();
+  }
+}
+
+/* ═══════════ 历史 ═══════════ */
+function loadSessions(){
+  try{ const a=JSON.parse(localStorage.getItem(LS.sess)||'[]'); return Array.isArray(a)?a:[]; }
+  catch(_){ return []; }
+}
+function saveSession(s){
+  const a=loadSessions(); a.unshift(s);
+  /* localStorage 大概 5MB，一场几十 KB。存不下就丢最旧的，别整个写失败 ——
+     写失败会让「开完了但一场都没存下」这种事悄悄发生。 */
+  let keep=a.slice(0,40);
+  while(keep.length){
+    try{ localStorage.setItem(LS.sess,JSON.stringify(keep)); return; }
+    catch(_){ keep=keep.slice(0,Math.max(1,keep.length-5)); if(keep.length<=1) break; }
+  }
+  toast('存不下了，这一场没进历史，记得先导出');
+}
+function paintHist(){
+  const box=$('#hist'); box.innerHTML='';
+  const a=loadSessions();
+  if(!a.length){ box.innerHTML='<div class="sub" style="padding-top:10px">还没开过。</div>'; return; }
+  a.forEach(s=>{
+    const d=el('div','hist',`<div class="ht">${esc(s.topic)}</div>
+      <div class="hd2">${esc(s.started)} · ${esc(s.panel_title)} · ${
+        esc((s.debrief?.conclusion||'').slice(0,50))}</div>`);
+    d.onclick=()=>showPast(s);
+    box.appendChild(d);
+  });
+}
+function showPast(s){
+  S.session=s; openStage(s.topic);
+  $('#stMeta').textContent=`${s.panel_title} · ${s.members.length} 位嘉宾 · 辩论 ${s.rounds} 轮 · ${s.started}`;
+  $('#prog').style.display='none';
+  const L=$('#live');
+  phase('第一轮 · 独立思考');
+  s.votes.forEach(v=>{ const c=el('div','pcard'); L.appendChild(c); paintVote(c,v); });
+  if(s.tally){ const tb=el('div','tally');
+    Object.entries(s.tally).forEach(([k,v])=>tb.appendChild(
+      el('div','',`<div class="n s-${k}" style="border:0">${v}</div><div class="sub">${k}</div>`)));
+    L.appendChild(tb); }
+  (s.debate||[]).forEach(r=>{ phase(`自由辩论 · 第 ${r.round} 轮`); r.turns.forEach(paintTurn); });
+  phase('最终陈述'); (s.finals||[]).forEach(paintFinal);
+  phase('圆桌收官 · 战报'); paintShifts(s); paintDebrief(s.debrief); paintDone(s);
+}
+
+/* ═══════════ 配置区 ═══════════ */
+function paintPanel(){
+  const tabs=$('#panelTabs'); tabs.innerHTML='';
+  Object.entries(PANELS).forEach(([k,v])=>{
+    const b=el('div','chip'+(k===S.panelKey?' on':''),esc(v.title));
+    b.onclick=()=>{ S.panelKey=k; try{localStorage.setItem(LS.panel,k);}catch(_){} paintPanel(); };
+    tabs.appendChild(b);
+  });
+  const p=PANELS[S.panelKey];
+  $('#panelDesc').textContent=p.desc;
+  S.picked=new Set(p.members.map(m=>m.id));
+  const box=$('#memberChips'); box.innerHTML='';
+  p.members.forEach(m=>{
+    const c=el('div','chip on',esc(m.name)+' <span style="opacity:.55;margin-left:5px">'+esc(m.tag)+'</span>');
+    c.onclick=()=>{
+      if(S.picked.has(m.id)){ S.picked.delete(m.id); c.classList.remove('on'); }
+      else { S.picked.add(m.id); c.classList.add('on'); }
+      hint();
+    };
+    box.appendChild(c);
+  });
+  hint();
+}
+function hint(){
+  const n=S.picked.size;
+  const calls=n*(2+S.rounds)+1;
+  $('#costHint').textContent = n<2 ? '至少要留两个人，一个人吵不起来'
+    : `${n} 位嘉宾 · 约 ${calls} 次模型调用 · 手机上大概 ${Math.round(calls*8/30)*0.5+1} 分钟`;
+  $('#btnGo').disabled = n<2 || !hasKey() || S.running;
+  if(!hasKey()&&n>=2) $('#startMsg').textContent='先在上面贴一把 key';
+  else if(!S.running) $('#startMsg').textContent='';
+}
+$('#roundSeg').onclick=e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  S.rounds=+b.dataset.r;
+  document.querySelectorAll('#roundSeg button').forEach(x=>x.classList.toggle('on',+x.dataset.r===S.rounds));
+  hint();
+};
+function openStage(topic){
+  $('#setup').classList.add('hide');
+  $('#stage').classList.remove('hide');
+  $('#btnNew').classList.remove('hide');
+  $('#prog').style.display='';
+  $('#stTopic').textContent=topic;
+  $('#live').innerHTML=''; $('#stErr').innerHTML='';
+  window.scrollTo(0,0);
+}
+$('#btnNew').onclick=()=>{
+  if(S.running&&!confirm('这一场还在跑，真的要退出吗？')) return;
+  location.reload();
+};
+$('#btnGo').onclick=async()=>{
+  const topic=$('#topic').value.trim();
+  if(!topic){ $('#startMsg').textContent='先写一句你要想清楚的事'; return; }
+  if(!hasKey()){ $('#startMsg').textContent='先贴一把 key'; return; }
+  S.running=true; hint();
+  try{ await runSession(topic,$('#context').value.trim()); }
+  catch(e){
+    S.running=false;
+    $('#stErr').appendChild(el('div','card err','跑砸了：'+esc(e.message||e)
+      +'<div class="sub" style="margin-top:8px">上面已经出来的部分还在，可以先看着。</div>'));
+    $('#progTxt').textContent='中断了';
+    if(S.session&&S.session.votes.length) saveSession(S.session);
+  }
+};
+
+/* 跑到一半别让他手滑退出去 */
+window.addEventListener('beforeunload',e=>{ if(S.running){ e.preventDefault(); e.returnValue=''; } });
+
+/* ═══════════ 启动 ═══════════ */
+(function boot(){
+  loadKeys(); paintKeyBox();
+  try{ const p=localStorage.getItem(LS.panel); if(p&&PANELS[p]) S.panelKey=p; }catch(_){}
+  paintPanel(); paintHist();
+})();
+</script>
+</body>
+</html>
