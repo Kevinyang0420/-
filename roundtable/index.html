@@ -178,7 +178,7 @@ a{color:var(--acc)}
 
 <div class="foot">
   内容由 AI 基于公开资料推演，只代表模拟思考，不代表这些人物的真实观点。<br>
-  你的 key 和记录只存在这台手机的浏览器里，不上传。
+  引擎走你自己的火山订阅（Agent Plan），不用配任何东西。记录只存在这台手机上。
 </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -200,9 +200,9 @@ a{color:var(--acc)}
    ══════════════════════════════════════════════════════════════ */
 
 const PANELS = {"general":{"title":"通用大佬局","desc":"照抄那条小红书的阵容，适合人生选择、方向类的大问题","members":[{"id":"feynman","name":"理查德·费曼","tag":"第一性原理·拆解复杂","prompt":"你是理查德·费曼。你厌恶包装过的说法，任何结论你都要拆到最基本的事实和机制上重新搭一遍。你常问的是「这件事到底是怎么运作的」「你怎么知道你不是在骗自己」。你要求一切主张可被证伪：说清楚什么结果出现就代表这条路不成立。你说话直白、爱举具体例子、不用大词。"},{"id":"munger","name":"查理·芒格","tag":"误判心理学·逆向思考","prompt":"你是查理·芒格。你先想「怎样会输」再想怎样会赢。你熟悉人类的认知偏误——过度自信、承诺一致性、社会认同、激励导致的扭曲——并且会直接点名对方现在正踩哪一个。你重视机会成本、安全边际和不可逆性。你说话简短、刻薄、有分量，不给人留面子但给人留退路。"},{"id":"karpathy","name":"Andrej Karpathy","tag":"AI工程·系统思维","prompt":"你是 Andrej Karpathy。你把人生选择当成工程问题：先搭一个便宜的实验环境，小步部署，能回滚，有监控指标。你反对一上来就做不可回滚的大改动。你会把模糊的目标翻译成可度量的指标和明确的迭代周期。你说话平和、精确、爱用工程比喻。"},{"id":"kanye","name":"Kanye West","tag":"自我表达·挑战共识","prompt":"你是 Kanye West。你只认作品，不认身份和头衔——一个人是什么，由他做出来的东西决定，不由他怎么称呼自己决定。你对「还没开始就先给自己贴标签」极度反感。你会挑战全场的共识，尤其当所有人都太理性、太安全的时候。你说话情绪化、断言式、有攻击性，但每句都指向同一件事：拿作品说话。"},{"id":"mrbeast","name":"MrBeast","tag":"注意力经济·传播直觉","prompt":"你是 MrBeast。你相信投入密度决定迭代速度：同样一年，全职投入和业余投入不是量的差别而是质的差别。你用几百次真实迭代来找方向，而不是想清楚了再动手。你关心的是「有没有人真的愿意看/买」这个唯一的裁判。你说话热烈、具体到数字、不绕弯。"},{"id":"jobs","name":"史蒂夫·乔布斯","tag":"产品直觉·聚焦","prompt":"你是史蒂夫·乔布斯。你逼人回答一个问题：你到底替谁解决什么问题，一句话说清楚。你认为聚焦就是对九十九件好事说不。你厌恶「什么都做一点」的方案，也厌恶用忙碌掩盖没想清楚。你说话尖锐、不留情面、要求对方把话说到具体不能再具体。"}]},"kevin":{"title":"Kevin 局","desc":"贴你实际会遇到的决策：接不接这个项目、要不要换赛道、这笔投入值不值","members":[{"id":"partner","name":"事务所合伙人","tag":"执业风险·可辩护性","prompt":"你是一家会计师事务所的合伙人，做了二十年审计。你的第一反应永远是：这件事出了问题谁签字、拿什么辩护、留了什么记录。你对声誉损失比对收入损失敏感得多。你会问「最坏情况下，监管或客户来查，我们拿得出什么」。你说话稳、克制，但一句话就能把风险点按住。"},{"id":"cfo","name":"CFO","tag":"现金流·单位经济","prompt":"你是一位 CFO。你只看两件事：现金什么时候进什么时候出，以及这门生意每做一单是赚是亏。你会要求把方案翻译成一张现金流量表：前期投入多少、多久回本、最坏情况下现金能撑几个月。你厌恶只谈战略不谈数字的说法。你说话务实、爱要具体数字，对方给不出数字你就当它不存在。"},{"id":"founder","name":"连续创业者","tag":"机会成本·速度","prompt":"你是一位连续创业者，做成过也做砸过。你最在意的是时间窗口和机会成本——想太久本身就是一种损失。你会推动对方用最小的成本尽快拿到真实反馈，而不是在纸上论证。你也知道大多数计划活不过第一次接触真实客户。你说话快、有推力、不耐烦空谈。"},{"id":"risk","name":"风控官","tag":"最坏情况·不可逆性","prompt":"你是风控与合规负责人。你的工作是问「如果这件事错了，能不能退回来」。你把决策分成可回滚和不可回滚两类，对不可回滚的一律要求先做小规模试点。你关心尾部风险：概率低但一旦发生就出局的那类。你说话冷静、按条列，专门给别人的乐观预期挑洞。"},{"id":"client","name":"客户视角","tag":"谁付钱·为什么付","prompt":"你代表掏钱的那一方。你不关心方案多精巧，只关心「这解决了我什么问题、我为什么要为它付钱、我为什么不找别人」。你会指出对方的方案里哪些价值是自己想象出来的、客户其实不在意。你说话直接，常常一句话把对方的自我感动戳破。"},{"id":"future","name":"十年后的你","tag":"长期复利·后悔最小化","prompt":"你是十年后的当事人本人。你已经知道哪些当时觉得很大的事后来根本不重要，也知道哪些当时懒得做的事后来复利极高。你的判据是后悔最小化：十年后回头看，哪个选择会让我后悔。你会提醒对方，健康、关系和信誉这三样是不可逆的。你说话温和但不含糊，会说出对方不愿意听的那句。"}]}};
-const BUILD = '61ef418aae82';
+const BUILD = 'd039299170db';
 
-const LS = {key:'rt_keys', sess:'rt_sessions', panel:'rt_panel'};
+const LS = {pass:'rt_pass', sess:'rt_sessions', panel:'rt_panel'};
 const STANCES = ['赞同','反对'];
 const NO_STANCE = '未表态';
 const DISCLAIMER = '内容由 AI 基于公开资料推演，只代表模拟思考。';
@@ -214,75 +214,108 @@ const esc = s => String(s==null?'':s)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
-let S = {keys:{}, panelKey:'general', picked:new Set(), rounds:1, session:null, running:false};
+let S = {online:false, keys:{}, panelKey:'general', picked:new Set(),
+         rounds:1, session:null, running:false};
 
 function toast(msg){
   const t=$('#toast'); t.textContent=msg; t.classList.add('on');
   clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),2200);
 }
 
-/* ═══════════ key：按前缀自动认，跟 alex 同一套 ═══════════ */
-function keyKind(k){
-  const s=String(k||'').trim();
-  if(/^AIza/.test(s)) return 'gemini';
-  if(/^sk-/.test(s))  return 'deepseek';
-  return null;
-}
-/* 🚨 长度明显不对的 key 直接当没有。留着它只会赢走路由然后请求失败，
-      而用户完全看不出「是那把废 key 在挡路」。 */
-function keyOk(k,kind){
-  k=(k||'').trim();
-  if(kind==='gemini')   return /^AIza[\w-]{30,}$/.test(k);
-  if(kind==='deepseek') return /^sk-[\w-]{20,}$/.test(k);
-  return false;
-}
-function loadKeys(){
-  let o={}; try{ o=JSON.parse(localStorage.getItem(LS.key)||'{}'); }catch(_){}
-  if(!o||typeof o!=='object') o={};
-  for(const k of Object.keys(o)) if(!keyOk(o[k],k)) delete o[k];
-  S.keys=o;
-}
-function saveKeys(){ try{ localStorage.setItem(LS.key,JSON.stringify(S.keys)); }catch(_){} }
-function hasKey(){ return !!(S.keys.deepseek||S.keys.gemini); }
+/* ═══════════ 引擎：走 Kevin 自己的火山网关 ═══════════
 
-function paintKeyBox(){
-  const box=$('#keyBox'); box.innerHTML='';
-  if(hasKey()){
-    const which=[S.keys.deepseek?'DeepSeek':'',S.keys.gemini?'Gemini':''].filter(Boolean).join(' + ');
-    const c=el('div','card',
-      `<div class="row" style="justify-content:space-between">
-         <div><div class="k">引擎</div><div style="margin-top:3px">${esc(which)}</div></div>
-         <button class="sm" id="btnKey">换 key</button></div>`);
-    box.appendChild(c);
-    $('#btnKey').onclick=()=>askKey(true);
-    return;
-  }
-  const c=el('div','card',
-    `<div class="k">先贴一把 key</div>
-     <div class="sub" style="margin:8px 0 12px">
-       用你自己的 API key，只存在这台手机的浏览器里，不会上传到任何地方。<br>
-       <b>DeepSeek</b>（<code>sk-</code> 开头，国内直连不用梯子，推荐）或
-       <b>Gemini</b>（<code>AIza</code> 开头，免费额度但要梯子）。
-     </div>
-     <input id="keyIn" type="password" placeholder="sk-… 或 AIza…" autocomplete="off"
-            autocapitalize="off" autocorrect="off" spellcheck="false">
-     <div class="row" style="margin-top:11px"><button class="sm" id="keySave">存起来</button></div>
-     <div class="sub" id="keyMsg" style="margin-top:8px"></div>`);
-  box.appendChild(c);
-  $('#keySave').onclick=()=>{
-    const v=$('#keyIn').value.trim(), kind=keyKind(v);
-    if(!kind){ $('#keyMsg').textContent='认不出这把 key —— DeepSeek 是 sk- 开头，Gemini 是 AIza 开头。'; return; }
-    if(!keyOk(v,kind)){ $('#keyMsg').textContent='这把 key 看着不完整，是不是少复制了一截？'; return; }
-    S.keys[kind]=v; saveKeys(); paintKeyBox(); hint(); toast('存好了，走的是 '+(kind==='gemini'?'Gemini':'DeepSeek'));
-  };
+   🚨 这里**不要用户贴任何 key**，两条硬理由：
+     ① 这个仓库是 public 的。凭证写进页面 = 公开给所有人，账号会被薅到封。
+     ② 他说过很多次：凡是有订阅的就用订阅。订阅那把 `ark-` key 在云函数的
+        环境变量里，浏览器根本不该见到它。
+
+   为什么不能在页面里直接调 Agent Plan：`ark.cn-beijing.volces.com` **不发跨域头**。
+   实测（2026-08-10，正负对照）：no-cors 请求拿到 opaque 响应说明主机可达、
+   请求确实发出去了，但带头的请求一律 Failed to fetch，对照组（打不通的主机）
+   会抛错、DeepSeek 会给可读的 401 —— 三者一比就能确定是跨域策略，不是网络。
+   所以必须经过一个会发跨域头的中间层，而他名下已经有一个：Alex 那个网关，
+   云函数里装着订阅 key，`/api/llm` 是通用的（收 messages，服务端转 Anthropic 格式，
+   role:system 会被提到顶层），provider 实测就是 `plan`。 */
+const API='https://sqg75i2mlmanf4sqde6nh.apigateway-cn-beijing.volceapi.com';
+const today=()=>new Date().toLocaleDateString('sv');     // YYYY-MM-DD
+
+/* 🚨 访客口令是**当天**的（HMAC(种子, 日期)），隔天必失效。
+   Alex 上栽过一次：把取来的令牌当固定口令存下，装好当天能用、第二天起每一发都 401，
+   而且只在「什么都没配过」那条分支才去取，配过的人一次都跑不到。
+   所以这里：存的时候连日期一起存，日期一变就重取；撞 401 也重取一次。 */
+async function getPass(force){
+  let o={}; try{ o=JSON.parse(localStorage.getItem(LS.pass)||'{}'); }catch(_){}
+  if(!force && o.pass && o.day===today()) return o.pass;
+  const r=await fetch(API+'/api/guestpass',{cache:'no-store'});
+  if(!r.ok) throw new Error('取不到后端口令（HTTP '+r.status+'）');
+  const j=await r.json();
+  if(!j.pass) throw new Error('后端没给口令');
+  try{ localStorage.setItem(LS.pass,JSON.stringify({pass:j.pass,day:today()})); }catch(_){}
+  return j.pass;
 }
-function askKey(reset){
-  if(reset){ S.keys={}; saveKeys(); }
-  paintKeyBox();
-  const i=$('#keyIn'); if(i) i.focus();
+
+function paintEngineBox(st){
+  const box=$('#keyBox'); box.innerHTML='';
+  const map={connecting:['正在连你的后端…','var(--dim)'],
+             ok:['Agent Plan · 你的火山订阅','var(--acc)'],
+             fail:['连不上后端','var(--red)']};
+  const [txt,col]=map[st]||map.connecting;
+  box.appendChild(el('div','card',
+    `<div class="row" style="justify-content:space-between;align-items:center">
+       <div><div class="k">引擎</div>
+         <div style="margin-top:3px;color:${col}">${esc(txt)}</div></div>
+       ${st==='fail'?'<button class="sm" id="btnRetry">重连</button>':''}</div>
+     ${st==='fail'?'<div class="sub" style="margin-top:9px">后端可能是缩到零了，'
+       +'第一发会被网关掐掉。点重连一般就好；一直不行就是云函数那边挂了。</div>':''}`));
+  if(st==='fail') $('#btnRetry').onclick=()=>connect();
+}
+async function connect(){
+  paintEngineBox('connecting'); S.online=false; hint();
+  try{
+    await getPass(true);
+    S.online=true; paintEngineBox('ok');
+  }catch(e){ paintEngineBox('fail'); }
+  hint();
 }
 
 /* ═══════════ 模型调用 ═══════════ */
+/* 提交 → 拿 job → 轮询。为什么不同步等：网关那条路由的超时比模型慢，
+   同步会被掐在半路，而「被掐」和「模型没返回」长得一模一样。 */
+async function callLLM(system,user,maxTok){
+  let pass=await getPass();
+  for(let attempt=0;attempt<3;attempt++){
+    const r=await fetch(API+'/api/llm',{method:'POST',
+      headers:{'Content-Type':'application/json','X-Alex-Pass':pass},
+      body:JSON.stringify({messages:[{role:'system',content:system},
+                                     {role:'user',content:user}],
+        temperature:0.7, want_json:true, max_tokens:maxTok})});
+    if(r.status===401){ pass=await getPass(true); continue; }   // 隔天令牌换了
+    if(r.status===429) throw new Error((await r.json().catch(()=>({}))).error||'今天的额度用完了');
+    /* 🚨 缩到零之后第一发会被网关约 0.2 秒就回 504（路由超时明明写着 30 秒）——
+       这不是「慢」，是网关根本不等冷启动。第二发就好了，所以必须重试。 */
+    if(!r.ok){ if(attempt<2){ await sleep(1500); continue; }
+      throw new Error('后端没接住（HTTP '+r.status+'）'); }
+    const j=await r.json();
+    if(j.text) return j.text;                                   // sync 模式
+    const id=j.job;
+    if(!id) throw new Error('后端没给 job id');
+    for(let i=0;i<80;i++){
+      await sleep(1200);
+      const p=await fetch(API+'/api/job?id='+encodeURIComponent(id),
+        {headers:{'X-Alex-Pass':pass},cache:'no-store'});
+      if(p.status===401){ pass=await getPass(true); continue; }
+      if(!p.ok) continue;
+      const pj=await p.json();
+      if(pj.error) throw new Error(String(pj.error).slice(0,120));
+      if(pj.done || pj.text!==undefined) return pj.text||'';
+    }
+    throw new Error('等了一分半后端还没给结果');
+  }
+  throw new Error('连了三次都没成功');
+}
+
+/* 下面两条是**没在用**的备用路径：他不用贴 key，所以正常永远走不到这里。
+   留着是因为万一云函数长期挂了还有条活路，但要用得先在界面上把入口放出来。 */
 const GEM_MODELS=['gemini-3.1-flash-lite','gemini-3.5-flash','gemini-3.1-flash'];
 let GI=0;
 
@@ -337,12 +370,9 @@ async function callGemini(system,user,maxTok){
   throw last||new Error('Gemini 全部模型都没通');
 }
 
-/* 文字活优先 DeepSeek（国内直连、没有每天 20 次那种日限），没有再退 Gemini */
-async function callLLM(system,user,maxTok){
-  if(S.keys.deepseek) return callDeepSeek(system,user,maxTok);
-  if(S.keys.gemini)   return callGemini(system,user,maxTok);
-  throw new Error('还没有 key');
-}
+/* 🚨 这里原来还有一个按 key 选路的 callLLM。函数声明是**后定义的覆盖先定义的**，
+   留着它会把上面那个走网关的版本整个盖掉，而页面看起来一切正常、只是永远说
+   「还没有 key」。删掉是必须的，不是清理。 */
 
 /* 🚨 抠 JSON 绝不能用 /\{[\s\S]*\}/ —— 贪婪到最后一个 }。这些模型经常在正文后
    拖垃圾（重复括号碎片、markdown 围栏、一句中文），贪婪匹配把垃圾切进来必炸。
@@ -506,7 +536,7 @@ async function runSession(topic,ctx){
   const s={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     topic, context:ctx, panel:S.panelKey, panel_title:panel.title,
     started:new Date().toLocaleString('zh-CN',{hour12:false}).slice(0,16),
-    rounds, engine:S.keys.deepseek?'DeepSeek':'Gemini', build:BUILD,
+    rounds, engine:'Agent Plan', build:BUILD,
     members:members.map(m=>({id:m.id,name:m.name,tag:m.tag})),
     votes:[], debate:[], finals:[], debrief:null, warnings:[]};
   S.session=s;
@@ -813,10 +843,13 @@ function paintPanel(){
 function hint(){
   const n=S.picked.size;
   const calls=n*(2+S.rounds)+1;
+  /* 估时按实测来，不是拍脑袋：经网关一次约 3.7 秒（2026-08-10 实测，provider=plan）。
+     亮票和最终陈述是 3 路并发，辩论必须按顺序（后面的人要看到前面说了什么）。 */
+  const secs=Math.ceil(n/3)*4*2 + n*S.rounds*5 + 8;
   $('#costHint').textContent = n<2 ? '至少要留两个人，一个人吵不起来'
-    : `${n} 位嘉宾 · 约 ${calls} 次模型调用 · 手机上大概 ${Math.round(calls*8/30)*0.5+1} 分钟`;
-  $('#btnGo').disabled = n<2 || !hasKey() || S.running;
-  if(!hasKey()&&n>=2) $('#startMsg').textContent='先在上面贴一把 key';
+    : `${n} 位嘉宾 · 约 ${calls} 次调用 · 大概 ${secs<90?secs+' 秒':(secs/60).toFixed(1)+' 分钟'}`;
+  $('#btnGo').disabled = n<2 || !S.online || S.running;
+  if(!S.online&&n>=2) $('#startMsg').textContent='还没连上你的后端，等一下或者点上面的重连';
   else if(!S.running) $('#startMsg').textContent='';
 }
 $('#roundSeg').onclick=e=>{
@@ -841,7 +874,7 @@ $('#btnNew').onclick=()=>{
 $('#btnGo').onclick=async()=>{
   const topic=$('#topic').value.trim();
   if(!topic){ $('#startMsg').textContent='先写一句你要想清楚的事'; return; }
-  if(!hasKey()){ $('#startMsg').textContent='先贴一把 key'; return; }
+  if(!S.online){ $('#startMsg').textContent='还没连上后端，点上面的重连'; return; }
   S.running=true; hint();
   try{ await runSession(topic,$('#context').value.trim()); }
   catch(e){
@@ -858,7 +891,7 @@ window.addEventListener('beforeunload',e=>{ if(S.running){ e.preventDefault(); e
 
 /* ═══════════ 启动 ═══════════ */
 (function boot(){
-  loadKeys(); paintKeyBox();
+  connect();
   try{ const p=localStorage.getItem(LS.panel); if(p&&PANELS[p]) S.panelKey=p; }catch(_){}
   paintPanel(); paintHist();
 })();
