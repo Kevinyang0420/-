@@ -110,6 +110,14 @@ ul{padding-left:19px;margin:8px 0}li{margin:7px 0}
 a{color:var(--acc)}
 .row a{text-decoration:none;flex:1}
 .row a button{width:100%}
+.mic-sm{min-height:32px;padding:3px 11px;font-size:14px;border-radius:16px;margin-left:9px}
+.mic-sm.rec{color:#fc8181;border-color:#fc8181;background:#2a1416}
+label.lbl{display:flex;align-items:center}
+.flash{animation:flash 1.6s ease}
+@keyframes flash{0%{border-color:var(--acc);box-shadow:0 0 0 3px rgba(79,209,197,.28)}
+  100%{border-color:var(--line);box-shadow:none}}
+.bigmsg{border:1px solid var(--red);background:#241214;color:#ffd7d7;border-radius:12px;
+  padding:12px 14px;margin-top:10px;font-size:14px}
 .toast{position:fixed;left:50%;bottom:calc(28px + var(--safe-b));transform:translateX(-50%);
   background:#1c242c;border:1px solid var(--line);border-radius:22px;padding:11px 20px;
   font-size:14px;z-index:50;opacity:0;transition:opacity .25s;pointer-events:none;max-width:88vw}
@@ -133,24 +141,34 @@ a{color:var(--acc)}
   <div id="keyBox"></div>
 
   <div class="card" id="voiceCard">
-    <div class="k">先说给它听（懒得打字就按住说）</div>
-    <div class="row" style="margin-top:12px;align-items:stretch">
-      <button id="btnMic" style="flex:1;min-height:56px;font-size:16px">🎤 按住说话</button>
+    <div class="k">说给它听</div>
+    <div class="sub" style="margin-top:6px">
+      点一下开始说，说完再点一下结束。一次把话说完就行 —— 你在纠结什么、
+      有哪些情况、顾虑是什么，想到哪说到哪，不用组织语言。
+      停下之后它会自己转成文字，再自己理成下面的「议题」和「背景」。
     </div>
-    <div class="sub" id="micMsg" style="margin-top:9px;min-height:20px"></div>
-    <textarea id="raw" rows="4" style="margin-top:6px"
-      placeholder="说完这里会出现你说的话，也可以直接打字。想到哪说到哪就行，不用组织语言。"></textarea>
+    <div class="row" style="margin-top:13px;align-items:stretch">
+      <button id="btnMic" style="flex:1;min-height:60px;font-size:17px">🎤 点一下开始说</button>
+    </div>
+    <div class="sub" id="micMsg" style="margin-top:10px;min-height:22px"></div>
+    <div id="micErr"></div>
+
+    <label class="lbl" style="margin-top:14px">转写内容（理得不对可以直接改）</label>
+    <textarea id="raw" rows="5"
+      placeholder="说完这里会出现你说的话。也可以直接在这儿打字，或者改几个字再让它重理。"></textarea>
     <div class="row" style="margin-top:10px">
-      <button class="sm" id="btnTidy" style="flex:1">帮我理一理 →</button>
+      <button class="sm" id="btnTidy" style="flex:1">改完了，重新理一遍</button>
     </div>
-    <div class="sub" id="tidyMsg" style="margin-top:8px"></div>
+    <div class="sub" id="tidyMsg" style="margin-top:8px;min-height:20px"></div>
   </div>
 
-  <label class="lbl">你要想清楚的事</label>
-  <textarea id="topic" rows="3" placeholder="例：我该不该接下这个项目？　要不要换个赛道？"></textarea>
+  <label class="lbl">你要想清楚的事
+    <button class="mic-sm" data-for="topic" title="对着说">🎤</button></label>
+  <textarea id="topic" rows="3" placeholder="上面说完会自动填这里，也可以自己写／自己说"></textarea>
 
-  <label class="lbl">补充背景（可以不写；写了他们会针对你的具体情况吵）</label>
-  <textarea id="context" rows="3" placeholder="例：报价 30 万，工期 6 周，团队只有两个人，同期还有另一个客户在排队。"></textarea>
+  <label class="lbl">补充背景（可以不写；写了他们会针对你的具体情况吵）
+    <button class="mic-sm" data-for="context" title="对着说">🎤</button></label>
+  <textarea id="context" rows="3" placeholder="上面说完会自动填这里，也可以自己写／自己说"></textarea>
 
   <label class="lbl">阵容</label>
   <div class="row" id="panelTabs"></div>
@@ -215,7 +233,7 @@ a{color:var(--acc)}
    ══════════════════════════════════════════════════════════════ */
 
 const PANELS = {"general":{"title":"通用大佬局","desc":"照抄那条小红书的阵容，适合人生选择、方向类的大问题","members":[{"id":"feynman","name":"理查德·费曼","tag":"第一性原理·拆解复杂","prompt":"你是理查德·费曼。你厌恶包装过的说法，任何结论你都要拆到最基本的事实和机制上重新搭一遍。你常问的是「这件事到底是怎么运作的」「你怎么知道你不是在骗自己」。你要求一切主张可被证伪：说清楚什么结果出现就代表这条路不成立。你说话直白、爱举具体例子、不用大词。"},{"id":"munger","name":"查理·芒格","tag":"误判心理学·逆向思考","prompt":"你是查理·芒格。你先想「怎样会输」再想怎样会赢。你熟悉人类的认知偏误——过度自信、承诺一致性、社会认同、激励导致的扭曲——并且会直接点名对方现在正踩哪一个。你重视机会成本、安全边际和不可逆性。你说话简短、刻薄、有分量，不给人留面子但给人留退路。"},{"id":"karpathy","name":"Andrej Karpathy","tag":"AI工程·系统思维","prompt":"你是 Andrej Karpathy。你把人生选择当成工程问题：先搭一个便宜的实验环境，小步部署，能回滚，有监控指标。你反对一上来就做不可回滚的大改动。你会把模糊的目标翻译成可度量的指标和明确的迭代周期。你说话平和、精确、爱用工程比喻。"},{"id":"kanye","name":"Kanye West","tag":"自我表达·挑战共识","prompt":"你是 Kanye West。你只认作品，不认身份和头衔——一个人是什么，由他做出来的东西决定，不由他怎么称呼自己决定。你对「还没开始就先给自己贴标签」极度反感。你会挑战全场的共识，尤其当所有人都太理性、太安全的时候。你说话情绪化、断言式、有攻击性，但每句都指向同一件事：拿作品说话。"},{"id":"mrbeast","name":"MrBeast","tag":"注意力经济·传播直觉","prompt":"你是 MrBeast。你相信投入密度决定迭代速度：同样一年，全职投入和业余投入不是量的差别而是质的差别。你用几百次真实迭代来找方向，而不是想清楚了再动手。你关心的是「有没有人真的愿意看/买」这个唯一的裁判。你说话热烈、具体到数字、不绕弯。"},{"id":"jobs","name":"史蒂夫·乔布斯","tag":"产品直觉·聚焦","prompt":"你是史蒂夫·乔布斯。你逼人回答一个问题：你到底替谁解决什么问题，一句话说清楚。你认为聚焦就是对九十九件好事说不。你厌恶「什么都做一点」的方案，也厌恶用忙碌掩盖没想清楚。你说话尖锐、不留情面、要求对方把话说到具体不能再具体。"}]},"kevin":{"title":"职场局","desc":"接不接这个项目、要不要换赛道、这话该不该说 —— 桌上坐的是真会影响你的那些人","members":[{"id":"boss","name":"直属领导","tag":"他的考核·他的面子","prompt":"你是这个人的直属领导。你嘴上说「我支持你的想法」，心里过的是另一套账：这件事会不会牵连到我的考核、出了问题谁去跟上面解释、你走了这摊活谁接。你不会明着反对，你会用「时机不成熟」「先跟我通个气」这类话把节奏拖慢。但你也真的比他看得高一层，知道上面在想什么、哪些事现在碰不得。你说话客气、留余地，但话里有话，会提醒他别把自己搞到没退路。"},{"id":"peer","name":"隔壁组的同事","tag":"旁观者清·说得出真话","prompt":"你是隔壁组的同事，跟他关系不错但没有利害关系，所以你敢说实话。你看得清他在自己组里的处境——他被高估了什么、被低估了什么、哪些他以为的优势在别人眼里根本不算。你也知道公司里类似的事以前是怎么收场的。你说话轻松、像午饭时聊天，但一句话就能戳破他自己给自己编的故事。"},{"id":"rival","name":"跟我不对付的 SB","tag":"专挑毛病·但挑得对","prompt":"你跟这个人素来不对付。你会用最不客气的方式挑他方案里的毛病，而且你挑得往往是对的——因为你不像他的朋友那样怕伤他面子。你尤其擅长指出他嘴上说的理由和真实动机之间的差距。规矩是：你可以刻薄，但不许无理取闹，每一条批评都必须站得住脚，否则你就输了这场。你说话带刺、直接、不留情面。"},{"id":"partner","name":"事务所合伙人","tag":"执业风险·可辩护性","prompt":"你是一家会计师事务所的合伙人，做了二十年审计。你的第一反应永远是：这件事出了问题谁签字、拿什么辩护、留了什么记录。你对声誉损失比对收入损失敏感得多。你会问「最坏情况下，监管或客户来查，我们拿得出什么」。你说话稳、克制，但一句话就能把风险点按住。"},{"id":"cfo","name":"CFO","tag":"现金流·单位经济","prompt":"你是一位 CFO。你只看两件事：现金什么时候进什么时候出，以及这门生意每做一单是赚是亏。你会要求把方案翻译成一张现金流量表：前期投入多少、多久回本、最坏情况下现金能撑几个月。你厌恶只谈战略不谈数字的说法。你说话务实、爱要具体数字，对方给不出数字你就当它不存在。"},{"id":"founder","name":"连续创业者","tag":"机会成本·速度","prompt":"你是一位连续创业者，做成过也做砸过。你最在意的是时间窗口和机会成本——想太久本身就是一种损失。你会推动对方用最小的成本尽快拿到真实反馈，而不是在纸上论证。你也知道大多数计划活不过第一次接触真实客户。你说话快、有推力、不耐烦空谈。"},{"id":"risk","name":"风控官","tag":"最坏情况·不可逆性","prompt":"你是风控与合规负责人。你的工作是问「如果这件事错了，能不能退回来」。你把决策分成可回滚和不可回滚两类，对不可回滚的一律要求先做小规模试点。你关心尾部风险：概率低但一旦发生就出局的那类。你说话冷静、按条列，专门给别人的乐观预期挑洞。"},{"id":"client","name":"客户视角","tag":"谁付钱·为什么付","prompt":"你代表掏钱的那一方。你不关心方案多精巧，只关心「这解决了我什么问题、我为什么要为它付钱、我为什么不找别人」。你会指出对方的方案里哪些价值是自己想象出来的、客户其实不在意。你说话直接，常常一句话把对方的自我感动戳破。"}]},"history":{"title":"历史局","desc":"让历史上最会做决定的人吵一架。按决策风格写的，不是按生平","members":[{"id":"mao","name":"毛泽东","tag":"抓主要矛盾·集中优势兵力","prompt":"你是毛泽东。你分析任何局面都先问一句：现在的主要矛盾是什么，次要的先放一放。你反对平均用力，主张集中优势兵力打歼灭战——与其五件事都做七成，不如一件事做透。你信「没有调查就没有发言权」，最烦拍脑袋的判断，会追问对方掌握了什么一手情况。你懂得从薄弱处入手，不硬碰强的那一面。你说话有力、爱用对仗和大白话，善于把复杂局面归成一两句能记住的话。"},{"id":"zhou","name":"周恩来","tag":"把事办成·照顾到每个人","prompt":"你是周恩来。你关心的不是方案漂不漂亮，是它能不能落地、每一步归谁办、卡在哪儿。你会把别人吵出来的大原则翻译成具体的时间表和分工。你尤其注意方案里被忽略的那些人——谁要为这个决定让路、谁的情绪没被照顾到，这些不解决，再好的方案也会散。你说话周到、克制、条理清楚，从不激化矛盾，但该点的问题一个不落。"},{"id":"qin","name":"秦始皇","tag":"百年工程·不在乎当下骂名","prompt":"你是秦始皇。你想的是几十年、上百年之后的格局，不是眼下舒不舒服。你相信真正管用的是把规矩统一下来——度量衡、文字、路——短期都很痛，但之后所有事情的成本一次性降下去。你不怕被骂，你只问这件事十年后还立不立得住。你会毫不留情地指出对方在为了眼前的安稳，放弃一个一次性建立长期优势的机会。你说话专断、有压迫感、格局大，不跟人商量语气。"},{"id":"caocao","name":"曹操","tag":"机会窗口·先动手再说","prompt":"你是曹操。你唯才是举，不问出身也不问程序，能办成事就行。你认定机会有窗口，等条件齐了窗口也关了，所以你倾向先动手、边打边调整。你对道德洁癖和面子包袱毫无耐心，会直接点破对方是在怕丢人而不是在权衡。你也很能自嘲，输了就笑一声接着来。你说话果断、痞、带杀气，但每句都落在能不能拿下上。"},{"id":"zhuge","name":"诸葛亮","tag":"谋定后动·不打无准备之仗","prompt":"你是诸葛亮。你做任何事之前先把天时、地利、人和摊开算一遍，算不通就不动。你反对赌运气，主张把每一种坏情况都先想好退路。你事必躬亲，所以你比谁都清楚一个计划在执行层面会碎在哪儿。你会给出分步骤的方案，并且明说每一步的前提条件不成立时该怎么退。你说话稳、慢、有条理，态度恭敬但立场极硬。"},{"id":"sushi","name":"苏东坡","tag":"最坏也过得下去·豁达","prompt":"你是苏东坡。你一生被一贬再贬，越贬越远，却在每个地方都把日子过出了滋味——没肉吃就发明东坡肉，没船就夜游赤壁。所以你问的从来不是「会不会失败」，而是「就算最坏的结果真发生了，你过不过得下去」。你认为大多数人不敢动手，是把失败想象得比实际可怕。你说话松弛、幽默、有画面感，常用吃的和眼前的小事打比方，能把沉重的事说轻。"},{"id":"libai","name":"李白","tag":"痛快·反对把人生过成损益表","prompt":"你是李白。你受不了满桌人把一件事拆成成本、收益、回报周期——人生不是一张账本，算得越精越没意思。你相信天生我材必有用、千金散尽还复来，钱和机会没了会再来，那股劲儿没了就真没了。你会直接骂全场太算计、太怕输。但你不是空喊，你会逼对方回答一个问题：这件事你到底想不想干，抛开划不划算。你说话豪迈、跳脱、有酒气，句子短而有劲。"},{"id":"heshen","name":"和珅","tag":"折成银子·连人情都算钱","prompt":"你是和珅。你把任何事都折算成银子：花多少、什么时候回本、谁欠谁人情、这份人情值几两。你觉得满口理想却不算账的人最不靠谱。你还特别懂人情世故的成本——谁不高兴了要花多少功夫哄回来，这也是钱。你会精确地报出对方没算的那几笔隐形开销。你说话圆滑、机灵、带点市侩的幽默，但数字上从不含糊。"}]}};
-const BUILD = 'b1ca11c45620';
+const BUILD = 'c0f24e18098b';
 
 const LS = {pass:'rt_pass', sess:'rt_sessions', panel:'rt_panel'};
 const STANCES = ['赞同','反对'];
@@ -1164,74 +1182,136 @@ function hint(){
   if(!S.online&&n>=2) $('#startMsg').textContent='还没连上你的后端，等一下或者点上面的重连';
   else if(!S.running) $('#startMsg').textContent='';
 }
-/* ── 麦克风：按住说，松开转写 ──
-   🚨 用 pointer 事件而不是 mouse/touch 两套：iOS 上两套会各触发一次，
-   松手时可能停两遍。pointercancel 也要接住（来电、切后台、手指划出按钮）。 */
-(function wireMic(){
-  const btn=$('#btnMic'), msg=$('#micMsg');
+/* ═══════════ 麦克风 ═══════════
+
+   🚨 **点一下开始、再点一下结束。不做「按住说话」。**
+   第一版做成按住，Kevin 说了一堆话一个字都没进来。根因是 `pointerleave`：
+   手指在手机上按住不可能纹丝不动，稍微一飘就滑出按钮矩形 → 当成松手 →
+   录音在零点几秒内被掐 → 只在一行小灰字里写「太短了」，他根本看不见。
+   他的原话：「按住说话的话，很容易没按好」。所以整套 hold 逻辑删干净了 ——
+   点按切换没有任何"按得好不好"的问题，也没有手指飘移这一类失败模式。
+   另一条同样重要：失败一律进大红框（`.bigmsg`），不许再藏在小灰字里。 */
+function bigErr(box,html){
+  box.innerHTML = html ? `<div class="bigmsg">${html}</div>` : '';
+}
+
+function makeMic(btn,{onText,msgEl,errEl,labelIdle,labelRec}){
   if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){
-    btn.disabled=true; btn.textContent='🎤 这个浏览器不给录音';
-    msg.textContent='直接在下面打字也一样。'; return;
+    btn.disabled=true; btn.textContent='🎤 不支持';
+    if(errEl) bigErr(errEl,'这个浏览器不让网页用麦克风，只能打字了。');
+    return;
   }
-  let busy=false, t0=0, tick=null;
-  const down=async ev=>{
-    ev.preventDefault();
-    if(busy||REC.on) return;
-    try{
-      msg.textContent='正在听…'; btn.textContent='🔴 松开就转写';
-      btn.style.background='#3a1a1a'; btn.style.borderColor='#fc8181';
-      await recStart(); t0=Date.now();
-      tick=setInterval(()=>{ msg.textContent='正在听…'+((Date.now()-t0)/1000).toFixed(0)+' 秒'; },300);
-    }catch(e){
-      reset(); msg.textContent='拿不到麦克风：'+(e.message||e)+'（去设置里给这个网页麦克风权限）';
+  let t0=0,tick=null,busy=false;
+  const say=t=>{ if(msgEl) msgEl.textContent=t; };
+  const paint=on=>{
+    btn.textContent=on?labelRec:labelIdle;
+    btn.classList.toggle('rec',on);
+    if(!btn.classList.contains('mic-sm')){
+      btn.style.background=on?'#3a1a1a':''; btn.style.borderColor=on?'#fc8181':'';
     }
   };
-  const reset=()=>{ clearInterval(tick); btn.textContent='🎤 按住说话';
-    btn.style.background=''; btn.style.borderColor=''; };
-  const up=async ev=>{
+  const stopTick=()=>{ clearInterval(tick); tick=null; };
+
+  async function begin(){
+    if(busy||REC.on) return;
+    if(errEl) bigErr(errEl,'');
+    try{
+      await recStart();
+      t0=Date.now(); paint(true); say('正在听…（说完再点一下就停）');
+      tick=setInterval(()=>say('正在听… '+((Date.now()-t0)/1000).toFixed(0)+' 秒（说完再点一下就停）'),300);
+    }catch(e){
+      paint(false); stopTick(); say('');
+      bigErr(errEl||msgEl,'拿不到麦克风：'+esc(e.message||String(e))
+        +'<br>去 iPhone 的「设置 → Safari → 麦克风」里允许，或者页面弹权限时点允许。');
+    }
+  }
+  async function finish(){
     if(!REC.on) return;
-    ev.preventDefault(); clearInterval(tick);
-    const got=recStop(); reset();
-    if(!got||got.secs<0.6){ msg.textContent='太短了，没听清，再按住多说几句'; return; }
+    stopTick();
+    const got=recStop(); paint(false);
+    if(!got||got.secs<0.6){
+      say(''); bigErr(errEl||msgEl,'只录到不到一秒，没听清。再点一次，多说几句。');
+      return;
+    }
     busy=true; btn.disabled=true;
-    msg.textContent=`听到 ${got.secs.toFixed(0)} 秒，正在转写…`;
+    say(`听到 ${got.secs.toFixed(0)} 秒，正在转文字…`);
     try{
       const txt=await transcribe(got.blob);
-      const box=$('#raw');
-      box.value=(box.value?box.value.trim()+'\n':'')+txt;
-      msg.textContent='转好了，可以接着说，也可以直接点「帮我理一理」';
-    }catch(e){ msg.textContent='转写失败：'+(e.message||e); }
-    finally{ busy=false; btn.disabled=false; }
-  };
-  btn.addEventListener('pointerdown',down);
-  btn.addEventListener('pointerup',up);
-  btn.addEventListener('pointercancel',up);
-  btn.addEventListener('pointerleave',ev=>{ if(REC.on) up(ev); });
-  btn.addEventListener('contextmenu',e=>e.preventDefault());   // 长按别弹菜单
-})();
+      if(!txt){ bigErr(errEl||msgEl,'转出来是空的 —— 可能是没录到声音（检查手机没静音、别捂住麦克风）。'); say(''); return; }
+      say('');
+      await onText(txt);
+    }catch(e){
+      say(''); bigErr(errEl||msgEl,'转写失败：'+esc(e.message||String(e)));
+    }finally{ busy=false; btn.disabled=false; }
+  }
 
-$('#btnTidy').onclick=async()=>{
-  const raw=$('#raw').value.trim();
-  const msg=$('#tidyMsg');
+  // 只听 click：点一下开始、再点一下结束。
+  // 🚨 不要再去接 pointerdown/up/leave —— 上一版就是被 leave 掐死的。
+  btn.addEventListener('click',ev=>{
+    ev.preventDefault();
+    if(REC.on) finish(); else begin();
+  });
+  btn.addEventListener('contextmenu',e=>e.preventDefault());
+  paint(false);
+}
+
+/* 把理好的结果填进下面两个框，并且**让他看见填了** */
+function applyTidy(d){
+  const topic=asText(d.topic), ctx=asText(d.context), note=asText(d.note);
+  if(!topic) return {ok:false,note};
+  const tb=$('#topic'), cb=$('#context');
+  tb.value=topic; if(ctx) cb.value=ctx;
+  [tb,cb].forEach(x=>{ x.classList.remove('flash'); void x.offsetWidth; x.classList.add('flash'); });
+  const pk=asText(d.panel);
+  if(PANELS[pk]&&pk!==S.panelKey){ S.panelKey=pk; paintPanel(); }
+  tb.scrollIntoView({behavior:'smooth',block:'center'});
+  hint();
+  return {ok:true,note};
+}
+async function runTidy(){
+  const raw=$('#raw').value.trim(), msg=$('#tidyMsg');
+  bigErr($('#micErr'),'');
   if(!raw){ msg.textContent='先说几句，或者在上面打点字'; return; }
   if(!S.online){ msg.textContent='还没连上后端'; return; }
   $('#btnTidy').disabled=true; msg.textContent='正在理…';
   try{
-    const d=await tidy(raw);
-    const topic=asText(d.topic), ctx=asText(d.context);
-    if(!topic){
-      msg.textContent='没听出你要做的是哪个选择。'+(asText(d.note)||'再说说你在两个什么之间犹豫。');
+    const r=applyTidy(await tidy(raw));
+    if(!r.ok){
+      msg.textContent='';
+      bigErr($('#micErr'),'没听出你要做的是哪个选择。'
+        +esc(r.note||'再说说你在两个什么之间犹豫，比如「接还是不接」「走还是留」。'));
       return;
     }
-    $('#topic').value=topic;
-    if(ctx) $('#context').value=ctx;
-    const pk=asText(d.panel);
-    if(PANELS[pk]&&pk!==S.panelKey){ S.panelKey=pk; paintPanel(); }
-    msg.innerHTML='理好了，下面都能改。'+(asText(d.note)?'<br><span class="mut">'+esc(asText(d.note))+'</span>':'');
-    $('#topic').scrollIntoView({behavior:'smooth',block:'center'});
-  }catch(e){ msg.textContent=String(e.message||e); }
+    msg.innerHTML='✅ 已经填到下面的「议题」和「背景」里了，都能改。'
+      +(r.note?'<br><span class="mut">'+esc(r.note)+'</span>':'');
+    toast('理好了，填到下面了');
+  }catch(e){ msg.textContent=''; bigErr($('#micErr'),'理不出来：'+esc(e.message||String(e))); }
   finally{ $('#btnTidy').disabled=false; }
-};
+}
+
+/* 主话筒：转完文字**自动接着理**，不用他再点一次 */
+makeMic($('#btnMic'),{
+  msgEl:$('#micMsg'), errEl:$('#micErr'),
+  labelIdle:'🎤 点一下开始说', labelRec:'⏹ 说完了，点这里结束',
+  onText:async txt=>{
+    const box=$('#raw');
+    box.value=(box.value.trim()?box.value.trim()+'\n':'')+txt;
+    box.classList.remove('flash'); void box.offsetWidth; box.classList.add('flash');
+    $('#micMsg').textContent='转好了，正在理成议题和背景…';
+    await runTidy();
+  }});
+$('#btnTidy').onclick=runTidy;
+
+/* 议题 / 背景 各自的小话筒：只把转写结果**追加进那个框**，不触发整理 */
+document.querySelectorAll('.mic-sm').forEach(b=>{
+  const target=$('#'+b.dataset.for);
+  makeMic(b,{msgEl:null, errEl:$('#micErr'), labelIdle:'🎤', labelRec:'🔴',
+    onText:async txt=>{
+      target.value=(target.value.trim()?target.value.trim()+' ':'')+txt;
+      target.classList.remove('flash'); void target.offsetWidth; target.classList.add('flash');
+      hint(); toast('填进去了');
+    }});
+});
 
 $('#roundSeg').onclick=e=>{
   const b=e.target.closest('button'); if(!b) return;
