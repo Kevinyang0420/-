@@ -1617,7 +1617,23 @@ async function backend(prompt, temp, wantJson){
     }
     const j = await r.json().catch(()=> null);
     if (j && j.text) return j.text;              // 同步模式（本机直连）
-    if (j && j.job) return await poll(j.job, cfg);// 异步模式（云端网关）
+    if (j && j.job){
+      /* 🚨 把「重下一单」的能力交给 poll()。
+         后端的 JOBS 是**进程内字典**，函数一扩到第二个实例，
+         轮询就可能问到没见过这个 job 的那个实例 → 404。
+         poll() 手里没有原始请求体，自己重下不了单，所以从这儿传进去。 */
+      const resubmit = async () => {
+        const r2 = await fetch(url, {method:'POST',
+          headers: Object.assign({'Content-Type':'application/json'}, passHdr()),
+          body}).catch(() => null);
+        if (!r2 || !r2.ok) return null;
+        const j2 = await r2.json().catch(() => null);
+        if (j2 && j2.text) return {text: j2.text};
+        if (j2 && j2.job) return {job: j2.job};
+        return null;
+      };
+      return await poll(j.job, cfg, resubmit);   // 异步模式（云端网关）
+    }
     last = '后端返回空';
   }
   throw new Error(last + '（已重试 3 次）');
@@ -1627,10 +1643,10 @@ async function backend(prompt, temp, wantJson){
 //    只 sleep 100ms、什么都不做的接口照样 504，而路由超时写的是 30 秒）。
 //    所以后端改成「下单立刻返回 job id，结果另开一个接口取」，
 //    两边都在 100ms 内答完，绕开这个毛病。这里就是取结果那半。
-async function poll(job, cfg){
+async function poll(job, cfg, resubmit){
   const base = String(cfg.url || '').replace(/\/+$/, '');
   const t0 = Date.now();
-  let wait = 350, gtry = false;
+  let wait = 350, gtry = false, retried = false;
   while (Date.now() - t0 < 150000){               // 最多等 150 秒
     await new Promise(f => setTimeout(f, wait));
     wait = Math.min(wait * 1.25, 2000);           // 慢慢退避，别把网关刷爆
@@ -1646,7 +1662,21 @@ async function poll(job, cfg){
       if (!gtry && await guestRefresh()){ gtry = true; continue; }
       throw new Error('后端口令不对，去「我的 → 后端」改一下');
     }
-    if (r.status === 404) throw new Error('后端把这次结果弄丢了，再试一次');
+    if (r.status === 404){
+      /* 🚨 404 = 这个 job 在**当前这个实例**的内存里找不到。
+         后端的 JOBS 是进程内字典，函数一旦扩到第二个实例，
+         轮询就可能问到没见过这个 job 的那一个。
+         2026-08-10 实测 21 发轮询里 0 次 404，但它是**结构性**存在的，
+         一旦发生用户就是直接报错、白问一次。
+         能自愈就别把它抛给他：重新下单一次，对他完全无感。 */
+      if (!retried && typeof resubmit === 'function'){
+        retried = true;                  // 只自愈一次，别无限刷网关
+        const again = await resubmit();
+        if (again && again.text) return again.text;
+        if (again && again.job){ job = again.job; wait = 350; continue; }
+      }
+      throw new Error('后端把这次结果弄丢了，再试一次');
+    }
     if (!r.ok){
       const t = await r.text().catch(()=> '');
       // 502 是后端把模型的错原样带回来了，这种重试没用
