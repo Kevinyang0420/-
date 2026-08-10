@@ -1429,10 +1429,12 @@ async function toAudioPart(blob){
     const d = to16k(decoded.getChannelData(0), decoded.sampleRate);
     const wav = encodeWav(d.buf, d.rate);
     ac.close();
+    // 🚨 把 PCM 一起带出来：长录音要在上层切段，切段必须用 PCM 重新编 WAV，
+    //    不能直接切 WAV 的字节（会把文件头切掉，后端拿到的就不是 WAV 了）。
     // 🚨 这里原来有个 4MB 的硬拦（「说得太长，分成两三句说」）。**去掉了** ——
     //    Kevin 明确不要时长限制，而分片流式发之后长音频本来就该能转。
     //    真出问题时后端会返回一句人话，不需要前端先把人挡住。
-    return {blob: wav, mime: 'audio/wav'};
+    return {blob: wav, mime: 'audio/wav', pcm: d.buf, rate: d.rate};
   } catch(e) {
     if (/说得太长/.test(e.message)) throw e;      // 这条是给人看的，别被下面吞掉
     const t = (blob.type || '').split(';')[0].toLowerCase();
@@ -2007,9 +2009,51 @@ async function askGemini(part){
       Kevin 定的规矩是「豆包只许用在口语练习」—— 这就是那个场景，
       也是全项目**唯一**允许花钱的地方。后端有每日硬上限兜着。
       一句话（7 秒录音）约 ¥0.00095，一天 30 句 3 分钱。 */
+/* 🚨 一发能扛多长：实测 71 秒（base64 3.1 MB）稳过，119 秒（5.1 MB）网关 504。
+   不是体积上限（纯占位数据 5 MB 照收），是**耗时**——上传 5 MB 要 6.6 秒，
+   而网关约 8 秒就掐，真机再叠上行带宽必然超。
+   所以超过这个长度就切段：**不降采样**（那会掉识别准确率），只是多几次往返。 */
+const AUDIO_SEG_SEC = 55;
+
 async function askBackendAudio(part){
+  const secs = part.pcm && part.rate ? part.pcm.length / part.rate : 0;
+  if (secs > AUDIO_SEG_SEC + 5 && part.pcm){
+    return await askBackendAudioSegmented(part, secs);
+  }
+  return await askBackendAudioOne(part);
+}
+
+/* 切段：每段各自转写，只要**转写文本**，最后拼起来再判一次。
+   🚨 判断（点评/角色回应）只做**一次**，拿完整文本做 —— 分段各判一次的话
+      他会收到好几份互相矛盾的点评，而且后半段没有前半段的上下文。 */
+async function askBackendAudioSegmented(part, secs){
+  const rate = part.rate;
+  const per = Math.ceil(part.pcm.length / Math.ceil(secs / AUDIO_SEG_SEC));
+  const texts = [];
+  const total = Math.ceil(part.pcm.length / per);
+  for (let i = 0, k = 0; i < part.pcm.length; i += per, k++){
+    $('#hint').innerHTML = '<span class="dots">在转第 ' + (k + 1) + '/' + total + ' 段</span>';
+    const seg = part.pcm.slice(i, Math.min(i + per, part.pcm.length));
+    const wav = encodeWav(seg, rate);
+    const d = await askBackendAudioOne(
+      {blob: wav, mime: 'audio/wav'},
+      'Transcribe the attached audio verbatim. Output JSON: {"said":"…"}. '
+      + 'Do not judge, do not add anything else.');
+    texts.push(String((d && d.said) || '').trim());
+  }
+  const said = texts.filter(Boolean).join(' ');
+  if (!said) throw new Error('这段录音没转出文字，再说一次');
+  // 拿完整文本走一次正常的文字判断
+  $('#hint').innerHTML = '<span class="dots">在想</span>';
+  const j = firstJson(await textCall(
+    buildPrompt('\nHE JUST SAID (transcribed):\n"' + said + '"'), 0.6));
+  if (j) j.said = said;               // 🚨 用转写原文，别让模型改写他说的话
+  return j;
+}
+
+async function askBackendAudioOne(part, overridePrompt){
   const cfg = S.api || {};
-  const prompt = buildPrompt(
+  const prompt = overridePrompt || buildPrompt(
     '\nThe attached audio is what he just said. Transcribe it into "said", '
     + 'then decide. Also judge his pronunciation and intonation from the audio '
     + 'itself (not just the words) and put that in "sound" in Chinese.');
