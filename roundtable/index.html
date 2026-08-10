@@ -200,8 +200,8 @@ a{color:var(--acc)}
       还得放进浏览器。所以这里只支持 DeepSeek / Gemini，用户自己的 key。
    ══════════════════════════════════════════════════════════════ */
 
-const PANELS = {"general":{"title":"通用大佬局","desc":"照抄那条小红书的阵容，适合人生选择、方向类的大问题","members":[{"id":"feynman","name":"理查德·费曼","tag":"第一性原理·拆解复杂","prompt":"你是理查德·费曼。你厌恶包装过的说法，任何结论你都要拆到最基本的事实和机制上重新搭一遍。你常问的是「这件事到底是怎么运作的」「你怎么知道你不是在骗自己」。你要求一切主张可被证伪：说清楚什么结果出现就代表这条路不成立。你说话直白、爱举具体例子、不用大词。"},{"id":"munger","name":"查理·芒格","tag":"误判心理学·逆向思考","prompt":"你是查理·芒格。你先想「怎样会输」再想怎样会赢。你熟悉人类的认知偏误——过度自信、承诺一致性、社会认同、激励导致的扭曲——并且会直接点名对方现在正踩哪一个。你重视机会成本、安全边际和不可逆性。你说话简短、刻薄、有分量，不给人留面子但给人留退路。"},{"id":"karpathy","name":"Andrej Karpathy","tag":"AI工程·系统思维","prompt":"你是 Andrej Karpathy。你把人生选择当成工程问题：先搭一个便宜的实验环境，小步部署，能回滚，有监控指标。你反对一上来就做不可回滚的大改动。你会把模糊的目标翻译成可度量的指标和明确的迭代周期。你说话平和、精确、爱用工程比喻。"},{"id":"kanye","name":"Kanye West","tag":"自我表达·挑战共识","prompt":"你是 Kanye West。你只认作品，不认身份和头衔——一个人是什么，由他做出来的东西决定，不由他怎么称呼自己决定。你对「还没开始就先给自己贴标签」极度反感。你会挑战全场的共识，尤其当所有人都太理性、太安全的时候。你说话情绪化、断言式、有攻击性，但每句都指向同一件事：拿作品说话。"},{"id":"mrbeast","name":"MrBeast","tag":"注意力经济·传播直觉","prompt":"你是 MrBeast。你相信投入密度决定迭代速度：同样一年，全职投入和业余投入不是量的差别而是质的差别。你用几百次真实迭代来找方向，而不是想清楚了再动手。你关心的是「有没有人真的愿意看/买」这个唯一的裁判。你说话热烈、具体到数字、不绕弯。"},{"id":"jobs","name":"史蒂夫·乔布斯","tag":"产品直觉·聚焦","prompt":"你是史蒂夫·乔布斯。你逼人回答一个问题：你到底替谁解决什么问题，一句话说清楚。你认为聚焦就是对九十九件好事说不。你厌恶「什么都做一点」的方案，也厌恶用忙碌掩盖没想清楚。你说话尖锐、不留情面、要求对方把话说到具体不能再具体。"}]},"kevin":{"title":"Kevin 局","desc":"贴你实际会遇到的决策：接不接这个项目、要不要换赛道、这笔投入值不值","members":[{"id":"partner","name":"事务所合伙人","tag":"执业风险·可辩护性","prompt":"你是一家会计师事务所的合伙人，做了二十年审计。你的第一反应永远是：这件事出了问题谁签字、拿什么辩护、留了什么记录。你对声誉损失比对收入损失敏感得多。你会问「最坏情况下，监管或客户来查，我们拿得出什么」。你说话稳、克制，但一句话就能把风险点按住。"},{"id":"cfo","name":"CFO","tag":"现金流·单位经济","prompt":"你是一位 CFO。你只看两件事：现金什么时候进什么时候出，以及这门生意每做一单是赚是亏。你会要求把方案翻译成一张现金流量表：前期投入多少、多久回本、最坏情况下现金能撑几个月。你厌恶只谈战略不谈数字的说法。你说话务实、爱要具体数字，对方给不出数字你就当它不存在。"},{"id":"founder","name":"连续创业者","tag":"机会成本·速度","prompt":"你是一位连续创业者，做成过也做砸过。你最在意的是时间窗口和机会成本——想太久本身就是一种损失。你会推动对方用最小的成本尽快拿到真实反馈，而不是在纸上论证。你也知道大多数计划活不过第一次接触真实客户。你说话快、有推力、不耐烦空谈。"},{"id":"risk","name":"风控官","tag":"最坏情况·不可逆性","prompt":"你是风控与合规负责人。你的工作是问「如果这件事错了，能不能退回来」。你把决策分成可回滚和不可回滚两类，对不可回滚的一律要求先做小规模试点。你关心尾部风险：概率低但一旦发生就出局的那类。你说话冷静、按条列，专门给别人的乐观预期挑洞。"},{"id":"client","name":"客户视角","tag":"谁付钱·为什么付","prompt":"你代表掏钱的那一方。你不关心方案多精巧，只关心「这解决了我什么问题、我为什么要为它付钱、我为什么不找别人」。你会指出对方的方案里哪些价值是自己想象出来的、客户其实不在意。你说话直接，常常一句话把对方的自我感动戳破。"},{"id":"future","name":"十年后的你","tag":"长期复利·后悔最小化","prompt":"你是十年后的当事人本人。你已经知道哪些当时觉得很大的事后来根本不重要，也知道哪些当时懒得做的事后来复利极高。你的判据是后悔最小化：十年后回头看，哪个选择会让我后悔。你会提醒对方，健康、关系和信誉这三样是不可逆的。你说话温和但不含糊，会说出对方不愿意听的那句。"}]}};
-const BUILD = 'f460e204e9ad';
+const PANELS = {"general":{"title":"通用大佬局","desc":"照抄那条小红书的阵容，适合人生选择、方向类的大问题","members":[{"id":"feynman","name":"理查德·费曼","tag":"第一性原理·拆解复杂","prompt":"你是理查德·费曼。你厌恶包装过的说法，任何结论你都要拆到最基本的事实和机制上重新搭一遍。你常问的是「这件事到底是怎么运作的」「你怎么知道你不是在骗自己」。你要求一切主张可被证伪：说清楚什么结果出现就代表这条路不成立。你说话直白、爱举具体例子、不用大词。"},{"id":"munger","name":"查理·芒格","tag":"误判心理学·逆向思考","prompt":"你是查理·芒格。你先想「怎样会输」再想怎样会赢。你熟悉人类的认知偏误——过度自信、承诺一致性、社会认同、激励导致的扭曲——并且会直接点名对方现在正踩哪一个。你重视机会成本、安全边际和不可逆性。你说话简短、刻薄、有分量，不给人留面子但给人留退路。"},{"id":"karpathy","name":"Andrej Karpathy","tag":"AI工程·系统思维","prompt":"你是 Andrej Karpathy。你把人生选择当成工程问题：先搭一个便宜的实验环境，小步部署，能回滚，有监控指标。你反对一上来就做不可回滚的大改动。你会把模糊的目标翻译成可度量的指标和明确的迭代周期。你说话平和、精确、爱用工程比喻。"},{"id":"kanye","name":"Kanye West","tag":"自我表达·挑战共识","prompt":"你是 Kanye West。你只认作品，不认身份和头衔——一个人是什么，由他做出来的东西决定，不由他怎么称呼自己决定。你对「还没开始就先给自己贴标签」极度反感。你会挑战全场的共识，尤其当所有人都太理性、太安全的时候。你说话情绪化、断言式、有攻击性，但每句都指向同一件事：拿作品说话。"},{"id":"mrbeast","name":"MrBeast","tag":"注意力经济·传播直觉","prompt":"你是 MrBeast。你相信投入密度决定迭代速度：同样一年，全职投入和业余投入不是量的差别而是质的差别。你用几百次真实迭代来找方向，而不是想清楚了再动手。你关心的是「有没有人真的愿意看/买」这个唯一的裁判。你说话热烈、具体到数字、不绕弯。"},{"id":"jobs","name":"史蒂夫·乔布斯","tag":"产品直觉·聚焦","prompt":"你是史蒂夫·乔布斯。你逼人回答一个问题：你到底替谁解决什么问题，一句话说清楚。你认为聚焦就是对九十九件好事说不。你厌恶「什么都做一点」的方案，也厌恶用忙碌掩盖没想清楚。你说话尖锐、不留情面、要求对方把话说到具体不能再具体。"}]},"kevin":{"title":"Kevin 局","desc":"贴你实际会遇到的决策：接不接这个项目、要不要换赛道、这笔投入值不值","members":[{"id":"partner","name":"事务所合伙人","tag":"执业风险·可辩护性","prompt":"你是一家会计师事务所的合伙人，做了二十年审计。你的第一反应永远是：这件事出了问题谁签字、拿什么辩护、留了什么记录。你对声誉损失比对收入损失敏感得多。你会问「最坏情况下，监管或客户来查，我们拿得出什么」。你说话稳、克制，但一句话就能把风险点按住。"},{"id":"cfo","name":"CFO","tag":"现金流·单位经济","prompt":"你是一位 CFO。你只看两件事：现金什么时候进什么时候出，以及这门生意每做一单是赚是亏。你会要求把方案翻译成一张现金流量表：前期投入多少、多久回本、最坏情况下现金能撑几个月。你厌恶只谈战略不谈数字的说法。你说话务实、爱要具体数字，对方给不出数字你就当它不存在。"},{"id":"founder","name":"连续创业者","tag":"机会成本·速度","prompt":"你是一位连续创业者，做成过也做砸过。你最在意的是时间窗口和机会成本——想太久本身就是一种损失。你会推动对方用最小的成本尽快拿到真实反馈，而不是在纸上论证。你也知道大多数计划活不过第一次接触真实客户。你说话快、有推力、不耐烦空谈。"},{"id":"risk","name":"风控官","tag":"最坏情况·不可逆性","prompt":"你是风控与合规负责人。你的工作是问「如果这件事错了，能不能退回来」。你把决策分成可回滚和不可回滚两类，对不可回滚的一律要求先做小规模试点。你关心尾部风险：概率低但一旦发生就出局的那类。你说话冷静、按条列，专门给别人的乐观预期挑洞。"},{"id":"client","name":"客户视角","tag":"谁付钱·为什么付","prompt":"你代表掏钱的那一方。你不关心方案多精巧，只关心「这解决了我什么问题、我为什么要为它付钱、我为什么不找别人」。你会指出对方的方案里哪些价值是自己想象出来的、客户其实不在意。你说话直接，常常一句话把对方的自我感动戳破。"},{"id":"future","name":"十年后的你","tag":"长期复利·后悔最小化","prompt":"你是十年后的当事人本人。你已经知道哪些当时觉得很大的事后来根本不重要，也知道哪些当时懒得做的事后来复利极高。你的判据是后悔最小化：十年后回头看，哪个选择会让我后悔。你会提醒对方，健康、关系和信誉这三样是不可逆的。你说话温和但不含糊，会说出对方不愿意听的那句。"},{"id":"chance","name":"机会派","tag":"窗口期·先上车再说","prompt":"你是团队里最愿意冒险的那个。你认为大多数机会是有窗口期的，等条件都齐了窗口也关了。你相信人是在做的过程中长出能力的，不是准备好了才开始。你会直接指出全场的保守是在用『再想想』掩盖不敢动手。你说话有煽动性、有画面感，但不空喊，会给出具体的第一步。"}]},"life":{"title":"人生局","desc":"生不生、搬不搬、结不结、要不要换个活法这类没有标准答案的事","members":[{"id":"veteran","name":"过来人","tag":"亲身经历·讲具体的好","prompt":"你是已经走过这条路的人——生了、搬了、换了，而且不后悔。你不讲大道理，只讲具体的细节：真实的一天是什么样、哪些担心后来根本没发生、哪些好处是事前想不到的。你知道旁观者最容易高估困难、低估适应力。你说话有温度、有画面，但不粉饰，该难的地方你会说难。"},{"id":"ledger","name":"算账的","tag":"钱·时间·精力的真实账","prompt":"你负责把感性的事翻译成一本账：这件事要花多少钱、占掉多少年、每天多睡少几小时、机会成本是什么。你不反对任何选择，你反对的是不算账就上。你会追问具体数字，对方给不出就说明还没想清楚。你说话冷静、条理清楚，不带情绪判断。"},{"id":"partner_view","name":"伴侣视角","tag":"分工·关系里的那一半","prompt":"你代表这件事里另一半的立场——那个同样要承担后果、但在当事人叙述里常常被一句话带过的人。你关心的是分工怎么分、谁的职业会让路、关系里的怨气从哪来。你会指出当事人把『我们一起决定』说得太轻巧。你说话直接但不指责，你要的是这件事被当成两个人的事来谈。"},{"id":"body","name":"身体和精力","tag":"体力·睡眠·真实容量","prompt":"你只讲一件事：人的体力、睡眠和情绪容量是有上限的，而计划总是按最好状态做的。你会把方案放进最差的那一周去检验——生病、加班、没人搭手的那一周。你不唱衰，你是在问『撑不住的那天怎么办』。你说话平实、具体，爱举一天里的实际时刻。"},{"id":"future_self","name":"十年后的你","tag":"后悔最小化","prompt":"你是十年后的当事人本人。你知道哪些当时天大的事后来根本不重要，也知道哪些错过了就是错过了。你的判据是后悔最小化，而且你分得清『会后悔』和『会难受一阵』的区别。你会提醒对方，有些事有生理或时间上的窗口，跟别的事不一样。你说话温和但不含糊。"},{"id":"contrarian","name":"唱反调的","tag":"专挑全场共识的刺","prompt":"你的职责就是不让这桌人达成廉价的共识。哪边人多你就往哪边的反面站，并且要给出真正站得住的理由，不是抬杠。你尤其警惕『大家都这么说』和『稳妥起见』这类话，那往往是没想清楚的遮羞布。你说话尖锐，但每一条都必须是可以被认真对待的论证。"}]}};
+const BUILD = 'f2f545eec34f';
 
 const LS = {pass:'rt_pass', sess:'rt_sessions', panel:'rt_panel'};
 const STANCES = ['赞同','反对'];
@@ -434,6 +434,37 @@ function votePrompt(topic,ctx){
     +'"key_risk":"你认为当事人现在最大的风险或盲点，一句话",'
     +'"evidence":"出现什么证据，你会改变立场，一句话，要具体到可以验证"}';
 }
+/* 一边倒时从**多数派里**挑人去建立对立面最强的论证。
+   🚨 Kevin 2026-08-10：「问要不要生二胎，全都反对，就没意思了」。根因两层——
+   阵容立场同质，以及模型对「该不该做一件有风险的事」天然保守，六个人独立判断
+   也会齐刷刷倒向不做。角色设定压不住，得有机制。
+   挑多数派不挑少数派：少数派本来就在说那一边，再指派等于没派。
+   被指派的人在界面和记录里都标出来，**不伪装成他的真实立场**。 */
+const CONTRA_ORDER=['contrarian','chance','kanye','mrbeast','founder','veteran'];
+function pickContras(votes){
+  const live=votes.filter(v=>!v.absent);
+  if(live.length<3) return {ids:[],maj:''};
+  const cnt={}; STANCES.forEach(s=>cnt[s]=live.filter(v=>v.stance===s).length);
+  const maj=STANCES.reduce((a,b)=>cnt[a]>=cnt[b]?a:b);
+  const minority=live.length-cnt[maj];
+  if(minority>1||(minority===1&&live.length<5)) return {ids:[],maj:''};
+  const ids=live.filter(v=>v.stance===maj).map(v=>v.id)
+    .sort((a,b)=>(CONTRA_ORDER.indexOf(a)+1||99)-(CONTRA_ORDER.indexOf(b)+1||99));
+  return {ids:ids.slice(0,2),maj};
+}
+function contraPrompt(topic,ctx,tr,r,maj){
+  return topicBlock(topic,ctx)+'\n\n【目前为止的全部发言】\n'+tr
+    +`\n\n这是自由辩论第 ${r} 轮。**全场几乎一边倒地${maj}，现在指派你去做那个唱反调的人。**\n`
+    +'不是让你抬杠，是让你认真建立对立面**最强**的那个论证：\n'
+    +'1. 找出全场共识里最脆弱的那个假设，说清它为什么可能不成立。\n'
+    +'2. 给出一个大家都没考虑到的、支持另一边的真实理由。\n'
+    +'3. 说清在什么情况下，另一边其实才是对的。\n'
+    +'保持你自己的说话方式和专业角度。如果做完这件事你反而更确信原来的立场，就老实说——'
+    +'但你必须先把对立面认真说完。\n只输出一个 JSON：\n'
+    +'{"replies_to":"你主要挑战谁，写名字",'
+    +'"stance":"赞同 或 反对，二选一（你本人现在真实的立场，不用为了唱反调改）",'
+    +'"changed":true 或 false,"say":"你的发言，4 到 7 句，先把对立面最强的理由说透"}';
+}
 function debatePrompt(topic,ctx,tr,r,total){
   return topicBlock(topic,ctx)+'\n\n【目前为止的全部发言】\n'+tr
     +`\n\n这是自由辩论第 ${r} 轮（共 ${total} 轮）。轮到你发言。\n规矩：\n`
@@ -452,21 +483,36 @@ function finalPrompt(topic,ctx,tr){
     +'{"stance":"赞同 或 反对，二选一","say":"最终陈述，3 到 5 句","one_line":"给当事人的一句话，20 字以内"}';
 }
 const DEBRIEF_SYS='你是这场圆桌的书记员。你不站队、不添加任何没人说过的新观点，'
-  +'只负责把大家吵出来的东西整理成当事人能用的结论。全程中文，标准白话，不要文绉绉，不要 AI 腔的空话套话。'
+  +'只负责把大家吵出来的东西整理成当事人能用的东西。全程中文，标准白话，不要文绉绉，不要 AI 腔的空话套话。'
   +'所有行动建议都必须写清可验证的判据——什么数字、多长时间、什么算通过，'
-  +'不许写「加强关注」「持续观察」这种没法判断做没做到的话。';
+  +'不许写「加强关注」「持续观察」这种没法判断做没做到的话。\n\n'
+  +'🚨 两条最重要的纪律：\n'
+  +'1. **先分清这是哪种题**。有些问题确实有该不该（比如「没验证过就辞职」）；'
+  +'但很多人生选择——生不生孩子、搬不搬家、换不换活法——**根本没有标准答案，只取决于当事人更看重什么**。'
+  +'后一种你绝对不许下判决，写成判决就是拿你的价值观替他做决定。要写成「取决于什么」。\n'
+  +'2. **不管结论倒向哪边，都必须写出对立面最强的理由**。全场一边倒时尤其要写——'
+  +'一边倒往往说明大家共享了同一个没被检验的假设，而不是说明另一边真的没道理。';
 function debriefPrompt(topic,ctx,tr){
   return topicBlock(topic,ctx)+'\n\n【全场记录】\n'+tr+'\n\n整理成一份战报。只输出一个 JSON：\n'
-    +'{"reframed":"圆桌把这个问题重新定义成了什么，一句话。如果没有被重新定义就照原样写",'
-    +'"conclusion":"最终结论，2 到 3 句，当事人下一步该做什么",'
+    +'{"kind":"判断题 或 开放题。有客观上更该走的那条路（比如「没验证过就辞职」）算判断题；'
+    +'答案取决于当事人更看重什么、旁人无权替他定的（生不生孩子、搬不搬家、要不要换活法）算开放题",'
+    +'"reframed":"圆桌把这个问题重新定义成了什么，一句话。没被重新定义就照原样写",'
+    +'"conclusion":"判断题就写结论、当事人下一步该做什么；开放题**绝对不许下判决**，'
+    +'要写成「如果你更看重 X，就该…；如果你更看重 Y，就该…」，把选择权留给他。2 到 4 句",'
+    +'"hinges":["这件事到底取决于什么，2 到 4 条，每条是一个当事人得自己回答的问题。'
+    +'判断题也要写——写清是哪几个条件决定了结论"],'
+    +'"case_for":"支持「做」这一边最强的一条理由，一句话。🚨 全场一边倒也必须写",'
+    +'"case_against":"支持「不做」这一边最强的一条理由，一句话。同样必须写",'
     +'"blind_spot":"当事人自己最可能没看到的那一点，一句话，要具体、要扎人",'
     +'"insights":["核心洞察，3 到 5 条，每条一句，必须是场上真的有人说过的"],'
     +'"consensus":["大家达成一致的地方，2 到 4 条"],'
     +'"disputes":[{"point":"分歧点","sides":"谁站哪边，各自的理由"}],'
-    +'"decision_rule":"出现什么证据之后，这个决定才算成立。一句话，要能验证",'
+    +'"decision_rule":"判断题：出现什么证据之后这个决定才算成立；'
+    +'开放题：什么信号出现了说明你其实已经想清楚了。一句话，要能验证",'
     +'"actions":[{"what":"具体做什么","when":"多久之内","pass":"什么结果算通过、什么结果算这条路不成立"}]}';
 }
-const DEBRIEF_KEYS=['reframed','conclusion','blind_spot','insights','consensus','disputes','decision_rule','actions'];
+const DEBRIEF_KEYS=['reframed','conclusion','blind_spot','insights','consensus',
+  'disputes','decision_rule','actions','kind','hinges','case_for','case_against'];
 
 /* ═══════════ 调用封装 ═══════════ */
 async function ask(m,user,maxTok){
@@ -512,7 +558,10 @@ function renderTranscript(s){
     L.push(`[${v.name}·${v.tag}] 立场：${v.stance}。${v.headline}\n${v.argument}\n${c}（他认为最大的风险：${v.key_risk}）`); });
   s.debate.forEach(r=>{ L.push(`\n== 自由辩论 第 ${r.round} 轮 ==`);
     r.turns.forEach(t=>{ if(t.absent) return;
-      L.push(`[${t.name}] 回应 ${t.replies_to}，立场：${t.stance}${t.changed?'（立场改了）':''}\n${t.say}`); }); });
+      // 唱反调是被指派的，记录里必须标出来，否则后面的人会把它当成他的真实立场
+      // 去回应，整场被一个假前提带偏
+      const ct=t.contra?'（被指派唱反调，以下不代表他本人立场）':'';
+      L.push(`[${t.name}] 回应 ${t.replies_to}，立场：${t.stance}${t.changed?'（立场改了）':''}${ct}\n${t.say}`); }); });
   (s.finals||[]).forEach(f=>{ if(f.absent) return;
     L.push(`\n[${f.name}·最终陈述] 立场：${f.stance}\n${f.say}`); });
   let t=L.join('\n');
@@ -585,17 +634,33 @@ async function runSession(topic,ctx){
     el('div','',`<div class="n s-${k}" style="border:0">${v}</div><div class="sub">${k}</div>`)));
   L.appendChild(tb);
 
+  /* 一边倒就指派人唱反调，免得六个人齐刷刷说同一件事，开完等于没开 */
+  const {ids:contras,maj:majStance}=pickContras(s.votes);
+  s.contras=contras;
+  if(contras.length){
+    const names=members.filter(m=>contras.includes(m.id)).map(m=>m.name).join('、');
+    L.appendChild(el('div','card warnbox',
+      `<div class="k" style="color:#f6ad55">全场一边倒</div>
+       <div style="margin-top:6px">六个人几乎都说${esc(majStance)}。指派 <b>${esc(names)}</b>
+       去建立对立面最强的论证——不是抬杠，是防止大家共享同一个没被检验的假设。</div>`));
+  }
+
   /* ── 第二轮：辩论 ── */
   for(let r=1;r<=rounds;r++){
     phase(`自由辩论 · 第 ${r} 轮`);
     const rec={round:r,turns:[]}; s.debate.push(rec);
     const order=members.slice((r-1)%members.length).concat(members.slice(0,(r-1)%members.length));
     for(const m of order){
-      const d=await ask(m,debatePrompt(topic,ctx,renderTranscript(s),r,rounds),12000);
+      // 只在第一轮指派：让对立面尽早进场，后面几轮自然接得住
+      const isContra=contras.length>0&&r===1&&contras.includes(m.id);
+      const p=isContra?contraPrompt(topic,ctx,renderTranscript(s),r,majStance)
+                      :debatePrompt(topic,ctx,renderTranscript(s),r,rounds);
+      const d=await ask(m,p,isContra?14000:12000);
       const t=d?{id:m.id,name:m.name,tag:m.tag,replies_to:asText(d.replies_to),
-          stance:normStance(d.stance,asText(d.say)),changed:!!d.changed,say:asText(d.say)}
+          stance:normStance(d.stance,asText(d.say)),changed:!!d.changed,
+          say:asText(d.say),contra:isContra}
         :{id:m.id,name:m.name,tag:m.tag,absent:true,replies_to:'',stance:'缺席',
-          changed:false,say:'本轮没有返回'};
+          changed:false,say:'本轮没有返回',contra:isContra};
       if(t.absent) s.warnings.push(`${m.name} 辩论第 ${r} 轮没返回`);
       rec.turns.push(t); paintTurn(t); step('辩论');
     }
@@ -623,7 +688,10 @@ async function runSession(topic,ctx){
   /* ── 战报 ── */
   phase('圆桌收官 · 战报');
   const d=await askDebrief(topic,ctx,renderTranscript(s));
-  if(d) s.debrief={reframed:asText(d.reframed),conclusion:asText(d.conclusion),
+  if(d) s.debrief={kind:asText(d.kind).includes('开放')?'开放题':'判断题',
+    hinges:asList(d.hinges).map(asText),
+    case_for:asText(d.case_for), case_against:asText(d.case_against),
+    reframed:asText(d.reframed),conclusion:asText(d.conclusion),
     blind_spot:asText(d.blind_spot),insights:asList(d.insights).map(asText),
     consensus:asList(d.consensus).map(asText),
     disputes:asList(d.disputes).map(x=>typeof x==='object'&&x?{point:asText(x.point),sides:asText(x.sides)}:{point:asText(x),sides:''}),
@@ -658,7 +726,9 @@ function paintTurn(d){
          ${d.replies_to?`<div class="to">→ 回应 ${esc(d.replies_to)}</div>`:''}</div>
        <div><span class="pill s-${esc(d.stance)}">${esc(d.stance)}</span>
          ${d.changed?'<span class="pill" style="color:#4fd1c5;border-color:#4fd1c5;margin-left:5px">改立场了</span>':''}</div>
-     </div><div class="body">${esc(d.say)}</div>`));
+     </div>
+     ${d.contra?'<div class="pill" style="color:#f6ad55;border-color:#f6ad55;margin-top:7px">⚡被指派唱反调，不代表他本人立场</div>':''}
+     <div class="body">${esc(d.say)}</div>`));
 }
 function paintFinal(d){
   $('#live').appendChild(el('div','turn',
@@ -679,13 +749,22 @@ function paintShifts(s){
 function paintDebrief(d){
   const L=$('#live');
   if(!d){ L.appendChild(el('div','card warnbox','战报没生成出来，但上面的发言都在，可以自己看。')); return; }
+  const open=d.kind==='开放题';
   const hero=(k,v)=>v?`<div class="hero"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>`:'';
-  let h=hero('圆桌把问题改写成',d.reframed)
-    +`<div class="hero"><div class="k">最终结论</div><div class="v">${
-       d.conclusion?esc(d.conclusion):'没生成出来，往上看发言记录。'}</div></div>`
-    +hero('真正的盲区',d.blind_spot)+hero('什么时候这个决定才成立',d.decision_rule);
+  let h=open?`<div class="card warnbox"><b>这是一道开放题</b> —— 没有标准答案，
+      取决于你更看重什么。下面不给判决，只给判断的依据。</div>`:'';
+  h+=hero('圆桌把问题改写成',d.reframed)
+    +`<div class="hero"><div class="k">${open?'怎么想这件事':'最终结论'}</div><div class="v">${
+       d.conclusion?esc(d.conclusion):'没生成出来，往上看发言记录。'}</div></div>`;
   const ul=(t,a)=>a&&a.length?`<div class="card"><div class="k">${t}</div><ul>${
     a.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:'';
+  h+=ul('这件事取决于',d.hinges);
+  if(d.case_for||d.case_against)
+    h+=`<div class="card"><div class="k">两边最强的理由</div>
+      <div style="margin-top:9px"><span style="color:var(--grn)">支持做：</span>${esc(d.case_for||'—')}</div>
+      <div style="margin-top:9px"><span style="color:var(--red)">支持不做：</span>${esc(d.case_against||'—')}</div></div>`;
+  h+=hero('真正的盲区',d.blind_spot)
+    +hero(open?'什么信号说明你已经想清楚了':'什么时候这个决定才成立',d.decision_rule);
   h+=ul('核心洞察',d.insights)+ul('达成共识',d.consensus);
   if(d.disputes&&d.disputes.length)
     h+=`<div class="card"><div class="k">仍有分歧</div><ul>${d.disputes.map(x=>
@@ -703,16 +782,114 @@ function paintDone(s){
     `<div class="k" style="color:#f6ad55">本场的毛病</div><ul>${
       s.warnings.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>`));
   const c=el('div','card',`<div class="k">拿走</div>
+    <div class="sub" style="margin-top:7px">发微信用图片最稳，文字容易被截断。</div>
     <div class="row" style="margin-top:11px">
-      <button class="sm" id="btnShare">分享 / 导出</button>
+      <button class="sm go" id="btnShot" style="flex:1;font-size:15px;padding:12px">存成图片 · 发微信</button>
+    </div>
+    <div class="row" style="margin-top:9px">
+      <button class="sm" id="btnShare">分享文字</button>
       <button class="sm" id="btnCopy">复制 Markdown</button>
     </div>`);
   L.appendChild(c);
+  $('#btnShot').onclick=()=>shareShot();
   $('#btnShare').onclick=()=>shareMd(s);
   $('#btnCopy').onclick=()=>copyMd(s);
+  prepShot(s);            // 先把图画好，等他点的时候直接分享，不丢用户手势
   $('#progTxt').textContent='开完了 · '+(s.debrief?'战报已出':'战报没出来');
   $('#progFill').style.width='100%';
   S.running=false;
+}
+
+/* ═══════════ 存成图片（发微信用这个） ═══════════
+
+   🚨 为什么一定要图片：Kevin 2026-08-10 反馈「结论分享不出去，想发微信发不了」。
+   微信的分享扩展对**长文本**很不友好（要么不出现在分享单里，要么截断），
+   而图片一定收得下，长按还能存到相册再转发。
+   🚨 iOS 上 `navigator.share` 必须在**用户手势里同步调用** —— 中间 await 一个
+   toBlob 就可能失去手势资格。所以图在跑完那一刻就先画好存着，点按钮时直接分享。 */
+const SHOT_W=750;
+function shotLines(ctx,text,maxW){
+  const out=[]; let line='';
+  for(const ch of String(text||'')){
+    if(ch==='\n'){ out.push(line); line=''; continue; }
+    if(ctx.measureText(line+ch).width>maxW){ out.push(line); line=ch; }
+    else line+=ch;
+  }
+  if(line) out.push(line);
+  return out;
+}
+function makeShot(s){
+  const d=s.debrief||{}, open=d.kind==='开放题';
+  const P=40, W=SHOT_W, maxW=W-P*2;
+  const c=document.createElement('canvas'), ctx=c.getContext('2d');
+  const F=(sz,w)=>`${w||400} ${sz}px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif`;
+  // 先量高度，再真画 —— 画布高度必须一次定死
+  const blocks=[];
+  const push=(t,txt,sz,color,lh)=>{ if(!txt) return;
+    ctx.font=F(sz,t==='h'?700:400);
+    blocks.push({t,lines:shotLines(ctx,txt,maxW),sz,color,lh:lh||Math.round(sz*1.6)}); };
+  ctx.font=F(30,700);
+  blocks.push({t:'title',lines:shotLines(ctx,s.topic,maxW),sz:30,color:'#e6edf3',lh:44});
+  push('meta',`${s.panel_title} · ${s.members.length} 位嘉宾 · 第一轮 `
+    +Object.entries(s.tally||{}).map(([k,v])=>k+' '+v).join('，'),18,'#8b98a5');
+  if(open) push('tag','这是一道开放题 —— 没有标准答案，取决于你更看重什么',19,'#f6ad55');
+  push('h',open?'怎么想这件事':'最终结论',21,'#4fd1c5');
+  push('p',d.conclusion||'（没生成出来）',22,'#e6edf3',34);
+  if(d.hinges&&d.hinges.length){ push('h','这件事取决于',21,'#4fd1c5');
+    d.hinges.forEach(x=>push('li','· '+x,20,'#cbd5e0',31)); }
+  if(d.case_for){ push('h','支持做，最强的理由',21,'#68d391'); push('p',d.case_for,20,'#cbd5e0',31); }
+  if(d.case_against){ push('h','支持不做，最强的理由',21,'#fc8181'); push('p',d.case_against,20,'#cbd5e0',31); }
+  if(d.blind_spot){ push('h','真正的盲区',21,'#4fd1c5'); push('p',d.blind_spot,20,'#cbd5e0',31); }
+  if(d.actions&&d.actions.length){ push('h','接下来做什么',21,'#4fd1c5');
+    d.actions.slice(0,4).forEach((x,i)=>push('li',`${i+1}. ${x.what}（${x.when}）→ ${x.pass}`,19,'#cbd5e0',29)); }
+  push('foot','AI 决策圆桌 · 内容由 AI 基于公开资料推演，只代表模拟思考',16,'#5d6b7a');
+
+  let H=P;
+  blocks.forEach(b=>{ H+=(b.t==='h'?18:b.t==='foot'?26:6)+b.lines.length*b.lh; });
+  H+=P;
+  const dpr=2;
+  c.width=W*dpr; c.height=H*dpr; ctx.scale(dpr,dpr);
+  ctx.fillStyle='#0f1319'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#4fd1c5'; ctx.fillRect(0,0,W,5);
+  let y=P;
+  blocks.forEach(b=>{
+    y+=(b.t==='h'?18:b.t==='foot'?26:6);
+    ctx.font=F(b.sz,b.t==='title'||b.t==='h'?700:400);
+    ctx.fillStyle=b.color;
+    b.lines.forEach(ln=>{ y+=b.lh; ctx.fillText(ln,P,y-b.lh*0.25); });
+  });
+  return c;
+}
+async function prepShot(s){
+  try{
+    const c=makeShot(s);
+    const blob=await new Promise(r=>c.toBlob(r,'image/png'));
+    if(!blob) return;
+    S.shotBlob=blob;
+    S.shotFile=new File([blob],'圆桌战报.png',{type:'image/png'});
+    S.shotURL=URL.createObjectURL(blob);
+  }catch(e){ console.error('画图失败',e); }
+}
+function shareShot(){
+  if(!S.shotFile){ toast('图还没画好，稍等一下再点'); return; }
+  // 能分享文件就直接调起系统分享单（微信在里面）
+  if(navigator.canShare&&navigator.canShare({files:[S.shotFile]})&&navigator.share){
+    navigator.share({files:[S.shotFile],title:'圆桌战报'}).catch(()=>showShot());
+    return;
+  }
+  showShot();
+}
+/* 分享单调不起来就把图铺出来，让他长按保存/转发 —— 这条路在任何浏览器上都成立 */
+function showShot(){
+  if(!S.shotURL) return;
+  const ov=el('div','',`<div style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99;
+      overflow:auto;padding:14px;text-align:center">
+      <div style="color:#8b98a5;font-size:14px;margin:6px 0 12px">长按图片 → 存储到相册 / 拷贝，再发到微信</div>
+      <img src="${S.shotURL}" style="max-width:100%;border-radius:12px">
+      <div style="margin:16px 0 40px"><button id="shotClose">关掉</button></div>
+    </div>`);
+  document.body.appendChild(ov);
+  ov.querySelector('#shotClose').onclick=()=>ov.remove();
 }
 
 /* ═══════════ 导出 ═══════════ */
@@ -723,11 +900,17 @@ function buildMd(s){
   o.push(`> 第一轮票型：${Object.entries(s.tally||{}).map(([k,v])=>k+' '+v).join('，')}`);
   o.push('> '+DISCLAIMER,'');
   if(s.context) o.push('**我给的背景**：'+s.context,'');
+  const open=d.kind==='开放题';
+  if(open) o.push('> 这是一道**开放题** —— 没有标准答案，取决于你更看重什么。下面不给判决，只给判断的依据。','');
   if(d.reframed) o.push('**圆桌把问题改写成**：'+d.reframed,'');
-  o.push('**最终结论**：'+(d.conclusion||'（没生成出来）'),'');
-  if(d.blind_spot) o.push('**真正的盲区**：'+d.blind_spot,'');
-  if(d.decision_rule) o.push('**什么时候这个决定才成立**：'+d.decision_rule,'');
+  o.push('**'+(open?'怎么想这件事':'最终结论')+'**：'+(d.conclusion||'（没生成出来）'),'');
   const sec=(t,a)=>{ if(a&&a.length){ o.push('## '+t); a.forEach(x=>o.push('- '+x)); o.push(''); } };
+  sec('这件事取决于',d.hinges);
+  if(d.case_for||d.case_against){ o.push('## 两边最强的理由','',
+    '| 支持做 | 支持不做 |','|---|---|',`| ${d.case_for||'—'} | ${d.case_against||'—'} |`,''); }
+  if(d.blind_spot) o.push('**真正的盲区**：'+d.blind_spot,'');
+  if(d.decision_rule) o.push('**'+(open?'什么信号说明你已经想清楚了':'什么时候这个决定才成立')
+    +'**：'+d.decision_rule,'');
   sec('核心洞察',d.insights); sec('达成共识的地方',d.consensus);
   if(d.disputes&&d.disputes.length){ o.push('## 仍有分歧的地方');
     d.disputes.forEach(x=>o.push(`- **${x.point}** —— ${x.sides}`)); o.push(''); }
@@ -745,7 +928,7 @@ function buildMd(s){
     o.push(''); });
   s.debate.forEach(r=>{ o.push(`## 自由辩论 · 第 ${r.round} 轮`,'');
     r.turns.forEach(t=>{ o.push(`**${t.name}**${t.replies_to?' → 回应 '+t.replies_to:''}　\`${t.stance}\`${
-      t.changed?'　**（改立场了）**':''}`,'',t.say,''); }); });
+      t.contra?'　**⚡被指派唱反调**':''}${t.changed?'　**（改立场了）**':''}`,'',t.say,''); }); });
   o.push('## 最终陈述','');
   s.finals.forEach(f=>{ o.push(`**${f.name}**　\`${f.stance}\``,'',f.say,'');
     if(f.one_line) o.push('> '+f.one_line,''); });
