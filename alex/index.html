@@ -1417,7 +1417,11 @@ function to16k(buf, rate){
   const out = new Float32Array(n);
   for (let i = 0; i < n; i++){
     const x = i * ratio, j = x | 0, f = x - j;
-    out[i] = buf[j] * (1 - f) + (buf[j + 1] || buf[j]) * f;   // 线性插值，语音够用
+    /* 🚨 别写 `buf[j+1] || buf[j]`：合法的 0.0 样本（静音、过零点）是 falsy，
+       会被当成「缺省」而回退到 buf[j]，在「有声→静音」的边界上算出
+       buf[j] 而不是 buf[j]*(1-f)，误差可达 buf[j]*f，可能听到咔哒声。
+       而且 j+1 恒在界内，这个兜底本来就不需要。（深审 2026-08-10） */
+    out[i] = buf[j] * (1 - f) + buf[j + 1] * f;   // 线性插值，语音够用
   }
   return {buf: out, rate: 16000};
 }
@@ -1448,9 +1452,14 @@ async function toAudioPart(blob){
     return {blob, mime};
   }
 }
-const b64 = blob => new Promise(r => {
+const b64 = blob => new Promise((r, rej) => {
   const fr = new FileReader();
   fr.onload = () => r(fr.result.split(',')[1]);
+  /* 🚨 没有 onerror 的话，读失败时这个 promise **永远 pending**，
+     调用方就那么挂着 —— 表现成「说完没反应」，最难查的那种。
+     （深审 2026-08-10 抓到，属实。） */
+  fr.onerror = () => rej(new Error('这段录音读不出来，再说一次'));
+  fr.onabort = () => rej(new Error('录音读取被中断，再说一次'));
   fr.readAsDataURL(blob);
 });
 
@@ -2047,7 +2056,12 @@ async function askBackendAudioSegmented(part, secs){
   $('#hint').innerHTML = '<span class="dots">在想</span>';
   const j = firstJson(await textCall(
     buildPrompt('\nHE JUST SAID (transcribed):\n"' + said + '"'), 0.6));
-  if (j) j.said = said;               // 🚨 用转写原文，别让模型改写他说的话
+  /* 🚨 拿不到 JSON 要**抛人话**，不能 return null。
+     单发路径（askBackendAudioOne）这种情况是 throw 的，这里原来直接返回 null
+     → 一路回到 send() 的 render(null) → TypeError「Cannot read properties of
+     null」，他看到的是天书。两条路径的失败处理必须一致。（深审 2026-08-10） */
+  if (!j) throw new Error('拼完整文本后没出结果，再说一次');
+  j.said = said;                      // 🚨 用转写原文，别让模型改写他说的话
   return j;
 }
 
@@ -2898,10 +2912,16 @@ async function send(){
   } catch(e){
     // 「Load failed」这种话等于没说，补上它可能是什么、下一步点哪
     const bare = /load failed|failed to fetch|networkerror/i.test(e.message);
-    $('#err').innerHTML = bare
-      ? '请求发不出去。点下面的<b>「自检」</b>看是哪一环 —— '
-        + '多半是本地文件在 iOS 上不许跨域，或网络到不了。'
-      : e.message;
+    /* 🚨 e.message 里可能带着**后端响应原文**（502 分支会把模型/网关的错
+       原样拼进去）。原样塞 innerHTML 等于把外部内容当 HTML 执行 ——
+       体验版是别人也能触发的，那就是一个 XSS 面。
+       固定文案才用 innerHTML，动态内容一律 textContent。（深审 2026-08-10） */
+    if (bare){
+      $('#err').innerHTML = '请求发不出去。点下面的<b>「自检」</b>看是哪一环 —— '
+        + '多半是本地文件在 iOS 上不许跨域，或网络到不了。';
+    } else {
+      $('#err').textContent = e.message;
+    }
   } finally {
     busy = false; $('#mic').disabled = false;
     resetMic();
