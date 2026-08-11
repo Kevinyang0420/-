@@ -475,18 +475,29 @@ button{font-family:inherit}
    背景必须刷在 <html> 上。原来只在 .booting 期间刷黑，启动页一收就露白边 ——
    Kevin 2026-08-08：「打开的时候好像还是有下巴，黑色没有占满整个屏幕」。
    现在**常驻**：html 永远用页面底色，浅色模式白、深色模式黑，两边都不露缝。 */
-html{background:var(--bg)}
-html.booting{background:#000}
+/* 🚨 **恒为黑**，不跟 --bg 走。这是整个画面的最底层：安全区、橡皮筋回弹、
+   splash 淡出的那一帧，露出来的都是它。原来它在浅色模式下是白的 ——
+   那就是他说的「白下巴」。（Kevin 2026-08-10 第二次提；上一次我只在
+   .booting 期间刷黑，摘掉 booting 的那一帧照样露白，等于没修。） */
+html{background:#000}
+html.booting,html.booting body{background:#000}
+/* 启动图收起到首屏画出来之间，body 还没内容 —— 这时候它也必须是黑的 */
 body{background:var(--bg)}
-#splash{position:fixed;inset:0;z-index:9999;background:#000;
+#splash{position:fixed;inset:0;z-index:99999;background:#000;
+  /* 🚨 三个高度都写上：dvh 覆盖 iOS 动态工具栏，100% 兜底老 Safari，
+     再用 env() 把安全区一并吃掉 —— 少一个就可能在某台机器上露一条边。 */
   height:100dvh;min-height:100%;
+  padding-bottom:env(safe-area-inset-bottom);
+  padding-top:env(safe-area-inset-top);
+  box-sizing:border-box;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:16px;transition:opacity .34s ease}
+  gap:16px;transition:opacity .55s ease}
 @supports not (height: 100dvh){#splash{height:100vh}}
 #splash.gone{opacity:0;pointer-events:none}
 /* 🚨 标识不做上下浮动了：卡通形象跳一跳是可爱，一个几何字母跳
    就成了廉价动效。高端黑那一路靠**静**，只留一个极轻的淡入。 */
-#splash .fig{width:min(26vw,104px);opacity:0;animation:fin .6s ease .05s forwards}
+@keyframes splashIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+#splash .fig{animation:splashIn .62s cubic-bezier(.2,.7,.3,1) both;width:min(26vw,104px);opacity:0;animation:fin .6s ease .05s forwards}
 @keyframes fin{to{opacity:1}}
 #splash .fig img{display:block;width:100%;height:auto}
 
@@ -518,6 +529,8 @@ body{background:var(--bg)}
 </div>
 <script>window.__T0=Date.now();setTimeout(function(){
   var s=document.getElementById('splash'); if(s) s.remove();
+  /* 🚨 这是**兜底**：正常路径在 1.4 秒后自己收。这里 6 秒硬撤，
+     防的是「脚本挂了，人被永远卡在开屏」。 */
   document.documentElement.classList.remove('booting');},6000);</script>
 <div class="wrap">
   <div id="topnav" hidden><button id="backbtn">← 返回</button></div>
@@ -6493,19 +6506,20 @@ if (S.key || apiOn()){
 }
 
 /* ───────── 收起启动页 ───────── */
-/* 至少停留 480ms —— 缓存命中时脚本 20ms 就跑完了，一闪而过比不显示还难看。
-   但它**只推迟不阻塞**：真出问题时上面那个 6 秒兜底会硬撤掉。 */
+/* 至少停留 1400ms（Kevin 2026-08-10：「黑色那个画面可以稍微停留得长一点点，
+   这样能有一种成熟 App 的感觉」）。缓存命中时脚本 20ms 就跑完，一闪而过反而廉价。
+   🚨 它**只推迟不阻塞**：真出问题时上面那个兜底会硬撤掉，不会把人卡在开屏。 */
 (function(){
   var el = document.getElementById('splash');
   if (!el) return;
-  var wait = Math.max(0, 480 - (Date.now() - (window.__T0 || Date.now())));
+  var wait = Math.max(0, 1400 - (Date.now() - (window.__T0 || Date.now())));
   setTimeout(function(){
     el.classList.add('gone');
     setTimeout(function(){
       if (el.parentNode) el.remove();
-      // 淡出**完**了再摘，否则淡出途中底部会闪一下白
+      // 淡出**完**了再摘。（现在就算摘早了也不会露白 —— html 恒为黑。）
       document.documentElement.classList.remove('booting');
-    }, 400);
+    }, 600);
   }, wait);
 })();
 </script>
