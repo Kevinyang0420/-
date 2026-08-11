@@ -5647,7 +5647,13 @@ function recPlayBtn(t){
       }
       url = URL.createObjectURL(blob);
       a = new Audio(url);
-      a.onended = a.onerror = () => { b.classList.remove('on'); audioRelease(key); };
+      /* 🚨 放完就把 objectURL 收掉，并把 a 置空 —— 下次点再重新拉 blob。
+         原来只 audioRelease，url 一直挂着：每张播过的录音卡各留一个 blob URL，
+         直到页面卸载才释放，长会话里会一直累积。（深审 2026-08-12） */
+      a.onended = a.onerror = () => {
+        b.classList.remove('on'); audioRelease(key);
+        if (url){ URL.revokeObjectURL(url); url = null; a = null; }
+      };
     }
     try { a.currentTime = 0; } catch(_){}
     b.classList.add('on');
@@ -6143,7 +6149,15 @@ function _tx(store, mode, fn){
     const s = t.objectStore(store);
     let out;
     try { out = fn(s); } catch(e){ return rej(e); }
-    t.oncomplete = () => res(out && out.result !== undefined ? out.result : out);
+    /* 🚨 `get` 未命中时 `out.result` 就是 undefined —— 原来写成
+       `out.result !== undefined ? out.result : out`，于是把 **IDBRequest 对象本身**
+       resolve 出去。调用方拿到一个 truthy 的假数据：
+       `sessGet` 返回它 → `if (s)` 成立 → `showOneRec` 里 `s.turns.forEach` 抛 TypeError。
+       （深审 2026-08-12 抓到，属实。`sessGetAudio` 靠 `r && r.b` 恰好挡住了，
+        所以一直没暴露 —— **靠调用方"恰好"挡住的错，迟早从别的调用方漏出来**。）
+       核对过全部调用方：put 返 key（无人用）、getAll 返数组、
+       get 返值或 undefined、delete 返 undefined —— 都正确。 */
+    t.oncomplete = () => res(out ? out.result : undefined);
     t.onerror = () => rej(t.error);
     t.onabort = () => rej(t.error || new Error('本地库写入被中断'));
   }));
@@ -6209,9 +6223,14 @@ async function sessDel(id){
   const s = await sessGet(id);
   try {
     await _tx('sess', 'readwrite', st => st.delete(id));
-    // 顺手把它的音频也删了，别留孤儿占地方
-    for (const t of ((s && s.turns) || []))
-      if (t.audio) await _tx('audio', 'readwrite', st => st.delete(t.audio));
+    /* 顺手把它的音频也删了，别留孤儿占地方。
+       🚨 **一个事务删完**，不要每条一个事务顺序 await ——
+       中间任何一条 reject，外层 catch 直接 return false，
+       后面几段音频永远删不掉（元数据已删，孤儿留着占空间）。
+       （深审 2026-08-12） */
+    const keys = ((s && s.turns) || []).map(t => t.audio).filter(Boolean);
+    if (keys.length)
+      await _tx('audio', 'readwrite', st => { keys.forEach(k => st.delete(k)); });
     return true;
   } catch(e){ return false; }
 }
@@ -6230,7 +6249,10 @@ async function sessSweep(){
         n++;
       }
     }
-  } catch(e){}
+  } catch(e){
+    // 🚨 别整段吞掉：清理坏了他感知不到，只会以为「没有过期音频」。
+    try { console.warn('[alex] 过期音频清理失败', e); } catch(_){}
+  }
   return n;
 }
 
