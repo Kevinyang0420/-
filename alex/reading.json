@@ -33330,6 +33330,60 @@
    "src": "SEC 10-K",
    "srcen": "SEC 10-K filing",
    "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_spurred_demand",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement.",
+   "why": "中国人写因果关系常局限于 caused 或 resulted in。用 spurred 能精准传达“刺激、拉动”动能；oversight and enforcement 的搭配比简单的 management 更具尽调与审计所需的专业监管色彩。",
+   "when": "用于尽调报告中说明外部调查、监管风暴或重大违规事件如何引发对特定业务管控制度加强的要求。",
+   "slot": "A series of [...] spurred demand for stronger [...] oversight and enforcement.",
+   "swap": [
+    "A series of [...] drove the need for heightened [...] control and compliance.（语气偏向客观业务驱动，强调合规落地的必要性）",
+    "A series of [...] prompted calls for more rigorous [...] supervision.（语气偏向回应各方诉求，强调监督力度的提升）"
+   ],
+   "para": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement. That led to the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977, which established the national Medicaid Fraud Control Units program.",
+   "srctitle": "Trump administration is withholding more than $1B in Medicaid funds from California and Minnesota, in latest example of weaponizing real and imagined fraud",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_led_to_amendments",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "That led to the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977, which established the national Medicaid Fraud Control Units program.",
+   "why": "利用开头的指示代词代指上文整个事件，并紧跟非限制性定语从句，把“政策演进”与“新设立的管控机制”连贯合成一句，避免了中国人常见的句式碎片化和反复用 and 连接的问题。",
+   "when": "用于说明某一审计发现或历史合规缺陷最终促成了公司何种管理制度的重塑或专项管控部门的设立。",
+   "slot": "That led to [...], which established [...]",
+   "swap": [
+    "This resulted in [...], thereby founding [...]（语气更强调因果链条中的直接手段与结果）",
+    "Consequently, [...] was enacted, giving rise to [...]（语气更正式规范，适合法律与合规审计报告）"
+   ],
+   "para": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement. That led to the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977, which established the national Medicaid Fraud Control Units program.",
+   "srctitle": "Trump administration is withholding more than $1B in Medicaid funds from California and Minnesota, in latest example of weaponizing real and imagined fraud",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_established_program",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "which established the national Medicaid Fraud Control Units program",
+   "why": "用 established 来表达“确立、建立制度或专项计划”，比普通的 set up 或 make 更具公信力和制度严肃感，适合描述风控体系的构建。",
+   "when": "用于在定语从句中跟进说明某项决议、整改措施或法案具体确立了什么业务流程或风控项目。",
+   "slot": "which established the [...] program",
+   "swap": [
+    "which instituted the [...] framework（侧重表达确立了整体制度框架而非单一项目）",
+    "which set up the [...] mechanism（语气略偏具体业务层面，侧重建立起日常运作机制）"
+   ],
+   "para": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement. That led to the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977, which established the national Medicaid Fraud Control Units program.",
+   "srctitle": "Trump administration is withholding more than $1B in Medicaid funds from California and Minnesota, in latest example of weaponizing real and imagined fraud",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
   }
  ]
 }
