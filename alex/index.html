@@ -2297,8 +2297,41 @@ function pickVoice(lang){
    Promise 永远不 resolve → send() 的 finally 不执行 → 按钮永久禁用，
    Kevin 说完第一句就再也按不动了。
    现在：say 不再阻塞回合（fire-and-forget），并且自带超时兜底。 */
+/* ═══ 全局音频通道：同一时刻只许一个声音 ═══
+   Kevin 2026-08-10：连点两下回放，两遍自己的声音叠在一起，「像有个回声」。
+
+   🚨 做成**一个通道**而不是逐处 if：出声的地方有 6 处（回放、听力 <audio>×2、
+      TTS×3），逐处补的话下次新增一处又会漏。谁要出声先 audioClaim()，
+      认领即顶掉前一个。
+
+   约定：**同一个来源再点一次 = 停**（返回 false）。
+   比「忽略第二下」好 —— 长音频他需要能中途停下来。 */
+const AUDIO = {stop: null, key: null};
+
+function audioStop(){
+  const f = AUDIO.stop;
+  AUDIO.stop = null; AUDIO.key = null;      // 🚨 先清再调，防止 stop 回调里
+  if (f){ try { f(); } catch(_){} }         //     又触发 onpause → 递归
+  try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch(_){}
+}
+
+function audioClaim(key, stopFn){
+  const same = AUDIO.key !== null && AUDIO.key === key;
+  audioStop();
+  if (same) return false;                   // 再点一次 = 停下，不再开第二遍
+  AUDIO.key = key; AUDIO.stop = stopFn;
+  return true;
+}
+
+/* 自己播完了要交还通道，否则下次点它会被当成「再点一次 = 停」。 */
+function audioRelease(key){
+  if (AUDIO.key === key){ AUDIO.stop = null; AUDIO.key = null; }
+}
+
 function say(text, lang, rate){
   if (!text) return Promise.resolve();
+  // 🚨 认领通道：原来只 cancel 了 TTS 自己，跟 <audio> 那边照样能叠。
+  audioClaim('tts', () => { try { speechSynthesis.cancel(); } catch(_){} });
   speechSynthesis.cancel();          // 上一句没念完就换 —— 直接顶掉，别排队
   const u = new SpeechSynthesisUtterance(text);
   const v = pickVoice(lang);
@@ -2886,12 +2919,23 @@ function attachReplay(el, it){
   b.className = 'play';
   b.textContent = '🎙 听我刚才说的';
   it.btn = b;
+  /* 🚨 复用同一个 Audio 对象。原来每点一次 `new Audio(it.url)`，
+     旧的那个既没人 pause 也没人回收 —— 连点两下就是两条声音叠着放。 */
+  let a = null;
+  const key = 'rec:' + it.url;
   b.onclick = () => {
     if (it.gone) return;
+    if (!audioClaim(key, () => { if (a) a.pause(); b.classList.remove('on'); })){
+      b.classList.remove('on');
+      return;                       // 同一个按钮再点一次 = 停
+    }
+    if (!a){
+      a = new Audio(it.url);
+      a.onended = a.onerror = () => { b.classList.remove('on'); audioRelease(key); };
+    }
+    try { a.currentTime = 0; } catch(_){}
     b.classList.add('on');
-    const a = new Audio(it.url);
-    a.onended = a.onerror = () => b.classList.remove('on');
-    a.play().catch(() => b.classList.remove('on'));
+    a.play().catch(() => { b.classList.remove('on'); audioRelease(key); });
   };
   el.appendChild(b);
   return el;
@@ -3258,12 +3302,14 @@ function showSession(se){
    结束后能在「历史」里翻回来看，包括当时 Alex 给的那句「该这么说」。 */
 const NAV = [];
 function go(render, title){
+  if (window.audioStop) audioStop();   // 🚨 换屏就停声，别让上一屏的声音跟着走
   if (window.selBarHide) selBarHide();   // 🚨 换屏必收浮条：selectionchange 不会因为切页而触发
   NAV.push({render, title});
   render();
   paintNav();
 }
 function back(){
+  if (window.audioStop) audioStop();   // 🚨 换屏就停声，别让上一屏的声音跟着走
   if (window.selBarHide) selBarHide();   // 🚨 换屏必收浮条：selectionchange 不会因为切页而触发
   onVoices = null;
   NAV.pop();
@@ -3628,7 +3674,10 @@ function markSeen(ids){
       顺带 iOS 上 <audio> 比 speechSynthesis 稳得多（不需要那套解锁把戏，
       只要是用户点击触发的 play() 就一定响）。
    慢速用 playbackRate=0.7 并保持音高（preservesPitch），不会变成怪腔。 */
+let _pkey = 0;
 function player(it, autoplay){
+  // 🚨 每个 player 实例一个 key：换一张卡片就是换一个来源，该顶掉前一个。
+  const KEY = 'pl' + (++_pkey);
   const wrap = document.createElement('div');
   /* 时事听力：音频在 BBC 那边，而且每题只考其中一小段 —— 播到 end 就停，
      不然他得自己在 6 分钟里找那 20 秒。 */
@@ -3637,7 +3686,11 @@ function player(it, autoplay){
     au.src = it.url; au.preload = 'metadata'; au.crossOrigin = null;
     const seg = () => { au.currentTime = Math.max(0, (it.start || 0) - 1); };
     au.ontimeupdate = () => { if (it.end && au.currentTime >= it.end + 0.5) au.pause(); };
-    au.onpause = () => wrap.querySelectorAll('.play').forEach(x=>x.classList.remove('on'));
+    au.onpause = () => {
+      wrap.querySelectorAll('.play').forEach(x=>x.classList.remove('on'));
+      // 播完/暂停都要交还通道，否则下次点它会被当成「再点一次 = 停」
+      if (AUDIO.key && AUDIO.key.indexOf(KEY + ':') === 0) audioRelease(AUDIO.key);
+    };
     au.onerror = () => {
       const w = document.createElement('div'); w.className='note';
       w.textContent = '这段音频加载不了（BBC 那边的地址可能变了），先看下一题。';
@@ -3646,7 +3699,13 @@ function player(it, autoplay){
     const mk = (label, rate) => {
       const b = document.createElement('button');
       b.className='play'; b.style.marginRight='8px'; b.textContent=label;
-      b.onclick = () => { au.pause(); au.playbackRate = rate;
+      b.onclick = () => {
+        // 🚨 跨卡片也要互斥：au.pause() 只管自己这一个 <audio>
+        if (!audioClaim(KEY + ':' + rate, () => { au.pause(); })){
+          b.classList.remove('on');
+          return;                   // 同一个按钮再点一次 = 停
+        }
+        au.pause(); au.playbackRate = rate;
         au.preservesPitch = au.webkitPreservesPitch = true;
         if (au.readyState >= 1) seg(); else au.onloadedmetadata = seg;
         b.classList.add('on'); au.play().catch(()=>{}); };
@@ -3685,6 +3744,10 @@ function player(it, autoplay){
     const b = document.createElement('button');
     b.className = 'play'; b.style.marginRight = '8px'; b.textContent = label;
     b.onclick = () => {
+      if (!audioClaim(KEY + ':' + rate, () => { au.pause(); })){
+        b.classList.remove('on');
+        return;                     // 同一个按钮再点一次 = 停
+      }
       au.pause();
       au.playbackRate = rate;
       au.preservesPitch = au.mozPreservesPitch = au.webkitPreservesPitch = true;
@@ -3694,7 +3757,10 @@ function player(it, autoplay){
     };
     return b;
   };
-  au.onended = () => wrap.querySelectorAll('.play').forEach(x => x.classList.remove('on'));
+  au.onended = au.onpause = () => {
+    wrap.querySelectorAll('.play').forEach(x => x.classList.remove('on'));
+    if (AUDIO.key && AUDIO.key.indexOf(KEY + ':') === 0) audioRelease(AUDIO.key);
+  };
   au.onerror = () => {
     const w = document.createElement('div');
     w.className = 'note';
@@ -6106,6 +6172,7 @@ function paintTabs(){
   }
 }
 function goTab(name){
+  if (window.audioStop) audioStop();   // 🚨 换屏就停声，别让上一屏的声音跟着走
   if (window.selBarHide) selBarHide();   // 🚨 换屏必收浮条：selectionchange 不会因为切页而触发
   if (!TABS[name]) return;
   TAB_CUR = name;
