@@ -3414,6 +3414,167 @@
     "写成 'We didn't get the board's final calculation.'，应用规范书面语 'As of the report date, no final calculation or determination has been made available to us'",
     "写成 'EBITDA must be adjusted downwards immediately.'，语气过硬，应用 'may require normalization adjustments by the deal team'"
    ]
+  },
+  {
+   "id": "mail_customer_contract_revenue_cutoff",
+   "t": "合同收入截止性核查",
+   "lvl": "★★☆",
+   "brief": "写给目标公司财务负责人，用于财务尽职调查现场的收入截止性测试沟通，放在收入循环核查章节",
+   "facts": [
+    "管理层口头说明FY25年末已确认的12笔跨期收入合计金额为¥872万",
+    "我们抽查了FY25年12月25日至FY26年1月10日的32份发货签收单，其中7单的签收日期在FY25年末但入账在FY26年1月",
+    "截至发稿日仍未收到目标公司提供的FY25年末最后15笔收入的完整签收审批文件",
+    "我们核对了FY25年11-12月的应收账款明细账，发现有4笔提前确认的服务收入挂账金额合计¥319万"
+   ],
+   "tgt": [
+    "We note that management has advised...",
+    "According to our sample testing of...",
+    "We have not yet received...",
+    "It should be highlighted that..."
+   ],
+   "traps": [
+    "Writing \"We found 7 bills are late\" instead of \"7 bills were found to have their revenue recognized in the incorrect reporting period\", the former is ambiguous and fails to specify the cutoff issue",
+    "Using \"the company didn't give us the documents\" instead of \"we have not yet received the complete approval documents for the final 15 revenue items as of the date of this email\", the former is accusatory and inappropriate for professional communication",
+    "Stating \"the revenue is wrong\" instead of \"the revenue recognition timing may not align with the applicable accounting standards\", the former makes definitive claims without sufficient supporting evidence"
+   ]
+  },
+  {
+   "id": "mail_related_party_loan_interest",
+   "t": "关联方借款利息核对",
+   "lvl": "★★☆",
+   "brief": "写给客户集团财务总监，用于关联方交易核查，放在关联方披露章节",
+   "facts": [
+    "管理层口头提供的FY25年关联方借款利息计提金额为¥124.6万",
+    "我们调取了2笔关联方借款合同，约定年利率为4.35%，但管理层提供的计息明细显示实际按5.2%计提",
+    "我们抽查了FY25年6-12月的12张利息计提凭证，其中8张的计息基数与合同约定不符",
+    "截至发稿日仍未收到目标公司提供的全部关联方借款资金流凭证"
+   ],
+   "tgt": [
+    "Management has indicated that...",
+    "Based on our review of the loan agreements...",
+    "Our sample testing of the accrual vouchers identified...",
+    "We are still awaiting the provision of..."
+   ],
+   "traps": [
+    "Writing \"the company charged wrong interest\" instead of \"we identified discrepancies between the accrued interest and the contractual terms\", the former is overly blunt and lacks professional tone",
+    "Using \"they owe us money\" instead of \"there are identified differences between the recorded interest accruals and the contractual interest obligations\", the former uses informal language inappropriate for business correspondence",
+    "Stating \"all the interest is incorrect\" instead of \"8 out of the 12 sampled accrual vouchers do not align with the contract terms\", the former makes an overgeneralized claim without proper sampling context"
+   ]
+  },
+  {
+   "id": "mail_inventory_obsolete_identification",
+   "t": "呆滞存货库龄核对",
+   "lvl": "★★☆",
+   "brief": "写给目标公司存货主管会计，用于存货减值测试沟通，放在存货循环核查章节",
+   "facts": [
+    "管理层口头将库龄超过18个月的存货定义为呆滞存货，合计账面余额为¥2160万",
+    "我们抽查了仓库的140份存货台账，发现其中32项存货的库龄实际超过24个月但未被纳入呆滞存货清单",
+    "我们核对了FY25年末的存货库龄报表，发现有17项在库物资的入库日期记录存在涂改痕迹",
+    "截至发稿日仍未收到目标公司提供的呆滞存货处置审批记录"
+   ],
+   "tgt": [
+    "Management has defined...",
+    "Our sample review of the inventory ledger revealed...",
+    "We noted discrepancies in the recording of...",
+    "We have not yet obtained the..."
+   ],
+   "traps": [
+    "Writing \"your staff made mistakes on inventory ages\" instead of \"we identified instances where the recorded inventory aging did not align with the physical入库 dates\", the former is accusatory and damages collaborative communication",
+    "Using \"the company forgot to count some old stock\" instead of \"32 items with an aging period exceeding 24 months were not included in the identified obsolete inventory list\", the former is imprecise and lacks specific data",
+    "Stating \"all the aging records are wrong\" instead of \"discrepancies were identified in 32 out of the 140 sampled inventory items\", the former makes an overconfident statement without sufficient sampling basis"
+   ]
+  },
+  {
+   "id": "mail_employee_benefit_expense_allocation",
+   "t": "职工福利费归集核对",
+   "lvl": "★★☆",
+   "brief": "写给目标公司HR薪酬专员，用于职工薪酬核查，放在职工薪酬章节",
+   "facts": [
+    "管理层口头说明FY25年职工福利费全部归集至管理费用科目，合计金额为¥589万",
+    "我们抽查了FY25年的45张福利费报销凭证，其中11张的报销内容实际属于销售人员的外勤补贴",
+    "我们核对了FY25年的费用明细账，发现有3笔合计¥72万的福利费被误计入研发费用科目",
+    "截至发稿日仍未收到目标公司提供的福利费报销审批明细台账"
+   ],
+   "tgt": [
+    "Management has advised that...",
+    "Our sample testing of the reimbursement vouchers identified...",
+    "We noted that certain expenses were incorrectly...",
+    "We are still waiting to receive the..."
+   ],
+   "traps": [
+    "Writing \"you mixed up the expense accounts\" instead of \"we identified instances where employee benefit expenses were recorded in incorrect general ledger accounts\", the former is overly direct and unprofessional",
+    "Using \"the company messed up the R&D costs\" instead of \"3 accruals totaling ¥720,000 were incorrectly recorded in the research and development expense line item\", the former uses informal and ambiguous language",
+    "Stating \"all the benefit allocations are wrong\" instead of \"11 out of the 45 sampled reimbursement vouchers contained expenses that should be classified elsewhere\", the former makes an overgeneralized claim without proper sampling context"
+   ]
+  },
+  {
+   "id": "mail_lease_payment_arrears_check",
+   "t": "租赁付款逾期核查",
+   "lvl": "★★☆",
+   "brief": "写给目标公司租赁资产管理员，用于租赁负债核查，放在租赁循环章节",
+   "facts": [
+    "管理层口头说明FY25年所有租赁付款均按时支付，无逾期记录",
+    "我们调取了FY25年的18份租赁合同的付款流水，其中4笔租金付款延迟了5-12天支付",
+    "我们核对了FY25年末的租赁负债明细账，发现有2笔未入账的逾期付款滞纳金合计¥18.3万",
+    "截至发稿日仍未收到目标公司提供的FY25年完整租赁付款银行回单"
+   ],
+   "tgt": [
+    "Management has stated that...",
+    "Based on our review of the payment bank statements...",
+    "We identified that two accruals for...",
+    "We have not yet received the complete..."
+   ],
+   "traps": [
+    "Writing \"the company paid rent late\" instead of \"we identified 4 instances where rental payments were made 5 to 12 days beyond the contractual due date\", the former is imprecise and fails to specify the number and timing of delays",
+    "Using \"they didn't pay the fees\" instead of \"unrecorded late payment fees totaling ¥183,000 were identified in the lease liability sub-ledger\", the former is ambiguous and omits key details",
+    "Stating \"all lease payments are late\" instead of \"4 out of the 18 sampled lease agreements had delayed payments\", the former makes an overgeneralized claim that is not supported by the sampling data"
+   ]
+  },
+  {
+   "id": "mail_intangible_asset_amortization_check",
+   "t": "无形资产摊销年限核对",
+   "lvl": "★★☆",
+   "brief": "写给目标公司财务经理，用于无形资产核查，放在长期资产章节",
+   "facts": [
+    "管理层口头说明外购办公软件的摊销年限为5年，与税法规定一致",
+    "我们抽查了FY25年入账的6套外购办公软件合同，其中2套的实际使用年限预计为3年",
+    "我们核对了FY25年的无形资产摊销凭证，发现有3套软件的摊销金额计算错误",
+    "截至发稿日仍未收到目标公司提供的全部外购软件的预计使用年限评估报告"
+   ],
+   "tgt": [
+    "Management has advised that...",
+    "Our review of the purchase contracts indicated...",
+    "We identified discrepancies in the amortization calculations for...",
+    "We have not yet obtained the..."
+   ],
+   "traps": [
+    "Writing \"your amortization is wrong\" instead of \"we identified that the amortization period for two of the sampled software packages does not align with management's estimated useful life\", the former is accusatory and unprofessional",
+    "Using \"the company didn't follow the tax rules\" instead of \"the recorded amortization period for the software differs from the useful life estimated by the company\", the former conflates accounting and tax treatment unnecessarily",
+    "Stating \"all the amortization is incorrect\" instead of \"discrepancies were found in the amortization calculations for three out of the six sampled software assets\", the former makes an overgeneralized claim without proper sampling support"
+   ]
+  },
+  {
+   "id": "mail_bank_loan_interest_expense_check",
+   "t": "银行借款利息支出核对",
+   "lvl": "★★☆",
+   "brief": "写给目标公司资金主管，用于筹资循环核查，放在银行借款章节",
+   "facts": [
+    "管理层口头说明FY25年银行借款利息支出合计为¥3270万，与账面记录一致",
+    "我们抽查了FY25年的9份银行借款合同，其中3份合同的约定利率与账面计提的利率存在差异",
+    "我们核对了FY25年的利息支出明细账，发现有4笔合计¥216万的利息支出未进行相应的进项税额转出",
+    "截至发稿日仍未收到目标公司提供的FY25年全部银行借款的利息结算单"
+   ],
+   "tgt": [
+    "Management has advised that...",
+    "Our sample review of the loan agreements revealed...",
+    "We identified that certain interest expense accruals...",
+    "We have not yet received the complete..."
+   ],
+   "traps": [
+    "Writing \"the company messed up the interest payments\" instead of \"we identified differences between the contractual interest rates and the recorded interest accruals for 3 out of the 9 sampled loan agreements\", the former is informal and accusatory",
+    "Using \"they forgot the tax adjustment\" instead of \"4 accruals totaling ¥2.16 million were identified without the corresponding input VAT转出 adjustment, which should be made in accordance with tax regulations\", the former omits specific details and professional context",
+    "Stating \"all the interest expenses are wrong\" instead of \"discrepancies were identified in the interest calculations for 3 out of the 9 sampled loan agreements\", the former makes an overgeneralized claim without proper sampling basis"
+   ]
   }
  ]
 }

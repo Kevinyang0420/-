@@ -33275,6 +33275,61 @@
    "src": "SEC 10-K",
    "srcen": "SEC 10-K filing",
    "url": "https://www.sec.gov/Archives/edgar/data/1642896/000162828026018167/iot-20260131.htm"
+  },
+  {
+   "id": "ph_tariffs_as_excuse",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "described the tariffs as an \"excuse for political manipulation\"",
+   "why": "中国人常错用被动或者生硬直译“把关税说成是政治操纵的借口”，这里用describe X as Y的正式搭配，符合财经官方声明的严谨书面语习惯，比直接say更正式客观。",
+   "when": "在财经/外交官方声明中，用来转述第三方对某项政策/措施的定性评价时。",
+   "slot": "[…] described […] as an \"excuse for […] manipulation\"",
+   "swap": [
+    "said that […] was a pretext for political meddling，语气更偏向指责性，比原句更尖锐",
+    "commented that […] served as a cover for political grandstanding，更强调该说法是为了造势表演",
+    "noted that […] was a political gimmick，更直白指出是政治噱头，弱化了“借口”的委婉感"
+   ],
+   "para": "China's foreign ministry spokesperson Mao Ning described the tariffs as an \"excuse for political manipulation\". Washington and Beijing have been locked in a tit-for-tat tariffs war which is currently on hold.",
+   "srctitle": "",
+   "src": "BBC 商业",
+   "srcen": "BBC Business",
+   "url": "https://www.bbc.co.uk/news/articles/cy4kp8jd0ppo?at_medium=RSS&at_campaign=rss"
+  },
+  {
+   "id": "ph_establish_partner_program",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "we have established the Arista Partner Program, designed to engage partners who provide value-added services and extend our reach into the marketplace",
+   "why": "中国人常直接写we set up a partner program to attract partners，这里用designed to engage比to attract更精准，extend our reach into the marketplace替代了简单的expand our business，更具象地表达了渠道覆盖市场的效果，符合财经报告的精准措辞要求。",
+   "when": "在正式财务报告中介绍公司为拓展渠道设立的合作项目时套用。",
+   "slot": "we have established […] Program, designed to engage partners who provide value-added services and extend our reach into the marketplace",
+   "swap": [
+    "we built a partner program to get more partners：用词过于随意，不符合合规报告的正式语体",
+    "we launched a partner initiative to recruit partners who offer value-added services：替换了established为launched，engage为recruit，虽意思相近但不如原文正式精准"
+   ],
+   "para": "We market and sell our products through our direct sales force and in partnership with our channel partners, including distributors, value-added resellers, systems integrators and original equipment manufacturer (\"OEM\") partners. We also partner with various technology companies to sell our products. To facilitate channel coordination and increase productivity, we have established the Arista Partner Program, designed to engage partners who provide value-added services and extend our reach into the marketplace. Authorized training partners deliver technical training to our channel partners and end customers. Our partners typically receive an order from an end customer before placing an order with us, and we verify the end customer's identification before accepting such orders. Our partners generally do not stock inventory received from us.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_verify_end_customer_id",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "we verify the end customer's identification before accepting such orders",
+   "why": "中国人常写we check the customer's information before accepting orders，这里用verify the end customer's identification比check更正式严谨，符合审计和合规报告中对流程细节的精准描述要求，且明确限定了end customer，避免歧义。",
+   "when": "在财务尽职调查、审计报告或合规文件中，介绍订单审核流程时套用。",
+   "slot": "we verify […] before accepting such orders",
+   "swap": [
+    "we check the customer's details before taking orders：用词过于口语化，正式度不足，且未明确限定end customer，存在歧义",
+    "we confirm the identity of the end customer prior to accepting orders：替换了verify为confirm，before为prior to，意思相近但不如原文的正式商务措辞标准"
+   ],
+   "para": "We market and sell our products through our direct sales force and in partnership with our channel partners, including distributors, value-added resellers, systems integrators and original equipment manufacturer (\"OEM\") partners. We also partner with various technology companies to sell our products. To facilitate channel coordination and increase productivity, we have established the Arista Partner Program, designed to engage partners who provide value-added services and extend our reach into the marketplace. Authorized training partners deliver technical training to our channel partners and end customers. Our partners typically receive an order from an end customer before placing an order with us, and we verify the end customer's identification before accepting such orders. Our partners generally do not stock inventory received from us.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
   }
  ]
 }
