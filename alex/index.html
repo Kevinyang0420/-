@@ -1267,7 +1267,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
 
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
 
-const BANKV = 'cd67eab6';
+const BANKV = '0faf18a7';
 
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
@@ -5099,7 +5099,10 @@ function showList(){
 
   const cnt = lv => SCENARIOS.filter(x => lvlNum(x.lvl) === lv).length;
 
-  $('#list').innerHTML =
+  /* 🚨 tab 拼进**这个模板**，不能先 insertBefore ——
+     这句 innerHTML 会把整个 #list 重写，插在前面的当场被冲掉。
+     （第一版就是这么写的：代码里看着加了，界面上一个都没有，还不报错。） */
+  $('#list').innerHTML = sessTopTabs() +
 
     `<div class="stats">
 
@@ -5147,6 +5150,7 @@ function showList(){
 
   });
 
+  bindSessTop();  // 口语页顶部那两个 tab
 }
 
 
@@ -5485,7 +5489,197 @@ const PAGEAT = {};
 
 
 
-async function start(scn){
+
+/* ═══ 我的记录：能回看，也能接着练 ═══
+   Kevin 2026-08-11：「现在我看这个历史里面，我点进去之后，就真的是历史了，
+   没法再接回去了。」
+
+   🚨 所以这一页的重点不是「好看的归档」，是**能接着往下说**。
+      每条记录顶上第一个按钮就是「接着这一场继续说」。 */
+
+const SESSUI = {top: 'do'};        // do = 练习 / rec = 我的记录
+
+function sessTopTabs(){
+  const b = (k, nm) => '<button class="rchip' + (SESSUI.top === k ? ' on' : '') +
+    '" data-stop="' + k + '" style="font-size:14px;padding:7px 16px">' + nm + '</button>';
+  return '<div class="tabs" style="margin-bottom:12px">' +
+    b('do', '练习') + b('rec', '我的记录') + '</div>';
+}
+
+function bindSessTop(){
+  document.querySelectorAll('#feed [data-stop],#list [data-stop]').forEach(x =>
+    x.onclick = () => {
+      SESSUI.top = x.dataset.stop;
+      if (SESSUI.top === 'rec') go(showMyRecs, '我的记录');
+      else back();
+    });
+}
+
+/* ── 列表 ─────────────────────────────────────────────────── */
+async function showMyRecs(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  const f = $('#feed');
+  f.innerHTML = sessTopTabs() + '<div class="note">正在读…</div>';
+  bindSessTop();
+  await sessSweep();                    // 顺手清过期音频（只清音频，文字留着）
+  const list = await sessList();
+  $('#sub').textContent = list.length ? '练过的每一场都在这儿，可以接着说'
+                                      : '还没有记录';
+  if (!list.length){
+    f.innerHTML = sessTopTabs() +
+      '<div class="note">还没有练习记录。<br><br>' +
+      '去「练习」说上一轮，这里就会留下：<b>你当时说的原声</b>、' +
+      '转写、对方怎么接的、以及 Alex 指出的问题和更精的说法。<br>' +
+      '而且随时可以从这儿<b>接着那一场继续说</b>。</div>';
+    bindSessTop();
+    return;
+  }
+  f.innerHTML = sessTopTabs() + list.map(s => {
+    const brk = s.breaks || 0;
+    const mins = Math.max(1, Math.round((s.sec || 0) / 60));
+    return '<div class="card" data-sid="' + esc(s.id) + '"><div class="hd">' +
+      '<span class="ct" style="font-size:11.5px;color:var(--brand-dark);' +
+      'font-weight:800">' + esc((s.scn && s.scn.t) || '一场练习') + '</span>' +
+      '<span class="done">' + esc(s.on) + '</span></div>' +
+      '<div class="sit" style="margin-top:4px">' +
+      esc(((s.scn && s.scn.sit) || '').slice(0, 60)) + '</div>' +
+      '<div class="t" style="margin-top:6px">' + s.turns.length + ' 轮 · ' +
+      mins + ' 分钟' + (brk ? ' · ' + brk + ' 处要改' : ' · 没破戏') +
+      (s.turns.some(t => t.audio) ? ' · 🎙 有原声' : '') + '</div></div>';
+  }).join('');
+  bindSessTop();
+  document.querySelectorAll('#feed .card[data-sid]').forEach(el =>
+    el.onclick = async () => {
+      const s = await sessGet(el.dataset.sid);
+      if (s) go(() => showOneRec(s), '这一场');
+    });
+}
+
+/* ── 详情：逐轮回放 + 纠错 + 接着说 ──────────────────────────── */
+function showOneRec(s){
+  const f = $('#feed');
+  $('#sub').textContent = (s.scn && s.scn.t) || '这一场';
+  f.innerHTML = '';
+
+  // 🚨 第一个按钮就是「接着说」—— 他明确说过点进去只能看、接不回去
+  const go1 = document.createElement('button');
+  go1.className = 'play';
+  go1.style.cssText = 'margin-bottom:14px;background:var(--accent);' +
+    'color:var(--on-accent);border-color:var(--accent);font-weight:800';
+  go1.textContent = '▶︎ 接着这一场继续说';
+  go1.onclick = () => resumeSess(s);
+  f.appendChild(go1);
+
+  const head = document.createElement('div');
+  head.className = 'brief';
+  head.innerHTML = '<div class="sit">' + esc((s.scn && s.scn.sit) || '') + '</div>' +
+    '<div class="role">你是 ' + esc((s.scn && s.scn.you) || '') + '</div>' +
+    '<div class="task">任务 ' + esc((s.scn && s.scn.task) || '') + '</div>' +
+    '<div class="t" style="margin-top:6px">' + esc(s.on) + ' · ' +
+    s.turns.length + ' 轮</div>';
+  f.appendChild(head);
+
+  s.turns.forEach((t, i) => {
+    const wrap = document.createElement('div');
+    wrap.style.marginTop = '16px';
+    // 我说的
+    const me = document.createElement('div');
+    me.className = 'turn you';
+    me.innerHTML = '<div class="who">你 · 第 ' + (i + 1) + ' 轮</div>' +
+      '<div class="bub">' + esc(t.said || '(没转出文字)') + '</div>';
+    wrap.appendChild(me);
+    // 原声
+    if (t.audio) wrap.appendChild(recPlayBtn(t));
+    // 对方
+    if (t.reply){
+      const you = document.createElement('div');
+      you.className = 'turn alex';
+      you.innerHTML = '<div class="who">对方</div><div class="bub">' +
+        esc(t.reply) + '</div>';
+      wrap.appendChild(you);
+    }
+    // 纠错
+    const c = t.crit || {};
+    if (c.zh || c.better){
+      const box = document.createElement('div');
+      box.className = 'better'; box.style.marginTop = '8px';
+      box.innerHTML = '<div class="lb">' +
+        (c.brk ? '当时指出的问题' : '当时的点评') + '</div>' +
+        (c.zh ? '<div style="font-size:13.5px;line-height:1.7">' +
+          esc(cleanZh(c.zh)) + '</div>' : '') +
+        (c.better ? '<div class="en" style="margin-top:8px">' +
+          esc(c.better) + '</div>' : '');
+      if (c.better) box.appendChild(copyBtn(c.better, '📋 复制'));
+      wrap.appendChild(box);
+    }
+    f.appendChild(wrap);
+  });
+
+  const rm = document.createElement('button');
+  rm.className = 'play'; rm.style.marginTop = '18px';
+  rm.textContent = '🗑 删掉这一场';
+  rm.onclick = async () => {
+    await sessDel(s.id);
+    toast('删掉了');
+    back();
+  };
+  f.appendChild(rm);
+}
+
+/* 原声按钮：点了才去 IndexedDB 取 Blob（列表页不预加载，省内存） */
+function recPlayBtn(t){
+  const b = document.createElement('button');
+  b.className = 'play'; b.style.margin = '6px 0 2px';
+  b.textContent = '🎙 听我当时说的' + (t.sec ? '（' + Math.round(t.sec) + '秒）' : '');
+  let a = null, url = null;
+  const key = 'rec:' + t.audio;
+  b.onclick = async () => {
+    if (!audioClaim(key, () => { if (a) a.pause(); b.classList.remove('on'); })){
+      b.classList.remove('on'); return;         // 再点一次 = 停
+    }
+    if (!a){
+      const blob = await sessGetAudio(t.audio);
+      if (!blob){
+        b.disabled = true;
+        b.textContent = '这段原声已过期清掉了（只留 30 天）';
+        audioRelease(key);
+        return;
+      }
+      url = URL.createObjectURL(blob);
+      a = new Audio(url);
+      a.onended = a.onerror = () => { b.classList.remove('on'); audioRelease(key); };
+    }
+    try { a.currentTime = 0; } catch(_){}
+    b.classList.add('on');
+    a.play().catch(() => { b.classList.remove('on'); audioRelease(key); });
+  };
+  return b;
+}
+
+/* ── 接着说：把上下文装回去 ──────────────────────────────────── */
+const RESUME_TURNS = 6;      // Kevin 2026-08-11 定：喂最近 6 轮
+
+async function resumeSess(s){
+  if (!s || !s.scn) return;
+  /* 🚨 用**存下来的整张场景卡**，不是拿 id 去题库里找 ——
+     题库天天在轮换，按 id 找的话过几天那一场就再也接不回来了。 */
+  S.scn = s.scn;
+  S.sess = s;                              // 续在同一条记录上，不另起
+  S.turns = s.turns.length;
+  S.breaks = s.breaks || 0;
+  S.nSince = 99;
+  /* 只喂最近 N 轮：整场都喂的话说久了每句都明显变慢（他选的 B 方案）。 */
+  S.hist = [];
+  s.turns.slice(-RESUME_TURNS).forEach(t => {
+    if (t.said) S.hist.push('LEARNER: ' + t.said);
+    if (t.reply) S.hist.push('CHARACTER: ' + t.reply);
+  });
+  SESSUI.top = 'do';
+  await start(s.scn, true);
+  toast('接上了，从第 ' + (s.turns.length + 1) + ' 轮继续');
+}
+
+async function start(scn, resume){
 
   // 轻索引里没有 ai/task/tgt/traps，开场前先把这一片取回来
 
@@ -5499,13 +5693,21 @@ async function start(scn){
 
   }
 
-  S.scn = scn; S.nSince = 99; S.hist = []; S.turns = 0; S.breaks = 0;
+  /* 🚨 续接时**不许**清空 hist/turns —— resumeSess 刚把最近 6 轮装回去，
+     这里一清就等于没接上，对方会重新开场白（PRD 判据 C5 查的就是这个）。 */
+  S.scn = scn;
+  if (!resume){
+    S.nSince = 99; S.hist = []; S.turns = 0; S.breaks = 0;
+    S.sess = null;                   // 新的一场，另起一条记录
+    S.sessId = 's' + Date.now();       // 这一场的 id，用来实时落盘
+  }
 
-  S.sessId = 's' + Date.now();       // 这一场的 id，用来实时落盘
 
   $('#list').hidden = true;
 
-  $('#sub').textContent = '点下面的按钮开始说英语';
+  $('#sub').textContent = resume
+    ? '接着上次那一场 · 已说 ' + (S.turns || 0) + ' 轮'
+    : '点下面的按钮开始说英语';
 
   $('#brief').hidden = false;
 
@@ -5891,11 +6093,155 @@ async function sendText(promise){
 
 const MYREC = {list: [], sec: 0, t0: 0, cap: 90};
 
+
+/* ═══ 练习记录：一次练习 = 一条记录，存 IndexedDB ═══
+   Kevin 2026-08-11：「我练完的口语，找不到在哪里了……把我练的、当时说的原声啊，
+   问题以及错误的修正，这些也都要记录下来」「如果我想接着继续说，
+   也要有一个功能能够让我接回去」。
+
+   🚨 为什么必须是 IndexedDB：录音是 Blob，**localStorage 只能存字符串**，
+      而且 5MB 上限，一段 1 分钟的 16k WAV 就 2MB。
+      原来的 MYREC 是内存里的 objectURL —— 刷新页面就没了，
+      这正是他「退出来回过头找就找不到了」的原因。
+
+   保留策略（Kevin 2026-08-11 定）：**音频留 30 天，文字永久**。
+   过期只清音频、不清记录 —— 回头翻上个月的还能看到当时说了什么、错在哪。 */
+
+const SESSDB = 'alex_sess';
+const SESS_AUDIO_DAYS = 30;          // 音频保留天数（文字不受影响）
+let _db = null;
+
+function sessDB(){
+  if (_db) return Promise.resolve(_db);
+  return new Promise((res, rej) => {
+    let rq;
+    try { rq = indexedDB.open(SESSDB, 2); }
+    catch(e){ return rej(e); }
+    rq.onupgradeneeded = () => {
+      const db = rq.result;
+      if (!db.objectStoreNames.contains('sess')){
+        const st = db.createObjectStore('sess', {keyPath: 'id'});
+        st.createIndex('on', 'on');          // 按时间倒序列表用
+      }
+      // 音频单独一个 store：清理时只删它，元数据原样留着
+      if (!db.objectStoreNames.contains('audio'))
+        db.createObjectStore('audio', {keyPath: 'k'});
+      /* 🚨 加 store 必须把版本号 +1（上面 open(SESSDB, 2)），
+         否则 onupgradeneeded 根本不触发，新 store 永远建不出来，
+         而报错是「找不到 objectStore」——看着像代码写错，其实是版本没动。 */
+      if (!db.objectStoreNames.contains('wrec'))
+        db.createObjectStore('wrec', {keyPath: 'id'});
+    };
+    rq.onsuccess = () => { _db = rq.result; res(_db); };
+    rq.onerror = () => rej(rq.error || new Error('打不开本地库'));
+  });
+}
+
+function _tx(store, mode, fn){
+  return sessDB().then(db => new Promise((res, rej) => {
+    const t = db.transaction(store, mode);
+    const s = t.objectStore(store);
+    let out;
+    try { out = fn(s); } catch(e){ return rej(e); }
+    t.oncomplete = () => res(out && out.result !== undefined ? out.result : out);
+    t.onerror = () => rej(t.error);
+    t.onabort = () => rej(t.error || new Error('本地库写入被中断'));
+  }));
+}
+
+/* ── 一条记录长什么样 ──────────────────────────────────────────
+   {id, on(YYYY-MM-DD), t0(ms), scn:{...整张场景卡...},
+    turns:[{i, said, reply, crit:{level,quote,native,better,issue}, audio:'k', sec}],
+    right, breaks, done}
+   🚨 scn 整张存下来 —— 「接着说」要靠它把场景原样装回去，
+      只存 id 的话题库轮换后那一场就再也接不回来了。 */
+
+function sessNew(scn){
+  return {id: 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          on: TODAY(), t0: Date.now(), scn: scn, turns: [], right: 0, breaks: 0};
+}
+
+async function sessSave(s){
+  if (!s || !s.turns || !s.turns.length) return null;   // 一轮没说就不留
+  s.sec = Math.round((Date.now() - s.t0) / 1000);
+  try {
+    await _tx('sess', 'readwrite', st => st.put(s));
+    return s.id;
+  } catch(e){
+    // 🚨 存不下要出声。静默失败的话他练完一场，回头发现什么都没有。
+    try { toast('这一场没存住（本地空间可能满了）'); } catch(_){}
+    return null;
+  }
+}
+
+async function sessPutAudio(key, blob){
+  if (!blob || !blob.size) return false;
+  try {
+    await _tx('audio', 'readwrite', st => st.put({k: key, b: blob, on: TODAY()}));
+    return true;
+  } catch(e){
+    try { toast('录音没存住（本地空间可能满了），文字还在'); } catch(_){}
+    return false;
+  }
+}
+
+async function sessGetAudio(key){
+  if (!key) return null;
+  try {
+    const r = await _tx('audio', 'readonly', st => st.get(key));
+    return r && r.b ? r.b : null;
+  } catch(e){ return null; }
+}
+
+async function sessList(){
+  try {
+    const all = await _tx('sess', 'readonly', st => st.getAll());
+    return (all || []).sort((a, b) => (b.t0 || 0) - (a.t0 || 0));
+  } catch(e){ return []; }
+}
+
+async function sessGet(id){
+  try { return await _tx('sess', 'readonly', st => st.get(id)); }
+  catch(e){ return null; }
+}
+
+async function sessDel(id){
+  const s = await sessGet(id);
+  try {
+    await _tx('sess', 'readwrite', st => st.delete(id));
+    // 顺手把它的音频也删了，别留孤儿占地方
+    for (const t of ((s && s.turns) || []))
+      if (t.audio) await _tx('audio', 'readwrite', st => st.delete(t.audio));
+    return true;
+  } catch(e){ return false; }
+}
+
+/* 过期清理：只清音频，**记录和文字一律留着**。
+   🚨 每次进列表时顺手跑一次，不另设定时器 —— 定时器在 PWA 里不可靠。 */
+async function sessSweep(){
+  const cut = Date.now() - SESS_AUDIO_DAYS * 86400000;
+  let n = 0;
+  try {
+    const all = await _tx('audio', 'readonly', st => st.getAll());
+    for (const a of (all || [])){
+      const t = Date.parse((a.on || '') + 'T00:00:00');
+      if (isFinite(t) && t < cut){
+        await _tx('audio', 'readwrite', st => st.delete(a.k));
+        n++;
+      }
+    }
+  } catch(e){}
+  return n;
+}
+
 function keepRec(blob, sec){
 
   if (!blob || !blob.size) return null;
 
-  const it = {url: URL.createObjectURL(blob), sec: Math.max(0.3, sec || 0)};
+  /* 🚨 blob 一起带着走：objectURL 只能撑到刷新前，
+     要留下来听必须存 Blob 本身（sessTurn 会把它写进 IndexedDB）。 */
+  const it = {url: URL.createObjectURL(blob), blob: blob,
+              sec: Math.max(0.3, sec || 0)};
 
   MYREC.list.push(it); MYREC.sec += it.sec;
 
@@ -6170,6 +6516,10 @@ async function render(d, mine){
   markDaily('speak');             // 说了一句就算今天练过口语
 
   recordTurn(d);                  // 这一轮也存进历史，别等「结束」才存
+  /* 🚨 完整版另存一份：原声 + 转写 + 对方的话 + 纠错，存 IndexedDB。
+     旧的那条（localStorage 文字摘要）留着不动，老记录不丢。
+     不 await —— 落盘是旁路，不能挡住下一句。 */
+  sessTurn(d, mine).catch(() => {});
 
   S.turns++;
 
@@ -6445,6 +6795,8 @@ $('#type').onclick = () => {
 
 };
 
+/* 打字练的那一轮同样要留记录 —— 只是没有原声。
+   🚨 少接一条路 = 他打字练的那些回头全都找不到，而界面看不出区别。 */
 async function typedTurn(){
 
   const said = $('#typein').value.trim();
@@ -7234,6 +7586,32 @@ function saveSess(list){
 }
 
 /* 每一轮就落盘一次 —— 不能等「结束」才存，他直接关页面就全没了 */
+
+/* 把这一轮完整存进 IndexedDB。
+   🚨 音频用 Blob 存，不用 objectURL —— objectURL 一刷新就失效，
+      那正是他「退出来回过头找就找不到了」的原因。 */
+async function sessTurn(d, mine){
+  if (!S.scn) return;
+  if (!S.sess || S.sess.scn.id !== S.scn.id){
+    // 同一场里 scn 不会变；变了说明换了一场，另起一条
+    if (S.sess) await sessSave(S.sess);
+    S.sess = sessNew(S.scn);
+  }
+  const i = S.sess.turns.length;
+  const t = {i: i, said: d.said || '', reply: d.in_character || '',
+             crit: {level: d.level || '', quote: d.quote || '',
+                    issue: d.issue || '', native: d.native || '',
+                    better: d.better || '', zh: critique(d) || '',
+                    brk: !!d.break},
+             at: Date.now()};
+  if (mine && mine.blob){
+    const k = S.sess.id + '_' + i;
+    if (await sessPutAudio(k, mine.blob)){ t.audio = k; t.sec = mine.sec; }
+  }
+  S.sess.turns.push(t);
+  if (d.break) S.sess.breaks++;
+  await sessSave(S.sess);          // 每轮都落盘 —— 中途退出也存得住
+}
 
 function recordTurn(d){
 
@@ -11339,7 +11717,9 @@ async function showWrite(){
 
     show.push(sorted[(from + k) % sorted.length]);
 
-  f.innerHTML = show.map(w => {
+  /* tab 拼进这个模板 —— 先 insertBefore 会被这句 innerHTML 冲掉
+     （口语那边刚栽过：代码里看着加了，界面上一个都没有，还不报错）。 */
+  f.innerHTML = wrecTopTabs() + show.map(w => {
 
     const n = wDone(w.id);
 
@@ -11379,6 +11759,7 @@ async function showWrite(){
 
   }
 
+  bindWrecTop();   // 写作页顶部那两个 tab
 }
 
 
@@ -11408,6 +11789,164 @@ function wMark(id){
 }
 
 
+
+
+/* ═══ 写作记录：翻得回做过的题和当时的批改 ═══
+   Kevin 2026-08-12：「写作也要加一个类似口语这样的功能，
+   可以翻回来看做过的历史题目」。
+
+   🚨 现状：写作只用 `wMark(id)` 记了「这题做过几次」——
+      **写的内容和批改一个字都没留**。所以他回头翻只能看到一个次数。
+      复用口语那套 IndexedDB，另开一个 store。 */
+
+async function wrecSave(w, text, d){
+  if (!w || !text) return null;
+  const rec = {
+    id: 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+    on: TODAY(), t0: Date.now(),
+    q: w.id, t: w.t || '', task: w.task || '', sit: w.sit || '',
+    mine: text,
+    level: (d && d.level) || '',
+    points: (d && Array.isArray(d.points)) ? d.points.slice(0, 4) : [],
+    better: (d && d.better) || '',
+    kept: (d && d.kept) || '',
+  };
+  try {
+    await _tx('wrec', 'readwrite', st => st.put(rec));
+    return rec.id;
+  } catch(e){
+    try { toast('这次写作没存住（本地空间可能满了）'); } catch(_){}
+    return null;
+  }
+}
+
+async function wrecList(){
+  try {
+    const all = await _tx('wrec', 'readonly', st => st.getAll());
+    return (all || []).sort((a, b) => (b.t0 || 0) - (a.t0 || 0));
+  } catch(e){ return []; }
+}
+
+async function wrecDel(id){
+  try { await _tx('wrec', 'readwrite', st => st.delete(id)); return true; }
+  catch(e){ return false; }
+}
+
+/* ── 界面：写作页顶部两个 tab ─────────────────────────────── */
+const WRECUI = {top: 'do'};
+
+function wrecTopTabs(){
+  const b = (k, nm) => '<button class="rchip' + (WRECUI.top === k ? ' on' : '') +
+    '" data-wtop="' + k + '" style="font-size:14px;padding:7px 16px">' + nm + '</button>';
+  return '<div class="tabs" style="margin-bottom:12px">' +
+    b('do', '练习') + b('rec', '我写过的') + '</div>';
+}
+
+function bindWrecTop(){
+  document.querySelectorAll('#feed [data-wtop],#list [data-wtop]').forEach(x =>
+    x.onclick = () => {
+      WRECUI.top = x.dataset.wtop;
+      if (WRECUI.top === 'rec') go(showMyWrites, '我写过的');
+      else back();
+    });
+}
+
+async function showMyWrites(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  const f = $('#feed');
+  f.innerHTML = wrecTopTabs() + '<div class="note">正在读…</div>';
+  bindWrecTop();
+  const list = await wrecList();
+  $('#sub').textContent = list.length ? '你写过的每一段，和当时的批改' : '还没写过';
+  if (!list.length){
+    f.innerHTML = wrecTopTabs() +
+      '<div class="note">还没有写作记录。<br><br>' +
+      '去「练习」写一段交上去，这里就会留下：<b>你当时写的原文</b>、' +
+      'Alex 指出的每一处问题、以及可以直接用的改写版本。</div>';
+    bindWrecTop();
+    return;
+  }
+  f.innerHTML = wrecTopTabs() + list.map(r => {
+    const lv = r.level === 'fine' ? '✅ 没问题'
+             : r.level === 'polish' ? '💡 可更精' : '✍️ 有要改的';
+    return '<div class="card" data-wid="' + esc(r.id) + '"><div class="hd">' +
+      '<span class="ct" style="font-size:11.5px;color:var(--brand-dark);' +
+      'font-weight:800">' + esc(r.t || '一道写作题') + '</span>' +
+      '<span class="done">' + esc(r.on) + '</span></div>' +
+      '<div class="sit" style="margin-top:4px">' +
+      esc((r.mine || '').slice(0, 78)) + '…</div>' +
+      '<div class="t" style="margin-top:6px">' + lv +
+      (r.points && r.points.length ? ' · ' + r.points.length + ' 处点评' : '') +
+      '</div></div>';
+  }).join('');
+  bindWrecTop();
+  document.querySelectorAll('#feed .card[data-wid]').forEach(el =>
+    el.onclick = async () => {
+      const r = (await wrecList()).find(x => x.id === el.dataset.wid);
+      if (r) go(() => showOneWrite(r), '这一篇');
+    });
+}
+
+function showOneWrite(r){
+  const f = $('#feed');
+  $('#sub').textContent = r.t || '这一篇';
+  f.innerHTML = '';
+
+  // 再写一次同一题 —— 跟口语那边「接着说」对应
+  const again = document.createElement('button');
+  again.className = 'play';
+  again.style.cssText = 'margin-bottom:14px;background:var(--accent);' +
+    'color:var(--on-accent);border-color:var(--accent);font-weight:800';
+  again.textContent = '✍️ 再写一次这道题';
+  again.onclick = async () => {
+    const bank = await loadWriting();
+    const w = (bank || []).find(x => x.id === r.q);
+    if (!w) return toast('这道题在题库里找不到了（可能已更新）');
+    WRECUI.top = 'do';
+    go(() => startWrite(w), '报告写作');
+  };
+  f.appendChild(again);
+
+  const head = document.createElement('div');
+  head.className = 'brief';
+  head.innerHTML = (r.sit ? '<div class="sit">' + esc(r.sit) + '</div>' : '') +
+    (r.task ? '<div class="task">要求 ' + esc(r.task) + '</div>' : '') +
+    '<div class="t" style="margin-top:6px">' + esc(r.on) + '</div>';
+  f.appendChild(head);
+
+  const mine = document.createElement('div');
+  mine.className = 'better'; mine.style.marginTop = '12px';
+  mine.innerHTML = '<div class="lb">你当时写的</div>' +
+    '<div class="en" style="white-space:pre-wrap;font-size:14px;line-height:1.75">' +
+    esc(r.mine || '') + '</div>';
+  f.appendChild(mine);
+
+  (r.points || []).forEach(p => {
+    if (!p || !p.quote) return;
+    const c = document.createElement('div');
+    c.className = 'card'; c.style.marginTop = '10px';
+    c.innerHTML = '<div style="font-size:13.5px;text-decoration:line-through;' +
+      'color:var(--muted)">' + esc(p.quote) + '</div>' +
+      '<div class="en" style="margin-top:6px">' + esc(p.native || '') + '</div>' +
+      (p.why ? '<div class="tags">' + esc(cleanZh(p.why)) + '</div>' : '');
+    f.appendChild(c);
+  });
+
+  if (r.better){
+    const b = document.createElement('div');
+    b.className = 'better'; b.style.marginTop = '12px';
+    b.innerHTML = '<div class="lb">当时给的改写</div>' +
+      '<div class="en" style="white-space:pre-wrap">' + esc(r.better) + '</div>';
+    b.appendChild(copyBtn(r.better, '📋 复制'));
+    f.appendChild(b);
+  }
+
+  const rm = document.createElement('button');
+  rm.className = 'play'; rm.style.marginTop = '18px';
+  rm.textContent = '🗑 删掉这一篇';
+  rm.onclick = async () => { await wrecDel(r.id); toast('删掉了'); back(); };
+  f.appendChild(rm);
+}
 
 function startWrite(w){
 
@@ -11591,6 +12130,10 @@ async function submitWrite(){
 
   }
 
+  /* 🚨 交卷就落盘：原来只 wMark 记了「做过几次」，
+     写的内容和批改一个字都没留，他回头翻只看得到一个次数。
+     不 await —— 落盘是旁路，别挡住批改显示。 */
+  wrecSave(WRITE.cur, text, d).catch(() => {});
   renderWrite(d, text);
 
   wMark(w.id);
