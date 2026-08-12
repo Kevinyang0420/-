@@ -3575,6 +3575,106 @@
     "Using \"they forgot the tax adjustment\" instead of \"4 accruals totaling ¥2.16 million were identified without the corresponding input VAT转出 adjustment, which should be made in accordance with tax regulations\", the former omits specific details and professional context",
     "Stating \"all the interest expenses are wrong\" instead of \"discrepancies were identified in the interest calculations for 3 out of the 9 sampled loan agreements\", the former makes an overgeneralized claim without proper sampling basis"
    ]
+  },
+  {
+   "id": "fdd_accounts_receivable_overstatement_risk",
+   "t": "应收账款多计风险",
+   "lvl": "★★★",
+   "brief": "为买方尽调报告撰写应收账款多计风险的发现段落，读者为买方deal team，可直接抄入财务风险章节。",
+   "facts": [
+    "管理层称FY24年末应收账款余额中85%的客户均已在FY25一季度完成回款，回款覆盖率达92%",
+    "我们抽查了FY24年末前20大应收账款客户的期后回款凭证，其中3家客户截至2026年3月15日仍未支付对应货款",
+    "我们尝试联系其中1家逾期客户的对接人，截至发稿日仍未得到有效回复",
+    "管理层表示该3家逾期客户均为长期合作方，过往从未出现过逾期情况，预计可在30天内完成回款",
+    "我们核对了应收账款明细账与销售合同，发现其中2笔大额应收账款对应的销售合同尚未完成双方盖章确认"
+   ],
+   "tgt": [
+    "Management represented that...",
+    "Our sample testing of...revealed that...",
+    "We attempted to contact...but have not received...to date",
+    "It should be noted that...",
+    "There is a risk that..."
+   ],
+   "traps": [
+    "误用\"We found that 3 clients didn't pay\"，未明确区分管理层表述与核查结果，应改为\"Management stated that...while our sample testing identified 3 clients with outstanding payments as of March 15, 2026\"",
+    "误用将来时描述已发生的核查结果，应改为使用过去式或现在完成时描述已完成的抽查动作",
+    "混用不同客户的披露信息，未按抽查样本分类说明，应逐条标注抽查的具体对象"
+   ]
+  },
+  {
+   "id": "fdd_income_tax_undercalculation",
+   "t": "所得税少计风险",
+   "lvl": "★★★",
+   "brief": "为买方尽调报告撰写所得税少计的发现段落，读者为买方deal team，可直接抄入税务风险章节。",
+   "facts": [
+    "管理层称FY24年度所得税费用已按25%的法定税率足额计提，无未缴税款",
+    "我们调取了FY24年度的企业所得税申报表与审计报告，发现公司实际享受了15%的高新技术企业税收优惠",
+    "我们核对了高新技术企业证书的有效期，发现该证书已于FY24年11月到期，且公司尚未完成重新认定",
+    "管理层表示正在准备重新认定材料，预计可在FY26年6月前完成审核",
+    "我们测算发现因税率差异导致FY24年少计提所得税费用约128万元人民币"
+   ],
+   "tgt": [
+    "Management indicated that...",
+    "Our review of the corporate tax return and audit report showed that...",
+    "As the high-tech enterprise certification expired in November 2024,...",
+    "There is a potential liability of...",
+    "Management has initiated the recertification process with an expected completion date of..."
+   ],
+   "traps": [
+    "混淆\"所得税费用\"与\"应交税费\"的概念，误用\"we found the company didn't pay enough tax\"，应改为\"we identified an underaccrual of corporate income tax expense\"",
+    "未说明税收优惠的具体政策依据，仅提及税率差异，应补充\"as per the high-tech enterprise preferential tax policy\"",
+    "使用绝对化表述\"must pay\"，未考虑管理层的重新认定计划，应改为\"potential additional tax liability\""
+   ]
+  },
+  {
+   "id": "fdd_inventory_obsolete_overstatement",
+   "t": "存货跌价多计风险",
+   "lvl": "★★★",
+   "brief": "为买方尽调报告撰写存货跌价多计的发现段落，读者为买方deal team，可直接抄入存货风险章节。",
+   "facts": [
+    "管理层称FY24年末存货跌价准备已按库龄分析足额计提，其中长库龄存货跌价准备计提比例为50%",
+    "我们抽查了FY24年末长库龄存货的明细清单，其中6项存货已在FY25年1-2月完成销售",
+    "我们核对了该6项存货的销售合同与回款凭证，确认销售价格高于其账面成本",
+    "管理层表示该6项存货的销售属于特殊促销安排，不属于正常存货周转",
+    "我们尝试获取该类促销安排的审批文件，截至发稿日仍未收到完整资料"
+   ],
+   "tgt": [
+    "Management argued that...",
+    "Our sample testing of aged inventory found that...",
+    "We reviewed the sales documents and confirmed that...",
+    "We have not yet received...to date",
+    "There is a risk that..."
+   ],
+   "traps": [
+    "使用\"the inventory was sold so no impairment\"的口语化表达，应改为\"the sold inventory no longer qualifies for impairment provision\"",
+    "未区分不同库龄存货的计提比例，仅笼统说明跌价准备情况，应明确标注\"50% provision for inventory over 12 months aged\"",
+    "误用现在时描述已完成的销售动作，应改为过去式\"were sold\"或现在完成时\"have been sold\""
+   ]
+  },
+  {
+   "id": "fdd_related_party_transaction_disclosure_gap",
+   "t": "关联方披露遗漏风险",
+   "lvl": "★★★",
+   "brief": "为买方尽调报告撰写关联方披露遗漏的发现段落，读者为买方deal team，可直接抄入关联方交易章节。",
+   "facts": [
+    "管理层称公司已披露所有关联方交易，共涉及12家关联方",
+    "我们通过工商信息查询系统核查了公司的股东与高管关联方，发现其中3家未披露的关联方为公司高管的直系亲属控制的企业",
+    "我们核对了FY24年度的关联交易明细账，发现该3家关联方累计发生交易金额约356万元人民币",
+    "管理层表示该3家企业未被纳入关联方清单是因为财务人员未更新关联方名单",
+    "我们尝试获取关联方名单的更新流程文件，截至发稿日仍未拿到相关制度"
+   ],
+   "tgt": [
+    "Management advised that...",
+    "Our third-party verification of shareholder and director connections identified...",
+    "The total value of undisclosed related party transactions for FY24 amounted to...",
+    "We have not yet obtained...to date",
+    "There is a risk that..."
+   ],
+   "traps": [
+    "混用\"related party\"和\"connected party\"的术语，未统一使用国际通用表述，应根据准则统一使用\"related party\"",
+    "直接说\"the company didn't disclose some transactions\"，未区分管理层表述与核查结果，应改为\"Management confirmed all related party transactions were disclosed, but our external review uncovered undisclosed related parties\"",
+    "未说明关联方与公司的具体关系，仅提及金额，应补充\"controlled by immediate family members of the company's executive directors\""
+   ]
   }
  ]
 }

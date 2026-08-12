@@ -33384,6 +33384,114 @@
    "src": "The Conversation",
    "srcen": "The Conversation (CC BY-ND)",
    "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_medicare_medicaid_anti_fraud_amendments",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977",
+   "why": "中国人写报告时常会用简单的“the 1977 Anti-Fraud and Abuse Law about Medicare and Medicaid”，这里用正式的立法术语Amendments，并且严格遵循官方法案命名顺序，格式更专业规范，符合财经监管类文本的正式写法。",
+   "when": "在报告中引用美国联邦监管法案、行业专项立法的正式场合。",
+   "slot": "the […] -[…] Anti-Fraud and Abuse Amendments of […]",
+   "swap": [
+    "1. the […] Anti-Fraud and Abuse Legislation of […]（用legislation替换amendments，泛指法案而非修订案）",
+    "2. the […] Anti-Fraud and Abuse Amendments enacted in […]（补充enacted in，更突出法案的颁布时间）"
+   ],
+   "para": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement. That led to the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977, which established the national Medicaid Fraud Control Units program.",
+   "srctitle": "Trump administration is withholding more than $1B in Medicaid funds from California and Minnesota, in latest example of weaponizing real and imagined fraud",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_established_the_national_medicaid_fraud_",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "which established the national Medicaid Fraud Control Units program.",
+   "why": "中国人常习惯用“this law set up a program called Medicaid Fraud Control Units”，这里用established直接搭配项目名称，句式紧凑正式，用national前置修饰项目范围，比拆分句式更符合英文财经报告的简洁书面表达习惯。",
+   "when": "在报告中描述某项政策法案设立具体监管执行机构或专项项目的场合。",
+   "slot": "which established the national […] program.",
+   "swap": [
+    "1. which launched the national […] program（用launched替换established，更侧重项目的启动落地）",
+    "2. which created the national framework for the […] program（补充framework，更突出体系搭建而非单纯设立）"
+   ],
+   "para": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement. That led to the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977, which established the national Medicaid Fraud Control Units program.",
+   "srctitle": "Trump administration is withholding more than $1B in Medicaid funds from California and Minnesota, in latest example of weaponizing real and imagined fraud",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_request_comment_on_proposal",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "requested comment on a proposal to modernize its rule",
+   "why": "中国人写官方财经公告常直接说“ask for opinions on a plan”，用requested comment比ask更正式专业，符合美联储官方文书的严谨风格，且to modernize its rule精准点明提案的核心目标，比笼统的plan更具体。",
+   "when": "官方发布监管规则修订征求意见的场合，比如央行、证监会发布政策修订征求公告时。",
+   "slot": "requested comment on a proposal to modernize its rule governing […]",
+   "swap": [
+    "sought feedback on a draft proposal to update its regulations for […]：更偏向书面化的内部监管修订场景，比原句稍显正式度略低",
+    "asked for public input on a plan to revise its rules for […]：更偏向面向大众的征求意见，语气更亲民，不如原句专业严谨"
+   ],
+   "para": "The Federal Reserve Board on Friday requested comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions. The proposal updates outdated thresholds while maintaining safeguards against preferential treatment.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731b.htm"
+  },
+  {
+   "id": "ph_trade_diversion",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "reflecting substantial trade diversion as exports shifted away from China",
+   "why": "中国人写这类报告常只会说“因为出口从中国转移了”，不会用trade diversion这个精准的经贸术语概括贸易转移的现象，substantial搭配diversion也比笼统的great更正式专业，句式用现在分词作伴随状语也比分开写两个短句更紧凑流畅。",
+   "when": "在写贸易转移、供应链重构类的财经分析报告时套用",
+   "slot": "reflecting substantial […] as […] shifted away from […]",
+   "swap": [
+    "1.  showing significant trade shift as exports moved out of China：相比原句更口语化，substantial比significant更正式，diversion比笼统的shift更精准指代贸易转移的专业含义",
+    "2.  indicating that trade diversion occurred when exports were redirected from China：多了不必要的从句结构，原句的现在分词伴随状语更简洁紧凑"
+   ],
+   "para": "In recent years, Vietnam has attracted considerable attention as a potential major beneficiary of the 2018-19 U.S.-China tariff increases, reflecting substantial trade diversion as exports shifted away from China (Alfaro and Chor, 2023; Freund et al., 2024). As shown in the left panel of Figure 1, U.S. imports from China declined sharply after the 2018-19 tariffs, while imports from Vietnam tripled by 2025.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_us_imports_trend",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "U.S. imports from China declined sharply after the 2018-19 tariffs, while imports from Vietnam tripled by 2025",
+   "why": "中国人常只会分开描述两个数据变化，不会用while精准对比两组反向/平行的趋势，tripled这个动词比increased three times更简洁地道，by 2025明确了时间节点的量化范围，比笼统的in 2025更准确。",
+   "when": "在对比两组贸易数据变化趋势的报告段落中套用",
+   "slot": "[…] declined sharply after […], while […] tripled by […]",
+   "swap": [
+    "1.  U.S. imports from China fell significantly after the 2018-19 tariffs, and imports from Vietnam increased three times by 2025：用and替代while失去了对比逻辑，tripled比increased three times更凝练，sharply比significantly更强调下降幅度之大",
+    "2.  U.S. imports from China dropped after the 2018-19 tariffs, and imports from Vietnam grew to three times the original size by 2025：表述过于啰嗦，原句的tripled更简洁专业"
+   ],
+   "para": "In recent years, Vietnam has attracted considerable attention as a potential major beneficiary of the 2018-19 U.S.-China tariff increases, reflecting substantial trade diversion as exports shifted away from China (Alfaro and Chor, 2023; Freund et al., 2024). As shown in the left panel of Figure 1, U.S. imports from China declined sharply after the 2018-19 tariffs, while imports from Vietnam tripled by 2025.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_attract_attention",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Vietnam has attracted considerable attention as a potential major beneficiary",
+   "why": "中国人常写Vietnam became a focus或者Vietnam was paid much attention，用attract considerable attention更符合财经报告的正式书面语习惯，potential major beneficiary的搭配也精准点明了越南的角色，比笼统的important country更专业。",
+   "when": "在分析某经济体成为政策红利受益者的报告开头套用",
+   "slot": "[…] has attracted considerable attention as a potential major beneficiary",
+   "swap": [
+    "1.  Vietnam has drawn much attention as a possible big beneficiary：considerable比much更正式，potential比possible更强调“潜在的”专业语境，major比big更贴合经贸报告的正式语气",
+    "2.  Vietnam was regarded as a major potential beneficiary and got lots of attention：语序颠倒且表述更口语化，原句的句式更紧凑正式"
+   ],
+   "para": "In recent years, Vietnam has attracted considerable attention as a potential major beneficiary of the 2018-19 U.S.-China tariff increases, reflecting substantial trade diversion as exports shifted away from China (Alfaro and Chor, 2023; Freund et al., 2024). As shown in the left panel of Figure 1, U.S. imports from China declined sharply after the 2018-19 tariffs, while imports from Vietnam tripled by 2025.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
   }
  ]
 }

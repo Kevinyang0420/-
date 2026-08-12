@@ -1267,7 +1267,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
 
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
 
-const BANKV = 'f29e299c';
+const BANKV = '5f3d06e9';
 
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
@@ -2602,6 +2602,10 @@ const ISSUES = ['语法', '中式直译', '搭配不地道', '语域偏了', '�
 function cleanZh(zh){
 
   if (!zh) return '';
+  /* 🚨 模型偶尔把字段填成**字符串** "null" / "undefined" / "N/A"。
+     `if (!zh)` 只挡得住真正的 null/undefined，挡不住这种字面量 ——
+     于是气泡里就显示一个大写的 "null"（实测撞到过一次）。 */
+  if (/^\s*(null|undefined|none|n\/a|nil)\s*[。.]?\s*$/i.test(String(zh))) return '';
 
   // 按句切，逐句过滤 —— 整段丢掉太粗暴，往往只有一句越界
 
@@ -6407,7 +6411,19 @@ async function render(d, mine){
 
   if (!d.said || !d.said.trim()){
 
-    $('#err').textContent = '没听清，再说一次（离麦克风近一点）'; return;
+    /* 🚨 **不许静默 return**。转写为空时原来只在 #err 留一行小字、
+       一个气泡都不画 —— 他看到的就是「说完了，屏幕上什么都没多」，
+       正是 Kevin 2026-08-12 说的「整个互动过程直接就没了」。
+       语音这条路转写为空是常事（环境吵 / 说太短 / ASR 抽风），
+       所以这一轮必须**看得见**，而且能回放自己刚才说的，
+       他才判断得出是自己没说清、还是机器没听清。 */
+    const _el = bubble('you', '你', '（这一句没转出文字）');
+    attachReplay(_el, mine);
+    bubble('alex', 'Alex',
+      '这句我没听清 —— 点上面的「🎙 听我刚才说的」回放一下：'
+      + '录音里能听清的话多半是环境音太大；录音本身也很轻，就离麦克风近一点再说一次。');
+    $('#err').textContent = '';
+    return;
 
   }
 
