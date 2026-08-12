@@ -5055,6 +5055,114 @@ function lvlDots(lv){
 
 /* 这一场练过几次 —— 从对话历史里数，让首页有「进度感」 */
 
+
+/* ═══ 推荐多样性：碰得越多的类别，排得越后 ═══
+   Kevin 2026-08-12：「每次给我推荐的内容都很类似，比如『一次性费用』之类的，
+   我看过好几次都是推这个……如果我点击、碰到某个 category 的次数越多，
+   算法就可以往后算一些，尽量推荐一些没有做过的 category 出来。
+   已经说过的话题就往下沉，打开口语陪练之后用户肯定最想看到更新鲜的话题。」
+
+   🚨 先量过再动手：场景库 4150 张，七大类各占 10–20%，
+      「一次性/非经常」只占 0.6% —— **库存分布没问题，是算法只有一层**。
+      原来只按 `practised(id)` 排：同一大类、同一子话题里连着推，
+      他看到的就是「老是这一类」。
+
+   两级衰减（id 形如 `wk_clarify_non_recurring_items`）：
+     一级 = 大类 wk（7 种）
+     二级 = 子话题 clarify（274 种，最大只占 1.9%，粒度正好）
+   碰过的次数越多，排序分越大、越靠后。 */
+
+/* 我碰过的账：从练习记录里数，不另存一份 —— 单一数据源。
+   🚨 缓存一次，别在 sort 的比较函数里反复扫 loadSess()：
+      4150 张 × O(n log n) 次比较，每次都扫一遍会明显卡。 */
+let _touchCache = null, _touchStamp = 0;
+
+function touchCounts(){
+  const now = Date.now();
+  if (_touchCache && now - _touchStamp < 3000) return _touchCache;
+  const cat = {}, sub = {}, one = {};
+  try {
+    (loadSess() || []).forEach(s => {
+      if (!s || !s.scn || !(s.turns && s.turns.length)) return;
+      const p = String(s.scn).split('_');
+      one[s.scn] = (one[s.scn] || 0) + 1;
+      if (p[0]) cat[p[0]] = (cat[p[0]] || 0) + 1;
+      if (p[1]) sub[p[0] + '_' + p[1]] = (sub[p[0] + '_' + p[1]] || 0) + 1;
+    });
+  } catch(_){}
+  _touchCache = {cat: cat, sub: sub, one: one};
+  _touchStamp = now;
+  return _touchCache;
+}
+function touchBust(){ _touchCache = null; }   // 练完一场要让它重算
+
+/* 排序分：越小越靠前。
+   权重拉开量级，保证「练过的」一定沉到「没练过的」后面，
+   同理「碰过的子话题」压过「碰过的大类」—— 三层不会互相串味。 */
+function freshRank(sc){
+  const t = touchCounts();
+  const p = String(sc.id).split('_');
+  const done = t.one[sc.id] || 0;                    // 这一张练过几次
+  const subN = t.sub[p[0] + '_' + p[1]] || 0;        // 这个子话题碰过几次
+  const catN = t.cat[p[0]] || 0;                     // 这个大类碰过几次
+  /* 🚨 大类那一项**开根号**：碰 9 次不该比碰 1 次「难看」9 倍 ——
+     否则他多练两次尽调，整个尽调类就被永久打入冷宫，
+     而他本来就是做尽调的。要的是「换换口味」，不是「换个专业」。 */
+  return done * 10000 + subN * 100 + Math.sqrt(catN) * 10;
+}
+
+/* 稳定的打散：同分的按 id 哈希排，且哈希带当天种子 ——
+   不然同分的永远是同一个排最前，等于没打散。 */
+
+/* 排好序的推荐列表：**按类别轮转**，不是一路排序。
+
+   🚨 第一版写成「加权求和 + sort」，测出来一个真缺陷：
+      纯加权之下，只要某大类被碰过一次，**整个大类就沉到所有未碰类别之后**。
+      他是做尽调的，练几次 dd 就再也看不到 dd —— 那不是「换口味」，是「换专业」。
+      加根号、加封顶都救不了：只要罚分 > 0，就排在所有 0 分的后面。
+
+      正解是**轮转**：每一轮从每个大类各取一张，碰得少的大类先取。
+      这样前 N 条必然铺开好几个类别，而他的主业也一直在场，只是不再霸屏。 */
+function freshOrder(list){
+  const t = touchCounts();
+  const by = {};
+  (list || []).forEach(sc => {
+    const cat = String(sc.id).split('_')[0];
+    (by[cat] = by[cat] || []).push(sc);
+  });
+  const h = x => [...String(x)].reduce((k, c) => (k * 31 + c.charCodeAt(0)) % 9973, 7);
+  // 每个大类内部：没练过的在前 → 碰得少的子话题在前 → 哈希打散
+  Object.keys(by).forEach(c => by[c].sort((a, b) => {
+    const pa = t.one[a.id] || 0, pb = t.one[b.id] || 0;
+    if (pa !== pb) return pa - pb;
+    const sa = String(a.id).split('_'), sb = String(b.id).split('_');
+    const ta = t.sub[sa[0] + '_' + sa[1]] || 0, tb = t.sub[sb[0] + '_' + sb[1]] || 0;
+    if (ta !== tb) return ta - tb;
+    return h(a.id + DAYSEED) - h(b.id + DAYSEED);
+  }));
+  // 大类的取用顺序：碰得少的先来；同样次数的按当天哈希转，别每天都同一个打头
+  const cats = Object.keys(by).sort((a, b) => {
+    const d = (t.cat[a] || 0) - (t.cat[b] || 0);
+    return d || (h(a + DAYSEED) - h(b + DAYSEED));
+  });
+  const out = [];
+  for (let i = 0; out.length < (list || []).length; i++){
+    let moved = false;
+    for (const c of cats){
+      if (by[c].length > i){ out.push(by[c][i]); moved = true; }
+    }
+    if (!moved) break;
+  }
+  return out;
+}
+
+function freshCmp(a, b){
+  const d = freshRank(a) - freshRank(b);
+  if (d) return d;
+  const h = x => [...String(x)].reduce((k, c) => (k * 31 + c.charCodeAt(0)) % 9973, 7);
+  return h(a.id + DAYSEED) - h(b.id + DAYSEED);
+}
+
 function practised(id){
 
   return loadSess().filter(x => x.scn === id && x.turns && x.turns.length).length;
@@ -5099,7 +5207,9 @@ function showList(){
 
   const h = x => [...x].reduce((k,c) => (k*31 + c.charCodeAt(0)) % 9973, 7);
 
-  const freshScn = pool.slice().sort((a,b) => h(a.id+DAYSEED) - h(b.id+DAYSEED))[0];
+  /* 不再只按哈希挑 —— 那样只保证「每天不同」，不保证「换个类别」。
+     freshCmp 会把碰过的大类 / 子话题往后压。 */
+  const freshScn = freshOrder(pool)[0];
 
   const cnt = lv => SCENARIOS.filter(x => lvlNum(x.lvl) === lv).length;
 
@@ -5401,21 +5511,15 @@ function paintCards(){
 
      避免第二名又变成新的「永远第一」。 */
 
-  const hit = SCENARIOS.map((sc,i) => [sc,i])
-
-    .filter(([sc]) => sc.id.startsWith(pre) && (!LV || lvlNum(sc.lvl) === LV))
-
-    .sort((a,b) => {
-
-      const d = practised(a[0].id) - practised(b[0].id);
-
-      if (d) return d;
-
-      const h = x => [...x].reduce((k,c) => (k*31 + c.charCodeAt(0)) % 9973, 7);
-
-      return h(a[0].id + DAYSEED) - h(b[0].id + DAYSEED);
-
-    });
+  /* 🚨 按**类别轮转**取，不是一路排序。
+     纯加权排序有个真缺陷：只要某大类被碰过一次，整个大类就沉到
+     所有未碰类别之后 —— 他是做尽调的，练几次 dd 就再也看不到 dd，
+     那不是「换口味」是「换专业」。轮转能保证前几条铺开多个类别，
+     同时他的主业一直在场、只是不再霸屏。 */
+  const _idx = new Map(SCENARIOS.map((sc, i) => [sc.id, i]));
+  const hit = freshOrder(SCENARIOS.filter(
+      sc => sc.id.startsWith(pre) && (!LV || lvlNum(sc.lvl) === LV)))
+    .map(sc => [sc, _idx.get(sc.id)]);
 
   if (!hit.length){
 
