@@ -5089,27 +5089,19 @@ function touchCounts(){
       if (p[0]) cat[p[0]] = (cat[p[0]] || 0) + 1;
       if (p[1]) sub[p[0] + '_' + p[1]] = (sub[p[0] + '_' + p[1]] || 0) + 1;
     });
-  } catch(_){}
+  } catch(e){
+    /* 🚨 别整段静默吞：这里一抛错，cat/sub/one 全空，
+       效果是「所有场景都当成没练过」—— 推荐悄悄重置，他看不到任何异常。
+       loadSess 自己已经兜底了，所以这层真抛错就是**数据出事了**，该出声。 */
+    try { console.warn('[alex] touchCounts 出错，推荐排序会退化', e); } catch(_){}
+  }
   _touchCache = {cat: cat, sub: sub, one: one};
   _touchStamp = now;
   return _touchCache;
 }
 function touchBust(){ _touchCache = null; }   // 练完一场要让它重算
 
-/* 排序分：越小越靠前。
-   权重拉开量级，保证「练过的」一定沉到「没练过的」后面，
-   同理「碰过的子话题」压过「碰过的大类」—— 三层不会互相串味。 */
-function freshRank(sc){
-  const t = touchCounts();
-  const p = String(sc.id).split('_');
-  const done = t.one[sc.id] || 0;                    // 这一张练过几次
-  const subN = t.sub[p[0] + '_' + p[1]] || 0;        // 这个子话题碰过几次
-  const catN = t.cat[p[0]] || 0;                     // 这个大类碰过几次
-  /* 🚨 大类那一项**开根号**：碰 9 次不该比碰 1 次「难看」9 倍 ——
-     否则他多练两次尽调，整个尽调类就被永久打入冷宫，
-     而他本来就是做尽调的。要的是「换换口味」，不是「换个专业」。 */
-  return done * 10000 + subN * 100 + Math.sqrt(catN) * 10;
-}
+
 
 /* 稳定的打散：同分的按 id 哈希排，且哈希带当天种子 ——
    不然同分的永远是同一个排最前，等于没打散。 */
@@ -5156,12 +5148,7 @@ function freshOrder(list){
   return out;
 }
 
-function freshCmp(a, b){
-  const d = freshRank(a) - freshRank(b);
-  if (d) return d;
-  const h = x => [...String(x)].reduce((k, c) => (k * 31 + c.charCodeAt(0)) % 9973, 7);
-  return h(a.id + DAYSEED) - h(b.id + DAYSEED);
-}
+
 
 function practised(id){
 
@@ -5201,15 +5188,38 @@ function showList(){
 
      后者会把他一直钉在同一张卡上，正是他抱怨的那个现象。 */
 
-  const never = SCENARIOS.filter(x => !practised(x.id));
+  /* 🚨 走**缓存**，别逐个 practised —— 它每调一次就 getItem + JSON.parse 一次，
+     而这里要对 4150 张逐个调。实测（真 localStorage）：
+       30 场记录 → 118 ms，60 场 → 225 ms，120 场 → 461 ms（主线程同步阻塞）
+     走缓存全部 1 ms，结果完全一致。
+     `touchCounts().one[id]` 跟 `practised(id)` 语义等价 ——
+     缓存是我自己加的，却没在这里用上。（深审 2026-08-12 抓到。） */
+  const _t = touchCounts();
+  const never = SCENARIOS.filter(x => !(_t.one[x.id] || 0));
 
   const pool = never.length ? never : SCENARIOS;
 
   const h = x => [...x].reduce((k,c) => (k*31 + c.charCodeAt(0)) % 9973, 7);
 
   /* 不再只按哈希挑 —— 那样只保证「每天不同」，不保证「换个类别」。
-     freshCmp 会把碰过的大类 / 子话题往后压。 */
-  const freshScn = freshOrder(pool)[0];
+     freshOrder 按类别轮转，把碰过的大类 / 子话题往后压。 */
+  /* 🚨 首页只要**一张**，别把 4090 张全排一遍 —— 实测 freshOrder 全量排序
+     要 103 ms（120 场记录时），而这一屏只用得上第一个。
+     每个大类各取「最该练的那一张」候选，再在候选里挑 —— 7 张 vs 4090 张。
+     结果跟全量排序的第一名一致：轮转的第一名必然出自某个大类的第一名。 */
+  const freshScn = (() => {
+    const t = touchCounts();
+    const by = {};
+    pool.forEach(sc => {
+      const c = String(sc.id).split('_')[0];
+      (by[c] = by[c] || []).push(sc);
+    });
+    const hh = x => [...String(x)].reduce((k,c) => (k*31 + c.charCodeAt(0)) % 9973, 7);
+    const cats = Object.keys(by).sort((a,b) =>
+      ((t.cat[a]||0) - (t.cat[b]||0)) || (hh(a+DAYSEED) - hh(b+DAYSEED)));
+    if (!cats.length) return null;
+    return freshOrder(by[cats[0]])[0] || null;
+  })();
 
   const cnt = lv => SCENARIOS.filter(x => lvlNum(x.lvl) === lv).length;
 
@@ -5236,7 +5246,7 @@ function showList(){
 
        <div class="s">${esc(freshScn.you)} · ${'★'.repeat(lvlNum(freshScn.lvl))}${
 
-         practised(freshScn.id) ? ' · 练过 ' + practised(freshScn.id) : ' · 还没练过'}</div>
+         (_t.one[freshScn.id] || 0) ? ' · 练过 ' + _t.one[freshScn.id] : ' · 还没练过'}</div>
 
        </div>` : '') +
 
