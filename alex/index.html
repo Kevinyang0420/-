@@ -6284,6 +6284,10 @@ function sessNew(scn){
 }
 
 async function sessSave(s){
+  /* 写了新记录就让推荐缓存失效 —— 否则练完一场，排序还是按几秒前
+     那份旧账算，「练过的沉底」当场就不灵。
+     （touchBust 原来只定义、没人调 = 死代码，这层缓存永远不刷新。） */
+  try { touchBust(); } catch(_){}
   if (!s || !s.turns || !s.turns.length) return null;   // 一轮没说就不留
   s.sec = Math.round((Date.now() - s.t0) / 1000);
   try {
