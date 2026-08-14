@@ -4775,18 +4775,44 @@ function audioStop(){
 
 
 
+/* 远程音频要缓冲：按钮上给可见反馈，否则他会以为没反应、再点一下。
+   （2026-08-14：这个函数被我删死代码的正则误删过一次，
+     结果点播放直接 ReferenceError，play() 执行不到 —— 「点了没声音」。） */
+function _loadingHint(btn, au){
+  try {
+    if (!btn || !au || au.readyState >= 3) return;
+    if (!btn.dataset.label) btn.dataset.label = btn.textContent;
+    btn.textContent = '加载中…';
+    const restore = () => {
+      if (btn.dataset.label) btn.textContent = btn.dataset.label;
+      au.removeEventListener('playing', restore);
+      au.removeEventListener('error', restore);
+    };
+    au.addEventListener('playing', restore);
+    au.addEventListener('error', restore);
+    setTimeout(() => { if (btn.textContent === '加载中…') restore(); }, 12000);
+  } catch(_){
+    /* 🚨 这是个**纯装饰**的反馈，绝不能因为它出问题而挡住播放。
+       上一次就是它抛异常把 play() 挡在后面的。 */
+  }
+}
+
+/* 「真的在出声吗」——不是「有没有 audio 对象」。
+   readyState>=3 表示至少能连续播一小段；currentTime>0 表示确实已经在走。 */
+
 function audioClaim(key, stopFn){
+  /* 认领音频通道：先停掉当前在响的那个，再把通道交给新来的。
 
-  const same = AUDIO.key !== null && AUDIO.key === key;
-
+     🚨 **不再有「再点一次 = 停」**（2026-08-14 去掉）。
+        那是我修回声时顺手加的，他从没要求过，却带来一整类问题：
+        任何「第一下没听到 → 再点一下」的情形都会变成静音 ——
+        而手机 + 远程流 + 静音开关，这种情形太常见了。
+        现在每次点都是**从头重播**：回声照样不会有（同一个 <audio>
+        先 pause 再 play，不会叠），跨来源互斥也还在。
+        少一个状态，就少一整类 bug。 */
   audioStop();
-
-  if (same) return false;                   // 再点一次 = 停下，不再开第二遍
-
   AUDIO.key = key; AUDIO.stop = stopFn;
-
   return true;
-
 }
 
 
@@ -5804,9 +5830,9 @@ function recPlayBtn(t){
   let a = null, url = null;
   const key = 'rec:' + t.audio;
   b.onclick = async () => {
-    if (!audioClaim(key, () => { if (a) a.pause(); b.classList.remove('on'); })){
-      b.classList.remove('on'); return;         // 再点一次 = 停
-    }
+    /* 认领通道：会停掉当前在响的别的声源。**不再有「再点一次=停」** ——
+       那会让「第一下没听到就再点一下」变成静音（2026-08-14 他撞到）。 */
+    audioClaim(key, () => { if (a) a.pause(); b.classList.remove('on'); });
     if (!a){
       const blob = await sessGetAudio(t.audio);
       if (!blob){
@@ -6480,14 +6506,9 @@ function attachReplay(el, it){
   b.onclick = () => {
 
     if (it.gone) return;
-
-    if (!audioClaim(key, () => { if (a) a.pause(); b.classList.remove('on'); })){
-
-      b.classList.remove('on');
-
-      return;                       // 同一个按钮再点一次 = 停
-
-    }
+    /* 认领通道：会停掉当前在响的别的声源。**不再有「再点一次=停」** ——
+       那会让「第一下没听到就再点一下」变成静音（2026-08-14 他撞到）。 */
+    audioClaim(key, () => { if (a) a.pause(); b.classList.remove('on'); });
 
     if (!a){
 
@@ -8076,14 +8097,9 @@ function player(it, autoplay){
       b.onclick = () => {
 
         // 🚨 跨卡片也要互斥：au.pause() 只管自己这一个 <audio>
-
-        if (!audioClaim(KEY + ':' + rate, () => { au.pause(); })){
-
-          b.classList.remove('on');
-
-          return;                   // 同一个按钮再点一次 = 停
-
-        }
+        /* 认领通道：会停掉当前在响的别的声源。**不再有「再点一次=停」** ——
+           那会让「第一下没听到就再点一下」变成静音（2026-08-14 他撞到）。 */
+        audioClaim(KEY + ':' + rate, () => { au.pause(); });
 
         au.pause(); au.playbackRate = rate;
 
@@ -8091,6 +8107,7 @@ function player(it, autoplay){
 
         if (au.readyState >= 1) seg(); else au.onloadedmetadata = seg;
 
+        _loadingHint(b, au);   // 看得见在加载，他才不会去点第二下
         b.classList.add('on'); au.play().catch(()=>{}); };
 
       return b;
@@ -8162,14 +8179,9 @@ function player(it, autoplay){
     b.className = 'play'; b.style.marginRight = '8px'; b.textContent = label;
 
     b.onclick = () => {
-
-      if (!audioClaim(KEY + ':' + rate, () => { au.pause(); })){
-
-        b.classList.remove('on');
-
-        return;                     // 同一个按钮再点一次 = 停
-
-      }
+      /* 认领通道：会停掉当前在响的别的声源。**不再有「再点一次=停」** ——
+         那会让「第一下没听到就再点一下」变成静音（2026-08-14 他撞到）。 */
+      audioClaim(KEY + ':' + rate, () => { au.pause(); });
 
       au.pause();
 
@@ -8181,6 +8193,7 @@ function player(it, autoplay){
 
       b.classList.add('on');
 
+      _loadingHint(b, au);   // 看得见在加载，他才不会去点第二下
       au.play().catch(()=>{ $('#err') && ($('#err').textContent = ''); });
 
     };
