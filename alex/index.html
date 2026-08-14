@@ -2348,6 +2348,14 @@ Alex speaks 标准现代白话. 禁用 惟/该等/系/载明/所载/据以. Engl
 
    knowing he was wrong and still not knowing what to say. Put the finished line in
 
+   🚨 "better" is **HIS** line, not the character's. He reads it aloud.
+      It must keep the SAME speech act: if he asked a question, "better" is
+      still a question; if he pushed back, it still pushes back.
+      NEVER put the character's answer in "better" — that belongs in
+      "in_character". (2026-08-14 real failure: he asked the CFO about an SPE
+       and "better" came back as the CFO's own reply. Two English sentences
+       in one response and the model swapped them.)
+
    "better": the WHOLE utterance, rewritten, in English, ready to say word-for-word
 
    in this exact situation — not a fragment, not a template with blanks, not a
@@ -2434,7 +2442,7 @@ OUTPUT — exactly one JSON object, no markdown fence, no other text:
 
             但 PERMIT 若是密度 1（每句都纠），句子没问题时也要写一句肯定的话",
 
- "better":"他本该说的完整英文整句；不破戏时为 null",
+ "better":"**他**本该说的完整英文整句 —— 不是对方的回话！保持同一个言语行为：他在问就还是问；不破戏时为 null",
 
  "dimension":["D7"],"severity":"high","pattern":"d7-conclusion-without-evidence",
 
@@ -2681,6 +2689,19 @@ function cleanZh(zh){
 }
 
 /* 三槽拼成一句中文。拼不出来（模型没填）就退回过滤后的 alex_zh。 */
+
+/* 「该这么说」不许是对方的台词。
+   🚨 Kevin 2026-08-14 撞到：better 里出现的是 CFO 的回话，跟「对方」气泡几乎一样。
+      提示词已经说死了，但**提示词会漂，闸门不会** —— 这一层才是真正兜住的。
+   判据：两句话的词重合度 > 0.6 就认定串台，不显示 better（纠错本身照常给）。 */
+function betterBled(d){
+  const a = String((d && d.better) || '').toLowerCase().match(/[a-z']+/g) || [];
+  const b = String((d && d.in_character) || '').toLowerCase().match(/[a-z']+/g) || [];
+  if (a.length < 6 || b.length < 6) return false;
+  const B = new Set(b);
+  const hit = a.filter(w => B.has(w)).length;
+  return hit / a.length > 0.6;
+}
 
 function critique(d){
 
@@ -6653,7 +6674,7 @@ async function render(d, mine){
 
     const el = bubble('alex','Alex', critique(d) || d.said && '这句可以。', lv);
 
-    if (d.level === 'polish' && d.better){
+    if (d.level === 'polish' && d.better && !betterBled(d)){
 
       const box = document.createElement('div');
 
@@ -6693,7 +6714,7 @@ async function render(d, mine){
 
     // 「该这么说」—— 完整整句，带播放键，这是他最要的东西
 
-    if (d.better){
+    if (d.better && !betterBled(d)){
 
       const box = document.createElement('div');
 
