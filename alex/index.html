@@ -13526,11 +13526,14 @@ function showDict(q){
         'border-radius:12px;font-size:16px;background:var(--card);color:var(--fg)">' +
       '<button id="dgo" class="btn" style="flex:0 0 auto;padding:0 18px">查</button>' +
     '</div>' +
-    '<div class="note" style="margin:0 0 10px">' +
+    /* 🚨 说明文字和历史 chips 都排在**结果上面**的话，等于把结果往下推一百多像素，
+       小屏上收藏键就掉出第一屏。所以：出了结果就把说明收起来（那是给第一次用的人看的），
+       历史挪到结果**下面**（它是「再查一次」的入口，不是主线）。 */
+    '<div class="note" id="dhint" style="margin:0 0 10px">' +
       '单词给音标、义项、搭配；词组和句式给「什么场合用、能不能写进报告」；' +
       '直接输中文就给几个地道说法让你挑。' +
     '</div>' +
-    '<div id="dhist"></div><div id="dres"></div>';
+    '<div id="dres"></div><div id="dhist" style="margin-top:14px"></div>';
   bindDictTop();
   const inp = $('#dq'), btn = $('#dgo');
   inp.value = (q != null && q !== '') ? normQ(q) : (DICT.q || '');
@@ -13666,6 +13669,49 @@ function saveMini(e){
   return s;
 }
 
+/* 主词条的收藏行：两个本子都摆出来，默认那本排前面，收过的多一个去掉键。
+   🚨 它必须长在**词条头那张卡里面**，不能是后面单独的一张卡。
+      单独一张卡时，前面的标题栏／搜索框／历史 chips 一挤，它在 375×667 的小屏上
+      就掉到第一屏外（实测 690px vs 一屏 667px）—— 而「要滚才看得见」正是
+      他反馈的那句「根本没地方点」。长在头卡里就跟屏高无关了。 */
+function bookRow(e){
+  const row = document.createElement('div');
+  if (!e) return row;
+  row.style.cssText = 'display:flex;align-items:center;gap:7px;flex-wrap:wrap;' +
+    'margin-top:11px;padding-top:10px;border-top:1px solid var(--line)';
+  const id = qId(e.q || e.w);
+  const rec = nbFind(id);
+  const lab = document.createElement('span');
+  lab.style.cssText = 'font-size:12px;color:var(--muted);font-weight:700';
+  lab.textContent = rec ? '已在' + BOOKS[rec.book] : '收进';
+  row.appendChild(lab);
+  const order = [bookFor(e)];
+  Object.keys(BOOKS).forEach(k => { if (order.indexOf(k) < 0) order.push(k); });
+  order.forEach(bk => {
+    const b = document.createElement('button');
+    const on = !!(rec && rec.book === bk);
+    b.className = 'rchip' + (on ? ' on' : '');
+    b.style.cssText = 'font-size:12.5px;padding:5px 12px;margin:0';
+    b.textContent = (on ? '✓ ' : '') + BOOKS[bk];
+    b.onclick = ev => { ev.stopPropagation(); doSave(e, bk); };
+    row.appendChild(b);
+  });
+  if (rec){
+    const d = document.createElement('button');
+    d.className = 'rchip';
+    d.style.cssText = 'font-size:12.5px;padding:5px 10px;margin:0';
+    d.textContent = '🗑';
+    d.title = '从本子里去掉';
+    d.onclick = ev => {
+      ev.stopPropagation();
+      if (nbDel(id)){ toast('去掉了'); redrawDict(); refreshDictTop(); }
+      else toast('删不动（存储满了）');
+    };
+    row.appendChild(d);
+  }
+  return row;
+}
+
 function wordCard(e){
   const box = document.createElement('div');
   box.className = 'better';
@@ -13681,6 +13727,7 @@ function wordCard(e){
   box.appendChild(playBtn(e.w || e.q, '🔊 读一遍'));
   const yg = youglish(e.w || e.q);
   if (yg) box.appendChild(yg);
+  box.appendChild(bookRow(e));
   return box;
 }
 
@@ -13744,7 +13791,7 @@ function zhCard(e){
        靠 redrawDict() 保持一致（各自 paint 必然一个✓一个☆）。 */
     const cs = Array.isArray(e.cands) ? e.cands : [];
     const hit = cs.find(c => c && c.en && ENORM(c.en) === ENORM(e.pick)) || {en: e.pick, cn: e.why};
-    box.appendChild(saveMini(candEntry(e.w || e.q, hit)));
+    box.appendChild(bookRow(candEntry(e.w || e.q, hit)));
   }
   return box;
 }
@@ -13784,15 +13831,19 @@ function dictRender(e, cached){
   const res = $('#dres');
   if (!res || !e) return;
   DICT._cached = !!cached;
+  // 有结果了就把那段说明收起来 —— 它每多占一行，收藏键就往下掉一行
+  const hint = $('#dhint');
+  if (hint) hint.hidden = true;
   res.innerHTML = '';
   if (e.kind === 'zh'){
     res.appendChild(zhCard(e));
     res.appendChild(candsBlock(e));
   } else {
+    /* 🚨 收藏键长在 wordCard / zhCard **里面**（`bookRow`），不再是单独一张卡。
+       第一版放在整条词条最底下 —— 实测 y=1752、一屏 812px，他直接说
+       「根本没地方点」。第二版挪成词条后面第一张卡，812 的屏够了，
+       但 375×667 的小屏仍然落在 690px（第一屏外）。长在头卡里才跟屏高无关。 */
     res.appendChild(wordCard(e));
-    /* 🚨 收藏键必须在**第一屏**。原来放在整条词条最底下（实测 y=1752、
-       一屏 812px），他翻到一半就以为「根本没地方点」—— 属实。 */
-    res.appendChild(nbBar(e));
     res.appendChild(defsBlock(e));
     const cb = collBlock(e); if (cb) res.appendChild(cb);
     if (e.biz) res.appendChild(dSec('🧾 报告里怎么用',
@@ -13821,40 +13872,8 @@ function dictRender(e, cached){
   bindSay(res);
 }
 
-/* 主词条的收藏条：两个本子都摆出来，默认那本排前面。 */
-function nbBar(e){
-  const wrap = document.createElement('div');
-  wrap.className = 'card';
-  const id = qId(e.q || e.w);
-  const rec = nbFind(id);
-  wrap.innerHTML = '<div class="hd"><span class="role">📒 收进本子</span>' +
-    (rec ? '<span class="done">已在' + BOOKS[rec.book] + '</span>' : '') + '</div>' +
-    '<div class="t" style="margin:2px 0 9px">' +
-      (rec ? '想换个本子直接点另一个，复习进度不会清零。'
-           : '收进去以后能在「我的本子」里翻，也会排进每天的复习。') + '</div>';
-  const order = [bookFor(e)];
-  Object.keys(BOOKS).forEach(k => { if (order.indexOf(k) < 0) order.push(k); });
-  order.forEach(bk => {
-    const b = document.createElement('button');
-    const on = !!(rec && rec.book === bk);
-    b.className = 'rchip' + (on ? ' on' : '');
-    b.textContent = (on ? '✓ ' : '') + BOOKS[bk];
-    b.style.marginRight = '8px';
-    b.onclick = () => doSave(e, bk);
-    wrap.appendChild(b);
-  });
-  if (rec){
-    const d = document.createElement('button');
-    d.className = 'play';
-    d.textContent = '🗑 从本子里去掉';
-    d.onclick = () => {
-      if (nbDel(id)){ toast('去掉了'); redrawDict(); refreshDictTop(); }
-      else toast('删不动（存储满了）');
-    };
-    wrap.appendChild(d);
-  }
-  return wrap;
-}
+/* 主词条的收藏行现在长在 wordCard / zhCard 里（`bookRow`），
+   原来那张单独的「📒 收进本子」卡已经删掉 —— 留着就是第二套状态，迟早走样。 */
 
 /* ═══ 我的本子 ═══ */
 function showNotebook(){
