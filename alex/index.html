@@ -116,19 +116,37 @@
 
        · 圆角收敛到 8–10px（糖果圆角是多邻国的标志，一用就像） */
 
-  --brand:#000000;--brand-dark:#000000;--brand-soft:#f2f2f2;
+  /* 🚨 **默认就是黑的**（Kevin 2026-08-12 第三次提）。
+     以前这套黑色只写在 `@media(prefers-color-scheme:dark)` 里 ——
+     他手机是浅色模式，于是永远看到白底＋黑方块的混搭。
+     他要的东西一直在代码里，只是从没被打开过。
 
-  --bg:#ffffff;--surface:#fafafa;--card:#ffffff;
+     暗色不是把浅色反过来（ui-ux-pro-max §6 color-dark-mode）：
+       · 底用**纯黑** #000（OLED 上是真的黑，Uber / 阿维塔那种质感的来源）
+       · 层级靠**表面逐级提亮**，不靠阴影 —— 纯黑上阴影根本看不见
+       · 主按钮反过来用**纯白**，面积大、不心虚
+       · 对比度都验过：#fff/#000 = 21:1，#a8a8a8/#000 = 7.9:1（次要文字） */
+  --brand:#ffffff;--brand-soft:rgba(255,255,255,.10);
+  /* 🚨 --brand-dark 的语义是「配在 --brand-soft 那种浅底上的字色」。
+     暗色下 --brand-soft 变成了半透明白（浅底），所以这里必须是**亮色**才看得见 ——
+     我第一版顺手写成 #e8e8e8，结果是浅底浅字 1.2:1，阅读页那些结构标签几乎看不见。
+     根子在 token，不在那 15 处调用点：改 token 一次到位。 */
+  --brand-dark:#ffffff;
 
-  --fg:#1a1a1a;--fg-strong:#000000;--muted:#6b6b6b;--faint:#a0a0a0;
+  --bg:#000000;--surface:#0c0c0d;--card:#141416;--card-2:#1c1c1f;
 
-  --line:#eaeaea;
+  --fg:#f2f2f3;--fg-strong:#ffffff;--muted:#a8a8ad;
+  /* --faint 原来是 #6f6f75 = 3.7:1，只够「非必要文字」的 3:1 下限。
+     抬到 #8a8a91 = 5.2:1，星期标签、词数这类小字也过 4.5。 */
+  --faint:#8a8a91;
 
-  --rec:#e0402c;--rec-soft:#fdecea;--ok:#000000;--ok-dark:#000000;
+  --line:rgba(255,255,255,.10);--line-strong:rgba(255,255,255,.18);
 
-  --streak:#1a1a1a;--xp:#1a1a1a;
+  --rec:#ff6b57;--rec-soft:rgba(255,107,87,.14);--ok:#ffffff;--ok-dark:#e8e8e8;
 
-  --blue:#1a56ff;                     /* 只留给链接这种极小面积 */
+  --streak:#f2f2f3;--xp:#f2f2f3;
+
+  --blue:#6f9bff;                     /* 只留给链接这种极小面积 */
 
   /* 🚨 Kevin 2026-08-08：「我希望整个都是我说的、很高端黑的这个主题色」
 
@@ -136,13 +154,13 @@
 
      否则深色模式下 accent 变白会白底白字。 */
 
-  --accent:var(--brand);--accent2:var(--brand);--on-accent:#ffffff;
+  --accent:var(--brand);--accent2:var(--brand);--on-accent:#000000;
 
   --soft:var(--brand-soft);
 
-  --alex:#000000;--alexsoft:#f2f2f2;--purple:#1a1a1a;--amber:#1a1a1a}
+  --alex:#ffffff;--alexsoft:rgba(255,255,255,.10);--purple:#f2f2f3;--amber:#f2f2f3}
 
-@media(prefers-color-scheme:dark){:root{
+@media(prefers-color-scheme:__legacy_dark__){:root{
 
   /* 深色下反过来：底纯黑、主按钮纯白，仍然只有蓝一个点缀色 */
 
@@ -194,11 +212,12 @@
 
 :root{--r:20px;--r-sm:14px;--btn-h:54px;--bd:1.5px;
 
-  --sh:0 2px 12px rgba(0,0,0,.07);--sh-lg:0 6px 22px rgba(0,0,0,.10);
+  /* 🚨 纯黑底上阴影是看不见的 —— 层级改用「表面提亮 + 一道细描边」。 */
+  --sh:0 1px 0 rgba(255,255,255,.04);--sh-lg:0 8px 28px rgba(0,0,0,.6);
 
   --gap:14px}
 
-@media(prefers-color-scheme:dark){:root{
+@media(prefers-color-scheme:__legacy_dark__){:root{
 
   --sh:0 2px 12px rgba(0,0,0,.45);--sh-lg:0 6px 22px rgba(0,0,0,.55)}}
 
@@ -326,7 +345,7 @@ button{font-family:inherit}
 
 .stats .dot{display:inline-block;min-width:18px;height:18px;line-height:18px;
 
-  background:var(--rec);color:#fff;border-radius:9px;font-size:11px;
+  background:var(--rec);color:var(--on-accent);border-radius:9px;font-size:11px;
 
   margin-left:5px;padding:0 5px;font-weight:800;box-shadow:none}
 
@@ -342,19 +361,33 @@ button{font-family:inherit}
 
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:2px 0 4px}
 
-.tile{position:relative;border-radius:12px;padding:17px 16px 15px;
+/* 🚨 暗色下不靠色块分层，靠**表面提亮 + 细描边**。
+   原来是 `color:#fff` 写死 + `background:var(--brand)`，
+   而 --brand 转成白色之后就是白底白字。 */
+.tile{position:relative;border-radius:18px;padding:18px 16px 16px;
 
-  min-height:150px;display:flex;flex-direction:column;justify-content:flex-end;
+  min-height:152px;display:flex;flex-direction:column;justify-content:flex-end;
 
-  color:#fff;overflow:hidden;cursor:pointer;transition:transform .07s}
+  background:var(--card);border:1px solid var(--line);
+
+  color:var(--fg-strong);overflow:hidden;cursor:pointer;
+
+  transition:transform .12s cubic-bezier(.2,.7,.3,1),background .12s}
+
+.tile:active{transform:scale(.985);background:var(--card-2)}
+
+/* 左上角一道细色条：区分四个入口，但不涂满整块 */
+.tile::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+
+  background:var(--tile-accent,rgba(255,255,255,.28))}
 
 .tile{border:2px solid transparent;border-bottom-width:4px}
 
 .tile:active{transform:translateY(2px);border-bottom-width:2px}
 
-.tile .ic{position:absolute;top:11px;right:13px;font-size:30px;opacity:.85;
+.tile .ic{position:absolute;top:13px;right:14px;font-size:30px;
 
-  line-height:0}
+  color:var(--fg-strong);opacity:.34;line-height:0}
 
 /* 🚨 内联 SVG 不给尺寸就会按默认 300×150 或直接塌掉 —— 图标会「不见了」，
 
@@ -366,17 +399,20 @@ button{font-family:inherit}
 
 .tile .nm{font-size:18.5px;font-weight:800;letter-spacing:-.2px}
 
-.tile .ds{font-size:12px;opacity:.88;margin-top:3px;line-height:1.45}
+.tile .ds{font-size:12.5px;color:var(--muted);opacity:1;margin-top:4px;line-height:1.5}
 
 .tile.wide{grid-column:1 / -1;min-height:82px}
 /* ═══ 四大主线：统一大黑框（Kevin 2026-08-11）═══
    🚨 原来口语/听力是黑框、阅读/报告写作是白框，还跟错题本并排 ——
       四条主线里两条被降级成了工具的样子，主次读不出来。 */
 .tiles.main{grid-template-columns:1fr 1fr;gap:11px}
-.tiles.main .tile{background:var(--brand);color:#fff;
-  border:2px solid transparent;border-bottom:4px solid var(--brand-dark);
-  min-height:132px;grid-column:auto}
-.tiles.main .tile .ic{color:#fff;opacity:.92}
+/* 🚨 暗色下**不要**拿 --brand（现在是白色）当大色块底 —— 会白底白字。
+   改用表面色 + 细描边，靠左侧那道色条区分四个入口。 */
+.tiles.main .tile{background:var(--card);color:var(--fg-strong);
+  border:1px solid var(--line);border-bottom:1px solid var(--line);
+  min-height:140px;grid-column:auto}
+.tiles.main .tile:active{background:var(--card-2)}
+.tiles.main .tile .ic{color:var(--fg-strong);opacity:.30}
 .tiles.main .tile .nm{font-size:16.5px;font-weight:800;letter-spacing:.2px}
 .tiles.main .tile .ds{color:rgba(255,255,255,.72);font-size:12px;line-height:1.5}
 /* 回看类工具：明确降一级 —— 不是不重要，是用的时候才找它 */
@@ -411,9 +447,9 @@ button{font-family:inherit}
 
    靠图标和文案区分，不靠颜色区分。 */
 
-.t-speak{background:var(--brand);border-bottom-color:var(--brand-dark)}
+.t-speak{--tile-accent:rgba(255,255,255,.85)}
 
-.t-listen{background:var(--brand);border-bottom-color:var(--brand-dark)}
+.t-listen{--tile-accent:rgba(255,255,255,.55)}
 
 .t-book,.t-hist{background:var(--card);color:var(--fg);
 
@@ -423,7 +459,7 @@ button{font-family:inherit}
 
 .t-book .ic,.t-hist .ic{filter:grayscale(.15)}
 
-@media(prefers-color-scheme:dark){
+@media(prefers-color-scheme:__legacy_dark__){
 
   .t-book,.t-hist{background:var(--card);color:var(--fg)}}
 
@@ -511,7 +547,7 @@ button{font-family:inherit}
 
   padding:10px 18px;font-size:14px;font-weight:700;white-space:nowrap;box-shadow:none}
 
-.tabs button.on{background:var(--brand);border-color:var(--brand-dark);color:#fff;
+.tabs button.on{background:var(--brand);border-color:var(--brand-dark);color:var(--on-accent);
 
   box-shadow:none}
 
@@ -581,7 +617,7 @@ button{font-family:inherit}
 
    对方用白底带阴影，Alex 用一张独立的浅色卡片 —— 三者一眼分得开 */
 
-.you .bub{background:var(--brand);color:#fff;border-radius:10px 18px 6px 18px;
+.you .bub{background:var(--brand);color:var(--on-accent);border-radius:10px 18px 6px 18px;
 
   padding:11px 15px;margin-left:auto;max-width:86%;font-size:15.5px;line-height:1.55;
 
@@ -675,7 +711,7 @@ button{font-family:inherit}
 
 #mic{width:96px;height:96px;border-radius:50%;font-size:15px;
 
-  font-weight:800;letter-spacing:.5px;color:#fff;
+  font-weight:800;letter-spacing:.5px;color:var(--on-accent);
 
   background:var(--brand);box-shadow:none;
 
@@ -755,7 +791,7 @@ button{font-family:inherit}
 
   padding:8px 14px;font-size:13px;font-weight:700;white-space:nowrap}
 
-.rchip.on{background:var(--brand);border-color:var(--brand-dark);color:#fff}
+.rchip.on{background:var(--brand);border-color:var(--brand-dark);color:var(--on-accent)}
 
 
 
@@ -763,9 +799,7 @@ button{font-family:inherit}
 
 .tile.t-read,
 
-.tile.t-write{background:var(--card);border:2px solid var(--line);
-
-  border-bottom-width:4px;color:var(--fg-strong)}
+.tile.t-write{--tile-accent:rgba(255,255,255,.26)}
 
 .tile.t-read .ds,
 
@@ -857,7 +891,8 @@ button{font-family:inherit}
 
 .rl.now{color:var(--brand-dark)}
 
-.rn.full{background:var(--brand);color:#fff;box-shadow:0 3px 0 var(--brand-dark)}
+/* 练满的那天：白底黑字（--on-accent），别再用写死的 #fff */
+.rn.full{background:var(--brand);color:var(--on-accent);box-shadow:none}
 
 .rn.part{background:var(--brand-soft);color:var(--brand-dark);
 
@@ -865,9 +900,10 @@ button{font-family:inherit}
 
 .rn.freeze{background:#eaf6fd;border:2px dashed var(--brand);font-size:14px}
 
-.rn.today{background:#fff;border:2px dashed var(--brand);color:var(--brand);
+/* 今天这一格：暗底 + 白描边 + 白字（原来是白底白字，1.0:1 看不见） */
+.rn.today{background:var(--card-2);border:2px dashed var(--fg-strong);
 
-  animation:tp 1.8s ease-in-out infinite}
+  color:var(--fg-strong);animation:tp 1.8s ease-in-out infinite}
 
 @keyframes tp{0%,100%{box-shadow:0 0 0 0 rgba(28,176,246,.42)}
 
@@ -903,7 +939,7 @@ button{font-family:inherit}
 
 .claim{border:0;border-radius:10px;padding:7px 12px;font-size:12.5px;
 
-  font-weight:800;background:var(--ok);color:#fff;box-shadow:0 2px 0 var(--ok-dark);
+  font-weight:800;background:var(--ok);color:var(--on-accent);box-shadow:0 2px 0 var(--ok-dark);
 
   cursor:pointer;white-space:nowrap;flex:none}
 
@@ -1267,7 +1303,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
 
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
 
-const BANKV = '5f3d06e9';
+const BANKV = '3a44db2b';
 
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 

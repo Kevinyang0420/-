@@ -3675,6 +3675,144 @@
     "直接说\"the company didn't disclose some transactions\"，未区分管理层表述与核查结果，应改为\"Management confirmed all related party transactions were disclosed, but our external review uncovered undisclosed related parties\"",
     "未说明关联方与公司的具体关系，仅提及金额，应补充\"controlled by immediate family members of the company's executive directors\""
    ]
+  },
+  {
+   "id": "fdd_off_balance_guarantee",
+   "t": "违规对外担保潜在代偿风险",
+   "lvl": "★★★",
+   "brief": "本段分析目标公司为关联方提供违规担保的潜在代偿负债。报告将呈交买方 Deal Team，放置于报告「债务与潜在负债（Net Debt & Contingent Liabilities）」章节。",
+   "facts": [
+    "管理层表示，公司 FY25 期间仅为全资子公司提供担保，不存在任何为关联方或第三方提供担保的情况。",
+    "我们在检索公开诉讼及工商信息时发现，目标公司于 FY25H1 为关联方 A 公司的一笔 3,000 万元银行贷款提供了连带责任保证。",
+    "银行流水与催收函显示，A 公司已于 9M26 发生贷款逾期，涉及本息合计 3,180 万元，银行已向目标公司发出催缴通知。",
+    "截至发稿日，管理层仍未提供该担保的内部董事会决议及法律意见书，我们无法完全评估该担保协议的合同法律效力。"
+   ],
+   "tgt": [
+    "Management represented that no off-balance sheet guarantees had been extended...",
+    "Our independent public background check revealed that...",
+    "presents a potential contingent liability / financial exposure",
+    "As of the date of this report, we have not been provided with..."
+   ],
+   "traps": [
+    "错误将管理层的口头表述写成事实否定句：写成 \"Management said that no guarantee was provided\"。应该用 \"Management represented that no off-balance sheet guarantees had been extended\"，用 represented 表达这仅仅是管理层的口头陈述，非审计核实的事实。",
+    "直译“截至发稿日”为 \"Until today\" 或 \"To today\"。应该使用 \"As of the date of this report\" 或 \"Up to the date hereof\" 等标准的报告时点用语。",
+    "使用带有情感色彩或过于不确定的词汇表示潜在负债，如 \"This guarantee is a big problem\" 或 \"may be a liability\"。应该用 \"presents a potential contingent liability / financial exposure of up to RMB 31.8m\"。"
+   ]
+  },
+  {
+   "id": "fdd_lease_termination_penalty",
+   "t": "租赁提前解约违约金未计提风险",
+   "lvl": "★★★",
+   "brief": "本段评估目标公司因提前关店/关厂而面临的租赁违约金及复原成本未计提风险。呈交买方 Deal Team，用于报告「非经常性损益与债务调整（EBITDA & Net Debt Adjustments）」章节。",
+   "facts": [
+    "管理层口头表示，FY25 关闭的 3 家冗余门店系与房东协商一致无偿解约，不存在任何违约赔偿金。",
+    "我们查阅了这 3 家门店的原始租赁合同，条款明确规定提前解约需支付相当于 6 个月租金的违约金，并需承担场地复原费用。",
+    "访谈已离职门店经理及查看银行付款凭证显示，公司已于 9M26 向其中一位房东支付了 80 万元违约保证金扣款，但账面计入营业外支出而非提备。",
+    "截至发稿日，管理层尚未提供其余 2 家门店的正式解约协议及房东放弃追索违约金的书面凭证。"
+   ],
+   "tgt": [
+    "Management posited that the leases were terminated without penalty...",
+    "Our review of the underlying lease agreements identified that...",
+    "gives rise to potential unaccrued termination penalties and reinstatement obligations",
+    "Subject to the provision of executed termination agreements..."
+   ],
+   "traps": [
+    "错用表达管理层意图的动词，如 \"Management lied that...\" 或 \"Management hid the penalty\"（带有一观攻击性）。应该使用 \"Management posited/represented that..., which is inconsistent with lease agreement terms\"。",
+    "将场地复原费用错写为 \"site recovery cost\" 或 \"fix room money\"。专业的租赁与会计术语应为 \"reinstatement obligations / site restoration costs\"。",
+    "直译“取决于能否取得”为 \"Depending on whether we get\"。在 FDD 条件句中应写为 \"Subject to the provision of executed termination agreements...\"。"
+   ]
+  },
+  {
+   "id": "fdd_pending_litigation_liability",
+   "t": "专利侵权诉讼潜在赔偿负债低估",
+   "lvl": "★★★",
+   "brief": "本段分析目标公司涉入的重大专利侵权诉讼可能导致的额外赔偿金及法律费用。呈交买方 Deal Team，置于报告「或有负债（Contingent Liabilities）」章节。",
+   "facts": [
+    "管理层表示，胜诉概率极高，且即使败诉，账面已计提的 100 万元预计负债已足够覆盖 FY25 诉讼损失。",
+    "我们核查法院一审判决书发现，法院已判决目标公司赔偿原告损失 500 万元，并承担诉讼费及律师费 60 万元。",
+    "目标公司已在 FY25 提起上诉，银行流水显示 9M26 已累计支付二审律师费 80 万元，但账面未追加计提预计负债。",
+    "截至发稿日，目标公司聘请的外聘法律顾问尚未向我们回复律师询证函（Lawyer's Confirmation Letter）。"
+   ],
+   "tgt": [
+    "Management contended that the existing provision is sufficient to cover...",
+    "Per our inspection of the first-instance court judgment...",
+    "presents a potential exposure of unaccrued litigation liabilities",
+    "Pending receipt of the external legal confirmation letter..."
+   ],
+   "traps": [
+    "把“管理层认为”写成 \"Management promised that...\"。promise 是承诺，管理层对诉讼结果的看法应使用 \"Management contended / maintained that...\"。",
+    "将律师询证函错写为 \"lawyer ask letter\" 或 \"lawyer answer paper\"。标准规范的审计/尽调词汇是 \"legal confirmation letter\" 或 \"lawyers' response letter\"。",
+    "把“存在 460 万元的未计提风险”写成 \"has a danger of 4.6 million\"。应表达为 \"presents an unaccrued exposure of RMB 4.6m\" 或 \"may require an additional provision of RMB 4.6m\"。"
+   ]
+  },
+  {
+   "id": "fdd_unpaid_overtime_liability",
+   "t": "生产人员加班费欠缴及追索风险",
+   "lvl": "★★★",
+   "brief": "本段评估目标公司因长期存在超时加班未足额支付加班费可能引发的劳动仲裁与追缴负债。呈交买方 Deal Team，置于报告「营运资本与潜在负债（Net Debt & Working Capital）」章节。",
+   "facts": [
+    "管理层口头澄清，公司执行综合工时制，FY24 及 FY25 工厂工人不存在任何未结清的加班费。",
+    "我们抽查了 FY25 连续 3 个月的打卡记录与工资单（涉及 150 名一线员工），发现月均超额加班达 40 小时，但工资单仅按基本工资发放，无加班系数。",
+    "劳动局调解文书及银行流水显示，9M26 目标公司已向 12 名离职员工补偿加班费共计 35 万元，但账面未对在职人员作类似提备。",
+    "截至发稿日，管理层未提供当地劳动部门出具的“允许实行综合计算工时工作制”的官方批复文件。"
+   ],
+   "tgt": [
+    "Management advised that the Company operates under a comprehensive working hour system...",
+    "Our sample testing of timecards against payroll records revealed that...",
+    "may give rise to retroactive wage claims and historical non-compliance liabilities",
+    "In the absence of official governmental approval documents..."
+   ],
+   "traps": [
+    "把“欠缴加班费”写成 \"owe overtime money\" 或 \"underpaid night pay\"。专业写作应用 \"unpaid overtime wages\" 或 \"back pay liabilities / retroactive wage claims\"。",
+    "直译“在缺乏官方批复的情况下”为 \"In no official document situation\"。标准表达为 \"In the absence of official approval documents...\" 或 \"Lacking statutory approvals...\"。",
+    "错误使用主动语态表达抽查结果 \"We tested 150 workers and found...\"。报告中建议以事实为主体，使用被动句或客观主语 \"Our sample testing covering 150 workers revealed that...\"。"
+   ]
+  },
+  {
+   "id": "fdd_channel_stuffing_risk",
+   "t": "经销商年末渠道压货与退货风险",
+   "lvl": "★★★",
+   "brief": "本段分析目标公司年末通过向经销商大量压货（Channel Stuffing）以虚增 FY25 收入及潜在退货隐患。呈交买方 Deal Team，用于报告「收入质量与 EBITDA（Quality of Earnings）」章节。",
+   "facts": [
+    "管理层强调，FY25Q4 销售收入同比增长 45% 系因新产品市场需求暴涨，且销售均为不可撤销的买断式销售。",
+    "我们抽查了前十大经销商 FY25Q4 的发货单与进销存数据，发现经销商在 12 月底的库存周转天数从正常的 30 天骤升至 120 天。",
+    "仓库出入库记录及期后流水显示，9M26 前两个月发生销货退回 1,800 万元，占 FY25Q4 销售额的 30%，但 FY25 账面未计提退货准备。",
+    "截至发稿日，管理层仍未提供前两大经销商 FY26Q1 的最新进销存月报（Sell-through report）。"
+   ],
+   "tgt": [
+    "Management emphasized that the revenue growth in FY25Q4 was driven by genuine market demand...",
+    "Our analysis of distributor inventory metrics indicated...",
+    "is indicative of potential channel stuffing and post-period return risks",
+    "Pending the provision of updated sell-through reports..."
+   ],
+   "traps": [
+    "把渠道压货直译为 \"press products into channels\" 或 \"store house loading\"。应该使用金融尽调专业术语 \"channel stuffing\" 或 \"trade loading\"。",
+    "把“期后销货退回”写成 \"after-period sales back\" 或 \"back goods after FY25\"。应写为 \"post-period sales returns\" 或 \"subsequent product returns\"。",
+    "主观推断“管理层做假账”寫成 \"Management manipulated the revenue\"。应该客观叙述为 \"Management's representation is not supported by subsequent sales return trends...\"。"
+   ]
+  },
+  {
+   "id": "fdd_restructuring_cost_underprovision",
+   "t": "业务关停裁员补偿计提不足风险",
+   "lvl": "★★★",
+   "brief": "本段分析目标公司 FY25 宣布关停某亏损业务线后，相关裁员经济补偿金及专用设备变现损失未足额提备的风险。呈交买方 Deal Team，置于报告「重组费用与负债调整（Restructuring & Debt-like Items）」章节。",
+   "facts": [
+    "管理层口头表示，关停分公司 A 的计划已于 FY25 底基本完成，账面预提的 200 万元离职补偿金已完全覆盖相关成本。",
+    "我们查阅了重组方案及涉及的 80 名员工劳动合同，按照法定 N+1 补偿标准重新计算，应支付离职补偿金至少 480 万元，存在 280 万元缺口。",
+    "固定资产盘点及处置合同显示，9M26 变卖关停工厂设备的实际变现收入比账面净值低 150 万元，该损失在 FY25 未做减值准备。",
+    "截至发稿日，管理层尚未提供关停分公司剩余 20 名核心员工的解除劳动合同签署进度及最终结算清单。"
+   ],
+   "tgt": [
+    "Management represented that the accrued provision was sufficient to cover all restructuring costs...",
+    "Based on our recalculation under statutory severance framework...",
+    "indicates an under-provision of severance liabilities and asset impairment losses",
+    "Subject to final executed settlement agreements for the remaining personnel..."
+   ],
+   "traps": [
+    "把裁员补偿金写成 \"fire people pay\" 或 \"firing compensation\"。专业英文报告应使用 \"severance packages\"、\"statutory severance pay\" 或 \"redundancy payments\"。",
+    "直译“N+1 补偿标准”为 \"N+1 compensate rule\"。在英文报告中应说明为 \"statutory severance calculated on an 'N+1' basis under PRC labor regulations\"。",
+    "误将“固定资产处置损失”写成 \"fixed asset selling lose\"。正确表达是 \"loss on disposal of fixed assets\" 或 \"impairment charge on deconsolidated/idle assets\"。"
+   ]
   }
  ]
 }

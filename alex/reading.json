@@ -33492,6 +33492,96 @@
    "src": "美联储研究札记",
    "srcen": "Federal Reserve",
    "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_to_facilitate",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "To facilitate channel coordination and increase productivity, we have established the Arista Partner Program",
+   "why": "中国人表达目的时极易连用 'In order to make...'，显得啰嗦且口语化。原句使用 'To facilitate [抽象名词]'（为了促进/便利……）起句，后面接 'we have established [制度/程序]'，结构严谨，非常适合审计师在报告中描述企业为了达到某种内部控制或管理目的而设立的制度。",
+   "when": "在审计报告中描述企业内部控制设计、管理制度设立的目的和背景时。",
+   "slot": "To facilitate [...] and increase [...], we have established [...]",
+   "swap": [
+    "With a view to enhancing [...] and maximizing [...], management has implemented [...] (语气更正式，常用于正式审计意见书)",
+    "In an effort to streamline [...] and boost [...], the company set up [...] (侧重于流程简化和效率提升的背景描述)"
+   ],
+   "para": "We market and sell our products through our direct sales force and in partnership with our channel partners, including distributors, value-added resellers, systems integrators and original equipment manufacturer (\"OEM\") partners. We also partner with various technology companies to sell our products. To facilitate channel coordination and increase productivity, we have established the Arista Partner Program, designed to engage partners who provide value-added services and extend our reach into the marketplace. Authorized training partners deliver technical training to our channel partners and end customers. Our partners typically receive an order from an end customer before placing an order with us, and we verify the end customer's identification before accepting such orders. Our partners generally do not stock inventory received from us.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_spurred_demand_247",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "spurred demand for stronger Medicaid oversight and enforcement.",
+   "why": "中国人写审计报告常用 'led to the need for'。这里用 'spurred demand for'（刺激了对...的需求），用动词 'spur'（像马刺般鞭策）比 'cause' 更有力，生动体现了外部事件对加强内部控制或监管的倒逼作用。",
+   "when": "在审计报告中描述由于发现舞弊漏洞、系统故障或监管处罚，从而倒逼企业管理层必须加强某项内控或监督时。",
+   "slot": "spurred demand for stronger [...] oversight and enforcement.",
+   "swap": [
+    "triggered an urgent need for more rigorous [...] monitoring and compliance. (语气更紧迫，强调合规和监控的严苛性)",
+    "driven the necessity of robust [...] supervision. (语气较客观中性，强调由于客观事实驱动了强监管的必要性)"
+   ],
+   "para": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement. That led to the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977, which established the national Medicaid Fraud Control Units program.",
+   "srctitle": "Trump administration is withholding more than $1B in Medicaid funds from California and Minnesota, in latest example of weaponizing real and imagined fraud",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_attracted_considerable_attention",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "Vietnam has attracted considerable attention as a potential major beneficiary of",
+   "why": "中国人常写 'is considered a key player' 或 'will benefit from'。这里用 'attracted considerable attention as a potential major beneficiary of'，用名词 'beneficiary' 代替动词，并用 'potential major' 进行客观对冲，显得极其专业和中立。",
+   "when": "适用于尽调报告中评估行业趋势、政策红利或供应链转移对目标公司的潜在利好。",
+   "slot": "[...] has attracted considerable attention as a potential major beneficiary of [...]",
+   "swap": [
+    "[...] is highly positioned to benefit significantly from [...] (语气更确定，直接强调受益定位)",
+    "[...] has emerged as a key prospective beneficiary of [...] (语气更书面，强调‘脱颖而出’的动态过程)"
+   ],
+   "para": "In recent years, Vietnam has attracted considerable attention as a potential major beneficiary of the 2018-19 U.S.-China tariff increases, reflecting substantial trade diversion as exports shifted away from China (Alfaro and Chor, 2023; Freund et al., 2024). As shown in the left panel of Figure 1, U.S. imports from China declined sharply after the 2018-19 tariffs, while imports from Vietnam tripled by 2025.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_reflecting_substantial_diversion",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "reflecting substantial trade diversion as exports shifted away from",
+   "why": "中国人常写 'which shows...' 或 'because...' 这种平铺直叙的因果关系。原文用现在分词 'reflecting' 引导伴随结果，并用 'shifted away from' 优雅地描述资金、业务或客户的流失与转移，避免了单调的 'decreased' 或 'moved'。",
+   "when": "适用于审计或尽调中解释数据异动、客户流失或业务转型背后的深层原因。",
+   "slot": "reflecting substantial [...] as [...] shifted away from [...]",
+   "swap": [
+    "indicating a significant reallocation of [...] as [...] migrated from [...] (更侧重资产或资源的重新配置)",
+    "mirroring a pronounced shift in [...] as [...] diverted from [...] (语气更客观，强调两者的镜像对应关系)"
+   ],
+   "para": "In recent years, Vietnam has attracted considerable attention as a potential major beneficiary of the 2018-19 U.S.-China tariff increases, reflecting substantial trade diversion as exports shifted away from China (Alfaro and Chor, 2023; Freund et al., 2024). As shown in the left panel of Figure 1, U.S. imports from China declined sharply after the 2018-19 tariffs, while imports from Vietnam tripled by 2025.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_declined_sharply_while_tripled",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "declined sharply after the 2018-19 tariffs, while imports from Vietnam tripled by 2025.",
+   "why": "中国人描述对比时常用 'but' 且数据描述单一（如 'decreased a lot'）。原文用 'declined sharply' 搭配 'while' 引导的对照句，并用倍数动词 'tripled' 干净利落地完成对比，行文极具画面感和说服力。",
+   "when": "适用于财务分析中对比两家子公司、两个产品线或两个市场在同一时段内的业绩此消彼长。",
+   "slot": "[...] declined sharply after [...], while [...] tripled by [...]",
+   "swap": [
+    "[...] contracted significantly following [...], whereas [...] surged threefold by [...] (语气更正式，'contracted' 和 'surged' 财务感更强)",
+    "[...] fell abruptly after [...], while [...] experienced a threefold increase by [...] (语气较温和，用名词短语平衡句式)"
+   ],
+   "para": "In recent years, Vietnam has attracted considerable attention as a potential major beneficiary of the 2018-19 U.S.-China tariff increases, reflecting substantial trade diversion as exports shifted away from China (Alfaro and Chor, 2023; Freund et al., 2024). As shown in the left panel of Figure 1, U.S. imports from China declined sharply after the 2018-19 tariffs, while imports from Vietnam tripled by 2025.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
   }
  ]
 }
