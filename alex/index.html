@@ -13415,6 +13415,36 @@ function mergeNb(cur, inc){
   return out;
 }
 
+/* ── 结果里的一小块 → 本子里的一条 ──
+   Kevin 2026-08-14：「它给我提供了三个不同的表达，但我只想把其中一句收到单词本里
+   也不行，根本没有地方可以选。」所以候选、搭配、近义都要能**单独收**。
+   这三个是纯数据成形，放在逻辑这一半（界面那边只负责画按钮）。 */
+
+/* 收进哪一本按**英文那一面**判：中文查询看推荐的那句，其余看词条本身。
+   （中文条目本身没有「是不是一个词」这回事，拿它判会全都掉进专业表达本。） */
+const bookFor = e => defaultBook(kindOf(
+  (e && e.kind === 'zh') ? (e.pick || e.q || e.w || '') : ((e && (e.q || e.w)) || '')));
+
+/* 一条搭配 / 一个近义词 → 本子里的完整一条。
+   🚨 存的是自带释义和例句的一份，不是指向原词条的引用 ——
+      本子要能离线翻，而且原词条随时可能被「重新查一次」整个换掉。 */
+function subEntry(en, cn, opt){
+  opt = opt || {};
+  return {w: en, q: normQ(en), kind: kindOf(en), reg: opt.reg || '', ipa: '',
+          defs: [{pos: opt.pos || '', cn: cn || '', en: opt.eg || '', zh: opt.zh || ''}],
+          coll: [], near: [], biz: opt.biz || '', from: opt.from || ''};
+}
+
+/* 中文查出来的候选 → 存成「中文 → 英文」那一面。
+   🚨 id 取**英文**（三个候选各存各的，不会互相覆盖），
+      而 w 留着中文 —— 复习时要问「这个意思英文怎么说」，
+      拿英文当正面等于先把答案亮出来。 */
+function candEntry(zhWord, c){
+  if (!c || !c.en) return null;
+  return {kind: 'zh', w: zhWord, q: normQ(c.en), pick: c.en, why: c.cn || '',
+          reg: c.reg || '', cands: [c]};
+}
+
 /* ── 复习节奏：1 → 3 → 7 → 21 天，记不住打回第一档 ──
    🚨 「熟了」必须**跨天**：同一天连点两次「记住了」说明不了什么，刚看完答案当然记得。
       跟错题本毕业门槛同一个口径（≥3 次且分布在 ≥3 天）。
@@ -13585,8 +13615,55 @@ function playBtn(text, label){
 function dSec(title, inner){
   const d = document.createElement('div');
   d.className = 'card';
-  d.innerHTML = '<div class="hd"><span class="role">' + title + '</span></div>' + inner;
+  d.innerHTML = '<div class="hd"><span class="role">' + title + '</span></div>' +
+    (inner || '');
   return d;
+}
+
+/* ── 收藏控件 ──
+   Kevin 2026-08-14 反馈两条，都属实：
+   ①「查了单词，没地方点收进单词本」—— 键在整条词条的**最底下**（实测 y=1752，
+     一屏 812px），他翻到近义词那儿就以为没有了。**默认没滚到的地方等于不存在。**
+   ②「给了三个不同的表达，我只想收其中一句，根本没地方选」—— 原来只能整条收。
+
+   所以现在：主词条的收藏键提到**最上面**；候选表达、搭配、近义**每一条各有一个键**。
+
+   🚨 同一个英文表达在页面上可能出现两次（推荐那句同时也是候选之一），
+      两个键指向**同一条记录**。所以收完一律 `redrawDict()` 整块重画，
+      不各自 paint —— 各画各的必然出现「一个显✓一个显☆」的自相矛盾。 */
+
+function doSave(e, bk){
+  if (!e) return;
+  const r = nbAdd(e, bk);
+  if (r === 'full') return toast('存不下了（浏览器存储满），先去本子里删几条', 3200);
+  toast(r === 'moved' ? '移到' + BOOKS[bk] + '了'
+      : r === 'same'  ? '已经在' + BOOKS[bk] + '里'
+      : '收进' + BOOKS[bk] + '了');
+  redrawDict(); refreshDictTop();
+}
+
+/* 一小块内容的收藏键：一个 chip，收进默认的那本；已收的再点一下就去掉。
+   想换本子在「我的本子」里点开那一条改（那儿有完整的两个键）。 */
+function saveMini(e){
+  const s = document.createElement('span');
+  if (!e) return s;
+  const id = qId(e.q || e.w);
+  const rec = nbFind(id);
+  const b = document.createElement('button');
+  b.className = 'rchip' + (rec ? ' on' : '');
+  b.style.cssText = 'font-size:12px;padding:4px 10px;margin-top:6px';
+  b.textContent = rec ? '✓ 已在' + BOOKS[rec.book] : '☆ 收进本子';
+  b.onclick = ev => {
+    ev.stopPropagation();
+    if (rec){
+      if (nbDel(id)){ toast('去掉了'); redrawDict(); refreshDictTop(); }
+      else toast('删不动（存储满了）');
+      return;
+    }
+    doSave(e, bookFor(e));
+  };
+  s.appendChild(b);
+  return s;
 }
 
 function wordCard(e){
@@ -13618,24 +13695,38 @@ function defsBlock(e){
     '</div>').join(''));
 }
 
+/* 搭配和近义都是「一行一条、每条能单独收」，长得一样，所以共用一个渲染。 */
+function rowsBlock(title, items, mkRec, render){
+  if (!items.length) return null;
+  const card = dSec(title, '');
+  items.forEach((it, i) => {
+    const row = document.createElement('div');
+    row.style.marginTop = (i ? 12 : 4) + 'px';
+    row.innerHTML = render(it);
+    row.appendChild(saveMini(mkRec(it)));
+    card.appendChild(row);
+  });
+  return card;
+}
+
 function collBlock(e){
-  const cl = Array.isArray(e.coll) ? e.coll : [];
-  if (!cl.length) return null;
-  return dSec('🔗 常见搭配', cl.map(c =>
-    '<div style="margin-top:6px;font-size:14px">' +
-      '<span class="en" data-say="' + esc(c.en) + '">' + esc(c.en) + '</span>' +
-      (c.cn ? '<span style="color:var(--muted)"> · ' + esc(c.cn) + '</span>' : '') +
-    '</div>').join(''));
+  const cl = (Array.isArray(e.coll) ? e.coll : []).filter(c => c && c.en);
+  return rowsBlock('🔗 常见搭配', cl,
+    c => subEntry(c.en, c.cn || '', {pos: '搭配', from: e.w || e.q,
+                                     eg: c.eg || '', reg: e.reg || ''}),
+    c => '<span class="en" style="font-size:14px" data-say="' + esc(c.en) + '">' +
+         esc(c.en) + '</span>' +
+         (c.cn ? '<span style="color:var(--muted);font-size:14px"> · ' + esc(c.cn) +
+           '</span>' : ''));
 }
 
 function nearBlock(e){
-  const ns = Array.isArray(e.near) ? e.near.filter(x => x && x.en) : [];
-  if (!ns.length) return null;
-  return dSec('↔️ 别跟这些混了', ns.map(n =>
-    '<div style="margin-top:6px;font-size:14px">' +
-      '<b class="en" data-say="' + esc(n.en) + '">' + esc(n.en) + '</b>' +
-      (n.cn ? '<div class="sit" style="margin-top:2px">' + esc(n.cn) + '</div>' : '') +
-    '</div>').join(''));
+  const ns = (Array.isArray(e.near) ? e.near : []).filter(x => x && x.en);
+  return rowsBlock('↔️ 别跟这些混了', ns,
+    n => subEntry(n.en, n.cn || '', {from: e.w || e.q}),
+    n => '<b class="en" style="font-size:14px" data-say="' + esc(n.en) + '">' +
+         esc(n.en) + '</b>' +
+         (n.cn ? '<div class="sit" style="margin-top:2px">' + esc(n.cn) + '</div>' : ''));
 }
 
 function zhCard(e){
@@ -13647,21 +13738,29 @@ function zhCard(e){
     (e.pick ? '<div class="en" style="margin-top:8px;font-size:15px;line-height:1.7">' +
       '写进报告就用这个：<b>' + esc(e.pick) + '</b></div>' : '') +
     (e.why ? '<div class="sit" style="margin-top:4px">' + esc(e.why) + '</div>' : '');
-  if (e.pick) box.appendChild(playBtn(e.pick, '🔊 读一遍'));
+  if (e.pick){
+    box.appendChild(playBtn(e.pick, '🔊 读一遍'));
+    /* 推荐那句在下面的候选里还会再出现一次 —— 两个键指的是同一条记录，
+       靠 redrawDict() 保持一致（各自 paint 必然一个✓一个☆）。 */
+    const cs = Array.isArray(e.cands) ? e.cands : [];
+    const hit = cs.find(c => c && c.en && ENORM(c.en) === ENORM(e.pick)) || {en: e.pick, cn: e.why};
+    box.appendChild(saveMini(candEntry(e.w || e.q, hit)));
+  }
   return box;
 }
 
+/* 中文查英文：**每条候选各有一个收藏键**。
+   Kevin 2026-08-14：「给了三个不同的表达，但我只想把其中一句收到单词本里也不行」。 */
 function candsBlock(e){
-  const cs = Array.isArray(e.cands) ? e.cands : [];
-  return dSec('🧭 几种说法，挑一个', cs.map((c, i) =>
-    '<div style="margin-top:' + (i ? 12 : 4) + 'px">' +
-      '<div class="en" style="font-size:15px;line-height:1.6" data-say="' + esc(c.en) + '">' +
-        esc(c.en) + (c.reg ? ' <span style="font-size:11.5px;color:var(--muted);' +
-          'font-weight:700">' + esc(c.reg) + '</span>' : '') + '</div>' +
-      (c.cn ? '<div class="sit" style="margin-top:3px">' + esc(c.cn) + '</div>' : '') +
-      (c.eg ? '<div style="margin-top:4px;font-size:13.5px;color:var(--muted)" ' +
-        'data-say="' + esc(c.eg) + '">' + esc(c.eg) + '</div>' : '') +
-    '</div>').join(''));
+  const cs = (Array.isArray(e.cands) ? e.cands : []).filter(c => c && c.en);
+  return rowsBlock('🧭 几种说法，挑一个收', cs,
+    c => candEntry(e.w || e.q, c),
+    c => '<div class="en" style="font-size:15px;line-height:1.6" data-say="' + esc(c.en) + '">' +
+         esc(c.en) + (c.reg ? ' <span style="font-size:11.5px;color:var(--muted);' +
+           'font-weight:700">' + esc(c.reg) + '</span>' : '') + '</div>' +
+         (c.cn ? '<div class="sit" style="margin-top:3px">' + esc(c.cn) + '</div>' : '') +
+         (c.eg ? '<div style="margin-top:4px;font-size:13.5px;color:var(--muted)" ' +
+           'data-say="' + esc(c.eg) + '">' + esc(c.eg) + '</div>' : ''));
 }
 
 /* 点任意英文片段就念一遍 —— 查词的人多半也想听发音，别让他去找按钮。 */
@@ -13672,15 +13771,28 @@ function bindSay(root){
   });
 }
 
+/* 收完重画整块，保持所有收藏键状态一致。
+   🚨 重画要**留住滚动位置**：不留的话他在页面中段点一下收藏，屏幕直接弹回顶部，
+      感觉像点错了什么。 */
+function redrawDict(){
+  const y = window.scrollY;
+  dictRender(DICT.cur, DICT._cached);
+  window.scrollTo(0, y);
+}
+
 function dictRender(e, cached){
   const res = $('#dres');
-  if (!res) return;
+  if (!res || !e) return;
+  DICT._cached = !!cached;
   res.innerHTML = '';
   if (e.kind === 'zh'){
     res.appendChild(zhCard(e));
     res.appendChild(candsBlock(e));
   } else {
     res.appendChild(wordCard(e));
+    /* 🚨 收藏键必须在**第一屏**。原来放在整条词条最底下（实测 y=1752、
+       一屏 812px），他翻到一半就以为「根本没地方点」—— 属实。 */
+    res.appendChild(nbBar(e));
     res.appendChild(defsBlock(e));
     const cb = collBlock(e); if (cb) res.appendChild(cb);
     if (e.biz) res.appendChild(dSec('🧾 报告里怎么用',
@@ -13691,7 +13803,6 @@ function dictRender(e, cached){
       'opacity:.75">' + esc(e.trap.bad) + '</div>' +
       '<div class="sit" style="margin-top:4px">' + esc(e.trap.why || '') + '</div>'));
   }
-  res.appendChild(nbBar(e));
   if (cached){
     const n = document.createElement('div');
     n.className = 'note';
@@ -13710,50 +13821,38 @@ function dictRender(e, cached){
   bindSay(res);
 }
 
-/* 收进本子的那一条。默认归类按输入形态给，但两个本子都摆出来让他自己点。 */
+/* 主词条的收藏条：两个本子都摆出来，默认那本排前面。 */
 function nbBar(e){
   const wrap = document.createElement('div');
   wrap.className = 'card';
   const id = qId(e.q || e.w);
-  const paint = () => {
-    const rec = nbFind(id);
-    wrap.innerHTML = '<div class="hd"><span class="role">📒 收进本子</span>' +
-      (rec ? '<span class="done">已在' + BOOKS[rec.book] + '</span>' : '') + '</div>' +
-      '<div class="t" style="margin:2px 0 9px">' +
-        (rec ? '想换个本子直接点另一个，复习进度不会清零。'
-             : '收进去以后能在「我的本子」里翻，也会排进每天的复习。') + '</div>';
-    const order = [defaultBook(e.kind || kindOf(e.q || e.w))];
-    Object.keys(BOOKS).forEach(k => { if (order.indexOf(k) < 0) order.push(k); });
-    order.forEach(bk => {
-      const b = document.createElement('button');
-      const on = !!(rec && rec.book === bk);
-      b.className = 'rchip' + (on ? ' on' : '');
-      b.textContent = (on ? '✓ ' : '') + BOOKS[bk];
-      b.style.marginRight = '8px';
-      b.onclick = () => {
-        const r = nbAdd(e, bk);
-        /* 🚨 存不下必须让他知道。原来那种 catch 全吞 + 照样弹「收下了」，
-           正是他反馈过的「点了收藏，本子里没有」。 */
-        if (r === 'full') return toast('存不下了（浏览器存储满），先去本子里删几条', 3200);
-        toast(r === 'moved' ? '移到' + BOOKS[bk] + '了'
-            : r === 'same'  ? '已经在' + BOOKS[bk] + '里'
-            : '收进' + BOOKS[bk] + '了');
-        paint(); refreshDictTop();
-      };
-      wrap.appendChild(b);
-    });
-    if (rec){
-      const d = document.createElement('button');
-      d.className = 'play';
-      d.textContent = '🗑 从本子里去掉';
-      d.onclick = () => {
-        if (nbDel(id)){ toast('去掉了'); paint(); refreshDictTop(); }
-        else toast('删不动（存储满了）');
-      };
-      wrap.appendChild(d);
-    }
-  };
-  paint();
+  const rec = nbFind(id);
+  wrap.innerHTML = '<div class="hd"><span class="role">📒 收进本子</span>' +
+    (rec ? '<span class="done">已在' + BOOKS[rec.book] + '</span>' : '') + '</div>' +
+    '<div class="t" style="margin:2px 0 9px">' +
+      (rec ? '想换个本子直接点另一个，复习进度不会清零。'
+           : '收进去以后能在「我的本子」里翻，也会排进每天的复习。') + '</div>';
+  const order = [bookFor(e)];
+  Object.keys(BOOKS).forEach(k => { if (order.indexOf(k) < 0) order.push(k); });
+  order.forEach(bk => {
+    const b = document.createElement('button');
+    const on = !!(rec && rec.book === bk);
+    b.className = 'rchip' + (on ? ' on' : '');
+    b.textContent = (on ? '✓ ' : '') + BOOKS[bk];
+    b.style.marginRight = '8px';
+    b.onclick = () => doSave(e, bk);
+    wrap.appendChild(b);
+  });
+  if (rec){
+    const d = document.createElement('button');
+    d.className = 'play';
+    d.textContent = '🗑 从本子里去掉';
+    d.onclick = () => {
+      if (nbDel(id)){ toast('去掉了'); redrawDict(); refreshDictTop(); }
+      else toast('删不动（存储满了）');
+    };
+    wrap.appendChild(d);
+  }
   return wrap;
 }
 
@@ -13822,8 +13921,12 @@ function showNotebook(){
       但**推荐说法**要露出来，否则一列中文他分不清哪条是哪条。 */
 function nbRow(x){
   const e = x.e || {};
+  /* 副标题给的是「另一面」：
+     · 整条中文查询收进来的（id 就是那句中文）→ 显示推荐的英文
+     · 从候选里单独挑一句收的（id 是英文）→ 显示它对应的中文意思
+     两种都在本子里并排躺着，标题重复一遍等于没写。 */
   const sub = e.kind === 'zh'
-    ? (e.pick || ((e.cands || [])[0] || {}).en || '')
+    ? ((e.w && qId(e.w) !== x.id) ? e.w : (e.pick || ((e.cands || [])[0] || {}).en || ''))
     : (((e.defs || [])[0] || {}).cn || '');
   const r = x.rev || {};
   const dots = r.done ? '熟了' : '●'.repeat(Math.min(r.n || 0, 3)) +
@@ -13904,9 +14007,11 @@ function showReview(){
   const front = document.createElement('div');
   front.className = 'better';
   const isZh = e.kind === 'zh';
+  /* 🚨 中文那一面要拿 `e.w`（中文原文），不能拿 `rec.q` ——
+     从候选里单独收的那种，`rec.q` 是**英文**，用它做正面等于把答案先亮出来。 */
   front.innerHTML = '<div class="lb">' + (isZh ? '这个意思，英文怎么说' : '这个词什么意思') + '</div>' +
     '<div style="font-size:20px;font-weight:800;line-height:1.5;margin-top:2px">' +
-      esc(rec.q) + '</div>';
+      esc(isZh ? (e.w || rec.q) : rec.q) + '</div>';
   if (!isZh) front.appendChild(playBtn(rec.q, '🔊 读一遍'));
   f.appendChild(front);
 
