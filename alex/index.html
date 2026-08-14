@@ -364,6 +364,17 @@ button{font-family:inherit}
 /* 🚨 暗色下不靠色块分层，靠**表面提亮 + 细描边**。
    原来是 `color:#fff` 写死 + `background:var(--brand)`，
    而 --brand 转成白色之后就是白底白字。 */
+
+/* ═══ 每个 tab 的色相（Kevin 2026-08-14）═══
+   首页四块已经各有色相；进到具体页面后**强调元素继承同一个色**，
+   这样他一眼知道自己在哪一块。底色/卡片/正文一律不动 —— 点缀不铺面。
+   对比度两个方向都验过：色块上放黑字 7.9–11.9:1，色字放深卡片 6.9–10.4:1。 */
+:root{--tint:#ffffff;--on-tint:#000000}
+:root[data-tab="speak"] {--tint:#f5b942}
+:root[data-tab="listen"]{--tint:#48c8e8}
+:root[data-tab="read"]  {--tint:#5fd08a}
+:root[data-tab="write"] {--tint:#a98cff}
+
 .tile{position:relative;border-radius:18px;padding:18px 16px 16px;
 
   min-height:152px;display:flex;flex-direction:column;justify-content:flex-end;
@@ -441,7 +452,7 @@ button{font-family:inherit}
 .tool .cnt{margin-left:auto;font-size:12px;font-weight:800;color:var(--muted)}
 .resume.lead{margin:0 0 14px;padding:15px 16px;border-radius:14px;
   border:2px solid var(--brand);border-bottom-width:4px}
-.resume.lead .k{color:var(--brand-dark);font-weight:800}
+.resume.lead .k{color:var(--tint);font-weight:800}
 .resume.lead .v{font-size:16px;font-weight:800;margin-top:3px}
 .sechd{font-size:12px;font-weight:800;color:var(--faint);
   letter-spacing:.4px;margin:16px 0 8px}
@@ -496,13 +507,13 @@ button{font-family:inherit}
 
 .lvcard:active{transform:translateY(2px);border-bottom-width:2px;
 
-  border-color:var(--brand)}
+  border-color:var(--tint)}
 
 .lvcard .lv{flex:0 0 auto;display:flex;gap:4px}
 
 .lvcard .lv i{width:9px;height:9px;border-radius:50%;background:var(--line);display:block}
 
-.lvcard .lv i.f{background:var(--brand)}
+.lvcard .lv i.f{background:var(--tint)}
 
 .lvcard .tx{flex:1}
 
@@ -562,7 +573,7 @@ button{font-family:inherit}
 
   padding:10px 18px;font-size:14px;font-weight:700;white-space:nowrap;box-shadow:none}
 
-.tabs button.on{background:var(--brand);border-color:var(--brand-dark);color:var(--on-accent);
+.tabs button.on{background:var(--tint);border-color:var(--brand-dark);color:var(--on-tint);
 
   box-shadow:none}
 
@@ -580,7 +591,7 @@ button{font-family:inherit}
 
 .card:active{transform:translateY(2px);border-bottom-width:2px;
 
-  border-color:var(--brand)}
+  border-color:var(--tint)}
 
 .card .hd{display:flex;align-items:center;gap:8px}
 
@@ -602,7 +613,7 @@ button{font-family:inherit}
 
 .lvl i{width:6px;height:6px;border-radius:50%;background:var(--line);display:block}
 
-.lvl i.f{background:var(--brand)}
+.lvl i.f{background:var(--tint)}
 
 .done{flex:0 0 auto;font-size:11px;color:var(--ok-dark);font-weight:800;
 
@@ -632,7 +643,7 @@ button{font-family:inherit}
 
    对方用白底带阴影，Alex 用一张独立的浅色卡片 —— 三者一眼分得开 */
 
-.you .bub{background:var(--brand);color:var(--on-accent);border-radius:10px 18px 6px 18px;
+.you .bub{background:var(--tint);color:var(--on-tint);border-radius:10px 18px 6px 18px;
 
   padding:11px 15px;margin-left:auto;max-width:86%;font-size:15.5px;line-height:1.55;
 
@@ -670,7 +681,7 @@ button{font-family:inherit}
 
   border-radius:10px;box-shadow:none;padding:15px 17px;margin-top:13px}
 
-.better .lb{font-size:11px;letter-spacing:.4px;color:var(--brand-dark);
+.better .lb{font-size:11px;letter-spacing:.4px;color:var(--tint);
 
   font-weight:700;margin-bottom:5px}
 
@@ -690,7 +701,7 @@ button{font-family:inherit}
 
   transition:transform .06s,border-bottom-width .06s,border-color .12s}
 
-.play:active{transform:translateY(2px);border-bottom-width:2px;border-color:var(--brand)}
+.play:active{transform:translateY(2px);border-bottom-width:2px;border-color:var(--tint)}
 
 .play.on{border-color:var(--accent);color:var(--accent)}
 
@@ -702,7 +713,7 @@ button{font-family:inherit}
 
 #topnav{margin:4px 0 8px;min-height:44px;display:flex;align-items:center}
 
-#topnav button{background:none;border:none;color:var(--brand);font-size:16px;
+#topnav button{background:none;border:none;color:var(--tint);font-size:16px;
 
   padding:10px 14px 10px 0;font-weight:600;min-height:44px;
 
@@ -726,9 +737,9 @@ button{font-family:inherit}
 
 #mic{width:96px;height:96px;border-radius:50%;font-size:15px;
 
-  font-weight:800;letter-spacing:.5px;color:var(--on-accent);
+  font-weight:800;letter-spacing:.5px;color:var(--on-tint);
 
-  background:var(--brand);box-shadow:none;
+  background:var(--tint);box-shadow:none;
 
   touch-action:none;border:none;border-bottom:5px solid var(--brand-dark);
 
@@ -806,7 +817,7 @@ button{font-family:inherit}
 
   padding:8px 14px;font-size:13px;font-weight:700;white-space:nowrap}
 
-.rchip.on{background:var(--brand);border-color:var(--brand-dark);color:var(--on-accent)}
+.rchip.on{background:var(--tint);border-color:var(--brand-dark);color:var(--on-tint)}
 
 
 
@@ -13153,6 +13164,8 @@ function paintTabs(){
 }
 
 function goTab(name){
+  /* 让 CSS 知道现在在哪一块 —— 强调色跟着 tab 走 */
+  try { document.documentElement.dataset.tab = name; } catch(_){}
 
   if (window.audioStop) audioStop();   // 🚨 换屏就停声，别让上一屏的声音跟着走
 
