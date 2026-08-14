@@ -414,7 +414,10 @@ button{font-family:inherit}
 .tiles.main .tile:active{background:var(--card-2)}
 .tiles.main .tile .ic{color:var(--fg-strong);opacity:.30}
 .tiles.main .tile .nm{font-size:16.5px;font-weight:800;letter-spacing:.2px}
-.tiles.main .tile .ds{color:rgba(255,255,255,.72);font-size:12px;line-height:1.5}
+/* 🚨 用语义色，别写死 rgba —— 这条更具体，会盖掉 .tile .ds。
+   同型的坑我这一轮踩了两次（.tile 背景、.ds 颜色），教训是：
+   改样式后必须**量渲染结果**，光看自己改的那条不算数。 */
+.tiles.main .tile .ds{color:var(--muted);font-size:12.5px;line-height:1.5}
 /* 回看类工具：明确降一级 —— 不是不重要，是用的时候才找它 */
 .tools{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
 .tool{display:flex;align-items:center;gap:9px;padding:13px 14px;
@@ -799,7 +802,8 @@ button{font-family:inherit}
 
 .tile.t-read,
 
-.tile.t-write{--tile-accent:rgba(255,255,255,.26)}
+.tile.t-read{--tile-accent:rgba(255,255,255,.40)}
+.t-write{--tile-accent:rgba(255,255,255,.26)}
 
 .tile.t-read .ds,
 
