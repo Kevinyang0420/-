@@ -377,9 +377,20 @@ button{font-family:inherit}
 .tile:active{transform:scale(.985);background:var(--card-2)}
 
 /* 左上角一道细色条：区分四个入口，但不涂满整块 */
-.tile::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+/* 🚨 色条从 3px 加到 4px，并且用**各自的色相** ——
+   上一版四个格子只有白色的四档透明度，小尺寸下根本分不出来。 */
+.tile::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
 
-  background:var(--tile-accent,rgba(255,255,255,.28))}
+  background:var(--tile-tint,rgba(255,255,255,.28))}
+
+/* 图标后面一层极淡的同色辉光：远看就能认出是哪一块，近看不脏 */
+.tile::after{content:'';position:absolute;top:-28px;right:-28px;
+
+  width:120px;height:120px;border-radius:50%;pointer-events:none;
+
+  background:radial-gradient(circle,var(--tile-tint,transparent) 0%,transparent 70%);
+
+  opacity:.13}
 
 .tile{border:2px solid transparent;border-bottom-width:4px}
 
@@ -412,7 +423,8 @@ button{font-family:inherit}
   border:1px solid var(--line);border-bottom:1px solid var(--line);
   min-height:140px;grid-column:auto}
 .tiles.main .tile:active{background:var(--card-2)}
-.tiles.main .tile .ic{color:var(--fg-strong);opacity:.30}
+/* 图标直接上色相，不再是半透明白 —— 这是最快能认出模块的信号 */
+.tiles.main .tile .ic{color:var(--tile-tint,var(--fg-strong));opacity:.92}
 .tiles.main .tile .nm{font-size:16.5px;font-weight:800;letter-spacing:.2px}
 /* 🚨 用语义色，别写死 rgba —— 这条更具体，会盖掉 .tile .ds。
    同型的坑我这一轮踩了两次（.tile 背景、.ds 颜色），教训是：
@@ -450,9 +462,9 @@ button{font-family:inherit}
 
    靠图标和文案区分，不靠颜色区分。 */
 
-.t-speak{--tile-accent:rgba(255,255,255,.85)}
+.t-speak{--tile-tint:#f5b942}
 
-.t-listen{--tile-accent:rgba(255,255,255,.55)}
+.t-listen{--tile-tint:#48c8e8}
 
 .t-book,.t-hist{background:var(--card);color:var(--fg);
 
@@ -802,8 +814,8 @@ button{font-family:inherit}
 
 .tile.t-read,
 
-.tile.t-read{--tile-accent:rgba(255,255,255,.40)}
-.t-write{--tile-accent:rgba(255,255,255,.26)}
+.tile.t-read{--tile-tint:#5fd08a}
+.t-write{--tile-tint:#a98cff}
 
 .tile.t-read .ds,
 
