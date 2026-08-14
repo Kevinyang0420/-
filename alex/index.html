@@ -1330,7 +1330,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
 
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
 
-const BANKV = '3a44db2b';
+const BANKV = '2b113717';
 
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
@@ -5531,6 +5531,18 @@ function showLevel(mode){
 
   if (mode === 'listen'){
 
+    /* 「练习 / 我做过的题」两个 tab —— 跟口语的「我的记录」、写作的「我写过的」
+       同一个形态（Kevin 2026-08-14：「听力也加一个我做过的题吧，参考口语和写作」）。
+       🚨 插在 #feed 最前面，所以要在时事入口**之前**加。 */
+
+    LRECUI.top = 'do';
+
+    const tb = document.createElement('div');
+
+    tb.innerHTML = lrecTopTabs();
+
+    $('#feed').appendChild(tb.firstChild);
+
     const n = document.createElement('div');
 
     n.className = 'card';
@@ -5546,6 +5558,8 @@ function showLevel(mode){
     n.onclick = () => go(showNews, '时事听力');
 
     $('#feed').appendChild(n);
+
+    bindLrecTop();          // 🚨 上面那两个 tab 得绑，不绑就是点了没反应
 
   }
 
@@ -6349,7 +6363,7 @@ function sessDB(){
   if (_db) return Promise.resolve(_db);
   return new Promise((res, rej) => {
     let rq;
-    try { rq = indexedDB.open(SESSDB, 2); }
+    try { rq = indexedDB.open(SESSDB, 3); }   // 3：加了听力的 lrec store
     catch(e){ return rej(e); }
     rq.onupgradeneeded = () => {
       const db = rq.result;
@@ -6365,6 +6379,11 @@ function sessDB(){
          而报错是「找不到 objectStore」——看着像代码写错，其实是版本没动。 */
       if (!db.objectStoreNames.contains('wrec'))
         db.createObjectStore('wrec', {keyPath: 'id'});
+      /* 听力「我做过的题」（Kevin 2026-08-14：「听力也加一个我做过的题吧，
+         参考口语和写作」）。一题一条 —— 他说的是「题」，不是「哪一集」。
+         🚨 加这个 store 同样要把上面 open(SESSDB, N) 的版本号 +1。 */
+      if (!db.objectStoreNames.contains('lrec'))
+        db.createObjectStore('lrec', {keyPath: 'id'});
     };
     rq.onsuccess = () => { _db = rq.result; res(_db); };
     rq.onerror = () => rej(rq.error || new Error('打不开本地库'));
@@ -8782,6 +8801,14 @@ function renderUnitQs(box, unit){
 
         if (LSN.news) newsMark(LSN.news.title, it, (LSN.news.items || []).length);
 
+        /* 「我做过的题」也记在这一刻，跟上面那个进度埋点同一个时机 ——
+           两处埋在不同地方的话，早晚出现「进度说做过、记录里没有」。 */
+
+        lrecLog(it, k, right,
+                LSN.news ? (LSN.news.title || '时事听力')
+                         : ((LSN.scn && (LSN.scn.t || LSN.scn.id)) || '配音听力'),
+                LSN.news ? 'news' : 'scn');
+
         cards.forEach((x, ki) => {
 
           x.style.pointerEvents = 'none';
@@ -8814,6 +8841,173 @@ function renderUnitQs(box, unit){
 
   });
 
+}
+
+
+
+/* ═══ 听力：我做过的题 ═══
+   Kevin 2026-08-14：「听力也加一个我做过的题吧，参考口语和写作。」
+
+   所以形态**照抄那两块**：顶上两个 tab（练习 / 我做过的题）、列表点进去看详情、
+   能删、能回到原来那一集接着做。存 IndexedDB 的 `lrec`，跟写作的 `wrec` 一个模子。
+
+   🚨 一题一条，不是一集一条 —— 他说的是「我做过的**题**」。
+      按集存的话，翻回去只能看到「这集做过」，看不到当时错在哪，那就白记了。
+   🚨 埋点跟「已做过」那个进度条一致：**答完才记**（Kevin 2026-08-09 点名过
+      「刚点进去就标已做过，这不对」）。所以写在 renderUnitQs 的 onclick 里。      */
+
+function lrecId(q, src){
+  const s = String(src || '') + '|' + String(q || '');
+  let h = 7;
+  for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 99999989;
+  return 'l' + h.toString(36);
+}
+
+/* 记一题。同一题再做一次就覆盖同一条（keyPath 是内容哈希），
+   并把做过的次数累加 —— 他想知道的是「这题我又错了一次」，不是攒一堆重复。 */
+async function lrecPut(rec){
+  try {
+    const old = await _tx('lrec', 'readonly', st => st.get(rec.id));
+    const n = ((old && old.n) || 0) + 1;
+    const wrong = ((old && old.wrong) || 0) + (rec.right ? 0 : 1);
+    await _tx('lrec', 'readwrite', st => st.put(
+      Object.assign({}, old || {}, rec, {n: n, wrong: wrong})));
+    return true;
+  } catch(e){ return false; }
+}
+
+async function lrecList(){
+  try {
+    const all = await _tx('lrec', 'readonly', st => st.getAll());
+    return (all || []).sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+  } catch(e){ return []; }
+}
+
+async function lrecDel(id){
+  try { await _tx('lrec', 'readwrite', st => st.delete(id)); return true; }
+  catch(e){ return false; }
+}
+
+/* 答完一题就记 —— 由 renderUnitQs 调。
+   🚨 整个函数包在 try 里：记录失败绝不能把答题这条主路弄断。 */
+function lrecLog(it, k, right, srcTitle, kind){
+  try {
+    const rec = {
+      id: lrecId(it.q, srcTitle),
+      q: it.q, opt: (it.opt || []).slice(), ans: it.ans, pick: k, right: !!right,
+      key: it.key || '', zh: it.zh || '',
+      src: srcTitle || '', kind: kind || 'scn',
+      at: new Date().toISOString(), on: TODAY(),
+    };
+    lrecPut(rec);
+  } catch(_){}
+}
+
+/* ── 界面：听力页顶部两个 tab ── */
+const LRECUI = {top: 'do', only: 'all'};
+
+function lrecTopTabs(){
+  const b = (k, nm) => '<button class="rchip' + (LRECUI.top === k ? ' on' : '') +
+    '" data-ltop="' + k + '" style="font-size:14px;padding:7px 16px">' + nm + '</button>';
+  return '<div class="tabs" style="margin-bottom:12px">' +
+    b('do', '练习') + b('rec', '我做过的题') + '</div>';
+}
+
+function bindLrecTop(){
+  document.querySelectorAll('#feed [data-ltop],#list [data-ltop]').forEach(x =>
+    x.onclick = () => {
+      LRECUI.top = x.dataset.ltop;
+      if (LRECUI.top === 'rec') go(showMyListens, '我做过的题');
+      else back();
+    });
+}
+
+async function showMyListens(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  const f = $('#feed');
+  f.innerHTML = lrecTopTabs() + '<div class="note">正在读…</div>';
+  bindLrecTop();
+  const all = await lrecList();
+  const wrong = all.filter(r => !r.right);
+  $('#sub').textContent = all.length ? '做过 ' + all.length + ' 题 · 错过 ' + wrong.length + ' 题'
+                                     : '还没做过题';
+  if (!all.length){
+    f.innerHTML = lrecTopTabs() +
+      '<div class="note">还没有听力记录。<br><br>' +
+      '去「练习」做几题，这里就会留下：<b>当时那道题</b>、你选的、正确答案，' +
+      '以及为什么。<br><br>错过的题会单独标出来，可以只翻错的。</div>';
+    bindLrecTop();
+    return;
+  }
+  const list = LRECUI.only === 'wrong' ? wrong : all;
+  const chip = (v, nm) => '<button class="rchip' + (LRECUI.only === v ? ' on' : '') +
+    '" data-lonly="' + v + '">' + nm + '</button>';
+  f.innerHTML = lrecTopTabs() +
+    '<div class="tabs" style="margin-bottom:10px">' +
+      chip('all', '全部 ' + all.length) + chip('wrong', '做错的 ' + wrong.length) +
+    '</div>' +
+    (list.length ? '' : '<div class="note">这一档是空的。</div>') +
+    list.map(r =>
+      '<div class="card" data-lid="' + esc(r.id) + '"><div class="hd">' +
+        '<span class="ct" style="font-size:11.5px;font-weight:800;color:' +
+          (r.right ? 'var(--brand-dark)' : 'var(--warn,#c25)') + '">' +
+          (r.right ? '✅ 做对了' : '❌ 做错了') +
+          (r.n > 1 ? '<span style="color:var(--faint);font-weight:600"> · 做过 ' +
+            r.n + ' 次</span>' : '') + '</span>' +
+        '<span class="done">' + esc(r.on || '') + '</span></div>' +
+        '<div class="en" style="margin-top:3px;font-size:14px;line-height:1.6">' +
+          esc(r.q || '') + '</div>' +
+        (r.src ? '<div class="sit" style="margin-top:4px">' + esc(r.src) + '</div>' : '') +
+      '</div>').join('');
+  bindLrecTop();
+  document.querySelectorAll('#feed [data-lonly]').forEach(b =>
+    b.onclick = () => { LRECUI.only = b.dataset.lonly; showMyListens(); });
+  document.querySelectorAll('#feed .card[data-lid]').forEach(el =>
+    el.onclick = async () => {
+      const r = (await lrecList()).find(x => x.id === el.dataset.lid);
+      if (r) go(() => showOneListen(r), '这一题');
+    });
+}
+
+function showOneListen(r){
+  const f = $('#feed');
+  $('#sub').textContent = r.right ? '这一题做对了' : '这一题做错了';
+  f.innerHTML = '';
+
+  const q = document.createElement('div');
+  q.className = 'better';
+  q.innerHTML = '<div class="lb">' + esc(r.src || '听力题') +
+    (r.n > 1 ? ' · 做过 ' + r.n + ' 次' + (r.wrong ? '（错 ' + r.wrong + ' 次）' : '') : '') +
+    '</div>' +
+    '<div class="en" style="font-size:15px;line-height:1.7">' + esc(r.q || '') + '</div>';
+  q.appendChild(playBtn(r.q || '', '🔊 读题'));
+  f.appendChild(q);
+
+  (r.opt || []).forEach((o, k) => {
+    const c = document.createElement('div');
+    c.className = 'card';
+    c.style.marginTop = '8px';
+    c.textContent = 'ABCDE'[k] + '. ' + o;
+    if (k === r.ans) c.style.cssText += ';border-color:var(--ok,#0a0);background:var(--brand-soft)';
+    else if (k === r.pick) c.style.cssText += ';opacity:.55;text-decoration:line-through';
+    f.appendChild(c);
+  });
+
+  const d = document.createElement('div');
+  d.className = 'better'; d.style.marginTop = '12px';
+  d.innerHTML = '<div class="lb">' + (r.right ? '✅ 你当时选对了' : '❌ 你当时选错了') + '</div>' +
+    '<div style="font-size:13.5px;line-height:1.7">正确答案：' +
+      esc((r.opt || [])[r.ans] || '') +
+      (r.right ? '' : '<br>你选的：' + esc((r.opt || [])[r.pick] || '')) + '</div>' +
+    (r.key ? '<div class="tags">' + esc(r.key) + '</div>' : '') +
+    (r.zh ? '<div class="tags">' + esc(r.zh) + '</div>' : '');
+  f.appendChild(d);
+
+  const rm = document.createElement('button');
+  rm.className = 'play'; rm.style.marginTop = '18px';
+  rm.textContent = '🗑 删掉这一题';
+  rm.onclick = async () => { await lrecDel(r.id); toast('删掉了'); back(); };
+  f.appendChild(rm);
 }
 
 
@@ -9112,11 +9306,19 @@ const ESSAY = {items: [], cur: null, page: 0, task: 'all'};
 
 
 
+/* 🚨 加新任务类型要**同时**改三处，少一处那批卡就静默不显示：
+   ① 这张表（没有的话筛选 chip 出不来、卡面标题显示成生的 task 值）
+   ② 生成端 build_essays.TASKS（自产范文才需要）
+   ③ 出卡脚本里的 task 常量（xhs_to_alex.TASK = 'interview'）
+   `interview` 这一类是从他自己收藏的小红书笔记转过来的，见 xhs_to_alex.py。 */
+
 const ETASK = {finding:'Finding', query:'管理层问询', exec:'执行摘要',
 
                chart:'图表解读', chase:'催办邮件', caveat:'范围限制',
 
-               valuation:'估值说明', escalate:'内部升级', dispute:'分歧沟通'};
+               valuation:'估值说明', escalate:'内部升级', dispute:'分歧沟通',
+
+               interview:'面试问答'};
 
 
 
@@ -9328,6 +9530,15 @@ function showEssayList(es, all){
 
     if (d) return d;
 
+    /* 🚨 优先级排在「读没读过」**后面**：Kevin 2026-08-14 要小红书那批
+       「优先去复习和练习」，所以同为没读过时它排最前；但读过之后照样沉底，
+       否则同一篇永远钉在第一个，别的就再也轮不到了。
+       读过的那一组内部，高优先级仍然排前面 —— 他要的是复习它们。 */
+
+    const p = ((b.pri || 0) - (a.pri || 0));
+
+    if (p) return p;
+
     const h = x => [...x].reduce((k, c) => (k * 31 + c.charCodeAt(0)) % 9973, 7);
 
     return h(a.id + DAYSEED) - h(b.id + DAYSEED);
@@ -9387,6 +9598,15 @@ function showEssayList(es, all){
         '<div class="en" style="margin-top:2px;font-size:15px">' +
 
         esc(c.t || '') + '</div>' +
+
+        /* 从他自己收藏的笔记来的，要标出处 —— 跟阅读那边「每条都标来源」一个道理：
+           他有权知道眼前这篇是谁写的、从哪来的。 */
+
+        (c.src ? '<div style="margin-top:5px;font-size:11.5px;color:var(--brand-dark);' +
+
+          'font-weight:700">⭐ 你收藏的 · ' + esc(c.src.plat || '') +
+
+          (c.src.author ? ' · ' + esc(c.src.author) : '') + '</div>' : '') +
 
         '<div class="sit" style="margin-top:6px">' +
 
@@ -11424,6 +11644,29 @@ function openEssay(c){
         '<span style="color:var(--faint);font-weight:700;flex:0 0 44px">' +
 
         x[0] + '</span><span>' + esc(cleanZh(x[1])) + '</span></div>').join('');
+
+  /* 从他自己收藏的笔记转过来的，标清楚出处并留原链接。
+     🚨 跟阅读那边「每条都标出处」同一条规矩：这篇的英文是**照着那条视频里的说法**
+        重写的，不是我们凭空写的范文，他有权知道，也得能回去看原片。 */
+
+  if (c.src){
+    const s = c.src;
+    const line = document.createElement('div');
+    line.style.cssText = 'margin-top:9px;padding-top:8px;border-top:1px solid var(--line);' +
+      'font-size:12px;color:var(--muted);line-height:1.6';
+    line.innerHTML = '⭐ 来自你收藏的笔记 · ' + esc(s.plat || '') +
+      (s.author ? ' · ' + esc(s.author) : '') +
+      (s.note ? '<br>《' + esc(s.note) + '》' : '');
+    if (s.url){
+      const a = document.createElement('a');
+      a.className = 'play';
+      a.href = s.url; a.target = '_blank'; a.rel = 'noopener';
+      a.textContent = '↗ 看原笔记';
+      a.style.textDecoration = 'none';
+      line.appendChild(a);
+    }
+    scb.appendChild(line);
+  }
 
   f.appendChild(scb);
 
