@@ -7652,7 +7652,10 @@ function showBackup(){
 
       覆盖会静默吃掉其中一边。合并才是安全的默认。 */
 
-const BACKUP_KEYS = ['alex_state', 'alex_sessions', 'alex_lsn_seen', 'alex_dens'];
+/* 🚨 `alex_nb`（单词本 / 专业表达本）必须在备份里：那是他一条条自己攒的，
+   清一次浏览器缓存就全没了，而且没有任何提示 —— 正是这个备份功能存在的理由。
+   查过的词条缓存（alex_dict_cache）不进备份：丢了重查一次就有，没必要撑大文件。 */
+const BACKUP_KEYS = ['alex_state', 'alex_sessions', 'alex_lsn_seen', 'alex_dens', 'alex_nb'];
 
 
 
@@ -7807,6 +7810,23 @@ function importData(text, replace){
       localStorage.setItem(k, JSON.stringify([...new Set([...a, ...b])].slice(-500)));
 
       stats.push('听力记录已合并');
+
+    } else if (k === 'alex_nb'){
+
+      /* 本子按 id 合并，两边的复习进度取更靠前的那份（见 mergeNb）。
+         🚨 不能无脑覆盖：他很可能在手机和电脑上各收过一些词。 */
+
+      let inc = [];
+
+      try { inc = JSON.parse(d.data[k]) || []; } catch(_){}
+
+      const before = nbAll().length;
+
+      const merged = mergeNb(nbAll(), inc);
+
+      if (!nbSave(merged)) throw new Error('本子存不下（浏览器存储满了）');
+
+      stats.push(`本子 +${merged.length - before} 条（共 ${merged.length}）`);
 
     }
 
@@ -11090,6 +11110,8 @@ function selBarInit(essay, box){
 
   b.innerHTML = '<span class="sb-n"></span>' +
 
+    '<button class="sb-q">🔍 查这个</button>' +
+
     '<button class="sb-go">☆ 收藏选中的这句</button>' +
 
     '<button class="sb-x">取消</button>';
@@ -11122,7 +11144,9 @@ function selBarInit(essay, box){
 
       const live = selClean(String(window.getSelection() || ''));
 
-      if (selWords(live) >= 3) SELBAR.text = live;
+      /* 🚨 门槛从 3 词降到 1：查词就是要选一两个词。
+         收藏那条仍然要 ≥3 词（应用指南是给整句用的），所以两个键各判各的。 */
+      if (selWords(live) >= 1) SELBAR.text = live;
 
     }, {passive: true}));
 
@@ -11165,6 +11189,24 @@ function selBarInit(essay, box){
        这里直接给一条「已收 N 条 · 去收藏页看」，点一下就过去。 */
 
 
+
+  };
+
+  /* 选中一两个词就查它 —— 读范文时遇到不认识的词，不用退出去再输一遍。 */
+
+  b.querySelector('.sb-q').onclick = () => {
+
+    const t = SELBAR.text || selClean(String(window.getSelection() || ''));
+
+    if (!normQ(t)) return toast('没读到选中的文字，再长按选一次');
+
+    try { window.getSelection().removeAllRanges(); } catch(_){}
+
+    selBarHide();
+
+    SELBAR.text = '';
+
+    openDict(normQ(t));
 
   };
 
@@ -11216,9 +11258,16 @@ function selBarSync(){
 
   } catch(_){}
 
-  if (!inside || n < 3) return selBarHide();
+  if (!inside || n < 1) return selBarHide();
 
   SELBAR.text = t;                       // 🚨 存住，别等点的时候再读
+
+  /* 一两个词只能查，收藏键收起来 —— 拿半个词去要「应用指南」出来必然是废卡，
+     不如不给这个键。 */
+
+  const goBtn = b.querySelector('.sb-go');
+
+  if (goBtn) goBtn.hidden = n < 3;
 
   /* 选太长会让指南变得很泛（它是给**一个句式**用的）——提示但不拦着，
 
@@ -13067,6 +13116,887 @@ async function orderScenario(){
 
 
 
+/* ═══════════════════ 查词 + 我的本子 ═══════════════════
+
+   Kevin 2026-08-14：「有时候我想起一些英文表达，不知道在哪里查比较快，
+   如果能直接在你这里查就好了。查完之后，希望可以帮我归集到一个『单词本』或者
+   『专业表达本』里，把我平时想起来的单词、搭配或专业表达记录下来，方便我以后去
+   review。另外，这个功能最好也能支持我平时做一些基础的单词查询。」
+
+   🚨 这一块做得好不好只有一个判据：**下次他写报告或开口时，查过的这一条能不能用上。**
+      所以不做「有道搬运」——中文释义只是入口，真正值钱的是搭配、语域、
+      「这词能不能写进正式报告」，以及中国人最容易写错的那一版。
+
+   三种查法按输入自动分诊，不用他选：
+     word   单个英文词     → 音标 / 词性 / 义项 / 搭配 / 近义辨析
+     phrase 英文词组或句式 → 同上，重心在「整块什么时候用」
+     zh     中文           → 给几个候选英文 + 区别 + 推荐写进报告的那个
+
+   两个本子按他的原话分：**单词本** / **专业表达本**。收的时候给默认归类但可改 ——
+   他自己的本子，凭什么由我定。                                                    */
+
+const DICT = {q:'', cur:null, top:'look', book:'word', fq:'', busy:false, err:'', _ft:0};
+
+const NB_LS  = 'alex_nb';          // 本子
+const DCACHE = 'alex_dict_cache';  // 查过的词条（省额度，也让离线能翻）
+const DHIST  = 'alex_dict_hist';   // 最近查过什么
+const NB_MAX = 500, DC_MAX = 120, DH_MAX = 24;
+const BOOKS  = {word:'单词本', pro:'专业表达本'};
+
+const normQ = s => String(s == null ? '' : s).trim().replace(/\s+/g, ' ');
+const qId   = s => normQ(s).toLowerCase();
+
+/* 输入是什么就按什么查。中文里只要出现一个汉字就走中→英那条。 */
+function kindOf(q){
+  const t = normQ(q);
+  if (/[一-鿿]/.test(t)) return 'zh';
+  return t.split(' ').filter(Boolean).length > 1 ? 'phrase' : 'word';
+}
+
+const defaultBook = kind => kind === 'word' ? 'word' : 'pro';
+
+/* ── 判据：例句/搭配里到底有没有出现要查的那个词 ──
+   只比词干前缀，容得下 assess→assessed、liability→liabilities、provide→providing。
+
+   🚨 这条必须会失败，而且是最高频的废卡形态：模型很爱给一句意思相近、
+      却一个目标词都不含的漂亮例句（实测查 "in light of" 第一版给的例句里没有 light）。
+   🚨 前缀比对要带词边界 `\b`：不带的话查 "set" 会被 "asset" 命中 —— 那就成了
+      永远会通过的假检查。                                                     */
+const DSTOP = new Set(['a','an','the','of','in','on','to','for','with','at','by',
+                       'and','or','be','is','are','was','were','as','that','this',
+                       'it','its','from','into','than','then','so','not','no',
+                       'have','has','had','do','does','did','will','would','can']);
+
+const reEsc = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const dStem = w => w.length <= 4 ? w : w.slice(0, Math.max(4, w.length - 3));
+
+function stemsMissing(q, text){
+  const t = String(text == null ? '' : text);
+  const words = normQ(q).toLowerCase().match(/[a-z][a-z'-]*/g) || [];
+  if (!words.length) return [];
+  const content = words.filter(w => !DSTOP.has(w));
+  const pool = content.length ? content : words;
+  const miss = pool.filter(w =>
+    !(new RegExp('\\b' + reEsc(dStem(w)), 'i').test(t)));
+  /* 单词和两词搭配要求全中；再长就容 30%（floor，所以 3 个实词仍然要全中）——
+     "going concern basis of preparation" 这种长词条，地道的例句本来就会写成
+     "prepared on a going concern basis"，一个实词都不许少会把好卡全判废。 */
+  const tol = pool.length <= 2 ? 0 : Math.floor(pool.length * 0.3);
+  return miss.length > tol ? miss : [];
+}
+
+const DREGS = ['正式', '中性', '口语'];
+
+/* 返回 [] 表示通过。每条都想过「什么输入会让它失败」：
+   例句不含目标词 / 搭配是编的 / 语域瞎写 / 中文查英文只给一个候选没得比 /
+   pick 写了个候选里根本没有的说法。                                          */
+function entryBad(e, q, kind){
+  const bad = [];
+  if (!e || typeof e !== 'object') return ['没解析出 JSON'];
+
+  if (kind === 'zh'){
+    const cs = Array.isArray(e.cands) ? e.cands.filter(x => x && x.en && x.cn) : [];
+    if (cs.length < 2) bad.push('cands 只有 ' + cs.length + ' 条，至少要 2 个候选（一个没得比）');
+    cs.forEach((c, i) => {
+      if (/[一-鿿]/.test(c.en)) bad.push('cands[' + i + '].en 里混了中文');
+      if (!c.eg) bad.push('cands[' + i + '] 没例句');
+      else if (stemsMissing(c.en, c.eg).length)
+        bad.push('cands[' + i + '] 的例句里没出现「' + c.en + '」');
+      if (c.reg && DREGS.indexOf(c.reg) < 0)
+        bad.push('cands[' + i + '].reg 不是 正式/中性/口语');
+    });
+    if (!e.pick) bad.push('pick 缺失（没说该用哪个）');
+    else if (!cs.some(c => ENORM(c.en).toLowerCase() === ENORM(e.pick).toLowerCase()))
+      bad.push('pick「' + e.pick + '」不在候选里');
+    if (!e.why) bad.push('why 缺失');
+    return bad;
+  }
+
+  const ds = Array.isArray(e.defs) ? e.defs.filter(x => x && x.cn) : [];
+  if (!ds.length) bad.push('defs 一条都没有');
+  ds.forEach((d, i) => {
+    if (!d.pos) bad.push('defs[' + i + '] 没标词性');
+    if (!d.en) bad.push('defs[' + i + '] 没例句');
+    else {
+      const m = stemsMissing(q, d.en);
+      if (m.length) bad.push('defs[' + i + '] 的例句里没出现「' + m.slice(0, 2).join('/') + '」');
+      if (!d.zh) bad.push('defs[' + i + '] 的例句没给中文');
+    }
+  });
+  const cl = Array.isArray(e.coll) ? e.coll.filter(x => x && x.en) : [];
+  if (cl.length < 2) bad.push('coll 只有 ' + cl.length + ' 条搭配，至少 2 条');
+  cl.forEach((c, i) => {
+    if (stemsMissing(q, c.en).length) bad.push('coll[' + i + ']「' + c.en + '」里没有这个词');
+  });
+  if (!e.reg) bad.push('reg 缺失');
+  else if (DREGS.indexOf(e.reg) < 0)
+    bad.push('reg 要 正式/中性/口语 三选一，给的是「' + e.reg + '」');
+  if (!e.trap || !e.trap.bad || !e.trap.why) bad.push('trap 不全（最容易写错的那版没给）');
+  if (kind === 'word' && !e.ipa) bad.push('ipa 音标缺失');
+  return bad;
+}
+
+const DICT_RULES_EN =
+  '你是一本给中国职业人士用的英语词典。查的人做财务尽职调查和审计，' +
+  '英文读写没问题，缺的是「这个词到底怎么用、能不能写进正式报告」。\n\n' +
+  '要查的是：\n"""{q}"""\n\n' +
+  '严格输出这个 JSON，不要任何解释、不要 markdown 围栏：\n' +
+  '{"w":"归一化后的词条本身（英文原形；词组保持词组）",\n' +
+  ' "ipa":"英式音标，带斜杠，如 /əˈses/。词组给整串读法",\n' +
+  ' "reg":"正式 或 中性 或 口语（三选一，指这个词本身的语域）",\n' +
+  ' "defs":[{"pos":"词性，如 n. / v. / adj. / phr.",' +
+  '"cn":"中文释义，一句话说清",' +
+  '"en":"英文例句，🚨必须真的含这个词，优先商务/财务语境",' +
+  '"zh":"这句例句的中文"}],\n' +
+  ' "coll":[{"en":"最常见的固定搭配，🚨必须真的含这个词","cn":"中文意思"}],\n' +
+  ' "biz":"中文两三句：正式书面语（报告、邮件、附注）里怎么用它、放进报告合不合适、' +
+  '有没有更书面的替代。如果它就是个日常词，直说「日常词，正式报告里少见」，别硬凑",\n' +
+  ' "near":[{"en":"容易跟它混的近义词或近义表达",' +
+  '"cn":"中文一句：差在哪、什么时候该换用"}],\n' +
+  ' "trap":{"bad":"中国人想表达这个意思时最容易写成的那一版英文（错的那版）",' +
+  '"why":"中文一句：错在哪、会被读成什么意思"}}\n\n' +
+  '硬性要求（不满足就是废卡）：\n' +
+  '- defs 至少 1 条、最多 4 条，最常用的义项排最前面\n' +
+  '- 🚨 每条例句、每条搭配都必须**真的含这个词**（可以是变形：assess→assessed）\n' +
+  '- coll 至少 2 条；near 至少 1 条\n' +
+  '- reg 只能是 正式/中性/口语 之一\n' +
+  '- trap 不许空：写不出「最容易写错的那版」说明没想清楚\n' +
+  '- 🚨 只讲英语怎么用，不讲专业判断（不评论该不该下结论、证据够不够、账务对不对）';
+
+const DICT_RULES_ZH =
+  '你在帮一个中国职业人士把一个中文意思说成地道英文。他做财务尽职调查和审计，' +
+  '写的是英文报告和邮件。\n\n' +
+  '他想表达的意思是：\n"""{q}"""\n\n' +
+  '严格输出这个 JSON，不要任何解释、不要 markdown 围栏：\n' +
+  '{"w":"他输入的中文原文",\n' +
+  ' "cands":[{"en":"英文表达（只写英文，不许夹中文）",' +
+  '"cn":"中文一句：这个说法什么场合用、跟别的候选差在哪",' +
+  '"eg":"英文例句，🚨必须真的含这个表达",' +
+  '"reg":"正式 或 中性 或 口语"}],\n' +
+  ' "pick":"这几个里最适合写进正式报告的那一个（**一字不差照抄**上面某个 en）",\n' +
+  ' "why":"中文一句：为什么是它"}\n\n' +
+  '硬性要求（不满足就是废卡）：\n' +
+  '- cands 2 到 4 条，覆盖不同语域，别给四个同义词\n' +
+  '- 🚨 每条例句必须真的含那个表达\n' +
+  '- pick 必须跟某个 en 一字不差\n' +
+  '- 🚨 只讲英语表达，不讲专业判断';
+
+/* 查一次，最多三轮。
+   🚨 重试必须带上上一次错在哪 —— 盲重试等于把同一个 prompt 再送一遍（makeGuide 那条教训）。
+   🚨 用函数式替换：查询词里可能有 `$`（financial text 满地都是），
+      `String.replace` 的替换串里 `$&`/`$'` 会被特殊解释，静默把 prompt 搅坏。 */
+async function dictLook(q, kind){
+  let last = null;
+  for (let i = 0; i < 3; i++){
+    let e = null;
+    let p = (kind === 'zh' ? DICT_RULES_ZH : DICT_RULES_EN).replace('{q}', () => q);
+    if (last){
+      p += '\n\n🚨 你上一次的输出被判废了，原因是：' + last +
+           '\n这一次务必避开。特别提醒：例句和搭配里必须**真的出现**要查的那个词' +
+           '（允许词形变化），不要给一句意思相近但不含这个词的漂亮句子。';
+    }
+    try { e = firstJson(await textCall(p, 0.3)); }
+    catch(err){ last = err.message || String(err); continue; }
+    const bad = entryBad(e, q, kind);
+    if (!bad.length){ e.kind = kind; e.q = normQ(q); return e; }
+    last = bad.join('；');
+  }
+  throw new Error(last || '查不出来');
+}
+
+/* ── 查过的词条：存本机 ──
+   🚨 缓存存不下**不是错误**，丢掉就是了；但**本子**存不下必须报给他看，
+      静默吞正是他反馈过的那种「点了收藏，本子里没有」。两者口径不同是故意的。 */
+function dCache(){
+  try { return JSON.parse(localStorage.getItem(DCACHE) || '{}') || {}; }
+  catch(_){ return {}; }
+}
+function dCacheGet(id){
+  const c = dCache()[id];
+  return (c && c.e) ? c.e : null;
+}
+function dCachePut(id, e, now){
+  const c = dCache();
+  c[id] = {e: e, ts: now || Date.now()};
+  const ks = Object.keys(c).sort((a, b) => (c[b].ts || 0) - (c[a].ts || 0));
+  const keep = {};
+  ks.slice(0, DC_MAX).forEach(k => { keep[k] = c[k]; });
+  try { localStorage.setItem(DCACHE, JSON.stringify(keep)); return true; }
+  catch(_){ try { localStorage.removeItem(DCACHE); } catch(_2){} return false; }
+}
+function dCacheDrop(id){
+  const c = dCache();
+  delete c[id];
+  try { localStorage.setItem(DCACHE, JSON.stringify(c)); } catch(_){}
+}
+
+function dHist(){
+  try { return JSON.parse(localStorage.getItem(DHIST) || '[]') || []; }
+  catch(_){ return []; }
+}
+function dHistPush(q){
+  const h = dHist().filter(x => qId(x) !== qId(q));
+  h.unshift(normQ(q));
+  try { localStorage.setItem(DHIST, JSON.stringify(h.slice(0, DH_MAX))); } catch(_){}
+}
+
+/* ── 本子 ── */
+function nbAll(){
+  try { return JSON.parse(localStorage.getItem(NB_LS) || '[]') || []; }
+  catch(_){ return []; }
+}
+function nbSave(list){
+  try { localStorage.setItem(NB_LS, JSON.stringify(list.slice(0, NB_MAX))); return true; }
+  catch(_){ return false; }
+}
+const nbFind  = id => nbAll().find(x => x.id === id) || null;
+const nbCount = bk => nbAll().filter(x => x.book === bk).length;
+
+/* 收进本子。返回 'added' | 'moved' | 'same' | 'full'。
+   🚨 同一个词再点一次不是「取消收藏」，是「换个本子」—— 词典跟阅读收藏夹不一样，
+      他点第二下的意图几乎总是「我放错本了」。真要去掉走 nbDel（页面上是单独一个键）。
+   🚨 换本子只动 book，**不碰 rev** —— 复习进度不该因为挪了个本子就清零。 */
+function nbAdd(e, book, today){
+  const id = qId(e.q || e.w);
+  if (!id) return 'full';
+  const list = nbAll();
+  const i = list.findIndex(x => x.id === id);
+  const day = today || TODAY();
+  if (i >= 0){
+    if (list[i].book === book) return 'same';
+    list[i].book = book;
+    return nbSave(list) ? 'moved' : 'full';
+  }
+  list.unshift({id: id, q: normQ(e.q || e.w), kind: e.kind || kindOf(e.q || e.w),
+                book: book, e: e, on: day,
+                rev: {n: 0, due: day, last: '', days: [], done: false}});
+  return nbSave(list) ? 'added' : 'full';
+}
+function nbDel(id){
+  return nbSave(nbAll().filter(x => x.id !== id));
+}
+function nbPut(rec){
+  const list = nbAll();
+  const i = list.findIndex(x => x.id === rec.id);
+  if (i < 0) return false;
+  list[i] = rec;
+  return nbSave(list);
+}
+
+/* 两台设备的本子合并（备份导入用）。
+   🚨 「合并」不是「覆盖」——他很可能手机上收了几条、电脑上又收了几条，
+      覆盖会静默吃掉一边。规则按各自的语义来：
+      · 同一条：复习天数取并集、次数取多的、下次到期取**更靠后**的
+        （靠前的话已经在另一台复习过的还会再问一遍）
+      · 归到哪一本：以本机为准（他在这台上分过类）
+      · 「熟了」重算，不直接抄 —— 抄的话次数/天数合并完可能自相矛盾 */
+function mergeNb(cur, inc){
+  const out = (cur || []).slice();
+  const at = {};
+  out.forEach((x, i) => { at[x.id] = i; });
+  (inc || []).forEach(b => {
+    if (!b || !b.id) return;
+    const i = at[b.id];
+    if (i === undefined){ out.push(b); at[b.id] = out.length - 1; return; }
+    const a = out[i];
+    const ar = a.rev || {}, br = b.rev || {};
+    const days = [...new Set([...(ar.days || []), ...(br.days || [])])].sort();
+    const n = Math.max(ar.n || 0, br.n || 0);
+    out[i] = Object.assign({}, b, a, {
+      on: [a.on, b.on].filter(Boolean).sort()[0] || a.on,   // 收得早的那天
+      rev: {
+        n: n, days: days,
+        last: [ar.last || '', br.last || ''].sort().pop(),
+        due: [ar.due || '', br.due || ''].sort().pop(),
+        done: n >= REV_HITS && days.length >= REV_DAYS,
+      },
+    });
+  });
+  return out;
+}
+
+/* ── 复习节奏：1 → 3 → 7 → 21 天，记不住打回第一档 ──
+   🚨 「熟了」必须**跨天**：同一天连点两次「记住了」说明不了什么，刚看完答案当然记得。
+      跟错题本毕业门槛同一个口径（≥3 次且分布在 ≥3 天）。
+      所以同一天里第二次点「记住了」不推进档位 —— 这条会失败，测试里有反例。 */
+const REV_STEPS = [1, 3, 7, 21];
+const REV_HITS = 3, REV_DAYS = 3;
+
+function addDays(d, n){
+  const t = new Date(d + 'T00:00:00Z');
+  t.setUTCDate(t.getUTCDate() + n);
+  return t.toISOString().slice(0, 10);
+}
+
+function revApply(rec, ok, today){
+  const day = today || TODAY();
+  if (!rec.rev) rec.rev = {n: 0, due: day, last: '', days: [], done: false};
+  const r = rec.rev;
+  r.days = r.days || [];
+  if (!ok){
+    r.n = 0; r.done = false; r.last = day; r.due = addDays(day, 1);
+    return r;
+  }
+  if (r.last === day) return r;          // 同一天再点，不算数
+  r.last = day;
+  if (r.days.indexOf(day) < 0) r.days.push(day);
+  r.n += 1;
+  r.due = addDays(day, REV_STEPS[Math.min(r.n - 1, REV_STEPS.length - 1)]);
+  r.done = r.n >= REV_HITS && r.days.length >= REV_DAYS;
+  return r;
+}
+
+/* 今天该复习的：没熟的 + 到期的。没有 rev 的老记录一律算到期。 */
+function revDue(list, today){
+  const day = today || TODAY();
+  return (list || nbAll()).filter(x =>
+    !(x.rev && x.rev.done) && (!x.rev || !x.rev.due || x.rev.due <= day));
+}
+
+/* ═══════════════════ 界面 ═══════════════════ */
+
+function dictTop(){
+  const n = nbAll().length, due = revDue().length;
+  const b = (k, nm) => '<button class="rchip' + (DICT.top === k ? ' on' : '') +
+    '" data-dtop="' + k + '" style="font-size:14px;padding:7px 16px">' + nm + '</button>';
+  return '<div class="tabs" style="margin-bottom:12px">' +
+    b('look', '查词') +
+    b('nb', '我的本子' + (n ? ' ' + n : '') + (due ? ' · 待复习 ' + due : '')) +
+    '</div>';
+}
+function bindDictTop(){
+  document.querySelectorAll('#feed [data-dtop]').forEach(x =>
+    x.onclick = () => { DICT.top = x.dataset.dtop; DICT.fq = ''; showDict(); });
+}
+
+/* 收完/删完把顶上那两个 chip 的计数刷一下。
+   🚨 收藏只重画了结果区的话，上面还写着旧数字（「我的本子 2」），
+      看起来就像没收进去 —— 他反馈过一模一样的形态（点了收藏，收藏页里没反映）。 */
+function refreshDictTop(){
+  const one = document.querySelector('#feed [data-dtop]');
+  const holder = one && one.parentNode;
+  if (!holder) return;
+  holder.outerHTML = dictTop();
+  bindDictTop();
+}
+
+/* 查词页。q 传进来就直接查（首页搜索框、划选浮条都走这条）。 */
+function showDict(q){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  if (window.selBarHide) selBarHide();
+  if (DICT.top === 'nb') return showNotebook();
+  const f = $('#feed');
+  $('#sub').textContent = '想起什么就查什么，查完顺手收进本子';
+  f.innerHTML = dictTop() +
+    '<div style="display:flex;gap:8px;margin-bottom:8px">' +
+      '<input id="dq" placeholder="英文词 / 词组 / 中文都行" ' +
+        'autocapitalize="off" autocorrect="off" spellcheck="false" ' +
+        'enterkeyhint="search" ' +
+        'style="flex:1;min-width:0;padding:12px 13px;border:2px solid var(--line);' +
+        'border-radius:12px;font-size:16px;background:var(--card);color:var(--fg)">' +
+      '<button id="dgo" class="btn" style="flex:0 0 auto;padding:0 18px">查</button>' +
+    '</div>' +
+    '<div class="note" style="margin:0 0 10px">' +
+      '单词给音标、义项、搭配；词组和句式给「什么场合用、能不能写进报告」；' +
+      '直接输中文就给几个地道说法让你挑。' +
+    '</div>' +
+    '<div id="dhist"></div><div id="dres"></div>';
+  bindDictTop();
+  const inp = $('#dq'), btn = $('#dgo');
+  inp.value = (q != null && q !== '') ? normQ(q) : (DICT.q || '');
+  const fire = () => {
+    const v = normQ(inp.value);
+    if (!v) return toast('先输入要查的词');
+    doLook(v);
+  };
+  btn.onclick = fire;
+  /* 🚨 手机上要先 blur 再查：不收键盘的话结果被键盘挡掉一大半，
+     他还得自己点一下空白处 —— 那一下很容易被当成「没反应」。 */
+  inp.onkeydown = ev => {
+    if (ev.key === 'Enter'){ ev.preventDefault(); inp.blur(); fire(); }
+  };
+  paintHist();
+  if (q != null && q !== '') doLook(normQ(q));
+  else if (DICT.cur) dictRender(DICT.cur, !!dCacheGet(qId(DICT.cur.q || DICT.cur.w)));
+  else if (DICT.err) $('#dres').innerHTML = '<div class="note">' + esc(DICT.err) + '</div>';
+}
+
+function paintHist(){
+  const h = $('#dhist');
+  if (!h) return;
+  const list = dHist();
+  if (!list.length){ h.innerHTML = ''; return; }
+  h.innerHTML = '<div class="tabs" style="margin-bottom:10px;flex-wrap:wrap">' +
+    list.slice(0, 12).map(x =>
+      '<button class="rchip" data-dq="' + esc(x) + '">' + esc(x) + '</button>').join('') +
+    '</div>';
+  h.querySelectorAll('[data-dq]').forEach(b =>
+    b.onclick = () => {
+      const v = b.dataset.dq, i = $('#dq');
+      if (i) i.value = v;
+      doLook(v);
+    });
+}
+
+async function doLook(q){
+  const id = qId(q), kind = kindOf(q);
+  DICT.q = normQ(q); DICT.err = '';
+  const res = $('#dres');
+  if (!res) return;
+  /* 查过的直接给 —— 不花额度、离线也能看。想要新的有「重新查一次」。 */
+  const hit = dCacheGet(id);
+  if (hit){
+    DICT.cur = hit;
+    dHistPush(q); paintHist();
+    dictRender(hit, true);
+    return;
+  }
+  if (DICT.busy) return toast('上一个还在查，等一下');
+  if (!pick()){
+    res.innerHTML = '<div class="note">现在没有可用的通道，去「我的 → 后端」看一眼再来查。</div>';
+    return;
+  }
+  DICT.busy = true;
+  res.innerHTML = '<div class="note">Alex 正在查「' + esc(normQ(q)) + '」…' +
+    (kind === 'zh' ? '（中文 → 给你几个地道说法）' : '') + '</div>';
+  try {
+    const e = await dictLook(normQ(q), kind);
+    dCachePut(id, e);
+    dHistPush(q);
+    DICT.cur = e;
+    /* 🚨 回来时他可能已经改查别的了 —— 拿旧结果覆盖新查询是最恼人的那种 bug */
+    if (qId(DICT.q) === id && $('#dres')){ dictRender(e, false); paintHist(); }
+  } catch(err){
+    DICT.err = '没查出来：' + String(err && err.message ? err.message : err).slice(0, 80);
+    if (qId(DICT.q) === id && $('#dres'))
+      $('#dres').innerHTML = '<div class="note">' + esc(DICT.err) +
+        '<br>换个说法再试一次，或者过一会儿（可能是今天的额度紧了）。</div>';
+  } finally { DICT.busy = false; }
+}
+
+function playBtn(text, label){
+  const b = document.createElement('button');
+  b.className = 'play';
+  b.textContent = label || '🔊';
+  b.onclick = ev => { ev.stopPropagation(); say(text, 'en'); };
+  return b;
+}
+
+function dSec(title, inner){
+  const d = document.createElement('div');
+  d.className = 'card';
+  d.innerHTML = '<div class="hd"><span class="role">' + title + '</span></div>' + inner;
+  return d;
+}
+
+function wordCard(e){
+  const box = document.createElement('div');
+  box.className = 'better';
+  const head = document.createElement('div');
+  head.innerHTML =
+    '<div class="lb">' + esc(e.reg || '') +
+      (e.kind === 'phrase' ? ' · 表达' : ' · 单词') + '</div>' +
+    '<div class="en" style="font-size:19px;line-height:1.5;font-weight:800">' +
+      esc(e.w || e.q || '') + '</div>' +
+    (e.ipa ? '<div style="font-size:13px;color:var(--muted);margin-top:3px">' +
+      esc(e.ipa) + '</div>' : '');
+  box.appendChild(head);
+  box.appendChild(playBtn(e.w || e.q, '🔊 读一遍'));
+  const yg = youglish(e.w || e.q);
+  if (yg) box.appendChild(yg);
+  return box;
+}
+
+function defsBlock(e){
+  const ds = Array.isArray(e.defs) ? e.defs : [];
+  return dSec('📖 什么意思', ds.map((d, i) =>
+    '<div style="margin-top:' + (i ? 12 : 4) + 'px">' +
+      '<div style="font-size:14px"><b>' + esc(d.pos || '') + '</b> ' + esc(d.cn || '') + '</div>' +
+      (d.en ? '<div class="en" style="margin-top:5px;font-size:14px;line-height:1.65" ' +
+        'data-say="' + esc(d.en) + '">' + esc(d.en) + '</div>' : '') +
+      (d.zh ? '<div class="sit" style="margin-top:2px">' + esc(d.zh) + '</div>' : '') +
+    '</div>').join(''));
+}
+
+function collBlock(e){
+  const cl = Array.isArray(e.coll) ? e.coll : [];
+  if (!cl.length) return null;
+  return dSec('🔗 常见搭配', cl.map(c =>
+    '<div style="margin-top:6px;font-size:14px">' +
+      '<span class="en" data-say="' + esc(c.en) + '">' + esc(c.en) + '</span>' +
+      (c.cn ? '<span style="color:var(--muted)"> · ' + esc(c.cn) + '</span>' : '') +
+    '</div>').join(''));
+}
+
+function nearBlock(e){
+  const ns = Array.isArray(e.near) ? e.near.filter(x => x && x.en) : [];
+  if (!ns.length) return null;
+  return dSec('↔️ 别跟这些混了', ns.map(n =>
+    '<div style="margin-top:6px;font-size:14px">' +
+      '<b class="en" data-say="' + esc(n.en) + '">' + esc(n.en) + '</b>' +
+      (n.cn ? '<div class="sit" style="margin-top:2px">' + esc(n.cn) + '</div>' : '') +
+    '</div>').join(''));
+}
+
+function zhCard(e){
+  const box = document.createElement('div');
+  box.className = 'better';
+  box.innerHTML = '<div class="lb">中文 → 地道英文</div>' +
+    '<div style="font-size:17px;font-weight:800;line-height:1.5">' +
+      esc(e.w || e.q || '') + '</div>' +
+    (e.pick ? '<div class="en" style="margin-top:8px;font-size:15px;line-height:1.7">' +
+      '写进报告就用这个：<b>' + esc(e.pick) + '</b></div>' : '') +
+    (e.why ? '<div class="sit" style="margin-top:4px">' + esc(e.why) + '</div>' : '');
+  if (e.pick) box.appendChild(playBtn(e.pick, '🔊 读一遍'));
+  return box;
+}
+
+function candsBlock(e){
+  const cs = Array.isArray(e.cands) ? e.cands : [];
+  return dSec('🧭 几种说法，挑一个', cs.map((c, i) =>
+    '<div style="margin-top:' + (i ? 12 : 4) + 'px">' +
+      '<div class="en" style="font-size:15px;line-height:1.6" data-say="' + esc(c.en) + '">' +
+        esc(c.en) + (c.reg ? ' <span style="font-size:11.5px;color:var(--muted);' +
+          'font-weight:700">' + esc(c.reg) + '</span>' : '') + '</div>' +
+      (c.cn ? '<div class="sit" style="margin-top:3px">' + esc(c.cn) + '</div>' : '') +
+      (c.eg ? '<div style="margin-top:4px;font-size:13.5px;color:var(--muted)" ' +
+        'data-say="' + esc(c.eg) + '">' + esc(c.eg) + '</div>' : '') +
+    '</div>').join(''));
+}
+
+/* 点任意英文片段就念一遍 —— 查词的人多半也想听发音，别让他去找按钮。 */
+function bindSay(root){
+  root.querySelectorAll('[data-say]').forEach(el => {
+    el.style.cursor = 'pointer';
+    el.onclick = () => say(el.dataset.say, 'en');
+  });
+}
+
+function dictRender(e, cached){
+  const res = $('#dres');
+  if (!res) return;
+  res.innerHTML = '';
+  if (e.kind === 'zh'){
+    res.appendChild(zhCard(e));
+    res.appendChild(candsBlock(e));
+  } else {
+    res.appendChild(wordCard(e));
+    res.appendChild(defsBlock(e));
+    const cb = collBlock(e); if (cb) res.appendChild(cb);
+    if (e.biz) res.appendChild(dSec('🧾 报告里怎么用',
+      '<div class="t" style="margin-top:4px;line-height:1.7">' + esc(e.biz) + '</div>'));
+    const nb = nearBlock(e); if (nb) res.appendChild(nb);
+    if (e.trap && e.trap.bad) res.appendChild(dSec('⚠️ 最容易写错的那版',
+      '<div class="en" style="margin-top:4px;font-size:14px;text-decoration:line-through;' +
+      'opacity:.75">' + esc(e.trap.bad) + '</div>' +
+      '<div class="sit" style="margin-top:4px">' + esc(e.trap.why || '') + '</div>'));
+  }
+  res.appendChild(nbBar(e));
+  if (cached){
+    const n = document.createElement('div');
+    n.className = 'note';
+    n.textContent = '这条之前查过，直接从本机拿的（不花额度）。';
+    const rb = document.createElement('button');
+    rb.className = 'play';
+    rb.textContent = '↻ 重新查一次';
+    rb.onclick = () => {
+      dCacheDrop(qId(e.q || e.w));
+      DICT.cur = null;
+      doLook(e.q || e.w);
+    };
+    n.appendChild(rb);
+    res.appendChild(n);
+  }
+  bindSay(res);
+}
+
+/* 收进本子的那一条。默认归类按输入形态给，但两个本子都摆出来让他自己点。 */
+function nbBar(e){
+  const wrap = document.createElement('div');
+  wrap.className = 'card';
+  const id = qId(e.q || e.w);
+  const paint = () => {
+    const rec = nbFind(id);
+    wrap.innerHTML = '<div class="hd"><span class="role">📒 收进本子</span>' +
+      (rec ? '<span class="done">已在' + BOOKS[rec.book] + '</span>' : '') + '</div>' +
+      '<div class="t" style="margin:2px 0 9px">' +
+        (rec ? '想换个本子直接点另一个，复习进度不会清零。'
+             : '收进去以后能在「我的本子」里翻，也会排进每天的复习。') + '</div>';
+    const order = [defaultBook(e.kind || kindOf(e.q || e.w))];
+    Object.keys(BOOKS).forEach(k => { if (order.indexOf(k) < 0) order.push(k); });
+    order.forEach(bk => {
+      const b = document.createElement('button');
+      const on = !!(rec && rec.book === bk);
+      b.className = 'rchip' + (on ? ' on' : '');
+      b.textContent = (on ? '✓ ' : '') + BOOKS[bk];
+      b.style.marginRight = '8px';
+      b.onclick = () => {
+        const r = nbAdd(e, bk);
+        /* 🚨 存不下必须让他知道。原来那种 catch 全吞 + 照样弹「收下了」，
+           正是他反馈过的「点了收藏，本子里没有」。 */
+        if (r === 'full') return toast('存不下了（浏览器存储满），先去本子里删几条', 3200);
+        toast(r === 'moved' ? '移到' + BOOKS[bk] + '了'
+            : r === 'same'  ? '已经在' + BOOKS[bk] + '里'
+            : '收进' + BOOKS[bk] + '了');
+        paint(); refreshDictTop();
+      };
+      wrap.appendChild(b);
+    });
+    if (rec){
+      const d = document.createElement('button');
+      d.className = 'play';
+      d.textContent = '🗑 从本子里去掉';
+      d.onclick = () => {
+        if (nbDel(id)){ toast('去掉了'); paint(); refreshDictTop(); }
+        else toast('删不动（存储满了）');
+      };
+      wrap.appendChild(d);
+    }
+  };
+  paint();
+  return wrap;
+}
+
+/* ═══ 我的本子 ═══ */
+function showNotebook(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  DICT.top = 'nb';
+  const f = $('#feed');
+  $('#sub').textContent = '你自己攒的词和表达';
+  const all = nbAll();
+  const mine = all.filter(x => x.book === DICT.book);
+  const due = revDue(mine);
+  const q = (DICT.fq || '').trim().toLowerCase();
+  const pool = mine.filter(x => !q ||
+    x.q.toLowerCase().indexOf(q) >= 0 ||
+    JSON.stringify(x.e || {}).toLowerCase().indexOf(q) >= 0);
+
+  const bkChip = k => '<button class="rchip' + (DICT.book === k ? ' on' : '') +
+    '" data-nbk="' + k + '">' + BOOKS[k] + ' ' + nbCount(k) + '</button>';
+
+  f.innerHTML = dictTop() +
+    '<div class="tabs" style="margin-bottom:10px">' + bkChip('word') + bkChip('pro') + '</div>' +
+    (all.length ? '' :
+      '<div class="note">本子还是空的。<br><br>去「查词」查一个词或表达，' +
+      '结果下面就有「收进单词本 / 收进专业表达本」。<br><br>' +
+      '在阅读的范文里长按选中一段文字，浮条上也有「🔍 查这个」。</div>') +
+    (mine.length ? (
+      (due.length
+        ? '<div class="card" id="nbrev" style="background:var(--soft)">' +
+            '<div class="hd"><span class="role">🔁 今天该复习 ' + due.length + ' 条</span></div>' +
+            '<div class="t">先想一下，再翻开看答案 —— 点一下就开始。</div></div>'
+        : '<div class="note">今天没有到期的，明天再来。</div>') +
+      (mine.length > 6
+        ? '<input id="nbq" placeholder="在本子里搜…" value="' + esc(DICT.fq || '') + '" ' +
+          'style="width:100%;padding:10px 12px;border:1px solid var(--line);' +
+          'border-radius:12px;font-size:14px;background:var(--card);color:var(--fg);' +
+          'margin:10px 0">' : '') +
+      (pool.length ? '' : '<div class="note">没搜到。</div>') +
+      pool.map(x => nbRow(x)).join('')
+    ) : (all.length ? '<div class="note">这一本还是空的，去另一本看看。</div>' : ''));
+
+  bindDictTop();
+  f.querySelectorAll('[data-nbk]').forEach(b =>
+    b.onclick = () => { DICT.book = b.dataset.nbk; DICT.fq = ''; showNotebook(); });
+  const rv = $('#nbrev');
+  if (rv) rv.onclick = () => startReview(due);
+  const inp = $('#nbq');
+  if (inp) inp.oninput = () => {
+    clearTimeout(DICT._ft);
+    DICT._ft = setTimeout(() => {
+      DICT.fq = inp.value;
+      showNotebook();
+      const n = $('#nbq');
+      if (n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+    }, 300);
+  };
+  f.querySelectorAll('.card[data-nid]').forEach(el =>
+    el.onclick = () => {
+      const it = nbFind(el.dataset.nid);
+      if (it) go(() => openNb(it.id), '本子');
+    });
+}
+
+/* 一条的样子：词 + 第一条释义 + 熟了几次。
+   🚨 中文条目要显示中文原文，显示 e.w 也一样（w 就是他输的中文），
+      但**推荐说法**要露出来，否则一列中文他分不清哪条是哪条。 */
+function nbRow(x){
+  const e = x.e || {};
+  const sub = e.kind === 'zh'
+    ? (e.pick || ((e.cands || [])[0] || {}).en || '')
+    : (((e.defs || [])[0] || {}).cn || '');
+  const r = x.rev || {};
+  const dots = r.done ? '熟了' : '●'.repeat(Math.min(r.n || 0, 3)) +
+                                 '○'.repeat(Math.max(0, 3 - (r.n || 0)));
+  return '<div class="card" data-nid="' + esc(x.id) + '">' +
+    '<div class="hd"><span class="ct" style="font-size:11.5px;color:var(--brand-dark);' +
+      'font-weight:800">' + esc(dots) + '</span>' +
+      '<span class="done">' + esc(x.on || '') + '</span></div>' +
+    '<div class="en" style="margin-top:3px;font-size:15px;font-weight:700">' +
+      esc(x.q) + '</div>' +
+    (sub ? '<div class="sit" style="margin-top:3px">' + esc(sub) + '</div>' : '') +
+    '</div>';
+}
+
+/* 本子里点开一条 = 完整词条（存的是当时那份，不重新调模型、离线也能看）。 */
+function openNb(id){
+  const rec = nbFind(id);
+  const f = $('#feed');
+  f.innerHTML = '';
+  if (!rec){ f.innerHTML = '<div class="note">这一条已经不在本子里了。</div>'; return; }
+  $('#sub').textContent = BOOKS[rec.book] + ' · 收于 ' + (rec.on || '');
+  const res = document.createElement('div');
+  res.id = 'dres';
+  f.appendChild(res);
+  DICT.cur = rec.e;
+  dictRender(rec.e, false);
+  const r = rec.rev || {};
+  const st = document.createElement('div');
+  st.className = 'note';
+  st.textContent = r.done ? '这条已经熟了，不再排进每日复习。'
+    : '复习进度：记住 ' + (r.n || 0) + ' 次（跨 ' + ((r.days || []).length) + ' 天）' +
+      (r.due ? ' · 下次 ' + r.due : '');
+  f.appendChild(st);
+}
+
+/* ═══ 复习 ═══
+   先想、再翻、然后自评。判据跟错题本一致：跨天才算数。 */
+const REV = {q: [], i: 0, flip: false, ok: 0, no: 0};
+
+function startReview(due){
+  const list = (due && due.length ? due : revDue(nbAll().filter(x => x.book === DICT.book)));
+  if (!list.length) return toast('今天没有要复习的');
+  /* 一次最多 20 条 —— 一屏一屏点得完才有人真的做完 */
+  REV.q = list.slice(0, 20).map(x => x.id);
+  REV.i = 0; REV.flip = false; REV.ok = 0; REV.no = 0;
+  go(showReview, '复习');
+}
+
+function showReview(){
+  const f = $('#feed');
+  f.innerHTML = '';
+  if (REV.i >= REV.q.length){
+    $('#sub').textContent = '复习完了';
+    const left = revDue(nbAll().filter(x => x.book === DICT.book)).length;
+    f.innerHTML = '<div class="better"><div class="lb">今天这一轮</div>' +
+      '<div style="font-size:15px;line-height:1.8;margin-top:4px">记住 ' + REV.ok +
+      ' 条 · 再练 ' + REV.no + ' 条</div>' +
+      '<div class="sit" style="margin-top:6px">' +
+      (left ? '还剩 ' + left + ' 条到期的，接着来还是明天再说都行。'
+            : '到期的都过完了。记住的会隔几天再出现 —— 隔着一段时间还想得起来，才算真记住。') +
+      '</div></div>';
+    const b = document.createElement('button');
+    b.className = 'btn';
+    b.style.marginTop = '12px';
+    b.textContent = left ? '再来一轮' : '回本子';
+    b.onclick = () => {
+      if (left) startReviewInPlace();
+      else { DICT.top = 'nb'; back(); }   // back() 会重画上一屏（本子）
+    };
+    f.appendChild(b);
+    return;
+  }
+  const rec = nbFind(REV.q[REV.i]);
+  if (!rec){ REV.i++; return showReview(); }   // 复习途中被删掉了，跳过
+  const e = rec.e || {};
+  $('#sub').textContent = '复习 ' + (REV.i + 1) + ' / ' + REV.q.length;
+
+  const front = document.createElement('div');
+  front.className = 'better';
+  const isZh = e.kind === 'zh';
+  front.innerHTML = '<div class="lb">' + (isZh ? '这个意思，英文怎么说' : '这个词什么意思') + '</div>' +
+    '<div style="font-size:20px;font-weight:800;line-height:1.5;margin-top:2px">' +
+      esc(rec.q) + '</div>';
+  if (!isZh) front.appendChild(playBtn(rec.q, '🔊 读一遍'));
+  f.appendChild(front);
+
+  if (!REV.flip){
+    const b = document.createElement('button');
+    b.className = 'btn';
+    b.style.marginTop = '14px';
+    b.textContent = '看答案';
+    b.onclick = () => { REV.flip = true; showReview(); };
+    f.appendChild(b);
+    return;
+  }
+
+  /* 🚨 这个变量绝不能叫 back —— 页面顶上有个全局函数 `back()`（返回上一屏），
+     在同一个函数作用域里再 `const back` 会把它整个遮掉，而且是 TDZ：
+     本函数里任何一处调 back() 都变成 "Cannot access 'back' before initialization"，
+     **静默失效**（点「回本子」没反应、控制台里也不显眼）。
+     真浏览器点一遍才抓到的，单元测试只覆盖逻辑那一半，看不到这个。 */
+  const ans = document.createElement('div');
+  ans.className = 'card';
+  if (isZh){
+    ans.innerHTML = '<div class="hd"><span class="role">🧭 该这么说</span></div>' +
+      '<div class="en" style="margin-top:4px;font-size:15px" data-say="' + esc(e.pick || '') + '">' +
+        esc(e.pick || '') + '</div>' +
+      (e.why ? '<div class="sit" style="margin-top:3px">' + esc(e.why) + '</div>' : '');
+  } else {
+    const d0 = (e.defs || [])[0] || {};
+    ans.innerHTML = '<div class="hd"><span class="role">📖 意思</span></div>' +
+      '<div style="margin-top:4px;font-size:14.5px"><b>' + esc(d0.pos || '') + '</b> ' +
+        esc(d0.cn || '') + '</div>' +
+      (d0.en ? '<div class="en" style="margin-top:6px;font-size:14px" data-say="' +
+        esc(d0.en) + '">' + esc(d0.en) + '</div>' : '') +
+      ((e.coll || []).length ? '<div class="sit" style="margin-top:6px">搭配：' +
+        esc((e.coll || []).slice(0, 3).map(c => c.en).join(' · ')) + '</div>' : '');
+  }
+  f.appendChild(ans);
+  bindSay(ans);
+
+  const row = document.createElement('div');
+  row.className = 'ctl';
+  const mk = (label, ok) => {
+    const b = document.createElement('button');
+    b.className = ok ? 'btn' : 'play';
+    b.textContent = label;
+    b.onclick = () => {
+      const cur = nbFind(REV.q[REV.i]);
+      if (cur){
+        revApply(cur, ok);
+        /* 🚨 存不下要说 —— 不说的话他复习半天，进度一条没存 */
+        if (!nbPut(cur)) toast('进度存不下（存储满了），先去本子里删几条', 3200);
+      }
+      if (ok) REV.ok++; else REV.no++;
+      REV.i++; REV.flip = false;
+      showReview();
+    };
+    return b;
+  };
+  row.appendChild(mk('😕 再练一下', false));
+  row.appendChild(mk('👍 记住了', true));
+  f.appendChild(row);
+
+  const more = document.createElement('button');
+  more.className = 'play';
+  more.style.marginTop = '10px';
+  more.textContent = '看完整词条';
+  more.onclick = () => go(() => openNb(rec.id), '本子');
+  f.appendChild(more);
+}
+
+/* 「再来一轮」：不进栈，就地换一批。 */
+function startReviewInPlace(){
+  const list = revDue(nbAll().filter(x => x.book === DICT.book));
+  REV.q = list.slice(0, 20).map(x => x.id);
+  REV.i = 0; REV.flip = false; REV.ok = 0; REV.no = 0;
+  showReview();
+}
+
+/* 从别处跳进来查一个词（首页搜索框、划选浮条）。 */
+function openDict(q){
+  DICT.top = 'look';
+  DICT.cur = null; DICT.err = '';
+  go(() => showDict(q), '查词');
+}
+function openNotebook(){
+  DICT.top = 'nb';
+  go(showNotebook, '我的本子');
+}
+
+
+
 /* 小提示条：领宝石、扣宝石、出题失败都靠它给个反馈 */
 
 function toast(msg, ms){
@@ -13102,6 +14032,9 @@ function showHome(){
   $('#sub').textContent = BANK_OK ? '今天想练哪一块'
     : '⚠️ 题库没下下来，现在只有内置的 ' + SCENARIOS.length + ' 张，下拉刷新试试';
   const never = SCENARIOS.filter(x => !practised(x.id));
+  /* 本子那块的角标跟错题本同一个语义：显示**该做的事有几件**（今天该复习几条），
+     不是总数 —— 总数不是个动作，看了也不知道要干嘛。 */
+  const nbDue = revDue().length;
   const pool = never.length ? never : SCENARIOS;
   const h = x => [...x].reduce((k,c) => (k*31 + c.charCodeAt(0)) % 9973, 7);
   const rec = pool.slice().sort((a,b) => h(a.id+DAYSEED) - h(b.id+DAYSEED))[0];
@@ -13113,6 +14046,17 @@ function showHome(){
        <div class="col"><div class="n">${streak()}</div><div class="l">连续天数</div></div>
        <div class="col"><div class="n">${ST.turns}</div><div class="l">累计轮数</div></div>
        <div class="col"><div class="n">${SCENARIOS.length}</div><div class="l">场景总数</div></div>
+     </div>` +
+    /* ═══ 查词栏 ═══ Kevin 2026-08-14：「有时候我想起一些英文表达，
+       不知道在哪里查比较快，如果能直接在你这里查就好了。」
+       🚨 所以它必须在**首屏、能直接打字**，而不是藏在某个二级页里 ——
+          多一跳就等于他还是会去别处查。 */
+    `<div style="display:flex;gap:8px;margin:0 0 14px">
+       <input id="hq" placeholder="🔍 查个词 / 表达，中英都行"
+         autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search"
+         style="flex:1;min-width:0;padding:11px 13px;border:2px solid var(--line);
+                border-radius:12px;font-size:15px;background:var(--card);color:var(--fg)">
+       <button id="hqgo" class="btn" style="flex:0 0 auto;padding:0 16px">查</button>
      </div>` +
     /* 🚨 「今天试试这个」提到最前面 —— 首屏第一个可点的东西应该是
        **今天练什么**，而不是一张功能清单。 */
@@ -13142,6 +14086,10 @@ function showHome(){
          <div class="nm">错题本</div>${n ? `<div class="cnt">${n}</div>` : ''}</div>
        <div class="tool" data-go="hist"><span class="ic"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.5V12l3 2"/></svg></span>
          <div class="nm">练习历史</div></div>
+       <div class="tool" data-go="nb"><span class="ic"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 5.5A2 2 0 0 1 6.5 3.5H19v17H6.5a2 2 0 0 1-2-2Z"/><path d="M8.5 8h7"/><path d="M8.5 12h4.5"/></svg></span>
+         <div class="nm">我的本子</div>${nbDue ? `<div class="cnt">${nbDue}</div>` : ''}</div>
+       <div class="tool" data-go="dict"><span class="ic"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.3"/><path d="M15.4 15.4 20 20"/></svg></span>
+         <div class="nm">查词典</div></div>
      </div>`;
   if (rec) $('#resume').onclick = () => start(rec);
   /* 今日进度插在「四条主线」和「回头看看」之间 —— 它属于今天要干的事 */
@@ -13155,11 +14103,26 @@ function showHome(){
     write: () => { WRITE.page = 0; go(showWrite, '报告写作'); },
     read:  () => { READ.page = 0; go(showRead, '阅读'); },
     hist: () => go(showHistory, '历史'),
+    dict: () => openDict(),
+    nb:   () => openNotebook(),
   };
   /* 🚨 按 data-go 绑，不按 class 绑 —— 首页现在有两套元素（.tile 主线、
      .tool 工具）。只绑一套的话另一套点了没反应，而且不报错。 */
   document.querySelectorAll('#list [data-go]').forEach(t =>
     t.onclick = () => { const f = GO[t.dataset.go]; if (f) f(); });
+  /* 查词栏：回车或点「查」都直接进查词页并开查。
+     🚨 先 blur 再跳 —— 手机上不收键盘的话，结果一出来就被键盘挡掉大半。 */
+  const hq = $('#hq'), hqgo = $('#hqgo');
+  if (hq && hqgo){
+    const fire = () => {
+      const v = normQ(hq.value);
+      if (!v) return openDict();
+      hq.blur(); hq.value = '';
+      openDict(v);
+    };
+    hqgo.onclick = fire;
+    hq.onkeydown = ev => { if (ev.key === 'Enter'){ ev.preventDefault(); fire(); } };
+  }
 }
 
 function paintTabs(){
@@ -13269,6 +14232,10 @@ function showMe(){
     c.onclick = fn; f.appendChild(c);
 
   };
+
+  row('📒','我的本子','查过的词和表达都在这儿，可以复习', () => {
+    DICT.top = 'nb'; go(showNotebook, '我的本子');
+  });
 
   row('🎙️','麦克风每次都要授权？','一次设成永久允许的办法（iOS）', () => {
 
