@@ -1,0 +1,661 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1c20">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>我的知识库</title>
+<!-- 🚨 安全现在靠「网址猜不到」，所以绝不能被搜索引擎收录 -->
+<meta name="robots" content="noindex,nofollow,noarchive">
+<link rel="manifest" href="manifest.webmanifest">
+<!-- 🚨 iOS **不读 manifest 里的 icons**，加到主屏时只认 apple-touch-icon。
+     少了这一行，主屏上就是网页截图或者标题首字（他嫌的那个「知」字就是这么来的）。 -->
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+
+<style>
+:root{
+  --bg:#14151a; --card:#1c1e24; --line:#2b2e36; --fg:#e9eaee; --muted:#9aa0ac;
+  --faint:#6b7280; --brand:#5b9cf6; --brand-soft:#1e2a3d; --warn:#e0785a;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#f6f7f9; --card:#fff; --line:#e3e6ea; --fg:#191b1f; --muted:#5a616e;
+         --faint:#8b929e; --brand-soft:#eaf1fe; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto;padding:14px 14px 90px}
+h1{font-size:19px;margin:2px 0 12px}
+.sub{color:var(--muted);font-size:13px;margin:-6px 0 14px}
+input,button,textarea{font:inherit;color:inherit}
+.in{width:100%;padding:12px 13px;border:2px solid var(--line);border-radius:12px;
+  background:var(--card);color:var(--fg);font-size:16px}
+.btn{background:var(--brand);color:#fff;border:0;border-radius:12px;
+  padding:12px 18px;font-weight:700;cursor:pointer}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:13px 14px;margin-bottom:10px;cursor:pointer}
+.card:active{transform:scale(.995)}
+.t{font-weight:700;font-size:15.5px;line-height:1.45}
+.s{color:var(--muted);font-size:13.5px;margin-top:5px}
+.meta{color:var(--faint);font-size:11.5px;margin-top:7px;display:flex;gap:8px;flex-wrap:wrap}
+.tag{display:inline-block;background:var(--brand-soft);color:var(--brand);
+  border-radius:99px;padding:2px 9px;font-size:11.5px;font-weight:700;
+  margin:0 5px 5px 0;cursor:pointer;border:0}
+.tags{margin:2px 0 12px;display:flex;flex-wrap:wrap;gap:0}
+.chip{background:var(--card);border:1.5px solid var(--line);color:var(--fg);
+  border-radius:99px;padding:6px 13px;font-size:13px;margin:0 7px 7px 0;cursor:pointer}
+.chip.on{border-color:var(--brand);color:var(--brand);font-weight:700}
+.seg{margin:0 0 14px}
+.seg h3{font-size:14px;color:var(--brand);margin:16px 0 5px;font-weight:800}
+.seg p{margin:0 0 9px;white-space:pre-wrap;word-wrap:break-word}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:13px 14px;margin-bottom:12px}
+.box .lb{font-size:11.5px;font-weight:800;color:var(--brand);letter-spacing:.4px;
+  margin-bottom:6px}
+.note{color:var(--muted);font-size:13.5px;padding:20px 4px;line-height:1.8}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:0;border:0;padding:11px 4px 9px;color:var(--faint);
+  font-size:11.5px;cursor:pointer}
+nav button.on{color:var(--brand);font-weight:800}
+nav .ic{display:block;font-size:17px;margin-bottom:2px}
+.top{position:sticky;top:0;background:var(--bg);padding:8px 0 6px;z-index:5}
+.back{background:0;border:0;color:var(--brand);font-size:14px;font-weight:700;
+  padding:6px 0;cursor:pointer}
+.more{background:0;border:1.5px solid var(--line);color:var(--muted);width:100%;
+  border-radius:12px;padding:11px;font-size:13.5px;cursor:pointer;margin-bottom:12px}
+mark{background:#ffe9a8;color:#000;padding:0 2px;border-radius:3px}
+.lock{max-width:360px;margin:16vh auto;padding:0 18px;text-align:center}
+.lock .em{font-size:40px;margin-bottom:10px}
+.err{color:var(--warn);font-size:13px;margin-top:10px;min-height:18px}
+</style>
+
+<div class="wrap" id="app"></div>
+<nav id="nav" hidden>
+  <button data-go="home"><span class="ic">📚</span>全部</button>
+  <button data-go="tags"><span class="ic">🏷️</span>标签</button>
+  <button data-go="dirs"><span class="ic">📂</span>目录</button>
+</nav>
+
+<script>
+/* 个人笔记阅读器。内容 AES-GCM 加密，密钥由口令 PBKDF2 派生。
+   localStorage 里存的是派生密钥，不是口令原文。
+
+   🚨 这个文件是**公开可读**的（静态站），所以注释里不写任何关于内容的描述 ——
+      第一版写了库里都有些什么，线上一看等于给路人指路。设计说明在本机 PRD.md 里。 */
+
+/* 🚨 钥匙直接烤在页面里，打包时由 kb_encrypt.py 替换这一行。
+   为什么这么做：钥匙存 localStorage 的话，**iOS 的主屏独立 App 和 Safari 是两个
+   互不相通的容器**，他必然要输两遍。Kevin 2026-08-15 第三次提：
+   「不要再让这个 key 的问题影响我的效率」。
+   安全改由**网址本身猜不到**来保证（32 位随机路径），威胁模型跟原来
+   「链接里带钥匙」完全一样：拿到链接 = 能看。区别只是他一次都不用输。 */
+const BAKED_KEY = '000305f57198daaad91470f75c58b04e33e286e76fd93803e1e6bc43b7a59e1b';
+
+const $ = s => document.querySelector(s);
+const APP = $('#app');
+const LS_KEY = 'kb_key', LS_SEEN = 'kb_seen';
+
+/* 🚨 两处都必须分页渲染，实测原因：
+   ① 首页 422 张卡一次画完 → 页高 84720px、4500 个 DOM 节点
+   ② 详情页那本 2.2M 字的教材有 **1617 段**，一次画完页高 **172 万像素**，手机直接卡死
+   所以列表一次 50 张、正文一次 40 段，其余点「继续」再来。 */
+const PAGE_N = 50, SEG_N = 40;
+const ST = {key:null, idx:null, view:'home', q:'', tag:'', dir:'', cache:{}, cur:null,
+            shown:PAGE_N, segShown:SEG_N};
+
+/* ── 加密：跟 kb_encrypt.py 一一对应，改一边就解不开 ── */
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function deriveKey(pass, salt, iter){
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass),
+    'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt, iterations:iter, hash:'SHA-256'},
+    base, {name:'AES-GCM', length:256}, true, ['decrypt']);
+}
+async function unseal(key, buf){
+  const b = new Uint8Array(buf);
+  /* 落盘布局：nonce(12) ‖ ciphertext ‖ tag(16)。WebCrypto 要的正是 ct‖tag 连在一起，
+     所以后面整段直接给它，不用把 tag 拆出来。 */
+  const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:b.slice(0,12)},
+                                            key, b.slice(12));
+  return new TextDecoder().decode(plain);
+}
+async function getJSON(url, key){
+  const r = await fetch(url, {cache:'no-cache'});
+  if (!r.ok) throw new Error('取不到 ' + url + '（HTTP ' + r.status + '）');
+  return JSON.parse(await unseal(key, await r.arrayBuffer()));
+}
+
+/* ── 解锁 ──
+   两种模式，看 manifest 的 mode：
+     key  —— 链接里带 `#k=<密钥>`，点一次存下来（不用输任何东西）
+     其它 —— 口令模式：PBKDF2 派生
+   🚨 `#` 后面的内容**不会发给服务器**，所以密钥不会出现在任何访问日志里。 */
+async function boot(){
+  let man;
+  try { man = await (await fetch('d/manifest.json', {cache:'no-cache'})).json(); }
+  catch(e){ APP.innerHTML = '<div class="note">数据还没上传（找不到 d/manifest.json）。</div>'; return; }
+
+  /* ① 页面里烤好的钥匙 —— 正常情况走这条，他什么都不用做。
+     🚨 放在最前面：不依赖 localStorage、不依赖 hash，所以
+        Safari 和主屏那个独立容器**行为完全一样**，不会再出现「这台设备没有钥匙」。 */
+  if (BAKED_KEY && /^[0-9a-f]{64}$/.test(BAKED_KEY)){
+    try {
+      const raw = Uint8Array.from(BAKED_KEY.match(/../g).map(h => parseInt(h, 16)));
+      ST.key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', true, ['decrypt']);
+      await unseal(ST.key, b64(man.check).buffer);
+      return start();
+    } catch(_){ ST.key = null; }      // 烤错了就往下走老路子，不至于开不了
+  }
+
+  // 链接里带钥匙 → 收下、验一遍、然后**把它从地址栏抹掉**（免得截图/分享时带出去）
+  const m = /[#&]k=([A-Za-z0-9_\-]+)/.exec(location.hash || '');
+  if (m){
+    try {
+      /* 🚨 钥匙用**十六进制**发（只有 0-9a-f）。原来用 base64url，里面带 `_`，
+         而 Telegram 的 Markdown 把 `_..._` 当斜体、**把下划线吃掉** ——
+         Kevin 收到的链接少了两个字符，当然报「钥匙不对」。
+         老的 base64url 链接仍然认，免得已经存过的设备失效。 */
+      const s0 = m[1];
+      const raw = /^[0-9a-fA-F]{64}$/.test(s0)
+        ? Uint8Array.from(s0.match(/../g).map(h => parseInt(h, 16)))
+        : Uint8Array.from(atob(s0.replace(/-/g, '+').replace(/_/g, '/') +
+            '='.repeat((4 - s0.length % 4) % 4)), c => c.charCodeAt(0));
+      const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', true, ['decrypt']);
+      await unseal(key, b64(man.check).buffer);      // 钥匙不对这里就抛
+      localStorage.setItem(LS_KEY, btoa(String.fromCharCode(...raw)));
+      ST.key = key;
+      history.replaceState(null, '', location.pathname);
+      return start();
+    } catch(_){
+      history.replaceState(null, '', location.pathname);
+      APP.innerHTML = '<div class="note">这条链接里的钥匙不对（可能已经作废了）。' +
+        '跟我说一声，我给你换一条新的。</div>';
+      return;
+    }
+  }
+
+  const saved = localStorage.getItem(LS_KEY);
+  if (saved){
+    try {
+      ST.key = await crypto.subtle.importKey('raw', b64(saved), 'AES-GCM', true, ['decrypt']);
+      await unseal(ST.key, b64(man.check).buffer);   // 存的 key 还对不对
+      return start();
+    } catch(_){ localStorage.removeItem(LS_KEY); }   // 钥匙/口令换过了，重新解锁
+  }
+  if (man.mode === 'key'){
+    /* 🚨 必须留一个能**手动粘钥匙**的口子。
+       2026-08-15 真事故：他在 Safari 里点链接存好了钥匙，"添加到主屏幕"之后
+       打开却说没有 key —— 因为 **iOS 的独立 App 容器跟 Safari 不共用 localStorage**，
+       而 manifest 里的 start_url 又把 `#k=` 那段丢掉了。两头一夹，主屏那个必然打不开。
+       manifest 的 start_url 已经删掉（不写的话 iOS 用当前地址、带着 hash 一起存），
+       这里再加一道手动入口兜底 —— 只靠一条链接的流程太脆。 */
+    APP.innerHTML = '<div class="lock"><div class="em">🔑</div>' +
+      '<h1 style="margin:0 0 6px">我的知识库</h1>' +
+      '<div class="sub" style="margin-bottom:14px">这台设备还没拿到钥匙。<br>' +
+      '把 Telegram 里那串钥匙粘进来（或者直接点那条链接）。</div>' +
+      '<input class="in" id="kin" placeholder="粘贴钥匙" autocapitalize="off" ' +
+      'autocorrect="off" spellcheck="false" enterkeyhint="go">' +
+      '<button class="btn" id="kgo" style="width:100%;margin-top:12px">解锁</button>' +
+      '<div class="err" id="ker"></div></div>';
+    const ki = $('#kin'), kg = $('#kgo'), ke = $('#ker');
+    const tryKey = async () => {
+      /* 整条链接粘进来也认 —— 他多半是长按复制了整行 */
+      const raw = (ki.value || '').trim();
+      const mm = /[#&]k=([A-Za-z0-9_\-]+)/.exec(raw);
+      const s0 = mm ? mm[1] : raw.replace(/[^A-Za-z0-9_\-]/g, '');
+      if (!s0) return;
+      kg.disabled = true; kg.textContent = '解锁中…'; ke.textContent = '';
+      try {
+        const bytes = /^[0-9a-fA-F]{64}$/.test(s0)
+          ? Uint8Array.from(s0.match(/../g).map(h => parseInt(h, 16)))
+          : Uint8Array.from(atob(s0.replace(/-/g, '+').replace(/_/g, '/') +
+              '='.repeat((4 - s0.length % 4) % 4)), c => c.charCodeAt(0));
+        const key = await crypto.subtle.importKey('raw', bytes, 'AES-GCM', true, ['decrypt']);
+        await unseal(key, b64(man.check).buffer);
+        localStorage.setItem(LS_KEY, btoa(String.fromCharCode(...bytes)));
+        ST.key = key;
+        start();
+      } catch(_){
+        ke.textContent = '这串钥匙不对';
+        kg.disabled = false; kg.textContent = '解锁';
+      }
+    };
+    kg.onclick = tryKey;
+    ki.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); ki.blur(); tryKey(); } };
+    return;
+  }
+  lockScreen(man);
+}
+
+function lockScreen(man){
+  $('#nav').hidden = true;
+  APP.innerHTML =
+    '<div class="lock"><div class="em">🔒</div>' +
+    '<h1 style="margin:0 0 6px">我的知识库</h1>' +
+    '<div class="sub" style="margin:0 0 16px">输一次就记住，之后直接打开</div>' +
+    '<input class="in" id="pw" type="password" placeholder="口令" ' +
+    'autocomplete="current-password" enterkeyhint="go">' +
+    '<button class="btn" id="go" style="width:100%;margin-top:12px">解锁</button>' +
+    '<div class="err" id="er"></div></div>';
+  const pw = $('#pw'), go = $('#go'), er = $('#er');
+  const tryIt = async () => {
+    const v = pw.value;
+    if (!v) return;
+    go.disabled = true; go.textContent = '解锁中…'; er.textContent = '';
+    try {
+      const key = await deriveKey(v, b64(man.salt), man.iter);
+      await unseal(key, b64(man.check).buffer);      // 口令不对这里就抛
+      /* 🚨 只存派生出来的密钥，不存口令原文 */
+      const raw = await crypto.subtle.exportKey('raw', key);
+      localStorage.setItem(LS_KEY, btoa(String.fromCharCode(...new Uint8Array(raw))));
+      ST.key = key;
+      start();
+    } catch(_){
+      er.textContent = '口令不对';
+      go.disabled = false; go.textContent = '解锁';
+      pw.select();
+    }
+  };
+  go.onclick = tryIt;
+  pw.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); pw.blur(); tryIt(); } };
+  setTimeout(() => pw.focus(), 100);
+}
+
+async function start(){
+  APP.innerHTML = '<div class="note">正在读索引…</div>';
+  try { ST.idx = await getJSON('d/index.bin', ST.key); }
+  catch(e){ APP.innerHTML = '<div class="note">索引读不出来：' + esc(e.message) + '</div>'; return; }
+  $('#nav').hidden = false;
+  document.querySelectorAll('#nav button').forEach(b =>
+    b.onclick = () => { ST.view = b.dataset.go; ST.cur = null; paint(); });
+  paint();
+  /* 语义向量后台加载（1.2 MB）——**不挡首屏**。没加载好之前搜索照样能用，
+     只是退回纯关键词；加载好了自动升级成混合检索。 */
+  getJSON('d/vectors.bin', ST.key).then(v => {
+    ST.vec = v;
+    if (ST.q && !ST.cur) paint();          // 已经在搜了就用语义重排一次
+  }).catch(() => {});
+}
+
+/* ── 工具 ── */
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function hi(text, q){
+  if (!q) return esc(text);
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return esc(text);
+  return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) +
+         '</mark>' + esc(text.slice(i + q.length));
+}
+const seen = () => { try { return JSON.parse(localStorage.getItem(LS_SEEN) || '[]'); }
+                     catch(_){ return []; } };
+function markSeen(id){
+  const s = seen().filter(x => x !== id);
+  s.unshift(id);
+  try { localStorage.setItem(LS_SEEN, JSON.stringify(s.slice(0, 40))); } catch(_){}
+}
+
+/* ═══ 搜索：语义 + 关键词 混合 ═══
+   Kevin 2026-08-15：「要加个搜索呀？支持我语义搜索，想看什么样的文章、什么样的笔记？」
+
+   语义那半：打包时用本地 bge-m3 把每篇和一张 2459 词的词表都嵌好、降到 128 维存成 int8；
+   手机上把查询切成词、按 IDF 加权平均，跟每篇算余弦。**全离线，不调任何接口。**
+
+   🚨 但纯语义在这个库上会翻车，实测拿到证据才改的：
+      79 篇《股权投资日报》标题摘要高度雷同，形成一个密集簇，
+      「英文面试怎么答」「怎么跟客户说不」这类查询全被它吸过去 ——
+      而单独搜「面试」结果完美。**所以必须混合**：关键词命中给硬加分，
+      它精确、可解释，正好补语义在密集簇上的失灵。 */
+const ZH = /[一-鿿]/;
+
+function qTokens(q){
+  /* 🚨 切法必须跟 kb_vectors.py 的 tokens() **一模一样**，
+     不一致的话查询词永远查不到词表里的向量，搜索会静默退化成纯关键词。 */
+  const s = (q || '').toLowerCase();
+  const out = (s.match(/[a-z][a-z0-9\-]+/g) || []);
+  (s.match(/[一-鿿]+/g) || []).forEach(run => {
+    if (run.length === 1) out.push(run);
+    for (let i = 0; i < run.length - 1; i++) out.push(run.slice(i, i + 2));
+  });
+  return out;
+}
+
+function semScores(q){
+  const V = ST.vec;
+  if (!V) return null;
+  const ti = V._ti || (V._ti = new Map(V.terms.map((t, i) => [t, i])));
+  const hit = [];
+  qTokens(q).forEach(t => {
+    const i = ti.get(t);
+    if (i !== undefined && V.idf[i] >= 0.7) hit.push(i);
+  });
+  if (!hit.length) return null;
+  const d = V.dim, vec = new Float32Array(d);
+  let wsum = 0;
+  hit.forEach(i => {
+    const w = V.idf[i], row = V.tvec[i], sc = V.tscale[i] / 127;
+    for (let j = 0; j < d; j++) vec[j] += row[j] * sc * w;
+    wsum += w;
+  });
+  let n = 0;
+  for (let j = 0; j < d; j++){ vec[j] /= wsum; n += vec[j] * vec[j]; }
+  n = Math.sqrt(n) || 1;
+  for (let j = 0; j < d; j++) vec[j] /= n;
+  const out = new Float32Array(V.n);
+  for (let k = 0; k < V.n; k++){
+    const row = V.dvec[k], sc = V.dscale[k] / 127;
+    let s = 0;
+    for (let j = 0; j < d; j++) s += row[j] * sc * vec[j];
+    /* 🚨 减掉枢纽度：有些笔记跟谁都近（这库里是 79 篇雷同的《股权投资日报》），
+       不减的话任何弱查询都被它们占满 —— 实测「怎么跟客户说不」整页都是日报。 */
+    out[k] = s - (V.hub ? V.hub[k] : 0);
+  }
+  return out;
+}
+
+/* 关键词分：标题命中最重，其次标签，再次摘要。整串命中额外加分。 */
+function kwScore(it, q){
+  const t = (it.t || '').toLowerCase(), s = (it.sum || '').toLowerCase();
+  const tags = (it.tags || []).map(x => x.toLowerCase());
+  let sc = 0;
+  if (t.includes(q)) sc += 3;
+  if (tags.some(x => x.includes(q))) sc += 2;
+  if (s.includes(q)) sc += 1.2;
+  if (sc) return sc;
+  // 整串没命中就退到分词命中（中文查询常常是短句）
+  const parts = qTokens(q).filter(x => ZH.test(x) ? x.length >= 2 : x.length >= 2);
+  if (!parts.length) return 0;
+  let hit = 0;
+  parts.forEach(p => {
+    if (t.includes(p)) { sc += 1.1; hit++; }
+    else if (tags.some(x => x.includes(p))) { sc += 0.8; hit++; }
+    else if (s.includes(p)) { sc += 0.5; hit++; }
+  });
+  return sc * (hit / parts.length);          // 命中比例越高越可信
+}
+
+function match(it){
+  if (ST.tag && !(it.tags || []).includes(ST.tag)) return false;
+  if (ST.dir && it.dir !== ST.dir) return false;
+  return true;
+}
+
+/* 返回排好序的结果。有向量就混合，没有就退回纯关键词（不静默假装有语义）。 */
+function search(all, q){
+  const pool = all.filter(match);
+  if (!q) return pool;
+  const sem = semScores(q);
+  const pos = ST.vec ? new Map(ST.vec.ids.map((id, i) => [id, i])) : null;
+  const scored = pool.map(it => {
+    const kw = kwScore(it, q);
+    const sv = (sem && pos.has(it.id)) ? Math.max(0, sem[pos.get(it.id)]) : 0;
+    return {it, s: kw * 0.5 + sv * 2.2, kw, sv};
+  }).filter(x => x.kw > 0 || x.sv > 0.25);   // 两边都不沾的直接不要
+  scored.sort((a, b) => b.s - a.s);
+  return scored.map(x => x.it);
+}
+
+/* ── 三屏 ── */
+function paint(){
+  document.querySelectorAll('#nav button').forEach(b =>
+    b.classList.toggle('on', b.dataset.go === ST.view));
+  window.scrollTo(0, 0);
+  if (ST.cur) return paintNote();
+  if (ST.view === 'tags') return paintTags();
+  if (ST.view === 'dirs') return paintDirs();
+  paintHome();
+}
+
+/* 首页 = **目录**，不是文章堆。
+   Kevin 2026-08-15：「一开始第一页就堆了那么多文章。你应该在第一页先放一个目录，
+   让我先去选想看什么，然后再慢慢一步一步进入到我想要的文章里面嘛。」
+   所以：没搜、没筛的时候 → 只给搜索框 + 八个大类 + 目录 + 最近看的；
+        一旦搜了或筛了 → 才出文章清单。 */
+function paintHome(){
+  const all = ST.idx.items;
+  const q = ST.q.trim();
+  if (!q && !ST.tag && !ST.dir) return paintCatalog(all);
+  const hits = search(all, q);
+  const filt = (ST.tag ? '<button class="chip on" id="ctag">🏷️ ' + esc(ST.tag) + ' ✕</button>' : '') +
+               (ST.dir ? '<button class="chip on" id="cdir">📂 ' + esc(ST.dir) + ' ✕</button>' : '');
+  const recent = !q && !ST.tag && !ST.dir
+    ? seen().map(id => all.find(x => x.id === id)).filter(Boolean).slice(0, 3) : [];
+
+  APP.innerHTML =
+    '<div class="top"><input class="in" id="q" placeholder="搜标题、摘要、标签…" ' +
+    'value="' + esc(ST.q) + '" enterkeyhint="search"></div>' +
+    (filt ? '<div style="margin:10px 0 4px">' + filt + '</div>' : '') +
+    '<div class="sub" style="margin:10px 0 10px">' +
+      (q || ST.tag || ST.dir ? hits.length + ' 篇' : all.length + ' 篇 · ' +
+        Object.keys(ST.idx.tags).length + ' 个标签') + '</div>' +
+    (recent.length ? '<div class="sub" style="margin:0 0 6px">最近看的</div>' +
+      recent.map(cardHTML).join('') + '<div class="sub" style="margin:14px 0 6px">全部</div>' : '') +
+    (hits.length ? hits.slice(0, ST.shown).map(cardHTML).join('') +
+        (hits.length > ST.shown
+          ? '<button class="more" id="mm">还有 ' + (hits.length - ST.shown) + ' 篇，继续加载</button>'
+          : '')
+      : '<div class="note">没搜到。</div>');
+
+  const mm = $('#mm');
+  if (mm) mm.onclick = () => {
+    const y = window.scrollY;
+    ST.shown += PAGE_N; paintHome(); window.scrollTo(0, y);
+  };
+  const inp = $('#q');
+  let t;
+  inp.oninput = () => { clearTimeout(t); t = setTimeout(() => {
+    ST.q = inp.value; ST.shown = PAGE_N;      // 换了搜索词就从头数
+    paintHome();
+    const n = $('#q'); if (n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+  }, 220); };
+  if ($('#ctag')) $('#ctag').onclick = () => { ST.tag = ''; paintHome(); };
+  if ($('#cdir')) $('#cdir').onclick = () => { ST.dir = ''; paintHome(); };
+  bindCards();
+}
+
+/* 目录页：一屏之内看清「这库里有什么」，点一层进一层。 */
+function paintCatalog(all){
+  const cats = ST.idx.cats || {};
+  const rows = Object.entries(cats).sort((a, b) => b[1].n - a[1].n);
+  const dirs = {};
+  all.forEach(i => { dirs[i.dir] = (dirs[i.dir] || 0) + 1; });
+  const recent = seen().map(id => all.find(x => x.id === id)).filter(Boolean).slice(0, 3);
+
+  APP.innerHTML =
+    '<div class="top"><input class="in" id="q" placeholder="搜你想看的（说人话就行）" ' +
+    'value="" enterkeyhint="search"></div>' +
+    '<div class="sub" style="margin:10px 0 14px">' + all.length + ' 篇 · ' +
+      Object.keys(dirs).length + ' 个来源 · ' + rows.length + ' 个主题</div>' +
+
+    '<div class="sub" style="margin:0 0 7px">按主题</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px">' +
+      rows.map(([c, v]) =>
+        '<div class="card" style="margin:0;padding:12px 13px" data-cat="' + esc(c) + '">' +
+        '<div class="t" style="font-size:14.5px">' + esc(c) + '</div>' +
+        '<div class="s" style="margin-top:3px">' + v.tags.length + ' 个标签</div></div>').join('') +
+    '</div>' +
+
+    '<div class="sub" style="margin:0 0 7px">按来源</div>' +
+    '<div style="margin-bottom:16px">' +
+      Object.entries(dirs).sort((a, b) => b[1] - a[1]).map(([d, n]) =>
+        '<button class="chip" data-dir="' + esc(d) + '">' + esc(d) +
+        ' <span style="opacity:.6">' + n + '</span></button>').join('') +
+    '</div>' +
+
+    (recent.length
+      ? '<div class="sub" style="margin:0 0 7px">最近看的</div>' + recent.map(cardHTML).join('')
+      : '');
+
+  const inp = $('#q');
+  let t;
+  inp.oninput = () => { clearTimeout(t); t = setTimeout(() => {
+    ST.q = inp.value; ST.shown = PAGE_N; paintHome();
+    const n = $('#q'); if (n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+  }, 220); };
+  document.querySelectorAll('[data-cat]').forEach(el =>
+    el.onclick = () => { ST.view = 'tags'; ST.openCat = el.dataset.cat; paint(); });
+  document.querySelectorAll('[data-dir]').forEach(el =>
+    el.onclick = () => { ST.dir = el.dataset.dir; ST.shown = PAGE_N; paintHome(); });
+  bindCards();
+}
+
+function cardHTML(it){
+  const q = ST.q.trim();
+  return '<div class="card" data-id="' + it.id + '">' +
+    '<div class="t">' + hi(it.t, q) + '</div>' +
+    (it.sum ? '<div class="s">' + hi(it.sum, q) + '</div>' : '') +
+    '<div class="meta"><span>📂 ' + esc(it.dir) + '</span>' +
+    '<span>' + Math.round(it.n / 1000) + 'k 字</span>' +
+    '<span>' + it.segs + ' 段</span>' +
+    (it.on ? '<span>' + esc(it.on) + '</span>' : '') + '</div>' +
+    ((it.tags || []).length ? '<div style="margin-top:7px">' +
+      it.tags.slice(0, 4).map(t => '<span class="tag">' + esc(t) + '</span>').join('') +
+      '</div>' : '') + '</div>';
+}
+
+function bindCards(){
+  document.querySelectorAll('.card[data-id]').forEach(el =>
+    el.onclick = () => openNote(el.dataset.id));
+  document.querySelectorAll('.card .tag').forEach(el =>
+    el.onclick = e => { e.stopPropagation(); ST.tag = el.textContent; ST.q = ''; ST.view = 'home'; paint(); });
+}
+
+/* 标签页：先给 8 个大类，点开才看具体标签。
+   🚨 Kevin 2026-08-15：「400 多个标签我怎么看呢？」——
+      实测 459 个里 **345 个只出现过一次**，平铺就是一堵墙。
+      所以默认只显示大类 + 每类里最常用的几个，其余折在「还有 N 个」后面。 */
+function paintTags(){
+  const cats = ST.idx.cats || {};
+  const open = ST.openCat || '';
+  const rows = Object.entries(cats).sort((a, b) => b[1].n - a[1].n);
+  APP.innerHTML = '<h1>标签</h1>' +
+    '<div class="sub">按大类收着 · ' + Object.keys(ST.idx.tags).length + ' 个标签归成 ' +
+      rows.length + ' 类</div>' +
+    rows.map(([c, v]) => {
+      const isOpen = open === c;
+      const show = isOpen ? v.tags : v.tags.slice(0, 6);
+      return '<div class="card" style="cursor:default">' +
+        '<div class="t" data-cat="' + esc(c) + '" style="cursor:pointer">' + esc(c) +
+          ' <span style="color:var(--faint);font-weight:400">' + v.n + ' 次 · ' +
+          v.tags.length + ' 个标签</span></div>' +
+        '<div style="margin-top:8px">' +
+          show.map(t => '<button class="tag" data-t="' + esc(t) + '">' + esc(t) +
+            ' <span style="opacity:.55">' + ST.idx.tags[t] + '</span></button>').join('') +
+          (v.tags.length > show.length
+            ? '<button class="tag" data-cat="' + esc(c) + '" style="opacity:.7">' +
+              '还有 ' + (v.tags.length - show.length) + ' 个 ▾</button>'
+            : (isOpen && v.tags.length > 6
+               ? '<button class="tag" data-cat="" style="opacity:.7">收起 ▴</button>' : '')) +
+        '</div></div>';
+    }).join('');
+  document.querySelectorAll('[data-cat]').forEach(b =>
+    b.onclick = () => { ST.openCat = b.dataset.cat === open ? '' : b.dataset.cat; paintTags(); });
+  document.querySelectorAll('[data-t]').forEach(b =>
+    b.onclick = () => { ST.tag = b.dataset.t; ST.dir = ''; ST.q = ''; ST.view = 'home'; paint(); });
+}
+
+function paintDirs(){
+  const d = {};
+  ST.idx.items.forEach(i => { d[i.dir] = (d[i.dir] || 0) + 1; });
+  APP.innerHTML = '<h1>目录</h1><div class="sub">按知识库里的文件夹分</div>' +
+    Object.entries(d).sort((a, b) => b[1] - a[1]).map(([k, n]) =>
+      '<div class="card" data-d="' + esc(k) + '"><div class="t">📂 ' + esc(k) + '</div>' +
+      '<div class="s">' + n + ' 篇</div></div>').join('');
+  document.querySelectorAll('[data-d]').forEach(el =>
+    el.onclick = () => { ST.dir = el.dataset.d; ST.tag = ''; ST.q = ''; ST.view = 'home'; paint(); });
+}
+
+async function openNote(id){
+  ST.cur = {id, loading: true};
+  ST.segShown = SEG_N;                 // 换一篇就从头数段
+  paint();
+  if (!ST.cache[id]){
+    try { ST.cache[id] = await getJSON('d/notes/' + id + '.bin', ST.key); }
+    catch(e){ ST.cur = {id, err: e.message}; return paint(); }
+  }
+  markSeen(id);
+  ST.cur = {id, data: ST.cache[id]};
+  paint();
+}
+
+function paintNote(){
+  const c = ST.cur;
+  const back = '<div class="top"><button class="back" id="bk">← 返回</button></div>';
+  if (c.loading) return void (APP.innerHTML = back + '<div class="note">正在解密…</div>', bindBack());
+  if (c.err) return void (APP.innerHTML = back + '<div class="note">打不开：' + esc(c.err) + '</div>', bindBack());
+
+  const d = c.data;
+  /* 🚨 顺序是固定的：先给他能一眼看完的（摘要→速览→点评），
+     长正文默认折叠 —— 「不要只是把纯文字丢进去」就是这条。 */
+  const body = d.segs || [];
+  const isLong = body.reduce((n, s) => n + s.text.length, 0) > 2500;
+  APP.innerHTML = back +
+    '<h1>' + esc(d.t) + '</h1>' +
+    '<div class="sub">📂 ' + esc(d.dir) +
+      (d.meta && d.meta.author ? ' · ' + esc(d.meta.author) : '') +
+      (d.meta && d.meta.on ? ' · ' + esc(d.meta.on) : '') + '</div>' +
+    ((d.tags || []).length ? '<div class="tags">' +
+      d.tags.map(t => '<button class="tag" data-t="' + esc(t) + '">' + esc(t) + '</button>').join('') +
+      '</div>' : '') +
+    (d.sum ? '<div class="box"><div class="lb">摘要</div>' + esc(d.sum) + '</div>' : '') +
+    (d.over ? '<div class="box"><div class="lb">速览</div>' +
+      d.over.split(/\n+/).filter(Boolean).map(p => '<p style="margin:0 0 7px">' + esc(p) + '</p>').join('') +
+      '</div>' : '') +
+    (d.comment ? '<div class="box"><div class="lb">点评 / 解读</div>' +
+      d.comment.split(/\n+/).filter(Boolean).map(p => '<p style="margin:0 0 7px">' + esc(p) + '</p>').join('') +
+      '</div>' : '') +
+    (body.length
+      ? (isLong ? '<button class="more" id="mo">📖 展开正文（' + body.length + ' 段）</button>' : '') +
+        '<div id="bd"' + (isLong ? ' hidden' : '') + '>' +
+          body.slice(0, ST.segShown).map(segHTML).join('') +
+          (body.length > ST.segShown
+            ? '<button class="more" id="ms">还有 ' + (body.length - ST.segShown) + ' 段，继续读</button>'
+            : '') +
+        '</div>'
+      : '');
+  bindBack();
+  const mo = $('#mo');
+  if (mo) mo.onclick = () => { $('#bd').hidden = false; mo.remove(); };
+  const ms = $('#ms');
+  if (ms) ms.onclick = () => {
+    const y = window.scrollY;
+    ST.segShown += SEG_N; paintNote(); window.scrollTo(0, y);
+    const b = $('#bd'); if (b) b.hidden = false;      // 已经展开过就别再收回去
+  };
+  document.querySelectorAll('[data-t]').forEach(b =>
+    b.onclick = () => { ST.tag = b.dataset.t; ST.cur = null; ST.view = 'home'; ST.q = ''; paint(); });
+}
+
+function segHTML(s){
+  return '<div class="seg">' + (s.h ? '<h3>' + esc(s.h) + '</h3>' : '') +
+    s.text.split(/\n+/).filter(Boolean).map(p => '<p>' + esc(p) + '</p>').join('') + '</div>';
+}
+function bindBack(){ const b = $('#bk'); if (b) b.onclick = () => { ST.cur = null; paint(); }; }
+
+/* 🚨 不能只在 boot() 里读一次 hash。实测踩到：页面加载完成时 `location.hash` 还是空的，
+   fragment 是之后才补上的（浏览器/跳转器的时序），于是那把钥匙被漏掉、界面停在
+   「还没拿到钥匙」。这条 hashchange 兜底还顺带覆盖另一种情况：
+   App 已经开着，他又点了一次带钥匙的链接。 */
+addEventListener('hashchange', () => {
+  if (!ST.key && /[#&]k=/.test(location.hash || '')) boot();
+});
+boot();
+/* 加载完再补查一次 —— 有些跳转器是「先渲染、后设 hash」，两边都盖住 */
+addEventListener('load', () => {
+  if (!ST.key && /[#&]k=/.test(location.hash || '')) boot();
+});
+
+/* 🚨 装 Service Worker，让页面本身永远走网络优先。
+   不装的话 Safari（尤其主屏那个独立容器）会把 index.html 缓存死 ——
+   2026-08-15 就是这么让他一直看到没有输入框的旧版、一直报「没有 key」的。 */
+if ('serviceWorker' in navigator){
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+
+<!-- build-marker: 20260815-122549 -->
