@@ -627,4 +627,11 @@ boot();
 addEventListener('load', () => {
   if (!ST.key && /[#&]k=/.test(location.hash || '')) boot();
 });
+
+/* 🚨 装 Service Worker，让页面本身永远走网络优先。
+   不装的话 Safari（尤其主屏那个独立容器）会把 index.html 缓存死 ——
+   2026-08-15 就是这么让他一直看到没有输入框的旧版、一直报「没有 key」的。 */
+if ('serviceWorker' in navigator){
+  addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
 </script>
