@@ -2174,7 +2174,10 @@ His counterparties are often non-native speakers on poor video calls.
 
        issue  = 五选一：语法 / 中式直译 / 搭配不地道 / 语域偏了 / 语气强度
 
-       native = 母语者会怎么说这一小段
+       native = **他**这一小段该怎么说 —— 不是对方的回话！
+                跟 better 一样保持同一个言语行为：他在抱怨就还是抱怨、在问就还是问，
+                只是换成母语者的说法。写完自查一句：这句话是他对着对方说的，
+                还是对方对着他说的？后者就是写错了，重写。
 
      例：quote="I think this loan should probably be current"
 
@@ -2454,7 +2457,8 @@ OUTPUT — exactly one JSON object, no markdown fence, no other text:
 
  "issue":"只能是这五个之一：语法 | 中式直译 | 搭配不地道 | 语域偏了 | 语气强度",
 
- "native":"母语者会怎么说这一小段（只是这一小段，不是整句）；没有就 null",
+ "native":"**他**那一小段该怎么说（只是这一小段，不是整句）——**不是对方的回话！**
+           跟 better 同一条规矩：说话的人还是他。没有就 null",
 
  "good":["pattern id he used well this turn，没有就给空数组"]}
 
@@ -2690,22 +2694,53 @@ function cleanZh(zh){
 
 /* 三槽拼成一句中文。拼不出来（模型没填）就退回过滤后的 alex_zh。 */
 
-/* 「该这么说」不许是对方的台词。
-   🚨 Kevin 2026-08-14 撞到：better 里出现的是 CFO 的回话，跟「对方」气泡几乎一样。
-      提示词已经说死了，但**提示词会漂，闸门不会** —— 这一层才是真正兜住的。
-   判据：两句话的词重合度 > 0.6 就认定串台，不显示 better（纠错本身照常给）。 */
-function betterBled(d){
-  const a = String((d && d.better) || '').toLowerCase().match(/[a-z']+/g) || [];
-  const b = String((d && d.in_character) || '').toLowerCase().match(/[a-z']+/g) || [];
+/* 「该这么说」和「母语者会说」都不许是**对方的台词**。
+   🚨 Kevin 2026-08-14 撞到 better 串台；2026-08-15 又撞到 native 串台 ——
+      他说 "You are useless, you waste my time."，纠错却给出
+      "I understand your frustration, sir. Let me check the live feed again…"，
+      跟下面「对方」气泡一字不差。那是**对着他说的话**，不是他该说的话。
+      上一版闸门只挂在 better 上，native 这一路整条没设防 ——
+      闸门挂错了对象，比没有闸门更糟：它让人以为查过了。
+   判据两条，命中任一就丢掉那个槽（纠错本身照常给）：
+     ① 词重合度 > 0.6（两边都 ≥6 词才判，短句词少容易误伤）
+     ② 归一化后一方整段包含另一方 —— 短句串台靠这条兜，① 词太少不判、拦不住
+        （②「太短就不判」的下限是 ≥4 词且 ≥20 字符：
+          "thanks a lot" 这种客套两边撞上纯属正常，判了就是瞎猜） */
+function bled(text, ref){
+  const words = t => String(t || '').toLowerCase().match(/[a-z']+/g) || [];
+  const a = words(text), b = words(ref);
+  if (!a.length || !b.length) return false;
+  const A = a.join(' '), B = b.join(' ');
+  if (a.length >= 4 && A.length >= 20 &&
+      (B.indexOf(A) >= 0 || A.indexOf(B) >= 0)) return true;
   if (a.length < 6 || b.length < 6) return false;
-  const B = new Set(b);
-  const hit = a.filter(w => B.has(w)).length;
-  return hit / a.length > 0.6;
+  const set = new Set(b);
+  return a.filter(w => set.has(w)).length / a.length > 0.6;
+}
+function betterBled(d){ return bled(d && d.better, d && d.in_character); }
+function nativeBled(d){ return bled(d && d.native, d && d.in_character); }
+
+/* 渲染/落盘前把串台的槽清掉。在 render() 顶上调一次即可 ——
+   下游的气泡、「该这么说」、IndexedDB 的这一轮记录、复盘页拿到的都是同一个干净对象。
+   🚨 别在各个显示点各写一遍判断：上一版就是只在两个显示点判了 better，
+      落盘那条路照旧存原文，复盘页于是照样把对方的台词当范例给出来。 */
+function scrubBleed(d){
+  if (!d) return d;
+  if (nativeBled(d)) d.native = '';
+  if (betterBled(d)) d.better = '';
+  return d;
 }
 
 function critique(d){
 
-  const q = (d.quote || '').trim(), n = (d.native || '').trim();
+  const q = (d.quote || '').trim();
+
+  /* 🚨 native 是「他那一小段该怎么说」，不是对方的回话。
+     串台就整条不给 —— 宁可只说「哪句话、什么毛病」，也不能把对着他说的话
+     当成他该说的话教给他。这里再判一次是因为 critique() 是所有路径的必经之处
+     （实时纠错、落盘、复盘页都调它），比只在 render() 里判更兜得住。 */
+
+  const n = nativeBled(d) ? '' : (d.native || '').trim();
 
   let issue = (d.issue || '').trim();
 
@@ -6658,6 +6693,11 @@ async function send(){
 
 async function render(d, mine){
 
+  /* 🚨 先洗一遍：串台的 native / better 在这里就清掉。
+     这一句在最顶上，下面的气泡、「该这么说」、recordTurn、sessTurn 拿到的
+     是同一个已清干净的对象 —— 单一配置点，别在各显示点各判一遍。 */
+  scrubBleed(d);
+
   if (!d.said || !d.said.trim()){
 
     /* 🚨 **不许静默 return**。转写为空时原来只在 #err 留一行小字、
@@ -6694,9 +6734,19 @@ async function render(d, mine){
 
   if (!d.break && critique(d)){
 
+    /* 🚨 兜底档不能是「✅ 这句没问题」。截图里他说的是
+       "You are useless, you waste my time."，点评写着「语气强度」，
+       标签却挂着 ✅ 这句没问题 —— 那一档原本是给 level 缺失/不认识时用的，
+       结果把**明确指出了毛病的那一轮**也标成没问题，自相矛盾。
+       有 issue 就照实说是什么毛病；只有真没毛病可讲时才 ✅。 */
+
+    const _iss = ISSUES.includes((d.issue || '').trim()) ? d.issue.trim() : '';
+
     const lv = d.level === 'fine' ? '✅ 这句没问题'
 
-             : d.level === 'polish' ? '💡 说得对，还能更精' : '✅ 这句没问题';
+             : d.level === 'polish' ? '💡 说得对，还能更精'
+
+             : _iss ? `⚠️ ${_iss}` : '✅ 这句没问题';
 
     const el = bubble('alex','Alex', critique(d) || d.said && '这句可以。', lv);
 
