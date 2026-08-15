@@ -5,6 +5,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>我的知识库</title>
 <link rel="manifest" href="manifest.webmanifest">
+<!-- 🚨 iOS **不读 manifest 里的 icons**，加到主屏时只认 apple-touch-icon。
+     少了这一行，主屏上就是网页截图或者标题首字（他嫌的那个「知」字就是这么来的）。 -->
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 
 <style>
 :root{
