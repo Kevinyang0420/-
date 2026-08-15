@@ -129,8 +129,15 @@ async function boot(){
   const m = /[#&]k=([A-Za-z0-9_\-]+)/.exec(location.hash || '');
   if (m){
     try {
-      const raw = Uint8Array.from(atob(m[1].replace(/-/g, '+').replace(/_/g, '/') +
-        '='.repeat((4 - m[1].length % 4) % 4)), c => c.charCodeAt(0));
+      /* 🚨 钥匙用**十六进制**发（只有 0-9a-f）。原来用 base64url，里面带 `_`，
+         而 Telegram 的 Markdown 把 `_..._` 当斜体、**把下划线吃掉** ——
+         Kevin 收到的链接少了两个字符，当然报「钥匙不对」。
+         老的 base64url 链接仍然认，免得已经存过的设备失效。 */
+      const s0 = m[1];
+      const raw = /^[0-9a-fA-F]{64}$/.test(s0)
+        ? Uint8Array.from(s0.match(/../g).map(h => parseInt(h, 16)))
+        : Uint8Array.from(atob(s0.replace(/-/g, '+').replace(/_/g, '/') +
+            '='.repeat((4 - s0.length % 4) % 4)), c => c.charCodeAt(0));
       const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', true, ['decrypt']);
       await unseal(key, b64(man.check).buffer);      // 钥匙不对这里就抛
       localStorage.setItem(LS_KEY, btoa(String.fromCharCode(...raw)));
@@ -311,12 +318,36 @@ function bindCards(){
     el.onclick = e => { e.stopPropagation(); ST.tag = el.textContent; ST.q = ''; ST.view = 'home'; paint(); });
 }
 
+/* 标签页：先给 8 个大类，点开才看具体标签。
+   🚨 Kevin 2026-08-15：「400 多个标签我怎么看呢？」——
+      实测 459 个里 **345 个只出现过一次**，平铺就是一堵墙。
+      所以默认只显示大类 + 每类里最常用的几个，其余折在「还有 N 个」后面。 */
 function paintTags(){
-  const ts = Object.entries(ST.idx.tags).sort((a, b) => b[1] - a[1]);
-  APP.innerHTML = '<h1>标签</h1><div class="sub">' + ts.length + ' 个 · 点一个看清单</div>' +
-    '<div class="tags">' + ts.map(([t, n]) =>
-      '<button class="tag" data-t="' + esc(t) + '" style="font-size:13px;padding:6px 12px">' +
-      esc(t) + ' <span style="opacity:.6">' + n + '</span></button>').join('') + '</div>';
+  const cats = ST.idx.cats || {};
+  const open = ST.openCat || '';
+  const rows = Object.entries(cats).sort((a, b) => b[1].n - a[1].n);
+  APP.innerHTML = '<h1>标签</h1>' +
+    '<div class="sub">按大类收着 · ' + Object.keys(ST.idx.tags).length + ' 个标签归成 ' +
+      rows.length + ' 类</div>' +
+    rows.map(([c, v]) => {
+      const isOpen = open === c;
+      const show = isOpen ? v.tags : v.tags.slice(0, 6);
+      return '<div class="card" style="cursor:default">' +
+        '<div class="t" data-cat="' + esc(c) + '" style="cursor:pointer">' + esc(c) +
+          ' <span style="color:var(--faint);font-weight:400">' + v.n + ' 次 · ' +
+          v.tags.length + ' 个标签</span></div>' +
+        '<div style="margin-top:8px">' +
+          show.map(t => '<button class="tag" data-t="' + esc(t) + '">' + esc(t) +
+            ' <span style="opacity:.55">' + ST.idx.tags[t] + '</span></button>').join('') +
+          (v.tags.length > show.length
+            ? '<button class="tag" data-cat="' + esc(c) + '" style="opacity:.7">' +
+              '还有 ' + (v.tags.length - show.length) + ' 个 ▾</button>'
+            : (isOpen && v.tags.length > 6
+               ? '<button class="tag" data-cat="" style="opacity:.7">收起 ▴</button>' : '')) +
+        '</div></div>';
+    }).join('');
+  document.querySelectorAll('[data-cat]').forEach(b =>
+    b.onclick = () => { ST.openCat = b.dataset.cat === open ? '' : b.dataset.cat; paintTags(); });
   document.querySelectorAll('[data-t]').forEach(b =>
     b.onclick = () => { ST.tag = b.dataset.t; ST.dir = ''; ST.q = ''; ST.view = 'home'; paint(); });
 }
