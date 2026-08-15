@@ -1330,7 +1330,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
 
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
 
-const BANKV = '2b113717';
+const BANKV = 'eb4ac6bd';
 
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
@@ -5139,7 +5139,14 @@ function bubble(cls, who, txt, extra, speak){
 
 const GRP = [['dd_','尽调'], ['aud_','审计'], ['wk_','职场'],
 
+             ['itv_','面试'],
+
              ['life_','生活'], ['talk_','闲聊'], ['soc_','人际'], ['hob_','兴趣']];
+
+/* 🚨 `itv_` 是从他自己收藏的小红书笔记转过来的面试题（`xhs_to_speak.py` 出卡）。
+   加新前缀**必须同时改这里** —— 题库靠 id 前缀分类，这张表里没有的前缀，
+   那批卡在选场景那一屏**一张都不显示**，而且不报错。
+   （我一度在出卡脚本的注释里写「前端已加」，其实没加 —— 推断当事实写的老毛病。） */
 
 /* 后四类是 Kevin 要的非职业维度（2026-07-31 第一条就提过，2026-08-03 又点名：
 
