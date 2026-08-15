@@ -2724,8 +2724,52 @@ function nativeBled(d){ return bled(d && d.native, d && d.in_character); }
    下游的气泡、「该这么说」、IndexedDB 的这一轮记录、复盘页拿到的都是同一个干净对象。
    🚨 别在各个显示点各写一遍判断：上一版就是只在两个显示点判了 better，
       落盘那条路照旧存原文，复盘页于是照样把对方的台词当范例给出来。 */
-function scrubBleed(d){
+/* ═══ 点评只能由「他说的那句话」推出来 ═══
+
+   🚨 Kevin 2026-08-15 原话：「说话的人是说话的人，你的脚本逻辑不是应该跟着说话的人
+      说的东西去写修订意见吗？为什么会把回复的人的意见给修订过来呢？回复又是你自己回复的。」
+
+   08-14 串了 better、08-15 又串了 native，两次的根因是同一个，而且不在模型那边：
+   **我把两件事塞进了同一次调用** —— 同一个模型在同一份 JSON 里既写「他该怎么说」
+   又写「对方怎么回」。两样东西装在一个筐里，串台是迟早的事，
+   事后拿相似度去拦只是补丁：模型换一种说法写出对方的台词，补丁就拦不住。
+
+   现在拆成两条路，谁也够不着谁：
+     ① 场景引擎（askGemini / askBackendAudio / askDeepSeekOrGeminiText）
+        只负责：转写 said + 对方回话 in_character。它写的点评字段**一律丢掉**。
+     ② 点评引擎（askCritique）**只拿到他那一句**，输出的 JSON 里
+        根本没有 in_character 这个字段 —— 对方的回话不在它的世界里。
+   合并时只从 ② 取点评、只从 ① 取 said / in_character（见 mergeCrit）。
+
+   下面这些闸门全部保留，作为最后一道，不作为唯一一道。 */
+
+/* 点评引擎能贡献的字段，仅此而已。said / in_character / move 永远来自场景引擎。 */
+const CRIT_FIELDS = ['level','break','quote','issue','native','better','alex_zh',
+                     'phrase','dimension','severity','pattern','good'];
+
+function mergeCrit(scene, crit){
+  const d = {said: (scene && scene.said) || '',
+             in_character: (scene && scene.in_character) || '',
+             move: (scene && scene.move) || 'none'};
+  for (const k of CRIT_FIELDS){
+    if (crit && crit[k] !== undefined && crit[k] !== null) d[k] = crit[k];
+  }
+  return d;
+}
+
+/* 🚨 结构判据：quote 必须能在**他说的那句话**里逐字找到。
+   找不到 → 这条点评讲的不是他说的话，整条丢掉。
+   这就是「点评跟着说话的人走」的可机械验证形态 —— 不靠相似度、不靠词表。 */
+function quoteAnchored(d){
+  const norm = s => (String(s || '').toLowerCase().match(/[a-z']+/g) || []).join(' ');
+  const q = norm(d && d.quote);
+  if (!q) return true;                       // 没摘引用就不判这一条
+  return norm(d && d.said).indexOf(q) >= 0;
+}
+
+function scrubCrit(d){
   if (!d) return d;
+  if (!quoteAnchored(d)){ d.quote = ''; d.issue = ''; d.native = ''; d.better = ''; }
   if (nativeBled(d)) d.native = '';
   if (betterBled(d)) d.better = '';
   return d;
@@ -4214,6 +4258,14 @@ function buildPrompt(tail){
     '\nRECENT TURNS\n' + (S.hist.slice(-4).join('\n') || '(第一轮)'),
 
     tail || '',
+
+    /* 🚨 这一轮你**只负责戏**：转写 + 对方怎么回。
+       点评由另一条路拿他那一句单独做（askCritique），你写了也会被丢掉。
+       这不是省 token 的小事 —— 让「他该怎么说」和「对方怎么回」出自同一次生成，
+       正是 08-14 / 08-15 两次把对方台词当成修订意见给他的根因。 */
+    '\n🚨 ONLY fill "said", "in_character", "move". Leave the coaching fields'
+    + ' (alex_zh, quote, issue, native, better, level, dimension, severity, pattern, good)'
+    + ' as null or omit them — a separate pass does the coaching from HIS sentence alone.',
 
   ].join('\n');
 
@@ -6362,7 +6414,7 @@ async function sendText(promise){
 
     //    同一个决定散在两个函数里，改一处等于没改 —— 又一次。
 
-    await render(await askDeepSeekOrGeminiText(said));
+    await render(await turnFromText(said));
 
   } catch(e){ $('#err').textContent = e.message; }
 
@@ -6662,7 +6714,9 @@ async function send(){
 
                                           : await askGemini(part);
 
-    await render(d, mine);
+    /* 🚨 场景引擎只给转写和对方的回话；点评拿他那一句单独再问一次。
+       两条路分开，「修订意见」结构上就够不着「对方的台词」。 */
+    await render(await withCritique(d), mine);
 
   } catch(e){
 
@@ -6706,10 +6760,11 @@ async function send(){
 
 async function render(d, mine){
 
-  /* 🚨 先洗一遍：串台的 native / better 在这里就清掉。
+  /* 🚨 先洗一遍：没锚在他那句话上的点评、串台的 native / better，在这里就清掉。
      这一句在最顶上，下面的气泡、「该这么说」、recordTurn、sessTurn 拿到的
-     是同一个已清干净的对象 —— 单一配置点，别在各显示点各判一遍。 */
-  scrubBleed(d);
+     是同一个已清干净的对象 —— 单一配置点，别在各显示点各判一遍。
+     这是最后一道，不是唯一一道：点评本来就由 askCritique 单独算，够不着对方的回话。 */
+  scrubCrit(d);
 
   if (!d.said || !d.said.trim()){
 
@@ -6730,6 +6785,17 @@ async function render(d, mine){
   }
 
   attachReplay(bubble('you','你', d.said), mine);
+
+  /* 🚨 点评这一路挂了要说出来。「每句都纠」那一档他等的就是这个，
+     静悄悄地没有 = 他会以为这句没问题（跟旧版把 level 缺失标成「✅ 这句没问题」同一个病）。
+     对话本身照常往下走，不把整轮弄丢。 */
+  if (d.critErr && S.density === 1){
+
+    bubble('alex','Alex', '这一句的点评没取到（' + d.critErr.slice(0, 60)
+
+      + '）—— 对话照常往下走，这句先跳过点评。', '点评没取到');
+
+  }
 
   /* 🚨 「错了」和「对，但能更好」必须一眼分得开。
 
@@ -7161,7 +7227,7 @@ async function typedTurn(){
 
   $('#err').textContent = '';
 
-  try { await render(await askDeepSeekOrGeminiText(said)); }
+  try { await render(await turnFromText(said)); }
 
   catch(e){ $('#err').textContent = e.message; }
 
@@ -7184,6 +7250,131 @@ $('#typein').addEventListener('keydown', e => { if (e.key === 'Enter') typedTurn
 
 
 /* 纯文本走哪家：Gemini 也能只吃文字，不一定要音频 */
+
+/* ═══ 点评引擎 ═══ 只看他那一句，输出里没有 in_character 这个字段。
+   见上面 CRIT_FIELDS 那段注释：这是「修订意见跟着说话的人走」的结构保证，
+   不是又一道过滤器。 */
+function critPrompt(said){
+
+  const scn = S.scn || {}, g = gate(S);
+
+  const drill = drilling().slice(0, 6);
+
+  return [
+
+    '你是 Alex —— 英语教练。你只做一件事：点评**他刚才说的这一句英语**。',
+
+    '🚨 你不是场景里的任何角色，不替任何人回话。对方这一轮怎么回，你看不到，也跟你无关。',
+
+    '🚨 你写的每一句英文（native / better）都是**他**要说出口的话，保持同一个言语行为：',
+
+    '   他在抱怨就还是抱怨、在问就还是问，只是换成母语者的说法。',
+
+    '   写完自查一句：这句是他对着别人说的，还是别人对着他说的？',
+
+    '   后者一律重写 —— 那是把别人的台词塞给他，是这个产品最不能犯的错。',
+
+    '',
+
+    '他在这个情境里是: ' + (scn.you || '') + '；他要达成的是: ' + (scn.task || ''),
+
+    '情境: ' + (scn.sit || ''),
+
+    (scn.tgt ? '目标表达:\n' + scn.tgt.map(t => '  - ' + t).join('\n') : ''),
+
+    (scn.traps ? '常见陷阱:\n' + scn.traps.map(t => '  - ' + t).join('\n') : ''),
+
+    (drill.length ? '\nHIS OPEN 错题本（他重犯的要算重，答对了把 id 放进 "good"）:\n'
+
+      + drill.map(e => `  - ${e.pat}  (错过 ${e.n} 次, ${e.sev || '?'})`).join('\n') : ''),
+
+    '\n' + g.txt,
+
+    '\nRECENT TURNS（只作语境，不要点评这里面的话）\n'
+
+      + (S.hist.slice(-4).join('\n') || '(第一轮)'),
+
+    '\nHE JUST SAID —— 要点评的就是这一句，别的都不是:\n' + said,
+
+    '\n只输出一个 JSON，不要 markdown 围栏、不要别的话:',
+
+    '{"level":"error|polish|fine","break":false,',
+
+    ' "quote":"从上面那一句里**原样摘出**的一小段（3-10 词），必须能在他那句话里逐字找到；没有就 null",',
+
+    ' "issue":"只能是这五个之一：语法 | 中式直译 | 搭配不地道 | 语域偏了 | 语气强度",',
+
+    ' "native":"**他**那一小段该怎么说（只是这一小段）；没有就 null",',
+
+    ' "better":"**他**本该说的完整整句；不破戏时为 null",',
+
+    ' "alex_zh":"中文，只讲这句英语本身怎么了，≤3 句；不许讲后果（「这会让对方…」「会导致…」一律不要）；没有就 null",',
+
+    ' "phrase":"2-5 词、人们真的会说出口的搭配；只在书面语里出现就给 null",',
+
+    ' "dimension":["D7"],"severity":"high|medium|low","pattern":"pattern id",',
+
+    ' "good":["他这轮用对的 pattern id，没有就空数组"]}',
+
+  ].filter(Boolean).join('\n');
+
+}
+
+async function askCritique(said){
+
+  const txt = await textCall(critPrompt(said), 0.3);
+
+  const c = firstJson(txt);
+
+  if (!c) throw new Error('点评返回里没有完整的 JSON：' + String(txt).slice(0, 100));
+
+  return c;
+
+}
+
+/* 打字 / 文字重来这条路：他那句话一开始就在手里，两次调用**并行**发出去 ——
+   拆成两条路不给他多加一秒等待。（录音那条路必须先转写出 said 才能点评，只能串行。） */
+async function turnFromText(said){
+
+  const [scene, crit] = await Promise.all([
+
+    askDeepSeekOrGeminiText(said),
+
+    askCritique(said).catch(e => ({__err: e.message || String(e)}))
+
+  ]);
+
+  if (crit && crit.__err){
+
+    const d = mergeCrit(scene, null); d.critErr = crit.__err; return d;
+
+  }
+
+  return mergeCrit(scene, crit);
+
+}
+
+/* 场景引擎给的点评字段一律丢掉，拿他那一句重新问一次。
+   🚨 点评这一路挂了（网络/额度）不能把整轮弄丢 —— 对话照常，只是这轮没点评。 */
+async function withCritique(scene){
+
+  if (!scene || !scene.said || !scene.said.trim()) return scene;
+
+  try {
+
+    return mergeCrit(scene, await askCritique(scene.said));
+
+  } catch(e){
+
+    const d = mergeCrit(scene, null);
+
+    d.critErr = e.message || String(e);
+
+    return d;
+
+  }
+
+}
 
 async function askDeepSeekOrGeminiText(said){
 
