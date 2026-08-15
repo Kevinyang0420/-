@@ -214,6 +214,12 @@ async function start(){
   document.querySelectorAll('#nav button').forEach(b =>
     b.onclick = () => { ST.view = b.dataset.go; ST.cur = null; paint(); });
   paint();
+  /* 语义向量后台加载（1.2 MB）——**不挡首屏**。没加载好之前搜索照样能用，
+     只是退回纯关键词；加载好了自动升级成混合检索。 */
+  getJSON('d/vectors.bin', ST.key).then(v => {
+    ST.vec = v;
+    if (ST.q && !ST.cur) paint();          // 已经在搜了就用语义重排一次
+  }).catch(() => {});
 }
 
 /* ── 工具 ── */
@@ -235,14 +241,104 @@ function markSeen(id){
   try { localStorage.setItem(LS_SEEN, JSON.stringify(s.slice(0, 40))); } catch(_){}
 }
 
+/* ═══ 搜索：语义 + 关键词 混合 ═══
+   Kevin 2026-08-15：「要加个搜索呀？支持我语义搜索，想看什么样的文章、什么样的笔记？」
+
+   语义那半：打包时用本地 bge-m3 把每篇和一张 2459 词的词表都嵌好、降到 128 维存成 int8；
+   手机上把查询切成词、按 IDF 加权平均，跟每篇算余弦。**全离线，不调任何接口。**
+
+   🚨 但纯语义在这个库上会翻车，实测拿到证据才改的：
+      79 篇《股权投资日报》标题摘要高度雷同，形成一个密集簇，
+      「英文面试怎么答」「怎么跟客户说不」这类查询全被它吸过去 ——
+      而单独搜「面试」结果完美。**所以必须混合**：关键词命中给硬加分，
+      它精确、可解释，正好补语义在密集簇上的失灵。 */
+const ZH = /[一-鿿]/;
+
+function qTokens(q){
+  /* 🚨 切法必须跟 kb_vectors.py 的 tokens() **一模一样**，
+     不一致的话查询词永远查不到词表里的向量，搜索会静默退化成纯关键词。 */
+  const s = (q || '').toLowerCase();
+  const out = (s.match(/[a-z][a-z0-9\-]+/g) || []);
+  (s.match(/[一-鿿]+/g) || []).forEach(run => {
+    if (run.length === 1) out.push(run);
+    for (let i = 0; i < run.length - 1; i++) out.push(run.slice(i, i + 2));
+  });
+  return out;
+}
+
+function semScores(q){
+  const V = ST.vec;
+  if (!V) return null;
+  const ti = V._ti || (V._ti = new Map(V.terms.map((t, i) => [t, i])));
+  const hit = [];
+  qTokens(q).forEach(t => {
+    const i = ti.get(t);
+    if (i !== undefined && V.idf[i] >= 0.7) hit.push(i);
+  });
+  if (!hit.length) return null;
+  const d = V.dim, vec = new Float32Array(d);
+  let wsum = 0;
+  hit.forEach(i => {
+    const w = V.idf[i], row = V.tvec[i], sc = V.tscale[i] / 127;
+    for (let j = 0; j < d; j++) vec[j] += row[j] * sc * w;
+    wsum += w;
+  });
+  let n = 0;
+  for (let j = 0; j < d; j++){ vec[j] /= wsum; n += vec[j] * vec[j]; }
+  n = Math.sqrt(n) || 1;
+  for (let j = 0; j < d; j++) vec[j] /= n;
+  const out = new Float32Array(V.n);
+  for (let k = 0; k < V.n; k++){
+    const row = V.dvec[k], sc = V.dscale[k] / 127;
+    let s = 0;
+    for (let j = 0; j < d; j++) s += row[j] * sc * vec[j];
+    /* 🚨 减掉枢纽度：有些笔记跟谁都近（这库里是 79 篇雷同的《股权投资日报》），
+       不减的话任何弱查询都被它们占满 —— 实测「怎么跟客户说不」整页都是日报。 */
+    out[k] = s - (V.hub ? V.hub[k] : 0);
+  }
+  return out;
+}
+
+/* 关键词分：标题命中最重，其次标签，再次摘要。整串命中额外加分。 */
+function kwScore(it, q){
+  const t = (it.t || '').toLowerCase(), s = (it.sum || '').toLowerCase();
+  const tags = (it.tags || []).map(x => x.toLowerCase());
+  let sc = 0;
+  if (t.includes(q)) sc += 3;
+  if (tags.some(x => x.includes(q))) sc += 2;
+  if (s.includes(q)) sc += 1.2;
+  if (sc) return sc;
+  // 整串没命中就退到分词命中（中文查询常常是短句）
+  const parts = qTokens(q).filter(x => ZH.test(x) ? x.length >= 2 : x.length >= 2);
+  if (!parts.length) return 0;
+  let hit = 0;
+  parts.forEach(p => {
+    if (t.includes(p)) { sc += 1.1; hit++; }
+    else if (tags.some(x => x.includes(p))) { sc += 0.8; hit++; }
+    else if (s.includes(p)) { sc += 0.5; hit++; }
+  });
+  return sc * (hit / parts.length);          // 命中比例越高越可信
+}
+
 function match(it){
   if (ST.tag && !(it.tags || []).includes(ST.tag)) return false;
   if (ST.dir && it.dir !== ST.dir) return false;
-  const q = ST.q.trim().toLowerCase();
-  if (!q) return true;
-  return (it.t || '').toLowerCase().includes(q) ||
-         (it.sum || '').toLowerCase().includes(q) ||
-         (it.tags || []).some(t => t.toLowerCase().includes(q));
+  return true;
+}
+
+/* 返回排好序的结果。有向量就混合，没有就退回纯关键词（不静默假装有语义）。 */
+function search(all, q){
+  const pool = all.filter(match);
+  if (!q) return pool;
+  const sem = semScores(q);
+  const pos = ST.vec ? new Map(ST.vec.ids.map((id, i) => [id, i])) : null;
+  const scored = pool.map(it => {
+    const kw = kwScore(it, q);
+    const sv = (sem && pos.has(it.id)) ? Math.max(0, sem[pos.get(it.id)]) : 0;
+    return {it, s: kw * 0.5 + sv * 2.2, kw, sv};
+  }).filter(x => x.kw > 0 || x.sv > 0.25);   // 两边都不沾的直接不要
+  scored.sort((a, b) => b.s - a.s);
+  return scored.map(x => x.it);
 }
 
 /* ── 三屏 ── */
@@ -256,10 +352,16 @@ function paint(){
   paintHome();
 }
 
+/* 首页 = **目录**，不是文章堆。
+   Kevin 2026-08-15：「一开始第一页就堆了那么多文章。你应该在第一页先放一个目录，
+   让我先去选想看什么，然后再慢慢一步一步进入到我想要的文章里面嘛。」
+   所以：没搜、没筛的时候 → 只给搜索框 + 八个大类 + 目录 + 最近看的；
+        一旦搜了或筛了 → 才出文章清单。 */
 function paintHome(){
   const all = ST.idx.items;
-  const hits = all.filter(match);
   const q = ST.q.trim();
+  if (!q && !ST.tag && !ST.dir) return paintCatalog(all);
+  const hits = search(all, q);
   const filt = (ST.tag ? '<button class="chip on" id="ctag">🏷️ ' + esc(ST.tag) + ' ✕</button>' : '') +
                (ST.dir ? '<button class="chip on" id="cdir">📂 ' + esc(ST.dir) + ' ✕</button>' : '');
   const recent = !q && !ST.tag && !ST.dir
@@ -294,6 +396,52 @@ function paintHome(){
   }, 220); };
   if ($('#ctag')) $('#ctag').onclick = () => { ST.tag = ''; paintHome(); };
   if ($('#cdir')) $('#cdir').onclick = () => { ST.dir = ''; paintHome(); };
+  bindCards();
+}
+
+/* 目录页：一屏之内看清「这库里有什么」，点一层进一层。 */
+function paintCatalog(all){
+  const cats = ST.idx.cats || {};
+  const rows = Object.entries(cats).sort((a, b) => b[1].n - a[1].n);
+  const dirs = {};
+  all.forEach(i => { dirs[i.dir] = (dirs[i.dir] || 0) + 1; });
+  const recent = seen().map(id => all.find(x => x.id === id)).filter(Boolean).slice(0, 3);
+
+  APP.innerHTML =
+    '<div class="top"><input class="in" id="q" placeholder="搜你想看的（说人话就行）" ' +
+    'value="" enterkeyhint="search"></div>' +
+    '<div class="sub" style="margin:10px 0 14px">' + all.length + ' 篇 · ' +
+      Object.keys(dirs).length + ' 个来源 · ' + rows.length + ' 个主题</div>' +
+
+    '<div class="sub" style="margin:0 0 7px">按主题</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px">' +
+      rows.map(([c, v]) =>
+        '<div class="card" style="margin:0;padding:12px 13px" data-cat="' + esc(c) + '">' +
+        '<div class="t" style="font-size:14.5px">' + esc(c) + '</div>' +
+        '<div class="s" style="margin-top:3px">' + v.tags.length + ' 个标签</div></div>').join('') +
+    '</div>' +
+
+    '<div class="sub" style="margin:0 0 7px">按来源</div>' +
+    '<div style="margin-bottom:16px">' +
+      Object.entries(dirs).sort((a, b) => b[1] - a[1]).map(([d, n]) =>
+        '<button class="chip" data-dir="' + esc(d) + '">' + esc(d) +
+        ' <span style="opacity:.6">' + n + '</span></button>').join('') +
+    '</div>' +
+
+    (recent.length
+      ? '<div class="sub" style="margin:0 0 7px">最近看的</div>' + recent.map(cardHTML).join('')
+      : '');
+
+  const inp = $('#q');
+  let t;
+  inp.oninput = () => { clearTimeout(t); t = setTimeout(() => {
+    ST.q = inp.value; ST.shown = PAGE_N; paintHome();
+    const n = $('#q'); if (n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+  }, 220); };
+  document.querySelectorAll('[data-cat]').forEach(el =>
+    el.onclick = () => { ST.view = 'tags'; ST.openCat = el.dataset.cat; paint(); });
+  document.querySelectorAll('[data-dir]').forEach(el =>
+    el.onclick = () => { ST.dir = el.dataset.dir; ST.shown = PAGE_N; paintHome(); });
   bindCards();
 }
 
