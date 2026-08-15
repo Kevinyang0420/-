@@ -29,8 +29,12 @@ body{margin:0;background:var(--bg);color:var(--fg);
    而下巴（Home Indicator 那条）又空着一大截 —— Kevin 2026-08-15：
    「位置太靠上了，下巴留得很长，我点返回的时候都点不到」。
    所以：顶部按安全区留白，底部只留导航栏需要的高度。 */
+/* 🚨 顶部要**实打实**留出来，不能只靠 env()：
+   Safari 标签页里 `safe-area-inset-top` 是 0，我上一版只写 `env()+16px`，
+   在他手机上等于几乎没挪 —— 他连着说了两遍「整体太靠上」，两遍都没改到。
+   所以给一个 44px 的固定基线，安全区再往上叠。 */
 .wrap{max-width:720px;margin:0 auto;
-  padding:calc(env(safe-area-inset-top, 0px) + 16px) 14px 84px}
+  padding:calc(env(safe-area-inset-top, 0px) + 44px) 14px 96px}
 h1{font-size:19px;margin:2px 0 12px}
 .sub{color:var(--muted);font-size:13px;margin:-6px 0 14px}
 input,button,textarea{font:inherit;color:inherit}
@@ -105,7 +109,7 @@ mark{background:#ffe9a8;color:#000;padding:0 2px;border-radius:3px}
    「不要再让这个 key 的问题影响我的效率」。
    安全改由**网址本身猜不到**来保证（32 位随机路径），威胁模型跟原来
    「链接里带钥匙」完全一样：拿到链接 = 能看。区别只是他一次都不用输。 */
-const BAKED_KEY = 'a3e4559ab1f9db413a536eedfffe3ae38bd3a248302bf7dd4f9c584ed5b26e30';
+const BAKED_KEY = '00d74f590fb55cc51839a9f6f67fbeb3e9a4184ceadae647099bb97b57728a27';
 
 const $ = s => document.querySelector(s);
 const APP = $('#app');
@@ -285,7 +289,15 @@ async function start(){
   catch(e){ APP.innerHTML = '<div class="note">索引读不出来：' + esc(e.message) + '</div>'; return; }
   $('#nav').hidden = false;
   document.querySelectorAll('#nav button').forEach(b =>
-    b.onclick = () => { ST.view = b.dataset.go; ST.cur = null; paint(); });
+    b.onclick = () => {
+      /* 🚨 「全部」＝**回首页目录**，把搜索、筛选、详情一起清掉。
+         上一版点它只是切 view，筛选还留着，所以他点了也出不来 —— 那正是
+         「点进去又出不来」的另一半原因。 */
+      ST.view = b.dataset.go;
+      ST.cur = null;
+      if (b.dataset.go === 'home'){ ST.q = ''; ST.tag = ''; ST.dir = ''; ST.shown = PAGE_N; }
+      paint();
+    });
   paint();
   /* 语义向量后台加载（1.2 MB）——**不挡首屏**。没加载好之前搜索照样能用，
      只是退回纯关键词；加载好了自动升级成混合检索。 */
@@ -425,8 +437,8 @@ function paint(){
   document.querySelectorAll('#nav button').forEach(b =>
     b.classList.toggle('on', b.dataset.go === ST.view));
   window.scrollTo(0, 0);
+  paintFab();                      // 🚨 每一屏都过这里，返回键的显隐只由 atRoot() 决定
   if (ST.cur) return paintNote();
-  hideFab();                       // 不在详情页就把那颗返回键收起来
   if (ST.view === 'tags') return paintTags();
   if (ST.view === 'dirs') return paintDirs();
   paintHome();
@@ -438,6 +450,7 @@ function paint(){
    所以：没搜、没筛的时候 → 只给搜索框 + 八个大类 + 目录 + 最近看的；
         一旦搜了或筛了 → 才出文章清单。 */
 function paintHome(){
+  paintFab();   // 🚨 每个画面自己保证返回键状态对 —— 这几个函数会被处理器直接调用，绕过 paint()
   const all = ST.idx.items;
   const q = ST.q.trim();
   if (!q && !ST.tag && !ST.dir) return paintCatalog(all);
@@ -481,6 +494,7 @@ function paintHome(){
 
 /* 目录页：一屏之内看清「这库里有什么」，点一层进一层。 */
 function paintCatalog(all){
+  paintFab();   // 🚨 每个画面自己保证返回键状态对 —— 这几个函数会被处理器直接调用，绕过 paint()
   const cats = ST.idx.cats || {};
   const rows = Object.entries(cats).sort((a, b) => b[1].n - a[1].n);
   const dirs = {};
@@ -551,6 +565,7 @@ function bindCards(){
       实测 459 个里 **345 个只出现过一次**，平铺就是一堵墙。
       所以默认只显示大类 + 每类里最常用的几个，其余折在「还有 N 个」后面。 */
 function paintTags(){
+  paintFab();   // 🚨 每个画面自己保证返回键状态对 —— 这几个函数会被处理器直接调用，绕过 paint()
   const cats = ST.idx.cats || {};
   const open = ST.openCat || '';
   const rows = Object.entries(cats).sort((a, b) => b[1].n - a[1].n);
@@ -581,6 +596,7 @@ function paintTags(){
 }
 
 function paintDirs(){
+  paintFab();   // 🚨 每个画面自己保证返回键状态对 —— 这几个函数会被处理器直接调用，绕过 paint()
   const d = {};
   ST.idx.items.forEach(i => { d[i.dir] = (d[i.dir] || 0) + 1; });
   APP.innerHTML = '<h1>目录</h1><div class="sub">按知识库里的文件夹分</div>' +
@@ -656,22 +672,40 @@ function segHTML(s){
   return '<div class="seg">' + (s.h ? '<h3>' + esc(s.h) + '</h3>' : '') +
     s.text.split(/\n+/).filter(Boolean).map(p => '<p>' + esc(p) + '</p>').join('') + '</div>';
 }
-function bindBack(){
-  const go = () => { ST.cur = null; ST.segShown = SEG_N; paint(); };
-  const b = $('#bk');
-  if (b) b.onclick = go;
-  /* 拇指够得着的那颗返回键 —— 固定在左下角，44px 以上，进详情页才出现 */
+/* ═══ 返回：**每一屏都要有**，不能只有文章详情页 ═══
+   🚨 Kevin 2026-08-15 连着骂了两次：「很多地方我点了进去又出不来了，没有返回按钮」。
+      我上一版只在 `paintNote()` 里挂了返回键 —— 点标签、点来源进到清单以后
+      那一屏根本没有出口，而底部「全部」当时也不清筛选，所以他是真的被困在里面。
+
+   现在只有一个规则：**只要不是首页目录，就一定有返回键**。
+   层级是固定的一条线，退一层就行：
+       文章详情 → 当前清单 → 首页目录
+   而底部「全部」永远直接回首页目录（把搜索/筛选/详情一起清掉）。 */
+function atRoot(){
+  return !ST.cur && !ST.tag && !ST.dir && !ST.q.trim() && ST.view === 'home';
+}
+
+function goBack(){
+  if (ST.cur){ ST.cur = null; ST.segShown = SEG_N; return paint(); }   // 文章 → 清单
+  if (ST.q.trim()){ ST.q = ''; ST.shown = PAGE_N; return paint(); }    // 搜索 → 目录
+  if (ST.tag || ST.dir){ ST.tag = ST.dir = ''; ST.shown = PAGE_N; return paint(); }
+  ST.view = 'home'; ST.openCat = '';                                   // 标签/目录页 → 目录
+  paint();
+}
+
+function paintFab(){
   let f = document.getElementById('fab');
   if (!f){
     f = document.createElement('button');
     f.id = 'fab';
+    f.textContent = '← 返回';
     document.body.appendChild(f);
   }
-  f.textContent = '← 返回';
-  f.hidden = false;
-  f.onclick = go;
+  f.onclick = goBack;
+  f.hidden = atRoot();          // 首页目录不显示，其余全部显示
 }
-function hideFab(){ const f = document.getElementById('fab'); if (f) f.hidden = true; }
+
+function bindBack(){ const b = $('#bk'); if (b) b.onclick = goBack; }
 
 /* 🚨 不能只在 boot() 里读一次 hash。实测踩到：页面加载完成时 `location.hash` 还是空的，
    fragment 是之后才补上的（浏览器/跳转器的时序），于是那把钥匙被漏掉、界面停在
