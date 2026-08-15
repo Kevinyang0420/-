@@ -2731,6 +2731,19 @@ function scrubBleed(d){
   return d;
 }
 
+/* 历史记录（这次修之前存的）显示时再洗一遍 —— 存的时候没洗，翻回来看照样串台。
+   只洗要显示的这两样，不动他磁盘上的记录：
+     better  串台 → 不给「该这么说」
+     zh 尾巴上的「母语者会说 “…”。」串台 → 只切这一句，前面「哪句话、什么毛病」照留 */
+function scrubOldTurn(t){
+  const out = {zh: (t && t.zh) || '', better: (t && t.better) || ''};
+  const ch = (t && (t.ch || t.reply)) || '';
+  if (bled(out.better, ch)) out.better = '';
+  const m = out.zh.match(/母语者会说\s*“([^”]+)”。?\s*$/);
+  if (m && bled(m[1], ch)) out.zh = out.zh.slice(0, m.index).trim();
+  return out;
+}
+
 function critique(d){
 
   const q = (d.quote || '').trim();
@@ -7322,11 +7335,16 @@ function showSession(se){
 
     bubble('you','你', t.said);
 
-    if (t.zh){
+    /* 🚨 修串台之前存下来的历史记录里，zh / better 存的还是原文，
+       翻回来看照样把对方的台词当成他该说的话。**修了当下不等于修了历史** ——
+       所以显示这一刻再洗一遍（只洗显示，不改他的记录）。 */
+    const _old = scrubOldTurn(t);
 
-      const el = bubble('alex','Alex', t.zh, t.brk ? '' : '这句没问题');
+    if (_old.zh){
 
-      if (t.better){
+      const el = bubble('alex','Alex', _old.zh, t.brk ? '' : '这句没问题');
+
+      if (_old.better){
 
         const box = document.createElement('div');
 
@@ -7334,7 +7352,7 @@ function showSession(se){
 
         box.innerHTML = `<div class="lb">该这么说</div>` +
 
-                        `<div class="en">${esc(t.better)}</div>`;
+                        `<div class="en">${esc(_old.better)}</div>`;
 
         const p = document.createElement('button');
 
@@ -7342,7 +7360,7 @@ function showSession(se){
 
         p.onclick = () => { unlockTTS(); p.classList.add('on');
 
-          say(t.better,'en').then(()=>p.classList.remove('on')); };
+          say(_old.better,'en').then(()=>p.classList.remove('on')); };
 
         box.appendChild(p);
 
