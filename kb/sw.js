@@ -9,7 +9,7 @@
      · index.html / manifest → **network-first**，网络能通就用新的，断网才用缓存
      · d/*.bin（加密内容）  → cache-first，它们只在重新加密时才变，而且很大
 */
-const V = 'kb-v1';
+const V = 'kb-v2';   // 改这个版本号会清掉旧缓存
 
 self.addEventListener('install', e => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(
@@ -29,9 +29,13 @@ self.addEventListener('fetch', e => {
       }))));
     return;
   }
-  // 页面/清单/图标：先走网络，失败才回缓存
+  /* 页面/清单/图标：先走网络，失败才回缓存。
+     🚨 必须带 `cache:'no-store'` —— 光写 fetch() 的话**浏览器自己的 HTTP 缓存**
+        照样能吐旧的给你，网络优先就成了摆设。
+        实测证据：第一次取 300ms、第二次 4ms —— 4ms 不可能是网络，就是 HTTP 缓存。
+        这正是他一直看到旧页面、一直报「没有 key」的那一层。 */
   e.respondWith(
-    fetch(e.request).then(r => {
+    fetch(e.request, {cache: 'no-store'}).then(r => {
       if (r.ok) caches.open(V).then(c => c.put(e.request, r.clone()));
       return r;
     }).catch(() => caches.match(e.request)));
