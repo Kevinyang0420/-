@@ -25,7 +25,12 @@
 body{margin:0;background:var(--bg);color:var(--fg);
   font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
   -webkit-text-size-adjust:100%}
-.wrap{max-width:720px;margin:0 auto;padding:14px 14px 90px}
+/* 🚨 iPhone 上「加到主屏」之后没有 Safari 的地址栏，内容会**顶到刘海/状态栏底下**，
+   而下巴（Home Indicator 那条）又空着一大截 —— Kevin 2026-08-15：
+   「位置太靠上了，下巴留得很长，我点返回的时候都点不到」。
+   所以：顶部按安全区留白，底部只留导航栏需要的高度。 */
+.wrap{max-width:720px;margin:0 auto;
+  padding:calc(env(safe-area-inset-top, 0px) + 16px) 14px 84px}
 h1{font-size:19px;margin:2px 0 12px}
 .sub{color:var(--muted);font-size:13px;margin:-6px 0 14px}
 input,button,textarea{font:inherit;color:inherit}
@@ -60,9 +65,18 @@ nav button{flex:1;background:0;border:0;padding:11px 4px 9px;color:var(--faint);
   font-size:11.5px;cursor:pointer}
 nav button.on{color:var(--brand);font-weight:800}
 nav .ic{display:block;font-size:17px;margin-bottom:2px}
-.top{position:sticky;top:0;background:var(--bg);padding:8px 0 6px;z-index:5}
+.top{position:sticky;top:calc(env(safe-area-inset-top, 0px));background:var(--bg);
+  padding:8px 0 6px;z-index:5}
+/* 🚨 返回键要**够得着、点得中**：Apple 的最小点击区是 44×44，原来只有约 14px 高的一行字。
+   现在做成一颗有边框的按钮，并且**固定在左下角**（拇指自然落点），
+   顶部那个只留着当面包屑。他说「点返回都点不到」指的就是原来那个。 */
 .back{background:0;border:0;color:var(--brand);font-size:14px;font-weight:700;
-  padding:6px 0;cursor:pointer}
+  padding:10px 4px;min-height:44px;cursor:pointer}
+#fab{position:fixed;left:14px;bottom:calc(env(safe-area-inset-bottom, 0px) + 62px);
+  z-index:20;background:var(--card);color:var(--brand);border:1.5px solid var(--line);
+  border-radius:99px;padding:0 18px;height:46px;font-size:14.5px;font-weight:800;
+  box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer}
+nav{padding-bottom:calc(env(safe-area-inset-bottom, 0px))}
 .more{background:0;border:1.5px solid var(--line);color:var(--muted);width:100%;
   border-radius:12px;padding:11px;font-size:13.5px;cursor:pointer;margin-bottom:12px}
 mark{background:#ffe9a8;color:#000;padding:0 2px;border-radius:3px}
@@ -91,7 +105,7 @@ mark{background:#ffe9a8;color:#000;padding:0 2px;border-radius:3px}
    「不要再让这个 key 的问题影响我的效率」。
    安全改由**网址本身猜不到**来保证（32 位随机路径），威胁模型跟原来
    「链接里带钥匙」完全一样：拿到链接 = 能看。区别只是他一次都不用输。 */
-const BAKED_KEY = '000305f57198daaad91470f75c58b04e33e286e76fd93803e1e6bc43b7a59e1b';
+const BAKED_KEY = 'a3e4559ab1f9db413a536eedfffe3ae38bd3a248302bf7dd4f9c584ed5b26e30';
 
 const $ = s => document.querySelector(s);
 const APP = $('#app');
@@ -386,9 +400,15 @@ function match(it){
 }
 
 /* 返回排好序的结果。有向量就混合，没有就退回纯关键词（不静默假装有语义）。 */
+/* 入库时间：frontmatter 的日期只有「收藏」有，其余用文件 mtime。取大的那个。 */
+const inDate = it => (it.on && it.on > (it.mt || '')) ? it.on : (it.mt || it.on || '');
+
 function search(all, q){
   const pool = all.filter(match);
-  if (!q) return pool;
+  /* 🚨 没搜关键词时**按入库时间由新到旧**（Kevin 2026-08-15：
+     「让新入库的排在最上面，像 HKUST 的讲义这些不用排那么靠前」）。
+     搜索结果不按时间排 —— 那时候他要的是相关度。 */
+  if (!q) return pool.slice().sort((a, b) => inDate(b).localeCompare(inDate(a)));
   const sem = semScores(q);
   const pos = ST.vec ? new Map(ST.vec.ids.map((id, i) => [id, i])) : null;
   const scored = pool.map(it => {
@@ -406,6 +426,7 @@ function paint(){
     b.classList.toggle('on', b.dataset.go === ST.view));
   window.scrollTo(0, 0);
   if (ST.cur) return paintNote();
+  hideFab();                       // 不在详情页就把那颗返回键收起来
   if (ST.view === 'tags') return paintTags();
   if (ST.view === 'dirs') return paintDirs();
   paintHome();
@@ -512,7 +533,7 @@ function cardHTML(it){
     '<div class="meta"><span>📂 ' + esc(it.dir) + '</span>' +
     '<span>' + Math.round(it.n / 1000) + 'k 字</span>' +
     '<span>' + it.segs + ' 段</span>' +
-    (it.on ? '<span>' + esc(it.on) + '</span>' : '') + '</div>' +
+    (inDate(it) ? '<span>' + esc(inDate(it)) + '</span>' : '') + '</div>' +
     ((it.tags || []).length ? '<div style="margin-top:7px">' +
       it.tags.slice(0, 4).map(t => '<span class="tag">' + esc(t) + '</span>').join('') +
       '</div>' : '') + '</div>';
@@ -635,7 +656,22 @@ function segHTML(s){
   return '<div class="seg">' + (s.h ? '<h3>' + esc(s.h) + '</h3>' : '') +
     s.text.split(/\n+/).filter(Boolean).map(p => '<p>' + esc(p) + '</p>').join('') + '</div>';
 }
-function bindBack(){ const b = $('#bk'); if (b) b.onclick = () => { ST.cur = null; paint(); }; }
+function bindBack(){
+  const go = () => { ST.cur = null; ST.segShown = SEG_N; paint(); };
+  const b = $('#bk');
+  if (b) b.onclick = go;
+  /* 拇指够得着的那颗返回键 —— 固定在左下角，44px 以上，进详情页才出现 */
+  let f = document.getElementById('fab');
+  if (!f){
+    f = document.createElement('button');
+    f.id = 'fab';
+    document.body.appendChild(f);
+  }
+  f.textContent = '← 返回';
+  f.hidden = false;
+  f.onclick = go;
+}
+function hideFab(){ const f = document.getElementById('fab'); if (f) f.hidden = true; }
 
 /* 🚨 不能只在 boot() 里读一次 hash。实测踩到：页面加载完成时 `location.hash` 还是空的，
    fragment 是之后才补上的（浏览器/跳转器的时序），于是那把钥匙被漏掉、界面停在
