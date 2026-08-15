@@ -165,12 +165,45 @@ async function boot(){
     } catch(_){ localStorage.removeItem(LS_KEY); }   // 钥匙/口令换过了，重新解锁
   }
   if (man.mode === 'key'){
-    /* 钥匙模式下没什么可输的 —— 只能靠那条链接 */
+    /* 🚨 必须留一个能**手动粘钥匙**的口子。
+       2026-08-15 真事故：他在 Safari 里点链接存好了钥匙，"添加到主屏幕"之后
+       打开却说没有 key —— 因为 **iOS 的独立 App 容器跟 Safari 不共用 localStorage**，
+       而 manifest 里的 start_url 又把 `#k=` 那段丢掉了。两头一夹，主屏那个必然打不开。
+       manifest 的 start_url 已经删掉（不写的话 iOS 用当前地址、带着 hash 一起存），
+       这里再加一道手动入口兜底 —— 只靠一条链接的流程太脆。 */
     APP.innerHTML = '<div class="lock"><div class="em">🔑</div>' +
       '<h1 style="margin:0 0 6px">我的知识库</h1>' +
-      '<div class="sub">这台设备还没拿到钥匙。<br><br>' +
-      '在跟 Claude 的对话里找到那条带 <code>#k=</code> 的链接，点开一次就好；' +
-      '之后直接开这个 App，不用再点。</div></div>';
+      '<div class="sub" style="margin-bottom:14px">这台设备还没拿到钥匙。<br>' +
+      '把 Telegram 里那串钥匙粘进来（或者直接点那条链接）。</div>' +
+      '<input class="in" id="kin" placeholder="粘贴钥匙" autocapitalize="off" ' +
+      'autocorrect="off" spellcheck="false" enterkeyhint="go">' +
+      '<button class="btn" id="kgo" style="width:100%;margin-top:12px">解锁</button>' +
+      '<div class="err" id="ker"></div></div>';
+    const ki = $('#kin'), kg = $('#kgo'), ke = $('#ker');
+    const tryKey = async () => {
+      /* 整条链接粘进来也认 —— 他多半是长按复制了整行 */
+      const raw = (ki.value || '').trim();
+      const mm = /[#&]k=([A-Za-z0-9_\-]+)/.exec(raw);
+      const s0 = mm ? mm[1] : raw.replace(/[^A-Za-z0-9_\-]/g, '');
+      if (!s0) return;
+      kg.disabled = true; kg.textContent = '解锁中…'; ke.textContent = '';
+      try {
+        const bytes = /^[0-9a-fA-F]{64}$/.test(s0)
+          ? Uint8Array.from(s0.match(/../g).map(h => parseInt(h, 16)))
+          : Uint8Array.from(atob(s0.replace(/-/g, '+').replace(/_/g, '/') +
+              '='.repeat((4 - s0.length % 4) % 4)), c => c.charCodeAt(0));
+        const key = await crypto.subtle.importKey('raw', bytes, 'AES-GCM', true, ['decrypt']);
+        await unseal(key, b64(man.check).buffer);
+        localStorage.setItem(LS_KEY, btoa(String.fromCharCode(...bytes)));
+        ST.key = key;
+        start();
+      } catch(_){
+        ke.textContent = '这串钥匙不对';
+        kg.disabled = false; kg.textContent = '解锁';
+      }
+    };
+    kg.onclick = tryKey;
+    ki.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); ki.blur(); tryKey(); } };
     return;
   }
   lockScreen(man);
