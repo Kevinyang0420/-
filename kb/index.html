@@ -1,0 +1,376 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1c20">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>我的知识库</title>
+<link rel="manifest" href="manifest.webmanifest">
+
+<style>
+:root{
+  --bg:#14151a; --card:#1c1e24; --line:#2b2e36; --fg:#e9eaee; --muted:#9aa0ac;
+  --faint:#6b7280; --brand:#5b9cf6; --brand-soft:#1e2a3d; --warn:#e0785a;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#f6f7f9; --card:#fff; --line:#e3e6ea; --fg:#191b1f; --muted:#5a616e;
+         --faint:#8b929e; --brand-soft:#eaf1fe; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:15px/1.65 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  -webkit-text-size-adjust:100%}
+.wrap{max-width:720px;margin:0 auto;padding:14px 14px 90px}
+h1{font-size:19px;margin:2px 0 12px}
+.sub{color:var(--muted);font-size:13px;margin:-6px 0 14px}
+input,button,textarea{font:inherit;color:inherit}
+.in{width:100%;padding:12px 13px;border:2px solid var(--line);border-radius:12px;
+  background:var(--card);color:var(--fg);font-size:16px}
+.btn{background:var(--brand);color:#fff;border:0;border-radius:12px;
+  padding:12px 18px;font-weight:700;cursor:pointer}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:13px 14px;margin-bottom:10px;cursor:pointer}
+.card:active{transform:scale(.995)}
+.t{font-weight:700;font-size:15.5px;line-height:1.45}
+.s{color:var(--muted);font-size:13.5px;margin-top:5px}
+.meta{color:var(--faint);font-size:11.5px;margin-top:7px;display:flex;gap:8px;flex-wrap:wrap}
+.tag{display:inline-block;background:var(--brand-soft);color:var(--brand);
+  border-radius:99px;padding:2px 9px;font-size:11.5px;font-weight:700;
+  margin:0 5px 5px 0;cursor:pointer;border:0}
+.tags{margin:2px 0 12px;display:flex;flex-wrap:wrap;gap:0}
+.chip{background:var(--card);border:1.5px solid var(--line);color:var(--fg);
+  border-radius:99px;padding:6px 13px;font-size:13px;margin:0 7px 7px 0;cursor:pointer}
+.chip.on{border-color:var(--brand);color:var(--brand);font-weight:700}
+.seg{margin:0 0 14px}
+.seg h3{font-size:14px;color:var(--brand);margin:16px 0 5px;font-weight:800}
+.seg p{margin:0 0 9px;white-space:pre-wrap;word-wrap:break-word}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:13px 14px;margin-bottom:12px}
+.box .lb{font-size:11.5px;font-weight:800;color:var(--brand);letter-spacing:.4px;
+  margin-bottom:6px}
+.note{color:var(--muted);font-size:13.5px;padding:20px 4px;line-height:1.8}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:0;border:0;padding:11px 4px 9px;color:var(--faint);
+  font-size:11.5px;cursor:pointer}
+nav button.on{color:var(--brand);font-weight:800}
+nav .ic{display:block;font-size:17px;margin-bottom:2px}
+.top{position:sticky;top:0;background:var(--bg);padding:8px 0 6px;z-index:5}
+.back{background:0;border:0;color:var(--brand);font-size:14px;font-weight:700;
+  padding:6px 0;cursor:pointer}
+.more{background:0;border:1.5px solid var(--line);color:var(--muted);width:100%;
+  border-radius:12px;padding:11px;font-size:13.5px;cursor:pointer;margin-bottom:12px}
+mark{background:#ffe9a8;color:#000;padding:0 2px;border-radius:3px}
+.lock{max-width:360px;margin:16vh auto;padding:0 18px;text-align:center}
+.lock .em{font-size:40px;margin-bottom:10px}
+.err{color:var(--warn);font-size:13px;margin-top:10px;min-height:18px}
+</style>
+
+<div class="wrap" id="app"></div>
+<nav id="nav" hidden>
+  <button data-go="home"><span class="ic">📚</span>全部</button>
+  <button data-go="tags"><span class="ic">🏷️</span>标签</button>
+  <button data-go="dirs"><span class="ic">📂</span>目录</button>
+</nav>
+
+<script>
+/* ═══════════════════ 我的知识库 ═══════════════════
+   Kevin 2026-08-15：「Obsidian 手机端同步要另花大几十美元…你帮我手搓一个 App，
+   把电脑里的知识库转到线上。①随时看、打好标签 ②视频转换的内容非常长，
+   最好有 Overview ③文本做好分段。」
+
+   🚨 站点是公开的（GitHub Pages），内容全部 AES-GCM 加密，密钥由口令派生。
+      没口令拿到的只是密文 —— 因为这库里有审计准则、市场报告、他的决策记录。
+
+   🚨 localStorage 里存的是**派生出来的密钥**，不是口令原文。
+      他打算复用 RustDesk 的远程控制口令，万一手机被翻，
+      拿到 key 也只能解这个库，反推不出那个口令。                              */
+
+const $ = s => document.querySelector(s);
+const APP = $('#app');
+const LS_KEY = 'kb_key', LS_SEEN = 'kb_seen';
+
+/* 🚨 两处都必须分页渲染，实测原因：
+   ① 首页 422 张卡一次画完 → 页高 84720px、4500 个 DOM 节点
+   ② 详情页那本 2.2M 字的教材有 **1617 段**，一次画完页高 **172 万像素**，手机直接卡死
+   所以列表一次 50 张、正文一次 40 段，其余点「继续」再来。 */
+const PAGE_N = 50, SEG_N = 40;
+const ST = {key:null, idx:null, view:'home', q:'', tag:'', dir:'', cache:{}, cur:null,
+            shown:PAGE_N, segShown:SEG_N};
+
+/* ── 加密：跟 kb_encrypt.py 一一对应，改一边就解不开 ── */
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function deriveKey(pass, salt, iter){
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass),
+    'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt, iterations:iter, hash:'SHA-256'},
+    base, {name:'AES-GCM', length:256}, true, ['decrypt']);
+}
+async function unseal(key, buf){
+  const b = new Uint8Array(buf);
+  /* 落盘布局：nonce(12) ‖ ciphertext ‖ tag(16)。WebCrypto 要的正是 ct‖tag 连在一起，
+     所以后面整段直接给它，不用把 tag 拆出来。 */
+  const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv:b.slice(0,12)},
+                                            key, b.slice(12));
+  return new TextDecoder().decode(plain);
+}
+async function getJSON(url, key){
+  const r = await fetch(url, {cache:'no-cache'});
+  if (!r.ok) throw new Error('取不到 ' + url + '（HTTP ' + r.status + '）');
+  return JSON.parse(await unseal(key, await r.arrayBuffer()));
+}
+
+/* ── 解锁 ── */
+async function boot(){
+  let man;
+  try { man = await (await fetch('d/manifest.json', {cache:'no-cache'})).json(); }
+  catch(e){ APP.innerHTML = '<div class="note">数据还没上传（找不到 d/manifest.json）。</div>'; return; }
+
+  const saved = localStorage.getItem(LS_KEY);
+  if (saved){
+    try {
+      ST.key = await crypto.subtle.importKey('raw', b64(saved), 'AES-GCM', true, ['decrypt']);
+      await unseal(ST.key, b64(man.check).buffer);   // 存的 key 还对不对
+      return start();
+    } catch(_){ localStorage.removeItem(LS_KEY); }   // 口令换过了，重新解锁
+  }
+  lockScreen(man);
+}
+
+function lockScreen(man){
+  $('#nav').hidden = true;
+  APP.innerHTML =
+    '<div class="lock"><div class="em">🔒</div>' +
+    '<h1 style="margin:0 0 6px">我的知识库</h1>' +
+    '<div class="sub" style="margin:0 0 16px">输一次就记住，之后直接打开</div>' +
+    '<input class="in" id="pw" type="password" placeholder="口令" ' +
+    'autocomplete="current-password" enterkeyhint="go">' +
+    '<button class="btn" id="go" style="width:100%;margin-top:12px">解锁</button>' +
+    '<div class="err" id="er"></div></div>';
+  const pw = $('#pw'), go = $('#go'), er = $('#er');
+  const tryIt = async () => {
+    const v = pw.value;
+    if (!v) return;
+    go.disabled = true; go.textContent = '解锁中…'; er.textContent = '';
+    try {
+      const key = await deriveKey(v, b64(man.salt), man.iter);
+      await unseal(key, b64(man.check).buffer);      // 口令不对这里就抛
+      /* 🚨 只存派生出来的密钥，不存口令原文 */
+      const raw = await crypto.subtle.exportKey('raw', key);
+      localStorage.setItem(LS_KEY, btoa(String.fromCharCode(...new Uint8Array(raw))));
+      ST.key = key;
+      start();
+    } catch(_){
+      er.textContent = '口令不对';
+      go.disabled = false; go.textContent = '解锁';
+      pw.select();
+    }
+  };
+  go.onclick = tryIt;
+  pw.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); pw.blur(); tryIt(); } };
+  setTimeout(() => pw.focus(), 100);
+}
+
+async function start(){
+  APP.innerHTML = '<div class="note">正在读索引…</div>';
+  try { ST.idx = await getJSON('d/index.bin', ST.key); }
+  catch(e){ APP.innerHTML = '<div class="note">索引读不出来：' + esc(e.message) + '</div>'; return; }
+  $('#nav').hidden = false;
+  document.querySelectorAll('#nav button').forEach(b =>
+    b.onclick = () => { ST.view = b.dataset.go; ST.cur = null; paint(); });
+  paint();
+}
+
+/* ── 工具 ── */
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function hi(text, q){
+  if (!q) return esc(text);
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return esc(text);
+  return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) +
+         '</mark>' + esc(text.slice(i + q.length));
+}
+const seen = () => { try { return JSON.parse(localStorage.getItem(LS_SEEN) || '[]'); }
+                     catch(_){ return []; } };
+function markSeen(id){
+  const s = seen().filter(x => x !== id);
+  s.unshift(id);
+  try { localStorage.setItem(LS_SEEN, JSON.stringify(s.slice(0, 40))); } catch(_){}
+}
+
+function match(it){
+  if (ST.tag && !(it.tags || []).includes(ST.tag)) return false;
+  if (ST.dir && it.dir !== ST.dir) return false;
+  const q = ST.q.trim().toLowerCase();
+  if (!q) return true;
+  return (it.t || '').toLowerCase().includes(q) ||
+         (it.sum || '').toLowerCase().includes(q) ||
+         (it.tags || []).some(t => t.toLowerCase().includes(q));
+}
+
+/* ── 三屏 ── */
+function paint(){
+  document.querySelectorAll('#nav button').forEach(b =>
+    b.classList.toggle('on', b.dataset.go === ST.view));
+  window.scrollTo(0, 0);
+  if (ST.cur) return paintNote();
+  if (ST.view === 'tags') return paintTags();
+  if (ST.view === 'dirs') return paintDirs();
+  paintHome();
+}
+
+function paintHome(){
+  const all = ST.idx.items;
+  const hits = all.filter(match);
+  const q = ST.q.trim();
+  const filt = (ST.tag ? '<button class="chip on" id="ctag">🏷️ ' + esc(ST.tag) + ' ✕</button>' : '') +
+               (ST.dir ? '<button class="chip on" id="cdir">📂 ' + esc(ST.dir) + ' ✕</button>' : '');
+  const recent = !q && !ST.tag && !ST.dir
+    ? seen().map(id => all.find(x => x.id === id)).filter(Boolean).slice(0, 3) : [];
+
+  APP.innerHTML =
+    '<div class="top"><input class="in" id="q" placeholder="搜标题、摘要、标签…" ' +
+    'value="' + esc(ST.q) + '" enterkeyhint="search"></div>' +
+    (filt ? '<div style="margin:10px 0 4px">' + filt + '</div>' : '') +
+    '<div class="sub" style="margin:10px 0 10px">' +
+      (q || ST.tag || ST.dir ? hits.length + ' 篇' : all.length + ' 篇 · ' +
+        Object.keys(ST.idx.tags).length + ' 个标签') + '</div>' +
+    (recent.length ? '<div class="sub" style="margin:0 0 6px">最近看的</div>' +
+      recent.map(cardHTML).join('') + '<div class="sub" style="margin:14px 0 6px">全部</div>' : '') +
+    (hits.length ? hits.slice(0, ST.shown).map(cardHTML).join('') +
+        (hits.length > ST.shown
+          ? '<button class="more" id="mm">还有 ' + (hits.length - ST.shown) + ' 篇，继续加载</button>'
+          : '')
+      : '<div class="note">没搜到。</div>');
+
+  const mm = $('#mm');
+  if (mm) mm.onclick = () => {
+    const y = window.scrollY;
+    ST.shown += PAGE_N; paintHome(); window.scrollTo(0, y);
+  };
+  const inp = $('#q');
+  let t;
+  inp.oninput = () => { clearTimeout(t); t = setTimeout(() => {
+    ST.q = inp.value; ST.shown = PAGE_N;      // 换了搜索词就从头数
+    paintHome();
+    const n = $('#q'); if (n){ n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+  }, 220); };
+  if ($('#ctag')) $('#ctag').onclick = () => { ST.tag = ''; paintHome(); };
+  if ($('#cdir')) $('#cdir').onclick = () => { ST.dir = ''; paintHome(); };
+  bindCards();
+}
+
+function cardHTML(it){
+  const q = ST.q.trim();
+  return '<div class="card" data-id="' + it.id + '">' +
+    '<div class="t">' + hi(it.t, q) + '</div>' +
+    (it.sum ? '<div class="s">' + hi(it.sum, q) + '</div>' : '') +
+    '<div class="meta"><span>📂 ' + esc(it.dir) + '</span>' +
+    '<span>' + Math.round(it.n / 1000) + 'k 字</span>' +
+    '<span>' + it.segs + ' 段</span>' +
+    (it.on ? '<span>' + esc(it.on) + '</span>' : '') + '</div>' +
+    ((it.tags || []).length ? '<div style="margin-top:7px">' +
+      it.tags.slice(0, 4).map(t => '<span class="tag">' + esc(t) + '</span>').join('') +
+      '</div>' : '') + '</div>';
+}
+
+function bindCards(){
+  document.querySelectorAll('.card[data-id]').forEach(el =>
+    el.onclick = () => openNote(el.dataset.id));
+  document.querySelectorAll('.card .tag').forEach(el =>
+    el.onclick = e => { e.stopPropagation(); ST.tag = el.textContent; ST.q = ''; ST.view = 'home'; paint(); });
+}
+
+function paintTags(){
+  const ts = Object.entries(ST.idx.tags).sort((a, b) => b[1] - a[1]);
+  APP.innerHTML = '<h1>标签</h1><div class="sub">' + ts.length + ' 个 · 点一个看清单</div>' +
+    '<div class="tags">' + ts.map(([t, n]) =>
+      '<button class="tag" data-t="' + esc(t) + '" style="font-size:13px;padding:6px 12px">' +
+      esc(t) + ' <span style="opacity:.6">' + n + '</span></button>').join('') + '</div>';
+  document.querySelectorAll('[data-t]').forEach(b =>
+    b.onclick = () => { ST.tag = b.dataset.t; ST.dir = ''; ST.q = ''; ST.view = 'home'; paint(); });
+}
+
+function paintDirs(){
+  const d = {};
+  ST.idx.items.forEach(i => { d[i.dir] = (d[i.dir] || 0) + 1; });
+  APP.innerHTML = '<h1>目录</h1><div class="sub">按知识库里的文件夹分</div>' +
+    Object.entries(d).sort((a, b) => b[1] - a[1]).map(([k, n]) =>
+      '<div class="card" data-d="' + esc(k) + '"><div class="t">📂 ' + esc(k) + '</div>' +
+      '<div class="s">' + n + ' 篇</div></div>').join('');
+  document.querySelectorAll('[data-d]').forEach(el =>
+    el.onclick = () => { ST.dir = el.dataset.d; ST.tag = ''; ST.q = ''; ST.view = 'home'; paint(); });
+}
+
+async function openNote(id){
+  ST.cur = {id, loading: true};
+  ST.segShown = SEG_N;                 // 换一篇就从头数段
+  paint();
+  if (!ST.cache[id]){
+    try { ST.cache[id] = await getJSON('d/notes/' + id + '.bin', ST.key); }
+    catch(e){ ST.cur = {id, err: e.message}; return paint(); }
+  }
+  markSeen(id);
+  ST.cur = {id, data: ST.cache[id]};
+  paint();
+}
+
+function paintNote(){
+  const c = ST.cur;
+  const back = '<div class="top"><button class="back" id="bk">← 返回</button></div>';
+  if (c.loading) return void (APP.innerHTML = back + '<div class="note">正在解密…</div>', bindBack());
+  if (c.err) return void (APP.innerHTML = back + '<div class="note">打不开：' + esc(c.err) + '</div>', bindBack());
+
+  const d = c.data;
+  /* 🚨 顺序是固定的：先给他能一眼看完的（摘要→速览→点评），
+     长正文默认折叠 —— 「不要只是把纯文字丢进去」就是这条。 */
+  const body = d.segs || [];
+  const isLong = body.reduce((n, s) => n + s.text.length, 0) > 2500;
+  APP.innerHTML = back +
+    '<h1>' + esc(d.t) + '</h1>' +
+    '<div class="sub">📂 ' + esc(d.dir) +
+      (d.meta && d.meta.author ? ' · ' + esc(d.meta.author) : '') +
+      (d.meta && d.meta.on ? ' · ' + esc(d.meta.on) : '') + '</div>' +
+    ((d.tags || []).length ? '<div class="tags">' +
+      d.tags.map(t => '<button class="tag" data-t="' + esc(t) + '">' + esc(t) + '</button>').join('') +
+      '</div>' : '') +
+    (d.sum ? '<div class="box"><div class="lb">摘要</div>' + esc(d.sum) + '</div>' : '') +
+    (d.over ? '<div class="box"><div class="lb">速览</div>' +
+      d.over.split(/\n+/).filter(Boolean).map(p => '<p style="margin:0 0 7px">' + esc(p) + '</p>').join('') +
+      '</div>' : '') +
+    (d.comment ? '<div class="box"><div class="lb">点评 / 解读</div>' +
+      d.comment.split(/\n+/).filter(Boolean).map(p => '<p style="margin:0 0 7px">' + esc(p) + '</p>').join('') +
+      '</div>' : '') +
+    (body.length
+      ? (isLong ? '<button class="more" id="mo">📖 展开正文（' + body.length + ' 段）</button>' : '') +
+        '<div id="bd"' + (isLong ? ' hidden' : '') + '>' +
+          body.slice(0, ST.segShown).map(segHTML).join('') +
+          (body.length > ST.segShown
+            ? '<button class="more" id="ms">还有 ' + (body.length - ST.segShown) + ' 段，继续读</button>'
+            : '') +
+        '</div>'
+      : '');
+  bindBack();
+  const mo = $('#mo');
+  if (mo) mo.onclick = () => { $('#bd').hidden = false; mo.remove(); };
+  const ms = $('#ms');
+  if (ms) ms.onclick = () => {
+    const y = window.scrollY;
+    ST.segShown += SEG_N; paintNote(); window.scrollTo(0, y);
+    const b = $('#bd'); if (b) b.hidden = false;      // 已经展开过就别再收回去
+  };
+  document.querySelectorAll('[data-t]').forEach(b =>
+    b.onclick = () => { ST.tag = b.dataset.t; ST.cur = null; ST.view = 'home'; ST.q = ''; paint(); });
+}
+
+function segHTML(s){
+  return '<div class="seg">' + (s.h ? '<h3>' + esc(s.h) + '</h3>' : '') +
+    s.text.split(/\n+/).filter(Boolean).map(p => '<p>' + esc(p) + '</p>').join('') + '</div>';
+}
+function bindBack(){ const b = $('#bk'); if (b) b.onclick = () => { ST.cur = null; paint(); }; }
+
+boot();
+</script>

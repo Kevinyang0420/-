@@ -1,0 +1,9 @@
+{
+  "name": "我的知识库",
+  "short_name": "知识库",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#14151a",
+  "theme_color": "#1a1c20",
+  "icons": []
+}
