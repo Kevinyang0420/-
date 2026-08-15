@@ -73,17 +73,11 @@ mark{background:#ffe9a8;color:#000;padding:0 2px;border-radius:3px}
 </nav>
 
 <script>
-/* ═══════════════════ 我的知识库 ═══════════════════
-   Kevin 2026-08-15：「Obsidian 手机端同步要另花大几十美元…你帮我手搓一个 App，
-   把电脑里的知识库转到线上。①随时看、打好标签 ②视频转换的内容非常长，
-   最好有 Overview ③文本做好分段。」
+/* 个人笔记阅读器。内容 AES-GCM 加密，密钥由口令 PBKDF2 派生。
+   localStorage 里存的是派生密钥，不是口令原文。
 
-   🚨 站点是公开的（GitHub Pages），内容全部 AES-GCM 加密，密钥由口令派生。
-      没口令拿到的只是密文 —— 因为这库里有审计准则、市场报告、他的决策记录。
-
-   🚨 localStorage 里存的是**派生出来的密钥**，不是口令原文。
-      他打算复用 RustDesk 的远程控制口令，万一手机被翻，
-      拿到 key 也只能解这个库，反推不出那个口令。                              */
+   🚨 这个文件是**公开可读**的（静态站），所以注释里不写任何关于内容的描述 ——
+      第一版写了库里都有些什么，线上一看等于给路人指路。设计说明在本机 PRD.md 里。 */
 
 const $ = s => document.querySelector(s);
 const APP = $('#app');
@@ -121,11 +115,35 @@ async function getJSON(url, key){
   return JSON.parse(await unseal(key, await r.arrayBuffer()));
 }
 
-/* ── 解锁 ── */
+/* ── 解锁 ──
+   两种模式，看 manifest 的 mode：
+     key  —— 链接里带 `#k=<密钥>`，点一次存下来（不用输任何东西）
+     其它 —— 口令模式：PBKDF2 派生
+   🚨 `#` 后面的内容**不会发给服务器**，所以密钥不会出现在任何访问日志里。 */
 async function boot(){
   let man;
   try { man = await (await fetch('d/manifest.json', {cache:'no-cache'})).json(); }
   catch(e){ APP.innerHTML = '<div class="note">数据还没上传（找不到 d/manifest.json）。</div>'; return; }
+
+  // 链接里带钥匙 → 收下、验一遍、然后**把它从地址栏抹掉**（免得截图/分享时带出去）
+  const m = /[#&]k=([A-Za-z0-9_\-]+)/.exec(location.hash || '');
+  if (m){
+    try {
+      const raw = Uint8Array.from(atob(m[1].replace(/-/g, '+').replace(/_/g, '/') +
+        '='.repeat((4 - m[1].length % 4) % 4)), c => c.charCodeAt(0));
+      const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', true, ['decrypt']);
+      await unseal(key, b64(man.check).buffer);      // 钥匙不对这里就抛
+      localStorage.setItem(LS_KEY, btoa(String.fromCharCode(...raw)));
+      ST.key = key;
+      history.replaceState(null, '', location.pathname);
+      return start();
+    } catch(_){
+      history.replaceState(null, '', location.pathname);
+      APP.innerHTML = '<div class="note">这条链接里的钥匙不对（可能已经作废了）。' +
+        '跟我说一声，我给你换一条新的。</div>';
+      return;
+    }
+  }
 
   const saved = localStorage.getItem(LS_KEY);
   if (saved){
@@ -133,7 +151,16 @@ async function boot(){
       ST.key = await crypto.subtle.importKey('raw', b64(saved), 'AES-GCM', true, ['decrypt']);
       await unseal(ST.key, b64(man.check).buffer);   // 存的 key 还对不对
       return start();
-    } catch(_){ localStorage.removeItem(LS_KEY); }   // 口令换过了，重新解锁
+    } catch(_){ localStorage.removeItem(LS_KEY); }   // 钥匙/口令换过了，重新解锁
+  }
+  if (man.mode === 'key'){
+    /* 钥匙模式下没什么可输的 —— 只能靠那条链接 */
+    APP.innerHTML = '<div class="lock"><div class="em">🔑</div>' +
+      '<h1 style="margin:0 0 6px">我的知识库</h1>' +
+      '<div class="sub">这台设备还没拿到钥匙。<br><br>' +
+      '在跟 Claude 的对话里找到那条带 <code>#k=</code> 的链接，点开一次就好；' +
+      '之后直接开这个 App，不用再点。</div></div>';
+    return;
   }
   lockScreen(man);
 }
@@ -372,5 +399,16 @@ function segHTML(s){
 }
 function bindBack(){ const b = $('#bk'); if (b) b.onclick = () => { ST.cur = null; paint(); }; }
 
+/* 🚨 不能只在 boot() 里读一次 hash。实测踩到：页面加载完成时 `location.hash` 还是空的，
+   fragment 是之后才补上的（浏览器/跳转器的时序），于是那把钥匙被漏掉、界面停在
+   「还没拿到钥匙」。这条 hashchange 兜底还顺带覆盖另一种情况：
+   App 已经开着，他又点了一次带钥匙的链接。 */
+addEventListener('hashchange', () => {
+  if (!ST.key && /[#&]k=/.test(location.hash || '')) boot();
+});
 boot();
+/* 加载完再补查一次 —— 有些跳转器是「先渲染、后设 hash」，两边都盖住 */
+addEventListener('load', () => {
+  if (!ST.key && /[#&]k=/.test(location.hash || '')) boot();
+});
 </script>
