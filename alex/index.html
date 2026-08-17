@@ -1330,7 +1330,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
 
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
 
-const BANKV = 'e1e60093';
+const BANKV = 'a7774ce2';
 
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
@@ -5634,42 +5634,6 @@ function showLevel(mode){
 
   $('#sub').textContent = mode === 'speak' ? '口语陪练 · 选难度' : '听力 · 选难度';
 
-  // 听力这一屏顶上加「时事」入口：工作场景之外，用真实新闻练耳朵
-
-  if (mode === 'listen'){
-
-    /* 「练习 / 我做过的题」两个 tab —— 跟口语的「我的记录」、写作的「我写过的」
-       同一个形态（Kevin 2026-08-14：「听力也加一个我做过的题吧，参考口语和写作」）。
-       🚨 插在 #feed 最前面，所以要在时事入口**之前**加。 */
-
-    LRECUI.top = 'do';
-
-    const tb = document.createElement('div');
-
-    tb.innerHTML = lrecTopTabs();
-
-    $('#feed').appendChild(tb.firstChild);
-
-    const n = document.createElement('div');
-
-    n.className = 'card';
-
-    n.innerHTML = `<div class="hd"><span class="role">📰 时事听力（BBC）</span></div>
-
-      <div class="sit">真实的 BBC 6 Minute English，时事热点、语速正常。
-
-        比工作场景难，练这个平时开会就不吃力。</div>
-
-      <div class="t">音频直接来自 BBC · 每题只回听相关的那 20 秒</div>`;
-
-    n.onclick = () => go(showNews, '时事听力');
-
-    $('#feed').appendChild(n);
-
-    bindLrecTop();          // 🚨 上面那两个 tab 得绑，不绑就是点了没反应
-
-  }
-
   const cnt = lv => SCENARIOS.filter(s => lvlNum(s.lvl) === lv).length;
 
   $('#list').innerHTML = '<div class="lvpick">' + LEVELS.map(L =>
@@ -5685,6 +5649,36 @@ function showLevel(mode){
        <span class="ct">${cnt(L.n)} 个场景</span>
 
      </div>`).join('') + '</div>';
+
+  /* 听力这一屏顶上两块：「练习 / 我做过的题」两个 tab + 时事听力入口。
+     🚨 必须进 `#list` 且插在难度卡**之前** —— Kevin 2026-08-17：
+        「听力的练习和做过的题为什么沉在下面呢？其他阅读、口语的记录啥的都是在顶上，
+          为什么就听力这么特别？这么做显得太草台了。」
+        量过：口语/阅读/写作的 chip 都在 y=99，听力在 y=444。
+        原因不是样式，是**容器选错了**：口语把 tabs/stats/resume/lvpick 全放 #list，
+        听力却把 tab 放进 #feed —— 而 DOM 里 #list 排在 #feed 前面，
+        所以放 #feed 里的东西必然掉到难度卡下面，怎么调样式都救不回来。
+     🚨 这段要在上面那句 `#list.innerHTML = ...` **之后**跑：那是整块覆盖，
+        写在它前面等于白写（原来那段被迫改用 #feed 就是踩了这个）。 */
+  if (mode === 'listen'){
+    LRECUI.top = 'do';
+    const head = document.createElement('div');
+    const tb = document.createElement('div');
+    tb.innerHTML = lrecTopTabs();
+    head.appendChild(tb.firstChild);
+    const n = document.createElement('div');
+    n.className = 'card';
+    n.innerHTML = `<div class="hd"><span class="role">📰 时事听力（BBC）</span></div>
+      <div class="sit">真实的 BBC 6 Minute English，时事热点、语速正常。
+        比工作场景难，练这个平时开会就不吃力。</div>
+      <div class="t">音频直接来自 BBC · 每题只回听相关的那 20 秒</div>`;
+    n.onclick = () => go(showNews, '时事听力');
+    head.appendChild(n);
+    /* 逐个搬到难度卡前面 —— 每次都插在 lvpick 之前，顺序自然保持。 */
+    const L0 = $('#list'), lv = L0.querySelector('.lvpick');
+    while (head.firstChild) L0.insertBefore(head.firstChild, lv);
+    bindLrecTop();          // 🚨 上面那两个 tab 得绑，不绑就是点了没反应
+  }
 
   document.querySelectorAll('.lvcard').forEach(c => c.onclick = () => {
 
@@ -13718,6 +13712,17 @@ function entryBad(e, q, kind){
     else if (!cs.some(c => ENORM(c.en).toLowerCase() === ENORM(e.pick).toLowerCase()))
       bad.push('pick「' + e.pick + '」不在候选里');
     if (!e.why) bad.push('why 缺失');
+    /* 🚨 口头那一版 —— 没有它整个新栏就是空的，所以必须能判失败。
+       两条都要：①得有 ②不能跟 pick 撞（撞了等于没给口语版）。 */
+    if (!e.spokenPick) bad.push('spokenPick 缺失（没说口头该怎么讲）');
+    else {
+      if (!cs.some(c => ENORM(c.en).toLowerCase() === ENORM(e.spokenPick).toLowerCase()))
+        bad.push('spokenPick 「' + e.spokenPick + '」不在候选里');
+      if (e.pick && ENORM(e.spokenPick).toLowerCase() === ENORM(e.pick).toLowerCase())
+        bad.push('spokenPick 跟 pick 是同一句 —— 等于没给口语版');
+    }
+    if (!cs.some(c => c.reg === '口语'))
+      bad.push('cands 里一条口语的都没有');
     return bad;
   }
 
@@ -13741,6 +13746,25 @@ function entryBad(e, q, kind){
   else if (DREGS.indexOf(e.reg) < 0)
     bad.push('reg 要 正式/中性/口语 三选一，给的是「' + e.reg + '」');
   if (!e.trap || !e.trap.bad || !e.trap.why) bad.push('trap 不全（最容易写错的那版没给）');
+  /* 🚨 口语这一段的校验跟 coll **故意不一样**：
+     coll 查的是「必须含这个词」，spoken 查的是「例句必须含这个说法」——
+     口语版换个说法是对的，拿 coll 那条去查它，会把正确答案判成废卡。 */
+  const sp = Array.isArray(e.spoken) ? e.spoken.filter(x => x && x.en) : [];
+  if (sp.length < 2) bad.push('spoken 只有 ' + sp.length + ' 条口语说法，至少 2 条');
+  sp.forEach((x, i) => {
+    if (/[一-鿿]/.test(x.en)) bad.push('spoken[' + i + '].en 里混了中文');
+    /* 🚨 必须是短表达，不能是整句。两个理由，缺一不可：
+       ① 收进本子的得是能迁移的表达，整句收进去换个场合就用不上；
+       ② 例句要「一字不差含着它」—— 而一整句几乎不可能再被另一句包含，
+          结果就是每次都判废卡、重试三轮全挂（实测 discrepancy 就是这样）。 */
+    const wc = (x.en.match(/[A-Za-z']+/g) || []).length;
+    if (wc > 7) bad.push('spoken[' + i + '] 「' + x.en +
+      '」写成整句了，要 2-6 词的短表达，完整句子放 eg');
+    if (!x.cn) bad.push('spoken[' + i + '] 没说什么场合用');
+    if (!x.eg) bad.push('spoken[' + i + '] 没例句');
+    else if (stemsMissing(x.en, x.eg).length)
+      bad.push('spoken[' + i + '] 的例句里没出现「' + x.en + '」');
+  });
   if (kind === 'word' && !e.ipa) bad.push('ipa 音标缺失');
   return bad;
 }
@@ -13760,6 +13784,9 @@ const DICT_RULES_EN =
   ' "coll":[{"en":"最常见的固定搭配，🚨必须真的含这个词","cn":"中文意思"}],\n' +
   ' "biz":"中文两三句：正式书面语（报告、邮件、附注）里怎么用它、放进报告合不合适、' +
   '有没有更书面的替代。如果它就是个日常词，直说「日常词，正式报告里少见」，别硬凑",\n' +
+  ' "spoken":[{"en":"口语里表达同一个意思的说法（2-6 词的短表达，不是整句）",' +
+  '"cn":"中文一句：什么场合说、比书面那版随意在哪",' +
+  '"eg":"完整的英文口语例句，🚨必须真的含这个说法"}],\n' +
   ' "near":[{"en":"容易跟它混的近义词或近义表达",' +
   '"cn":"中文一句：差在哪、什么时候该换用"}],\n' +
   ' "trap":{"bad":"中国人想表达这个意思时最容易写成的那一版英文（错的那版）",' +
@@ -13768,6 +13795,18 @@ const DICT_RULES_EN =
   '- defs 至少 1 条、最多 4 条，最常用的义项排最前面\n' +
   '- 🚨 每条例句、每条搭配都必须**真的含这个词**（可以是变形：assess→assessed）\n' +
   '- coll 至少 2 条；near 至少 1 条\n' +
+  '- 🚨 spoken 2 到 3 条，是**口语**里怎么表达这个意思：' +
+  '开会口头说、同事之间聊、打电话时会怎么讲\n' +
+  '- 🚨 spoken 跟 coll 的规则**相反**：搭配必须含这个词，' +
+  '而口语说法**不必含原词** —— 换个说法正是它的价值。' +
+  '比如 assess 的口语版可以是 "see how bad it is"、' +
+  '"take a proper look at"，一个 assess 都没有也对\n' +
+  '- 🚨 spoken 不许只是把原词加个 kind of / basically 就交差，' +
+  '也不许给俚语黑话（他要的是同事之间正常说话，不是 slang）\n' +
+  '- 🚨 spoken 的 en 必须是**2-6 词的短表达**（"run the numbers on"、'
+  '"take a close look at"），**不许写成一整句** —— 他要把它收进本子反复用，'
+  '整句收进去没法迁移到别的场合。完整的句子放进 eg\n' +
+  '- 🚨 每条 spoken 的 eg 必填，且必须**一字不差**含着那个短表达\n' +
   '- reg 只能是 正式/中性/口语 之一\n' +
   '- trap 不许空：写不出「最容易写错的那版」说明没想清楚\n' +
   '- 🚨 只讲英语怎么用，不讲专业判断（不评论该不该下结论、证据够不够、账务对不对）';
@@ -13783,11 +13822,19 @@ const DICT_RULES_ZH =
   '"eg":"英文例句，🚨必须真的含这个表达",' +
   '"reg":"正式 或 中性 或 口语"}],\n' +
   ' "pick":"这几个里最适合写进正式报告的那一个（**一字不差照抄**上面某个 en）",\n' +
-  ' "why":"中文一句：为什么是它"}\n\n' +
+  ' "why":"中文一句：为什么是它",' + '\n' +
+  ' "spokenPick":"这几个里**口头说**最自然的那一个' +
+  '（**一字不差照抄**上面某个 en，通常跟 pick 不是同一句）",' + '\n' +
+  ' "spokenWhy":"中文一句：口头为什么用它、跟报告那版差在哪"}\n\n' +
   '硬性要求（不满足就是废卡）：\n' +
-  '- cands 2 到 4 条，覆盖不同语域，别给四个同义词\n' +
+  '- 🚨 cands 3 到 4 条，**必须同时有至少一条 reg=正式、' +
+  '至少一条 reg=口语** —— 只给书面版的话，' +
+  '「口头就说这个」那一栏会跟报告那栏撞成同一句\n' +
+  '- 别给四个同义词，要覆盖不同语域\n' +
   '- 🚨 每条例句必须真的含那个表达\n' +
   '- pick 必须跟某个 en 一字不差\n' +
+  '- 🚨 spokenPick 也必须跟某个 en 一字不差，' +
+  '且**不能跟 pick 是同一句**\n' +
   '- 🚨 只讲英语表达，不讲专业判断';
 
 /* 查一次，最多三轮。
@@ -13801,8 +13848,12 @@ async function dictLook(q, kind){
     let p = (kind === 'zh' ? DICT_RULES_ZH : DICT_RULES_EN).replace('{q}', () => q);
     if (last){
       p += '\n\n🚨 你上一次的输出被判废了，原因是：' + last +
-           '\n这一次务必避开。特别提醒：例句和搭配里必须**真的出现**要查的那个词' +
-           '（允许词形变化），不要给一句意思相近但不含这个词的漂亮句子。';
+           '\n这一次务必避开。特别提醒：defs 的例句和 coll 的搭配里必须**真的出现**' +
+           '要查的那个词（允许词形变化），不要给一句意思相近但不含这个词的漂亮句子。' +
+           /* 🚨 spoken 是**例外**，这句必须写清楚 —— 上一版的提醒只有前半句，
+              等于在告诉模型「口语说法也要含原词」，把它往反方向推。 */
+           '\n🚨 但 spoken 那一段是例外：口语说法**不必含要查的词**（换个说法正是它的价值），' +
+           '它只要求 en 是 2-6 词的短表达、且 eg 一字不差地含着这个短表达。';
     }
     try { e = firstJson(await textCall(p, 0.3)); }
     catch(err){ last = err.message || String(err); continue; }
@@ -13822,7 +13873,20 @@ function dCache(){
 }
 function dCacheGet(id){
   const c = dCache()[id];
-  return (c && c.e) ? c.e : null;
+  const e = (c && c.e) ? c.e : null;
+  /* 🚨 加了「口语里怎么说」之后，**旧缓存里没有这一段**。
+     不换 DCACHE 这个 key 是故意的 —— 换了会一次性作废 120 条已查过的词，
+     每一条他都得重新花额度。改成只把**缺这段的**当未命中：
+     旧词重查一次就补上，其余照旧从本机拿。 */
+  if (e && !dictHasSpoken(e)) return null;
+  return e;
+}
+
+/* 一个词条里到底有没有口语那一段。两条路的形态不同，所以分开判。 */
+function dictHasSpoken(e){
+  if (!e) return false;
+  if (e.kind === 'zh') return !!e.spokenPick;
+  return Array.isArray(e.spoken) && e.spoken.length > 0;
 }
 function dCachePut(id, e, now){
   const c = dCache();
@@ -14276,6 +14340,22 @@ function collBlock(e){
            '</span>' : ''));
 }
 
+/* 🗣️ 口语里会这么说 —— Kevin 2026-08-17：「查出来的都是报告写法，比较书面化，
+   但我还想要一个偏口语表达的写法和说法。」
+   🚨 跟 collBlock 长得像但**规则相反**：搭配必须含这个词，口语说法不必含
+      （assess → "see how bad it is"）。改这里的时候别顺手把 coll 的校验抄过来。 */
+function spokenBlock(e){
+  const sp = (Array.isArray(e.spoken) ? e.spoken : []).filter(x => x && x.en);
+  return rowsBlock('🗣️ 口语里会这么说', sp,
+    x => subEntry(x.en, x.cn || '', {pos: '口语', from: e.w || e.q,
+                                     eg: x.eg || '', reg: '口语'}),
+    x => '<div class="en" style="font-size:15px;line-height:1.6" data-say="' +
+         esc(x.en) + '">' + esc(x.en) + '</div>' +
+         (x.cn ? '<div class="sit" style="margin-top:3px">' + esc(x.cn) + '</div>' : '') +
+         (x.eg ? '<div style="margin-top:4px;font-size:13.5px;color:var(--muted)" ' +
+           'data-say="' + esc(x.eg) + '">' + esc(x.eg) + '</div>' : ''));
+}
+
 function nearBlock(e){
   const ns = (Array.isArray(e.near) ? e.near : []).filter(x => x && x.en);
   return rowsBlock('↔️ 别跟这些混了', ns,
@@ -14301,6 +14381,24 @@ function zhCard(e){
     const cs = Array.isArray(e.cands) ? e.cands : [];
     const hit = cs.find(c => c && c.en && ENORM(c.en) === ENORM(e.pick)) || {en: e.pick, cn: e.why};
     box.appendChild(bookRow(candEntry(e.w || e.q, hit)));
+  }
+  /* 🗣️ 口头那一版跟报告那版**并排摆**，他一眼能看出差在哪。
+     提示词那边已经强制 spokenPick 不许跟 pick 同一句，撞了就是废卡、会重查。 */
+  if (e.spokenPick && ENORM(e.spokenPick) !== ENORM(e.pick || '')){
+    const sp = document.createElement('div');
+    sp.style.marginTop = '10px';
+    sp.style.paddingTop = '10px';
+    sp.style.borderTop = '1px solid var(--line)';
+    sp.innerHTML = '<div class="en" style="font-size:15px;line-height:1.7">' +
+      '口头就说这个：<b>' + esc(e.spokenPick) + '</b></div>' +
+      (e.spokenWhy ? '<div class="sit" style="margin-top:4px">' +
+        esc(e.spokenWhy) + '</div>' : '');
+    box.appendChild(sp);
+    box.appendChild(playBtn(e.spokenPick, '🔊 读一遍'));
+    const cs2 = Array.isArray(e.cands) ? e.cands : [];
+    const hit2 = cs2.find(c => c && c.en && ENORM(c.en) === ENORM(e.spokenPick)) ||
+                 {en: e.spokenPick, cn: e.spokenWhy, reg: '口语'};
+    box.appendChild(bookRow(candEntry(e.w || e.q, hit2)));
   }
   return box;
 }
@@ -14355,6 +14453,8 @@ function dictRender(e, cached){
     res.appendChild(wordCard(e));
     res.appendChild(defsBlock(e));
     const cb = collBlock(e); if (cb) res.appendChild(cb);
+    /* 口语紧挨着「报告里怎么用」放，两个语域上下对照 —— 他要的正是这个对比。 */
+    const sb = spokenBlock(e); if (sb) res.appendChild(sb);
     if (e.biz) res.appendChild(dSec('🧾 报告里怎么用',
       '<div class="t" style="margin-top:4px;line-height:1.7">' + esc(e.biz) + '</div>'));
     const nb = nearBlock(e); if (nb) res.appendChild(nb);

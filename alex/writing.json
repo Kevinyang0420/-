@@ -3813,6 +3813,313 @@
     "直译“N+1 补偿标准”为 \"N+1 compensate rule\"。在英文报告中应说明为 \"statutory severance calculated on an 'N+1' basis under PRC labor regulations\"。",
     "误将“固定资产处置损失”写成 \"fixed asset selling lose\"。正确表达是 \"loss on disposal of fixed assets\" 或 \"impairment charge on deconsolidated/idle assets\"。"
    ]
+  },
+  {
+   "id": "fdd_customer_contingent_claim",
+   "t": "大额客户潜在诉讼索赔风险",
+   "lvl": "★★☆",
+   "brief": "为买方尽调报告撰写一段发现，写给买方deal team，放在或有负债核查章节，需体现证据不足的措辞",
+   "facts": [
+    "管理层口头表示FY25年与核心客户A的合同纠纷已达成庭外和解意向",
+    "我们抽查了FY25年1-10月的32张销售相关凭证，未发现已计提对应预计负债的记录",
+    "截至2026年10月15日，尚未收到客户A出具的正式和解协议文件",
+    "我们调取了公司法务部归档的12份诉讼相关函件，其中7份无明确进展说明",
+    "财务部门称因和解细节未敲定，暂未计提预计负债"
+   ],
+   "tgt": [
+    "We note that management has orally advised that a contractual dispute with key Customer A in FY25 is subject to an out-of-court settlement意向 is not correct, use intention",
+    "There is no evidence of accrued contingent liabilities related to this matter in our sample testing of 32 sales-related vouchers from Jan-Oct FY25",
+    "As of October 15, 2026, we have not yet received a formal settlement agreement from Customer A",
+    "Given the incomplete evidence, we recommend management and the deal team assess the potential contingent liability with caution"
+   ],
+   "traps": [
+    "Writing \"Customer A has agreed to settle the dispute\" without qualifying the statement, as this overstates the confirmed facts and ignores the oral-only nature of management's representation",
+    "Using absolute language like \"no contingent liability should be accrued\" instead of qualifying the conclusion due to missing documentation",
+    "Translating directly from Chinese \"庭外和解意向\" to \"out-of-court settlement intention\" which is unnatural in business English; the correct phrasing is \"intention to settle the dispute out of court\""
+   ]
+  },
+  {
+   "id": "fdd_supplier_contingent_penalty",
+   "t": "供应商违约金计提不足风险",
+   "lvl": "★★☆",
+   "brief": "为买方尽调报告撰写一段发现，写给买方deal team，放在或有负债核查章节，需体现证据不足的措辞",
+   "facts": [
+    "管理层口头称FY26年9月向供应商B逾期交付原材料需支付的违约金约为¥120万",
+    "我们核查了FY25年12月至FY26年9月的18份采购合同，其中7份包含逾期违约金条款",
+    "截至2026年10月20日，未收到供应商B出具的正式违约金索赔函件",
+    "财务系统中未计提任何针对该逾期交付事项的预计负债",
+    "我们尝试联系供应商B的对接人，但截至发稿日仍未获得对方的索赔金额确认"
+   ],
+   "tgt": [
+    "Management has orally indicated that a penalty of approximately RMB1.2 million is owed to Supplier B for overdue raw material deliveries in September FY26",
+    "Our review of 18 procurement contracts from Dec FY25 to Sep FY26 identified 7 contracts containing late delivery penalty clauses",
+    "As of October 20, 2026, we have not received a formal penalty claim letter from Supplier B",
+    "No accrued provision for this overdue delivery matter is recorded in the company’s financial system"
+   ],
+   "traps": [
+    "Writing \"we confirmed the penalty amount is RMB1.2 million\" which is incorrect, as the amount is only from management's oral statement and not verified by the supplier",
+    "Using \"must accrue a penalty provision\" instead of qualifying the need for accrual given the missing formal claim documentation",
+    "Translating the Chinese term \"违约金\" directly to \"penalty\" without specifying \"contractual late delivery penalty\" for clarity in business English"
+   ]
+  },
+  {
+   "id": "fdd_lease_contingent_termination",
+   "t": "租赁提前解约违约金计提风险",
+   "lvl": "★★☆",
+   "brief": "为买方尽调报告撰写一段发现，写给买方deal team，放在租赁负债核查章节，需体现证据不足的措辞",
+   "facts": [
+    "管理层口头表示公司于FY25年租赁的上海办公场地可能因业务调整提前解约",
+    "我们抽查了FY25年签署的5份办公场地租赁合同，其中3份约定提前解约需支付相当于3个月租金的违约金",
+    "截至2026年10月15日，公司尚未向出租方发出正式的解约通知",
+    "财务部门未就该潜在解约事项计提任何预计负债",
+    "我们未能获取出租方关于解约意向的任何书面反馈"
+   ],
+   "tgt": [
+    "Management has orally advised that the company’s leased Shanghai office space signed in FY25 may be terminated early due to business restructuring",
+    "Our sample testing of 5 office lease contracts signed in FY25 found that 3 contracts require a penalty equivalent to 3 months’ rent for early termination",
+    "As of October 15, 2026, no formal termination notice has been sent to the lessor by the company",
+    "No provision has been accrued in the financial records for this potential early lease termination"
+   ],
+   "traps": [
+    "Stating \"the company will have to pay a 3-month rent penalty\" without noting that this is based on contract terms but no formal termination has occurred",
+    "Using definitive language like \"a termination penalty will be incurred\" instead of qualifying the statement as a potential risk",
+    "Translating the Chinese \"提前解约\" directly to \"early terminate the lease\" which is slightly awkward; the natural phrasing is \"terminate the lease early\""
+   ]
+  },
+  {
+   "id": "fdd_tax_contingent_assessment",
+   "t": "税务稽查潜在补缴风险",
+   "lvl": "★★☆",
+   "brief": "为买方尽调报告撰写一段发现，写给买方deal team，放在税务风险核查章节，需体现证据不足的措辞",
+   "facts": [
+    "管理层口头称FY24年的研发费用加计扣除申报已通过税务局初步审核",
+    "我们抽查了FY24年的42份研发费用凭证，发现其中6份凭证缺少项目立项审批文件",
+    "截至2026年10月22日，尚未收到税务局出具的正式审核通过通知书",
+    "财务部门已按申报金额计提了相关所得税减免，但未确认潜在补缴风险",
+    "我们联系了主管税务机关，但对方表示暂无法提供正式的审核结论"
+   ],
+   "tgt": [
+    "Management has orally stated that the R&D expense super deduction declaration for FY24 has passed the preliminary review by the tax authority",
+    "Our review of 42 R&D expense vouchers from FY24 identified that 6 vouchers lack project approval documents",
+    "As of October 22, 2026, we have not received a formal approval notice from the tax authority",
+    "The company has accrued income tax relief based on the declared amount but has not recognized any potential tax repayment risk"
+   ],
+   "traps": [
+    "Writing \"the R&D super deduction has been approved\" which overstates the facts, as only a preliminary review was mentioned by management",
+    "Using \"no tax risk exists\" instead of qualifying the conclusion due to missing formal approval documents and incomplete voucher support",
+    "Translating the Chinese \"初步审核\" to \"preliminary audit\" which is less standard in business English; the correct phrasing is \"preliminary review\""
+   ]
+  },
+  {
+   "id": "fdd_employee_contigent_compensation",
+   "t": "员工裁员补偿计提不足风险",
+   "lvl": "★★☆",
+   "brief": "为买方尽调报告撰写一段发现，写给买方deal team，放在人力资源与薪酬核查章节，需体现证据不足的措辞",
+   "facts": [
+    "管理层口头表示计划在FY26年末对15名后勤人员进行裁员",
+    "我们核查了FY26年1-9月的员工薪酬凭证，未发现已计提裁员补偿的记录",
+    "截至2026年10月18日，公司尚未向拟裁员员工出具正式的裁员通知书",
+    "人力资源部门称补偿标准将按照当地劳动法执行，但未提供具体的测算依据",
+    "我们未能获取当地劳动部门关于裁员备案的相关流程说明"
+   ],
+   "tgt": [
+    "Management has orally advised that the company plans to lay off 15 back-office employees by the end of FY26",
+    "Our review of payroll vouchers from Jan-Sep FY26 shows no accrued severance compensation has been recorded",
+    "As of October 18, 2026, no formal layoff notice has been issued to the affected employees",
+    "The HR department stated that compensation will follow local labor laws but has not provided detailed calculation basis"
+   ],
+   "traps": [
+    "Writing \"the company will pay severance for 15 employees\" which is premature, as the layoff plan is only oral and no formal notices have been sent",
+    "Using absolute language like \"severance compensation should be accrued\" without noting the lack of formal documentation and calculation details",
+    "Translating the Chinese \"后勤人员\" directly to \"logistics staff\" which is not the standard business English term; the correct phrasing is \"back-office employees\""
+   ]
+  },
+  {
+   "id": "fdd_dealer_contingent_return",
+   "t": "经销商渠道压货退货风险",
+   "lvl": "★★☆",
+   "brief": "为买方尽调报告撰写一段发现，写给买方deal team，放在销售与应收账款核查章节，需体现证据不足的措辞",
+   "facts": [
+    "管理层口头称FY26年9月向经销商C的季度发货存在渠道压货情况",
+    "我们抽查了FY26年7-9月的24张经销商发货凭证，其中11张未附带经销商签字的验收单",
+    "截至2026年10月20日，未收到经销商C出具的正式退货申请或沟通函件",
+    "财务部门已将该季度发货全额确认为当期销售收入",
+    "我们尝试联系经销商C的负责人，但截至发稿日仍未获得对方关于压货情况的确认"
+   ],
+   "tgt": [
+    "Management has orally indicated that quarterly shipments to Dealer C in September FY26 may involve channel stuffing",
+    "Our sample testing of 24 dealer shipment vouchers from Jul-Sep FY26 found that 11 vouchers lack signed acceptance documents from the dealer",
+    "As of October 20, 2026, we have not received a formal return application or communication from Dealer C",
+    "The company has recognized full revenue from this quarter’s shipments in the current period"
+   ],
+   "traps": [
+    "Writing \"Dealer C has returned the stuffed goods\" which is incorrect, as no formal return has been confirmed yet",
+    "Using \"channel stuffing is confirmed\" instead of qualifying the statement as a potential risk based on management's oral representation",
+    "Translating the Chinese \"渠道压货\" to \"channel pressure goods\" which is incorrect; the standard business English term is \"channel stuffing\""
+   ]
+  },
+  {
+   "id": "fdd_intangible_contingent_loss",
+   "t": "专利侵权潜在赔偿风险",
+   "lvl": "★★☆",
+   "brief": "为买方尽调报告撰写一段发现，写给买方deal team，放在或有负债与无形资产核查章节，需体现证据不足的措辞",
+   "facts": [
+    "管理层口头称公司于FY25年推出的X产品可能涉及专利侵权纠纷",
+    "我们核查了公司FY25年的12项专利申请文件，未发现与X产品相关的专利授权证明",
+    "截至2026年10月15日，尚未收到专利权人出具的正式侵权告知函",
+    "法务部门未就该潜在侵权事项计提任何预计负债",
+    "我们未能获取第三方专利检索机构关于X产品侵权风险的正式报告"
+   ],
+   "tgt": [
+    "Management has orally advised that the company’s newly launched Product X in FY25 may be involved in a patent infringement dispute",
+    "Our review of 12 patent application documents from FY25 found no patent authorization certificates related to Product X",
+    "As of October 15, 2026, we have not received a formal infringement notice from the patent holder",
+    "No provision has been accrued in the financial records for this potential patent infringement risk"
+   ],
+   "traps": [
+    "Writing \"Product X has been confirmed to infringe patents\" which overstates the facts, as only an oral allegation from management was received",
+    "Using definitive language like \"a patent infringement penalty will be incurred\" instead of qualifying the statement as a potential risk",
+    "Translating the Chinese \"专利侵权\" to \"patent invade right\" which is incorrect; the standard business English term is \"patent infringement\""
+   ]
+  },
+  {
+   "id": "fdd_payroll_contingent_arrears",
+   "t": "员工加班费欠缴追索风险",
+   "lvl": "★★☆",
+   "brief": "为买方尽调报告撰写一段发现，写给买方deal team，放在人力资源与薪酬核查章节，需体现证据不足的措辞",
+   "facts": [
+    "管理层口头称FY25年部分生产人员的加班费存在未足额支付的情况",
+    "我们抽查了FY25年1-12月的68张生产人员考勤凭证，其中21张缺少加班审批单",
+    "截至2026年10月22日，尚未收到当地劳动监察部门的任何问询或通知",
+    "财务部门未就该潜在加班费欠缴事项计提任何预计负债",
+    "我们未能获取生产部门关于加班情况的完整审批档案"
+   ],
+   "tgt": [
+    "Management has orally stated that some production employees may have underpaid overtime compensation in FY25",
+    "Our sample testing of 68 production employee attendance vouchers from FY25 found that 21 vouchers lack overtime approval documents",
+    "As of October 22, 2026, we have not received any inquiries or notices from the local labor supervision department",
+    "No provision has been accrued in the financial records for this potential unpaid overtime compensation risk"
+   ],
+   "traps": [
+    "Writing \"the company owes unpaid overtime wages to employees\" which is premature, as the matter is only based on incomplete voucher evidence and no formal claim has been made",
+    "Using absolute language like \"overtime arrears must be compensated\" without noting the lack of formal documentation and verified amounts",
+    "Translating the Chinese \"劳动监察部门\" directly to \"labor supervision department\" which is acceptable but can be more natural as \"local labor authority\" in business English"
+   ]
+  },
+  {
+   "id": "fdd_fnd_commission_accrual_incomplete",
+   "t": "销售佣金计提不完整",
+   "lvl": "★☆☆",
+   "brief": "这是买方FDD报告的会计核算风险发现，写给买方交易团队，放在营业成本及费用核查章节，需要清晰说明计提缺口及依据",
+   "facts": [
+    "管理层口头称FY25全年销售佣金计提比例为营收的1.2%",
+    "我们抽查了FY25年1-10月的120笔销售合同对应的佣金支付凭证，其中47笔已确认收入但未计提对应佣金",
+    "截至2026年6月15日，仍未获取FY25年11-12月的完整销售台账",
+    "财务系统显示FY25已计提销售佣金合计人民币890万元，按营收1.2%比例推算应计提金额为人民币1260万元"
+   ],
+   "tgt": [
+    "Based on our review,...",
+    "Management indicated that...",
+    "As of June 15, 2026,...",
+    "A potential accrual gap of approximately RMB 370 million is identified"
+   ],
+   "traps": [
+    "Writing \"We found the commission accrual is wrong\" which is overly vague, should specify the gap amount and sampling basis",
+    "Using present tense for completed FY25 activities, should use past tense for completed fieldwork and past perfect for prior period balances",
+    "Failing to attribute management's claim separately from audit evidence, should clearly distinguish management representations and independent testing results"
+   ]
+  },
+  {
+   "id": "fdd_fnd_tax_penalty_unaccrued",
+   "t": "税务罚款未计提风险",
+   "lvl": "★☆☆",
+   "brief": "这是买方FDD报告的或有负债风险发现，写给买方交易团队，放在税务合规及或有负债章节，需要说明违规事实及未计提情况",
+   "facts": [
+    "主管税务局于2026年5月向目标公司发送税务整改通知书，指出其FY24- FY25存在少申报印花税的问题",
+    "管理层口头表示预计将被处以少缴税额0.5倍的罚款，合计约人民币120万元",
+    "截至2026年6月15日，目标公司未就该潜在罚款计提任何预计负债",
+    "我们尚未收到税务局出具的正式处罚决定书"
+   ],
+   "tgt": [
+    "The tax authority issued a rectification notice on May 2026 regarding underreported stamp duty",
+    "Management estimates a potential penalty of approximately RMB 1.2 million based on 50% of the underpaid tax",
+    "No accrued liability for the potential penalty has been recorded in the FY25 financial statements",
+    "The formal penalty decision has not been received as of the reporting date"
+   ],
+   "traps": [
+    "Writing \"The company will get a big tax fine\" which is too informal, should use formal regulatory terminology like \"tax penalty\" and specify the basis",
+    "Failing to note the lack of formal penalty documentation, should clarify that the estimate is based on management's representation",
+    "Using present tense for the tax authority's notice, should use past tense for the issuance date and ongoing status of the process"
+   ]
+  },
+  {
+   "id": "fdd_fnd_warehouse_overstock_obsolete",
+   "t": "库存呆滞跌价风险",
+   "lvl": "★☆☆",
+   "brief": "这是买方FDD报告的存货减值风险发现，写给买方交易团队，放在存货及流动资产减值章节，需要说明呆滞库存情况及减值缺口",
+   "facts": [
+    "我们盘点了目标公司3个核心仓库的原材料及备件，发现其中12.7%的库存物料库龄超过18个月",
+    "管理层称部分长库龄物料可通过内部技改消耗，但未提供具体的消耗计划或审批文件",
+    "截至2026年6月15日，目标公司已计提的呆滞存货跌价准备为人民币320万元",
+    "按行业通用库龄减值比例测算，应计提的跌价准备金额约为人民币680万元"
+   ],
+   "tgt": [
+    "A physical inventory count identified 12.7% of inventory has a storage period exceeding 18 months",
+    "Management stated that some long-tenure inventory can be used for internal技改 but failed to provide supporting plans",
+    "The recorded inventory impairment reserve for obsolete stock totals RMB 3.2 million",
+    "There is a potential impairment gap of approximately RMB 3.6 million based on industry benchmark ratios"
+   ],
+   "traps": [
+    "Using \"all old inventory is useless\" which is overly absolute, should use \"has limited usage potential without supporting plans\"",
+    "Omitting the specific inventory proportion and gap amount, should include measurable audit findings",
+    "Confusing the industry benchmark ratio with management's estimate, should clearly separate independent calculation and management representation"
+   ]
+  },
+  {
+   "id": "fdd_fnd_unbilled_revenue_unverified",
+   "t": "未开票收入核查风险",
+   "lvl": "★☆☆",
+   "brief": "这是买方FDD报告的收入确认风险发现，写给买方交易团队，放在收入确认及截止性章节，需要说明核查情况及存疑事项",
+   "facts": [
+    "管理层提供的FY26年1-5月未开票收入明细显示金额为人民币1.9亿元",
+    "我们仅抽查了其中25笔合计人民币8200万元的未开票收入，无法获取对应的发货签收单",
+    "截至2026年6月15日，目标公司未提供剩余未开票收入的支撑性文件",
+    "部分未开票收入对应的客户为目标公司的关联方"
+   ],
+   "tgt": [
+    "Management provided an unbilled revenue listing of RMB 19 million for the first five months of FY26",
+    "Only 43% of the sampled unbilled revenue transactions had matching delivery receipts",
+    "Supporting documentation for a portion of the unbilled revenue could not be obtained",
+    "Some of the unbilled revenue relates to transactions with related parties"
+   ],
+   "traps": [
+    "Writing \"Unbilled revenue is all fake\" which is overly aggressive, should use \"lack of supporting documentation for a significant portion\"",
+    "Omitting the sampling percentage and amount, should include specific audit test details",
+    "Confusing related party transactions with regular unbilled revenue, should separately disclose the related party component"
+   ]
+  },
+  {
+   "id": "fdd_fnd_fixed_asset_idle_unimpaired",
+   "t": "固定资产闲置未减值",
+   "lvl": "★☆☆",
+   "brief": "这是买方FDD报告的固定资产减值风险发现，写给买方交易团队，放在固定资产及长期资产减值章节，需要说明闲置情况及未计提减值",
+   "facts": [
+    "我们现场核查发现目标公司有6台生产设备已连续闲置超过12个月，账面原值合计人民币5600万元",
+    "管理层称这些设备将在FY26年下半年重启使用，但未提供设备升级或订单支撑文件",
+    "截至2026年6月15日，目标公司未对该闲置固定资产计提任何减值准备",
+    "行业数据显示闲置超过12个月的生产设备减值比例通常为原值的60%-80%"
+   ],
+   "tgt": [
+    "On-site inspection identified 6 production assets that have been idle for more than 12 months with a gross book value of RMB 56 million",
+    "Management stated the equipment will be reused in the second half of FY26 without supporting operational plans",
+    "No impairment loss has been accrued for the idle fixed assets in the FY25 financial statements",
+    "Based on industry benchmarks, the estimated impairment amount ranges from 60% to 80% of the gross book value"
+   ],
+   "traps": [
+    "Using vague phrasing like \"some machines are not used\" which lacks specificity, should include the number of assets and total book value",
+    "Failing to note the lack of supporting evidence for management's reuse plan, should highlight the gap between representation and documentation",
+    "Using absolute terms like \"must be impaired\" which is overly definitive, should use \"potential impairment risk identified\""
+   ]
   }
  ]
 }

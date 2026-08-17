@@ -33582,6 +33582,244 @@
    "src": "美联储研究札记",
    "srcen": "Federal Reserve",
    "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_to_facilitate_established",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "To facilitate channel coordination and increase productivity, we have established the Arista Partner Program, designed to engage partners who provide value-added services and extend our reach into the marketplace.",
+   "why": "两个动作：先用 To + 动词 把「为了什么」提到句首交代动机，再用 designed to 挂一个后置分词，把「这个安排是干什么用的」补在名词后面，不用再起一句 The purpose of the program is to…。中国人常写成 In order to improve the efficiency, we established the program. The program is used to engage partners.——三句话拆开、in order to 拖沓、the purpose is to 是废话式主语。原文一句话讲完动机、措施、功能三层。",
+   "when": "报告里介绍一项制度、流程或控制措施时——先说为什么设，再说它承担什么职能。",
+   "slot": "To […] and […], we have established […], designed to […] and […].",
+   "swap": [
+    "With a view to […], the Group has put in place […] — 更正式、偏英式合规文本，适合写给监管看",
+    "[…] was introduced to […] — 被动、不强调是谁做的，责任主体模糊时用",
+    "In response to […], management implemented […] — 强调是被动应对某个问题，不是主动优化"
+   ],
+   "para": "We market and sell our products through our direct sales force and in partnership with our channel partners, including distributors, value-added resellers, systems integrators and original equipment manufacturer (\"OEM\") partners. We also partner with various technology companies to sell our products. To facilitate channel coordination and increase productivity, we have established the Arista Partner Program, designed to engage partners who provide value-added services and extend our reach into the marketplace. Authorized training partners deliver technical training to our channel partners and end customers. Our partners typically receive an order from an end customer before placing an order with us, and we verify the end customer's identification before accepting such orders. Our partners generally do not stock inventory received from us.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_before_placing_verify",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "Our partners typically receive an order from an end customer before placing an order with us, and we verify the end customer's identification before accepting such orders.",
+   "why": "两次用 before + 动名词 锁死先后顺序，主语不用重复出现，比 before they place an order 干净；两个分句同构并列，读者一眼看出这是一条控制链。中国人常写 First the partner receives the order. Then they place the order with us. And we will check the customer before we accept it.——用 first/then 编号、before they… 补主语、will check 把已有惯例写成将来时。",
+   "when": "描述截止性、订单流转、审批先后这类「谁先谁后」的控制程序时。",
+   "slot": "[…] typically […] before […], and we […] before […].",
+   "swap": [
+    "[…] only after […] has been obtained — 强调「没有这一步就不许往下走」，更硬，适合写控制缺陷时的应然状态",
+    "Prior to […], management […] — 更正式书面，prior to 比 before 冷一层",
+    "Upon receipt of […], we […] — 强调「一收到就做」，时间紧邻，不是单纯先后"
+   ],
+   "para": "We market and sell our products through our direct sales force and in partnership with our channel partners, including distributors, value-added resellers, systems integrators and original equipment manufacturer (\"OEM\") partners. We also partner with various technology companies to sell our products. To facilitate channel coordination and increase productivity, we have established the Arista Partner Program, designed to engage partners who provide value-added services and extend our reach into the marketplace. Authorized training partners deliver technical training to our channel partners and end customers. Our partners typically receive an order from an end customer before placing an order with us, and we verify the end customer's identification before accepting such orders. Our partners generally do not stock inventory received from us.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_generally_do_not",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Our partners generally do not stock inventory received from us.",
+   "why": "generally 挡在 do not 前面，等于说「基本上不，但不敢说绝对没有」——一个词就把绝对化的风险挡掉了，而且 do not 仍然是明确否定，不含糊。中国人常写 Our partners do not stock inventory（说死了，出一个反例整句就假）或 In most cases, partners may not stock…（may not 变成「可能不允许」，意思都跑了）。另外 stock 直接当动词用，比 keep inventory in stock 省一半字。",
+   "when": "写你抽查过但没穷尽全部样本的事实结论时——尤其访谈或分析性复核得出的普遍情况。",
+   "slot": "[…] generally do not […] received from […].",
+   "swap": [
+    "[…] rarely […] — 更弱，暗示有例外且见过例外",
+    "[…] are not expected to […] — 这是「按安排不应该」，不是「事实上没有」，口径变了",
+    "Based on our enquiries, […] did not […] — 明确把结论绑在证据来源上，尽调报告里最稳"
+   ],
+   "para": "We market and sell our products through our direct sales force and in partnership with our channel partners, including distributors, value-added resellers, systems integrators and original equipment manufacturer (\"OEM\") partners. We also partner with various technology companies to sell our products. To facilitate channel coordination and increase productivity, we have established the Arista Partner Program, designed to engage partners who provide value-added services and extend our reach into the marketplace. Authorized training partners deliver technical training to our channel partners and end customers. Our partners typically receive an order from an end customer before placing an order with us, and we verify the end customer's identification before accepting such orders. Our partners generally do not stock inventory received from us.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_delighted_to_be_here",
+   "kind": "phrase",
+   "dim": "modal",
+   "en": "I am delighted to be here at Stanford University today",
+   "why": "中国人常直接说I am glad to come here，用delighted比glad情感更饱满正式，搭配be here而非come here更贴合线下参会/演讲的场景，明确点明地点也符合正式发言的规范。",
+   "when": "正式场合开场表明受邀参会/到访的愉悦心情",
+   "slot": "I am delighted to be here at […] today",
+   "swap": [
+    "I am glad to come here today. 用词更口语化，情感强度弱且场景适配性差",
+    "It is a pleasure to join you at […] today. 更侧重与听众的互动感，少了个人亲临的直接感"
+   ],
+   "para": "Thank you for the kind introduction. I am delighted to be here at Stanford University today to discuss a topic that is central to the Federal Reserve's work: how policymakers analyze and respond to economic shocks in real time. 1",
+   "srctitle": "Jefferson, Navigating Economic Shocks: A Monetary Policymaker’s Perspective",
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
+  },
+  {
+   "id": "ph_regulation_o_update",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Regulation O has not been comprehensively updated since 1979.",
+   "why": "中国人常写的是“Regulation O was not updated comprehensively in 1979”或者“Regulation O hasn’t updated comprehensively since 1979”，原句用现在完成时的被动语态准确体现了规则至今未全面更新的状态，且“comprehensively”精准修饰“updated”，明确是全方面而非部分更新，表达更严谨。",
+   "when": "撰写监管规则、行业政策的历史沿革说明时套用",
+   "slot": "[…] has not been comprehensively updated since […]",
+   "swap": [
+    "Regulation X has not been fully revised since 2020.（用fully替换comprehensively，侧重完整修订而非全面更新）",
+    "[…] has not been updated in a comprehensive manner since […]（用介词短语替换副词，略显正式但稍显冗余）"
+   ],
+   "para": "Regulation O has not been comprehensively updated since 1979. The rule addresses a unique challenge for community banks, where board members and executives are often local business owners and civic leaders who provide valuable perspective and expertise to bank governance and information on the local economy.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731b.htm"
+  },
+  {
+   "id": "ph_unique_challenge_community_banks",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "The rule addresses a unique challenge for community banks,",
+   "why": "中国人常直译“this rule solves a special problem for small banks”，原句用“unique challenge”替代“special problem”，“unique”更强调该挑战是社区银行独有的，“address”比“solve”更贴合监管规则应对、处理行业难题的正式语境，“community banks”是行业标准译法，比“small banks”更精准。",
+   "when": "描述特定行业主体面临的专属行业监管或运营难题时套用",
+   "slot": "[…] addresses a unique challenge for […]",
+   "swap": [
+    "This policy tackles a distinct problem for […]（用tackles替换addresses，侧重主动解决，语气稍强）",
+    "[…] deals with a one-of-a-kind issue for […]（用one-of-a-kind替换unique，更口语化，正式报告中不推荐）"
+   ],
+   "para": "Regulation O has not been comprehensively updated since 1979. The rule addresses a unique challenge for community banks, where board members and executives are often local business owners and civic leaders who provide valuable perspective and expertise to bank governance and information on the local economy.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731b.htm"
+  },
+  {
+   "id": "ph_local_business_owners_civic_leaders",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "where board members and executives are often local business owners and civic leaders",
+   "why": "中国人常写“board members and executives are usually local businessmen and civic leaders”，原句用“often”比“usually”更贴合客观描述的语气，避免绝对化；“local business owners”比“local businessmen”更中性，涵盖女性创业者，“civic leaders”是标准的“ civic leader”复数形式，搭配更地道。",
+   "when": "描述企业/机构核心人员的身份背景时套用",
+   "slot": "where […] are often […] and […]",
+   "swap": [
+    "where […] are typically […] and community influencers（用typically替换often，语气更偏向常规情况，用community influencers替换civic leaders，侧重社区影响力而非官方 civic 身份）",
+    "in which […] are frequently […] and local civic figures（用in which替换where，更正式，用local civic figures替换civic leaders，表述略有差异）"
+   ],
+   "para": "Regulation O has not been comprehensively updated since 1979. The rule addresses a unique challenge for community banks, where board members and executives are often local business owners and civic leaders who provide valuable perspective and expertise to bank governance and information on the local economy.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731b.htm"
+  },
+  {
+   "id": "ph_enumeration_with_including",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "We market and sell our products through our direct sales force and in partnership with our channel partners, including distributors, value-added resellers, systems integrators and original equipment manufacturer (\"OEM\") partners.",
+   "why": "用 including 引出列举，只列典型类别而不说\"包括且仅包括\"，既给读者画面感又不把话说死；OEM 首次出现时用括号定义缩写，全文以后直接用。中国人常写成 such as A, B, C and so on 或 all kinds of，或干脆罗列成完整句群，既啰嗦又丢失了\"非穷尽列举\"的法律弹性。",
+   "when": "描述销售渠道、客户构成、费用类别等需要举例但不承诺穷尽的场合。",
+   "slot": "We market and sell our products through our […] and in partnership with our […], including […].",
+   "swap": [
+    "in partnership with various […] — 语气更泛，不点名合作方，披露颗粒度更低",
+    "through our direct sales force and select channel partners — 用 select 反向收窄范围，暗示有准入门槛，语气更收紧",
+    "including, without limitation, […] — 法律文本味更重，明确排除穷尽解释，比 including 更防御"
+   ],
+   "para": "We market and sell our products through our direct sales force and in partnership with our channel partners, including distributors, value-added resellers, systems integrators and original equipment manufacturer (\"OEM\") partners. We also partner with various technology companies to sell our products. To facilitate channel coordination and increase productivity, we have established the Arista Partner Program, designed to engage partners who provide value-added services and extend our reach into the marketplace. Authorized training partners deliver technical training to our channel partners and end customers. Our partners typically receive an order from an end customer before placing an order with us, and we verify the end customer's identification before accepting such orders. Our partners generally do not stock inventory received from us.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_medicaid_anti_fraud_amendments",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "That led to the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977",
+   "why": "中国人常写的是“This caused the 1977 Medicare-Medicaid Anti-Fraud and Abuse Amendments”，用“led to”比“caused”更正式且符合财经政策类文本的书面语气，更精准体现“政策出台是由需求推动逐步产生的因果关联”而非生硬的“导致”",
+   "when": "在财经/政策类写作中，描述某一需求、事件推动特定规则、法案出台的场合",
+   "slot": "That led to the […] of […]",
+   "swap": [
+    "This resulted in the […] of […]：更侧重客观结果，语气稍平实",
+    "This gave rise to the […] of […]：更强调催生的主动性，适合突出发起方的推动作用"
+   ],
+   "para": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement. That led to the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977, which established the national Medicaid Fraud Control Units program.",
+   "srctitle": "Trump administration is withholding more than $1B in Medicaid funds from California and Minnesota, in latest example of weaponizing real and imagined fraud",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_congressional_investigations_spurred_dem",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement",
+   "why": "中国人常直白写“Many congressional investigations made people want better Medicaid supervision”，用“spurred demand for”比“made people want”更专业正式，精准体现“调研活动推动了明确的行业监管需求”，“high-profile”也精准修饰了调查的受关注度，符合财经文本的严谨表述",
+   "when": "在尽职调查、审计报告或政策分析中，描述某类事件推动特定监管或合规需求的场合",
+   "slot": "A series of high-profile […] spurred demand for […]",
+   "swap": [
+    "A number of high-profile […] drove demand for […]：语气更直接，侧重驱动力的强度",
+    "A series of well-publicized […] stimulated demand for […]：“well-publicized”比“high-profile”更侧重传播度，适合强调事件的公众关注度"
+   ],
+   "para": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement. That led to the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977, which established the national Medicaid Fraud Control Units program.",
+   "srctitle": "Trump administration is withholding more than $1B in Medicaid funds from California and Minnesota, in latest example of weaponizing real and imagined fraud",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_rely_on_limited_number_of_suppliers",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "We may also see increased consolidation among our component suppliers.",
+   "why": "中国人常写“we may face more supplier consolidation”，这里用“see increased consolidation among”更贴合财报里客观描述行业变化的中立语气，且“among”精准点明是供应商群体内部的整合，比笼统的表述更清晰。",
+   "when": "在财务尽职调查或审计报告里描述行业供应链的集中化趋势时套用。",
+   "slot": "We may also see increased consolidation among […] suppliers.",
+   "swap": [
+    "\"We may witness growing consolidation within our supplier base\" + 用“witness”比“see”更正式，“within our supplier base”比“among our component suppliers”更宽泛，适用范围更广",
+    "\"There may be increased consolidation among our component suppliers\" + 把主语换成there be句式，更侧重客观现象而非主体的观察视角"
+   ],
+   "para": "Our products rely on key components, including merchant silicon, integrated circuit components and power supplies, which are purchased from a limited number of suppliers, including certain sole source providers. We may also see increased consolidation among our component suppliers. In particular, we are primarily reliant upon our predominant merchant silicon vendor, Broadcom, for our switching chips. Generally, neither we nor our contract manufacturers have a written agreement with these component providers to guarantee the supply of the key components used in our products, nor do we have exclusive rights to such key components. Furthermore, our arrangements with contract manufacturers and suppliers typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_primarily_reliant_upon_predominant_vendo",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "we are primarily reliant upon our predominant merchant silicon vendor, Broadcom, for our switching chips.",
+   "why": "中国人常直接写“we mainly use Broadcom’s chips”，这里用“primarily reliant upon”精准表达对单一供应商的依赖程度，“predominant”突出其市场主导地位，“for our switching chips”明确了依赖的具体产品场景，措辞更专业严谨。",
+   "when": "在财报或审计报告中说明对单一核心供应商的依赖情况时套用。",
+   "slot": "[…] are primarily reliant upon our predominant […] vendor, […] for […]",
+   "swap": [
+    "\"we mainly depend on our leading supplier, […]\" + 用“depend on”比“rely upon”更口语化，“leading”比“predominant”语气稍弱，更侧重市场领先而非绝对主导",
+    "\"we rely heavily on our principal vendor, […] for our […]\" + 用“heavily”侧重依赖的强度，“principal”比“predominant”更强调核心地位而非市场份额优势"
+   ],
+   "para": "Our products rely on key components, including merchant silicon, integrated circuit components and power supplies, which are purchased from a limited number of suppliers, including certain sole source providers. We may also see increased consolidation among our component suppliers. In particular, we are primarily reliant upon our predominant merchant silicon vendor, Broadcom, for our switching chips. Generally, neither we nor our contract manufacturers have a written agreement with these component providers to guarantee the supply of the key components used in our products, nor do we have exclusive rights to such key components. Furthermore, our arrangements with contract manufacturers and suppliers typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_neither_nor_no_purchase_obligations",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "Generally, neither we nor our contract manufacturers have a written agreement with these component providers to guarantee the supply of the key components used in our products, nor do we have exclusive rights to such key components.",
+   "why": "中国人常分开写两个否定句，这里用“neither…nor…nor…”的连贯句式，清晰串联了两个无保障的风险点，逻辑更紧凑，符合英文财报的正式书面表达习惯，避免了重复啰嗦。",
+   "when": "在财务报告中并列陈述多项无合同保障的风险或合规缺陷时套用。",
+   "slot": "Generally, neither […] nor […] have […] with […] to […] , nor do we have […] to […] .",
+   "swap": [
+    "\"Generally, we and our contract manufacturers lack written supply agreements with these component suppliers, and we also do not hold exclusive rights to these key components\" + 拆分句式后逻辑连贯性下降，且用词更直白，不如原句正式严谨",
+    "\"In general, neither we nor our contract manufacturers have secured written supply agreements for our key components, nor do we have exclusive usage rights\" + 用“secured”强调“争取到”的动作，“usage rights”比“exclusive rights”更具体限定使用场景"
+   ],
+   "para": "Our products rely on key components, including merchant silicon, integrated circuit components and power supplies, which are purchased from a limited number of suppliers, including certain sole source providers. We may also see increased consolidation among our component suppliers. In particular, we are primarily reliant upon our predominant merchant silicon vendor, Broadcom, for our switching chips. Generally, neither we nor our contract manufacturers have a written agreement with these component providers to guarantee the supply of the key components used in our products, nor do we have exclusive rights to such key components. Furthermore, our arrangements with contract manufacturers and suppliers typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
   }
  ]
 }
