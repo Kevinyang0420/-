@@ -833,11 +833,14 @@ button{font-family:inherit}
 
 #tabbar button{flex:0 0 18%}
 
+/* 🚨 `.rchip` 和 `.tabs button` 是同一种东西（一排可点的筛选片），
+   却各写各的内边距：8px 14px vs 10px 18px → 实测高度 38 vs 44，
+   同一屏上下两行明显不齐。统一成 `.tabs button` 那一套（它是更常见的那个）。 */
 .rchip{flex:0 0 auto;background:var(--card);border:2px solid var(--line);
 
   border-bottom-width:3px;color:var(--muted);border-radius:10px;
 
-  padding:8px 14px;font-size:13px;font-weight:700;white-space:nowrap}
+  padding:10px 18px;font-size:13px;font-weight:700;white-space:nowrap}
 
 .rchip.on{background:var(--tint);border-color:var(--brand-dark);color:var(--on-tint)}
 
@@ -9849,7 +9852,12 @@ function showEssayList(es, all){
 
   f.innerHTML = topTabs() +
 
-    '<div class="tabs" style="margin-bottom:10px;flex-wrap:wrap">' +
+    /* 🚨 这里原来 inline 写了 `flex-wrap:wrap`，把 `.tabs` 自带的横滑覆盖掉了。
+       实测（真机 375×812）：11 个分类 chip 折成 4 行、占掉 194px ——
+       一屏的 24% 全花在筛选器上，正文被推下去。
+       去掉 wrap 就回到 `.tabs` 的横滑（overflow-x:auto + 不换行），只占 44px。
+       Grok 2026-08-17 审查也提了这条，实测属实所以改。 */
+    '<div class="tabs" style="margin-bottom:10px">' +
 
       chip('all', '全部 ' + es.length) +
 
