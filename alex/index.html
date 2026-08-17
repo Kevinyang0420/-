@@ -840,7 +840,7 @@ button{font-family:inherit}
 
   border-bottom-width:3px;color:var(--muted);border-radius:10px;
 
-  padding:10px 18px;font-size:13px;font-weight:700;white-space:nowrap}
+  padding:10px 18px;font-size:14px;font-weight:700;white-space:nowrap}
 
 .rchip.on{background:var(--tint);border-color:var(--brand-dark);color:var(--on-tint)}
 
@@ -5869,7 +5869,7 @@ const SESSUI = {top: 'do'};        // do = 练习 / rec = 我的记录
 
 function sessTopTabs(){
   const b = (k, nm) => '<button class="rchip' + (SESSUI.top === k ? ' on' : '') +
-    '" data-stop="' + k + '" style="font-size:14px;padding:7px 16px">' + nm + '</button>';
+    '" data-stop="' + k + '">' + nm + '</button>';
   return '<div class="tabs" style="margin-bottom:12px">' +
     b('do', '练习') + b('rec', '我的记录') + '</div>';
 }
@@ -9193,7 +9193,7 @@ const LRECUI = {top: 'do', only: 'all'};
 
 function lrecTopTabs(){
   const b = (k, nm) => '<button class="rchip' + (LRECUI.top === k ? ' on' : '') +
-    '" data-ltop="' + k + '" style="font-size:14px;padding:7px 16px">' + nm + '</button>';
+    '" data-ltop="' + k + '">' + nm + '</button>';
   return '<div class="tabs" style="margin-bottom:12px">' +
     b('do', '练习') + b('rec', '我做过的题') + '</div>';
 }
@@ -9729,7 +9729,7 @@ function topTabs(){
 
   const b = (k, nm) => '<button class="rchip' + (READ.top === k ? ' on' : '') +
 
-    '" data-top="' + k + '" style="font-size:14px;padding:7px 16px">' + nm + '</button>';
+    '" data-top="' + k + '">' + nm + '</button>';
 
   return '<div class="tabs" style="margin-bottom:12px">' +
 
@@ -12672,7 +12672,7 @@ const WRECUI = {top: 'do'};
 
 function wrecTopTabs(){
   const b = (k, nm) => '<button class="rchip' + (WRECUI.top === k ? ' on' : '') +
-    '" data-wtop="' + k + '" style="font-size:14px;padding:7px 16px">' + nm + '</button>';
+    '" data-wtop="' + k + '">' + nm + '</button>';
   return '<div class="tabs" style="margin-bottom:12px">' +
     b('do', '练习') + b('rec', '我写过的') + '</div>';
 }
@@ -14091,7 +14091,7 @@ function revDue(list, today){
 function dictTop(){
   const n = nbAll().length, due = revDue().length;
   const b = (k, nm) => '<button class="rchip' + (DICT.top === k ? ' on' : '') +
-    '" data-dtop="' + k + '" style="font-size:14px;padding:7px 16px">' + nm + '</button>';
+    '" data-dtop="' + k + '">' + nm + '</button>';
   return '<div class="tabs" style="margin-bottom:12px">' +
     b('look', '查词') +
     b('nb', '我的本子' + (n ? ' ' + n : '') + (due ? ' · 待复习 ' + due : '')) +
