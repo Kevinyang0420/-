@@ -215,7 +215,14 @@
   /* 🚨 纯黑底上阴影是看不见的 —— 层级改用「表面提亮 + 一道细描边」。 */
   --sh:0 1px 0 rgba(255,255,255,.04);--sh-lg:0 8px 28px rgba(0,0,0,.6);
 
-  --gap:14px}
+  --gap:14px;
+  /* 卡片内边距的单一来源。🚨 2026-08-17 之前是三处各写各的：
+     .lvcard 18px / .card 16px / .better 15px（横向都是 17px，那个本来就一致）。
+     Grok 审查里说「内边距 14~18px 不一致」—— 这条是真的（实测三个值），
+     它同一轮里说的「圆角 12~16px 漂移」「卡间距 8/12/16 混用」
+     「字重几乎全是 regular」则都不成立（实测圆角只有 10/18 两个值、
+     间距全站统一 14px、字重是 800/700/500）。所以只改这一条。 */
+  --card-pad:16px 17px}
 
 @media(prefers-color-scheme:__legacy_dark__){:root{
 
@@ -256,6 +263,21 @@ body{margin:0;background:var(--bg);color:var(--fg);font-size:16px;line-height:1.
   background:var(--accent);color:var(--on-accent);transition:transform .05s,border-bottom-width .05s}
 
 .btn:active{transform:translateY(2px);border-bottom-width:var(--bd)}
+
+/* 查词那个键 —— Kevin 2026-08-17：「那么大个『查』字好丑啊」。
+   🚨 根因是它套了 `.btn`：胶囊圆角 999px + 纯白实心 `--accent`，
+      再塞一个中文字就成了「纯白大圆里一个字」，而且是整页唯一的纯白块。
+   现在跟旁边的输入框同一套语言：同高（align-self:stretch 自动跟）、
+   同 12px 圆角、同 2px 边框、同 --card 底，图标用跟底部 tab 一模一样的
+   24×24 / stroke 1.6 / round 线条。按下时边框变成当前 tab 的强调色。 */
+.sbtn{flex:0 0 auto;width:52px;align-self:stretch;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0;border-radius:12px;cursor:pointer;
+  background:var(--card);color:var(--fg-strong);
+  border:2px solid var(--line);
+  transition:border-color .12s,background .12s}
+.sbtn:active{border-color:var(--tint);background:var(--card-2)}
+.sbtn svg{width:21px;height:21px;display:block}
 
 .btn.ghost{background:var(--card);color:var(--accent);border-color:var(--line);
 
@@ -501,7 +523,7 @@ button{font-family:inherit}
 
   box-shadow:none;
 
-  padding:18px 17px;margin:var(--gap) 0;cursor:pointer;display:flex;align-items:center;
+  padding:var(--card-pad);margin:var(--gap) 0;cursor:pointer;display:flex;align-items:center;
 
   gap:15px;transition:transform .06s,border-color .12s,border-bottom-width .06s}
 
@@ -585,7 +607,7 @@ button{font-family:inherit}
 
   box-shadow:none;
 
-  padding:16px 17px;margin:var(--gap) 0;cursor:pointer;
+  padding:var(--card-pad);margin:var(--gap) 0;cursor:pointer;
 
   transition:transform .06s,border-color .12s,border-bottom-width .06s}
 
@@ -679,7 +701,7 @@ button{font-family:inherit}
 
 .better{background:var(--card);border:2px solid var(--brand);border-bottom-width:4px;
 
-  border-radius:10px;box-shadow:none;padding:15px 17px;margin-top:13px}
+  border-radius:10px;box-shadow:none;padding:var(--card-pad);margin-top:13px}
 
 .better .lb{font-size:11px;letter-spacing:.4px;color:var(--tint);
 
@@ -14097,7 +14119,11 @@ function showDict(q){
         'enterkeyhint="search" ' +
         'style="flex:1;min-width:0;padding:12px 13px;border:2px solid var(--line);' +
         'border-radius:12px;font-size:16px;background:var(--card);color:var(--fg)">' +
-      '<button id="dgo" class="btn" style="flex:0 0 auto;padding:0 18px">查</button>' +
+      '<button id="dgo" class="sbtn" aria-label="查">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+          'stroke-linecap="round" stroke-linejoin="round">' +
+          '<circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.8-3.8"></path>' +
+        '</svg></button>' +
     '</div>' +
     /* 🚨 说明文字和历史 chips 都排在**结果上面**的话，等于把结果往下推一百多像素，
        小屏上收藏键就掉出第一屏。所以：出了结果就把说明收起来（那是给第一次用的人看的），
@@ -14785,11 +14811,13 @@ function showHome(){
        🚨 所以它必须在**首屏、能直接打字**，而不是藏在某个二级页里 ——
           多一跳就等于他还是会去别处查。 */
     `<div style="display:flex;gap:8px;margin:0 0 14px">
-       <input id="hq" placeholder="🔍 查个词 / 表达，中英都行"
+       <input id="hq" placeholder="查个词 / 表达，中英都行"
          autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search"
          style="flex:1;min-width:0;padding:11px 13px;border:2px solid var(--line);
                 border-radius:12px;font-size:15px;background:var(--card);color:var(--fg)">
-       <button id="hqgo" class="btn" style="flex:0 0 auto;padding:0 16px">查</button>
+       <button id="hqgo" class="sbtn" aria-label="查"><svg viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+         ><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.8-3.8"></path></svg></button>
      </div>` +
     /* 🚨 「今天试试这个」提到最前面 —— 首屏第一个可点的东西应该是
        **今天练什么**，而不是一张功能清单。 */
