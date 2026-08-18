@@ -14166,13 +14166,19 @@ function polBadV2(p, o){
   } else {
     delete p.traps;
     const kept = [];
+    let trivial = 0;
     (Array.isArray(p.fixes) ? p.fixes : []).forEach(f => {
       if (!f) return;
       if (!polQuoteOk(f.quote, said)) return;
       if (!String(f.native || '').trim()) return;
-      if (!ISSUES.includes(String(f.issue || '').trim())) f.issue = '';
+      /* 🚨 只删口水话的不算修改 —— 见 polTrivialFix 上面那段。 */
+      if (polTrivialFix(f.quote, f.native)){ trivial++; return; }
+      f.issue = polIssue(f.issue);
       kept.push(f);
     });
+    if (trivial)
+      bad.push('有 ' + trivial + ' 条只是把口水话/虚词删掉了 —— 那是口语的自然现象，'
+        + '不是错误。要挑**说法本身不对**的：语法错、中式直译、搭配不地道、语域偏了、语气强度');
     /* 🚨 只有 first 轮要求必须有逐处改。改/补/删那几轮是在动稿子，
        他这一轮说的是**指令**不是英语，挑不出毛病是正常的。 */
     if (!kept.length && o.mode === 'first')
@@ -14257,6 +14263,24 @@ function polPrompt(topic, said, dims){
     ' "followup":{"en":"对方顺着这段话最可能追问的一句英文","zh":"一句中文说明它在探什么"}',
     '}',
     '',
+    /* 🚨 Kevin 2026-08-18：「最值钱的五处修改居然全是 bullshit，只是把我说的口水话给删了」
+       「你把那个 for the 这两个单词给删了而已，这有什么意义呢？」
+       原来只写「按值钱程度排」，没说什么叫值钱 —— 而删口水话最容易，它就全挑这个。
+       口语里的重复、卡壳、说一半改口**本来就是自然现象，不是错误**。 */
+    '',
+    '🚨 **什么才算一条修改**（这块他点名骂过，别再交口水话）：',
+    '   ✅ 要挑的是**说法本身不对**：语法错、中式直译、搭配不地道、',
+    '      语域不对（口语词用在正式场合）、语气强度不对。',
+    '      每条都要**给出他没说过的新说法** —— 那才是他能学走的东西。',
+    '   ❌ **不许**把这些当成一条修改：',
+    '      · 删掉 um / you know / like / I mean 这类口水词',
+    '      · 删掉重复的词、说一半又改口的半句',
+    '      · 只删掉 the / a / for / to 这类虚词而不换说法',
+    '      —— 这些是**口语的自然现象**，删了对他没有任何价值。',
+    '   🚨 代码会自动检查：如果 native 只是把 quote 里的虚词删掉、没引入任何新说法，',
+    '      这一条会被丢掉并打回重做。',
+    '   宁可只给 2 条真有价值的，也不要凑 5 条口水话。',
+    '',
     '- fixes **按值钱程度从高到低排**，有几处写几处（不要凑数，也不要只挑一两处敷衍）',
     '- 🚨 quote 必须在他原话里**逐字**出现。改写过的、拼接的、你自己造的一律不行',
     '- rewrite 是**整段**，不是一句；不要中文；不要以 Use/Try/Consider/Change 开头',
@@ -14277,6 +14301,62 @@ function polQuoteOk(quote, said){
 }
 
 const POL_ORDER = /^(use|try|consider|change|say|make sure|remember|avoid|don't|do not)\b/i;
+
+/* ═══ 「这条修改到底值不值钱」═══
+   🚨 Kevin 2026-08-18 原话：「最值钱的五处修改居然全是 bullshit，
+      只是把我说的口水话给删了……你把那个『for the』这两个单词给删了而已，
+      这有什么意义呢？瞎鸡巴搞，越改越差。」
+
+   根因：prompt 只说「按值钱程度排」，没说什么叫值钱。
+   而口语里**口水话、重复、说half改口本来就是自然现象，不是错误** ——
+   删掉它们最容易，模型就专挑这种做，结果五条全是废话。
+
+   判据（能机械算，不靠词表拍脑袋）：
+     native 是 quote 的**子序列**（＝纯删词，没引入任何新说法）
+     且删掉的全是虚词/口水词 → 这条不算修改，丢掉。
+   🚨 故意**不**把所有纯删词都判废：`I am agree → I agree` 删的是 "am"，
+      那是真语法错，必须留。区别就在删掉的是不是虚词。 */
+const POL_FILLER = new Set([
+  'um','uh','er','ah','em','mm','like','you','know','i','mean','sort','kind',
+  'basically','actually','so','well','just','really','the','a','an','and','that',
+  'very','for','to','in','on','at','it','is','was','then','also','some','maybe',
+  'okay','ok','right','yeah','of','this','these','my','our','there','here',
+]);
+
+/* 模型爱写「语法错误」「中式英语」这类近义标签，而 ISSUES 是五选一。
+   原来不在表里就直接清空 → 界面上**每条都没有类型标签**，他少了「这是哪类毛病」这个信号。
+   这里做一层归一化：能对上就对上，实在对不上才清空（宁可不显示，不许编一个）。 */
+function polIssue(s){
+  const t = String(s || '').trim().replace(/[错误问题的]+$/g, '');
+  if (!t) return '';
+  if (ISSUES.includes(t)) return t;
+  const MAP = [
+    [/语法|时态|单复数|冠词|动词|主谓/, '语法'],
+    [/中式|直译|chinglish|逐字/i, '中式直译'],
+    [/搭配|用词|词组|collocation/i, '搭配不地道'],
+    [/语域|正式|口语化|场合|register/i, '语域偏了'],
+    [/语气|强度|委婉|生硬|直接/, '语气强度'],
+  ];
+  for (const [re, v] of MAP) if (re.test(t)) return v;
+  return '';
+}
+
+function polTrivialFix(quote, native){
+  const w = s => (String(s || '').toLowerCase().match(/[a-z']+/g) || []);
+  const q = w(quote), n = w(native);
+  if (!q.length || !n.length) return true;
+  if (q.join(' ') === n.join(' ')) return true;          // 一个字没改
+  /* n 是不是 q 的子序列（保持顺序、只做删除） */
+  let i = 0;
+  const removed = [];
+  for (const x of q){
+    if (i < n.length && n[i] === x) i++;
+    else removed.push(x);
+  }
+  if (i !== n.length) return false;                      // 有新词或改了顺序 → 是真修改
+  if (!removed.length) return true;                      // 完全一样
+  return removed.every(x => POL_FILLER.has(x));          // 删的全是虚词 → 不值钱
+}
 
 /* 校验 + 就地清洗。返回 [坏原因...]，空数组＝可用。
    🚨 会失败的地方（每条都拿坏样本验过）：
@@ -14740,6 +14820,10 @@ async function polOnStop(){
   try {
     polStage('在转写你说的话');
     const part = await toAudioPart(blob);
+    /* 录了多少秒 —— 拿它跟转写词数比，能判出「没转全」。
+       优先用 PCM 长度算（准），拿不到就用按下到松开的墙钟时间兜底。 */
+    POL.saidSec = (part.pcm && part.rate) ? (part.pcm.length / part.rate)
+                                          : ((Date.now() - (POL.t0 || Date.now())) / 1000);
     const said = await polTranscribe(part);
     POL.busy = false;
     await polRun(said, POL.recMode || 'first');
@@ -14839,8 +14923,30 @@ function showPolishResult(){
   const H = t => '<div style="font-weight:800;font-size:15px;margin-bottom:10px">' + t + '</div>';
   const SUB = t => '<div class="t" style="color:var(--muted);margin-top:3px;line-height:1.55">' + t + '</div>';
 
-  /* ① 成稿 */
+  /* ① 你刚才说的 —— **全文，一个字都不省**
+     🚨 Kevin 2026-08-18：「我至少需要你把我刚才说的这些 broken English 的全文
+        整个摘录出来，让我看看自己说得有多差，然后再跟我讲其中要怎么改。」
+     v1 有这一块，**我在 v2 重写时把它删掉了** —— 这是我造成的倒退。
+     它必须排在最前面：先看见自己说的，再看改法，否则改的是什么根本对不上。
+     🚨 不许 slice、不许省略号。 */
+  const saidW = (String(POL.said || '').match(/[A-Za-z']+/g) || []).length;
+  const saidSec = POL.saidSec || 0;
+  /* 语速合理性：正常口语 100–160 wpm。低得离谱说明**转写没转全**，
+     这时候后面所有的分析都是基于残缺文本，必须当场说出来，不能让他自己发现。 */
+  const wpm = saidSec > 5 ? Math.round(saidW / (saidSec / 60)) : 0;
+  const maybeCut = wpm > 0 && wpm < 55;
   let h = '<div ' + CARD + '>' +
+      H('你刚才说的（原话，' + saidW + ' 词' + (saidSec ? ' · ' + Math.round(saidSec) + ' 秒' : '') + '）') +
+      (maybeCut ? '<div class="warn" style="margin-bottom:10px;line-height:1.55">' +
+        '⚠️ 这段说了 ' + Math.round(saidSec) + ' 秒却只转出 ' + saidW + ' 词（' + wpm +
+        ' 词/分，正常 100–160）—— <b>很可能没转全</b>。下面的分析是基于这段文字做的，' +
+        '不全的话请重说一次。</div>' : '') +
+      '<div style="font-size:15px;line-height:1.75;white-space:pre-wrap;' +
+        'color:var(--fg)">' + esc(POL.said) + '</div>' +
+    '</div>' +
+
+  /* ② 成稿 */
+    '<div ' + CARD + '>' +
       H(isZh ? '英文成稿（翻自你说的）' : '英文成稿') +
       '<div style="font-size:16px;line-height:1.7">' + esc(p.draft) + '</div>' +
       '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">' +
