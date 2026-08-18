@@ -14931,16 +14931,17 @@ function showPolishResult(){
      🚨 不许 slice、不许省略号。 */
   const saidW = (String(POL.said || '').match(/[A-Za-z']+/g) || []).length;
   const saidSec = POL.saidSec || 0;
-  /* 语速合理性：正常口语 100–160 wpm。低得离谱说明**转写没转全**，
-     这时候后面所有的分析都是基于残缺文本，必须当场说出来，不能让他自己发现。 */
-  const wpm = saidSec > 5 ? Math.round(saidW / (saidSec / 60)) : 0;
-  const maybeCut = wpm > 0 && wpm < 55;
+  /* 🚨 这里**曾经**有一条「说了 X 秒只转出 Y 词，很可能没转全」的红字警告，已删。
+     2026-08-18 Kevin：「你刚刚在第一个界面不是有一个历史记录，里面有我说的完整的话吗？
+     我看了第一版、第二版、第三版都挺完整的呀……你能不能别犯傻行吗？」
+     —— 他说得对：记录页存的 `rd.said` 一直是全文（我自己写的代码），
+     转写从来没截断过。他抱怨的「只截取了一小段」指的是**结果页压根没显示原话**，
+     而我把它误读成转写有问题，凭空造了个警告去防一个不存在的缺陷。
+     而且它会误报：练口语本来就边想边说，慢速带停顿的词/分很容易低于阈值 ——
+     **对着正常行为报警的检查，比没有检查更糟**。
+     只留客观的词数/秒数，不下判断。 */
   let h = '<div ' + CARD + '>' +
       H('你刚才说的（原话，' + saidW + ' 词' + (saidSec ? ' · ' + Math.round(saidSec) + ' 秒' : '') + '）') +
-      (maybeCut ? '<div class="warn" style="margin-bottom:10px;line-height:1.55">' +
-        '⚠️ 这段说了 ' + Math.round(saidSec) + ' 秒却只转出 ' + saidW + ' 词（' + wpm +
-        ' 词/分，正常 100–160）—— <b>很可能没转全</b>。下面的分析是基于这段文字做的，' +
-        '不全的话请重说一次。</div>' : '') +
       '<div style="font-size:15px;line-height:1.75;white-space:pre-wrap;' +
         'color:var(--fg)">' + esc(POL.said) + '</div>' +
     '</div>' +
