@@ -14447,9 +14447,13 @@ async function polTranscribe(part){
 
 /* ── 存哪 ────────────────────────────────────────────────
    复用「我的记录」那套 IndexedDB，另开 `polish` store —— 跟场景练习分开列。 */
-function polNew(topic){
+/* 🚨 `guide` 也要存进记录里。
+   Kevin 2026-08-18：「为啥我在打磨过的这些记录里面不能再接着说呢？」
+   —— 「接着打磨」要把上下文整个装回去，而维度（dims）只活在 POL.guide 里。
+   不存的话接回去就没有维度对账，跟场景练习那边「只存 id、题库一轮换就接不回来」是同一个坑。 */
+function polNew(topic, guide){
   return {id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          on: TODAY(), t0: Date.now(), topic: topic, rounds: []};
+          on: TODAY(), t0: Date.now(), topic: topic, guide: guide || null, rounds: []};
 }
 async function polSave(r){
   if (!r || !r.rounds || !r.rounds.length) return null;
@@ -14792,7 +14796,7 @@ async function polRun(said, mode, dropped){
        所以他能回看「这一版比上一版改了什么」。 */
     const round = {said: said, res: res, at: Date.now(), mode: mode, v: POL.round};
     if (!POL.rec_id){
-      const r = polNew(POL.topic);
+      const r = polNew(POL.topic, POL.guide);
       r.rounds.push(round);
       POL.rec_id = await polSave(r);
       POL.rec_obj = r;
@@ -15086,10 +15090,15 @@ function showPolishRec(r){
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
   $('#sub').textContent = String(r.topic || '').slice(0, 30);
   const f = $('#feed');
-  f.innerHTML = '<div class="card" style="padding:14px">' +
-      '<div class="k" style="font-weight:800">' + esc(r.topic) + '</div>' +
+  /* 最新那一版 —— 「接着打磨」就从它接回去。
+     🚨 `said` 挂在**轮次**上、`res` 才是结果，两个都要拿，别混。 */
+  const lastRound = (r.rounds || [])[r.rounds.length - 1] || {};
+  const last = lastRound.res || {};
+  f.innerHTML = '<div class="pol">' +
+    '<div class="card" style="padding:16px">' +
+      '<div style="font-weight:800">' + esc(r.topic) + '</div>' +
       '<div class="t" style="color:var(--muted);margin-top:4px">' +
-        esc(r.on) + ' · ' + r.rounds.length + ' 次</div>' +
+        esc(r.on) + ' · ' + r.rounds.length + ' 版</div>' +
     '</div>' +
     r.rounds.map((rd, i) => {
       const p = rd.res || {};
@@ -15123,8 +15132,38 @@ function showPolishRec(r){
               ' → ' + esc(x.good) + '</div>').join('') : '') +
       '</div>';
     }).join('') +
-    '<div class="card" style="padding:14px">' +
-      '<button id="poldel" class="rchip">删掉这条记录</button></div>';
+    '<div class="card" style="padding:16px">' +
+      '<button id="polresume" class="btn wide">接着打磨这一稿</button>' +
+      '<div class="t" style="color:var(--muted);margin-top:8px;line-height:1.55">' +
+        '把这一稿装回去接着改：补几个点、按你的要求改、或者划掉不想讲的。' +
+        (last.points ? '' : '<br>⚠️ 这条是旧版记录，没存要点清单，接回去会重新拆一遍。') +
+      '</div>' +
+      '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">' +
+        '<button id="poldel" class="rowbtn">删掉这条记录</button></div>' +
+    '</div></div>';
+
+  /* 🚨 「接着打磨」不是重新开一题 —— 要把上下文整个装回去，
+     并且**沿用同一条记录**（rec_id），否则同一个稿子会散成好几条。
+     这跟场景练习那边「接着说」是同一条要求，我在打磨这边漏了，被 Kevin 逮到第二次。 */
+  $('#polresume').onclick = () => {
+    polReset();
+    POL.topic = r.topic;
+    POL.guide = r.guide || {asks: [], dims: [], traps: []};
+    POL.rec_id = r.id;
+    POL.rec_obj = r;
+    POL.round = r.rounds.length;
+    /* 锚定要用**最初那段话**（第一轮的 said），不是最后一轮的指令 ——
+       最后一轮很可能是「砍掉一半」这种中文指令，拿它当原话，
+       直译陷阱/逐处改会全部落空。跟 polBadV2 里 origSaid 那条同一个理。 */
+    POL.said = (((r.rounds || [])[0] || {}).said) || lastRound.said || '';
+    POL.lang = polLang(POL.said);
+    /* 旧记录没有 points（v1 存的是 rewrite）→ 没法直接接着改，
+       装回 said 让他从「整段重说」起步，别假装能接。 */
+    POL.res = last.points ? last : null;
+    if (POL.res){ POL.onResult = false; go(showPolishResult, '接着打磨'); }
+    else { POL.onResult = false; go(showPolishPrep, '开口前'); }
+  };
+
   $('#poldel').onclick = async () => {
     if (await polDel(r.id)){ toast('删了'); back(); }
     else toast('删不掉');
