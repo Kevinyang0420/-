@@ -637,9 +637,13 @@ button{font-family:inherit}
 
 .lvl i.f{background:var(--tint)}
 
-.done{flex:0 0 auto;font-size:11px;color:var(--ok-dark);font-weight:800;
+/* 🚨 2026-08-18 对比度闸门抓到的第二处同型 bug（跟 #toast 一个病）：
+   底色 `#e8f8dc` 是**浅色主题时代写死的浅绿**，而字色 `--ok-dark` 随主题转黑
+   变成了近白 `#e8e8e8` → 线上实测 **1.10:1**，记录卡上那个日期根本看不见。
+   写死的颜色 + 会变的 token 混用，迟早撞车。两边都改成跟着 token 走。 */
+.done{flex:0 0 auto;font-size:11px;color:var(--muted);font-weight:800;
 
-  background:#e8f8dc;padding:3px 9px;border-radius:999px}
+  background:var(--brand-soft);padding:3px 9px;border-radius:999px}
 
 /* 简介卡：原来是一块灰底，跟卡片体系不搭 */
 
@@ -815,9 +819,52 @@ button{font-family:inherit}
 
 #setup .warn{font-size:12.5px;color:var(--muted);line-height:1.55}
 
-.dots::after{content:'';animation:d 1.1s steps(4,end) infinite}
+/* ═══ 等待指示器 ═══
+   Kevin 2026-08-18：「每次等待下面都会产生一个白条，这个很丑，能不能搞个进度条」
 
-@keyframes d{0%{content:''}25%{content:'·'}50%{content:'··'}75%{content:'···'}}
+   两件事分开：那个「白条」是 #toast 白底白字（已单独修）；这里是**等待本身**的观感。
+   设计走 Grok 的方案（他给的两条里选「错峰脉冲点 + 已知段数时的离散段条」）：
+     · 不做假进度条 —— 爬到 90% 卡住比转圈更伤信任，而我们**真的不知道**百分比
+     · 只有真知道段数时（长录音切段转写）才给离散段条，界面不撒谎
+     · 放**内容区内联**，不放屏幕底部：底部那条正是他讨厌的 toast 的位置
+
+   🚨 单一配置点：全站 10 处等待都写成 `<span class="dots">文字</span>`，
+      所以只改这里的 CSS，10 处一起升级，一个调用点都不用动。
+   🚨 原来那版用 `content` 做动画 —— 那是非标准写法（只有 WebKit 认），
+      本身就是它看起来「死气沉沉」的一半原因。 */
+.dots{display:inline-flex;align-items:center;gap:9px}
+
+/* 三个点用一个伪元素 + box-shadow 画出来，高光在三点之间来回走。
+   一个元素就够，不用往 10 个调用点里塞 markup。 */
+.dots::after{content:'';width:5px;height:5px;border-radius:50%;flex:0 0 auto;
+  background:#fff;box-shadow:9px 0 #fff,18px 0 #fff;margin-right:18px;
+  animation:dotwave 1.4s ease-in-out infinite}
+
+@keyframes dotwave{
+  0%,100%{background:rgba(255,255,255,1);
+          box-shadow:9px 0 rgba(255,255,255,.26),18px 0 rgba(255,255,255,.26)}
+  33%    {background:rgba(255,255,255,.26);
+          box-shadow:9px 0 rgba(255,255,255,1),18px 0 rgba(255,255,255,.26)}
+  66%    {background:rgba(255,255,255,.26);
+          box-shadow:9px 0 rgba(255,255,255,.26),18px 0 rgba(255,255,255,1)}}
+
+/* 确定进度：只在**真知道**总段数时用（长录音切段转写）。
+   done/current 才是实心 —— 没走到的段保持暗，不预支进度。 */
+.segs{display:inline-flex;gap:5px;align-items:center;margin-right:9px}
+.segs i{width:11px;height:3px;border-radius:1.5px;background:rgba(255,255,255,.16);
+  display:block;flex:0 0 auto}
+.segs i.on{background:#fff}
+.segs i.cur{background:#fff;animation:segp 1.25s ease-in-out infinite}
+@keyframes segp{0%,100%{opacity:1;transform:scaleY(1)}
+                50%{opacity:.45;transform:scaleY(.65)}}
+
+/* 🚨 减弱动效：动画停掉，但**不能变成看不见** —— 停掉之后三个点要一律可见，
+   否则开了这个设置的人在等待时屏幕上什么都没有。 */
+@media (prefers-reduced-motion:reduce){
+  .dots::after{animation:none;
+    background:rgba(255,255,255,.85);
+    box-shadow:9px 0 rgba(255,255,255,.85),18px 0 rgba(255,255,255,.85)}
+  .segs i.cur{animation:none}}
 
 
 
@@ -1021,9 +1068,16 @@ button{font-family:inherit}
 
 .shop .it .ds{font-size:10.5px;color:var(--faint);margin-top:4px;line-height:1.35}
 
+/* 🚨 Kevin 2026-08-18：「每次等待下面都会产生一个白条，这个很丑」——
+   那不是进度条，是**这条提示的字看不见**。
+   根因：主题整体转黑之后 `--fg-strong` 恒为 `#ffffff`，而这里写死 `color:#fff`
+   → 白底白字，对比度实测 **1.00**（线上量的，不是推的），于是只剩一个白方块。
+   同一个坑本文件已经踩过一次 —— `--on-accent` 就是为「深色下 accent 变白会白底白字」
+   加的，toast 当时漏了。**token 改了，用它的地方没跟着改**，又一次。
+   修成它自己的设计语言：主按钮是纯白底黑字，提示也用这一套（21:1）。 */
 #toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));
 
-  transform:translate(-50%,10px);background:var(--fg-strong);color:#fff;
+  transform:translate(-50%,10px);background:var(--brand);color:var(--on-accent);
 
   padding:9px 15px;border-radius:12px;font-size:13px;font-weight:700;opacity:0;
 
@@ -4384,7 +4438,8 @@ async function askBackendAudioSegmented(part, secs){
 
   for (let i = 0, k = 0; i < part.pcm.length; i += per, k++){
 
-    $('#hint').innerHTML = '<span class="dots">在转第 ' + (k + 1) + '/' + total + ' 段</span>';
+    // 这是全站唯一**真知道总数**的等待，用离散段条（其余一律脉冲点）
+    $('#hint').innerHTML = segWait('在转第 ' + (k + 1) + '/' + total + ' 段', k + 1, total);
 
     const seg = part.pcm.slice(i, Math.min(i + per, part.pcm.length));
 
@@ -5041,6 +5096,19 @@ function sayQueue(items){
 const esc = s => String(s ?? '').replace(/[&<>"]/g,
 
   c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* 等待指示器的两种形态（样式见 .dots / .segs 那一段）。
+   🚨 `segWait` 只许在**真知道总数**的时候调 —— 传不出 total 就用 `dotWait`。
+      拿假的总数画段条 = 界面撒谎，比转圈更糟。 */
+const dotWait = msg => '<span class="dots">' + esc(msg) + '</span>';
+const segWait = (msg, cur, total) => {
+  const n = Math.max(0, Math.floor(total) || 0), c = Math.max(1, Math.floor(cur) || 1);
+  if (!n) return dotWait(msg);                       // 不知道总数就别画段条
+  let s = '<span class="segs">';
+  for (let i = 1; i <= n; i++)
+    s += '<i class="' + (i < c ? 'on' : i === c ? 'cur' : '') + '"></i>';
+  return s + '</span>' + esc(msg);
+};
 
 
 
@@ -13998,7 +14066,7 @@ async function polTranscribe(part){
     const total = Math.ceil(part.pcm.length / per);
     const out = [];
     for (let i = 0, k = 0; i < part.pcm.length; i += per, k++){
-      polStage('在转第 ' + (k + 1) + '/' + total + ' 段');
+      polStage('在转第 ' + (k + 1) + '/' + total + ' 段', k + 1, total);
       const seg = part.pcm.slice(i, Math.min(i + per, part.pcm.length));
       out.push(await one({blob: encodeWav(seg, part.rate), mime: 'audio/wav'}));
     }
@@ -14056,10 +14124,12 @@ function polTopicPush(t){
       （「根本没地方点」）。所以出题这一屏只有：输入框 + 一个大按钮 + 最近用过的，
       guidance 和结果都在下面，滚不到的地方等于不存在。 */
 
-function polStage(msg){
+/* cur/total 只有切段转写那一处给得出来 —— 给了就画离散段条，没给就脉冲点。 */
+function polStage(msg, cur, total){
   POL.stage = msg || '';
   const el = document.getElementById('polstage');
-  if (el) el.innerHTML = msg ? '<span class="dots">' + esc(msg) + '</span>' : '';
+  if (!el) return;
+  el.innerHTML = !msg ? '' : (total ? segWait(msg, cur, total) : dotWait(msg));
 }
 
 /* 出题（打磨这一档的根屏） */
