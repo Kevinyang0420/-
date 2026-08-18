@@ -1355,7 +1355,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
 
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
 
-const BANKV = 'a7774ce2';
+const BANKV = 'b030551b';
 
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
@@ -5420,6 +5420,12 @@ let LV = 0;                 // 选中的难度（0 = 还没选）
 
 function showList(){
 
+  /* 🚨 高亮由**当前渲染的这一屏**认领，不靠 SESSUI.top 自己漂。
+     2026-08-18 实测：从「打磨」点底部的口语 tab 回来，落在练习屏上、
+     高亮的却还是「打磨」—— TABS.speak 只调 showList()，没人把 top 拨回来。
+     三个屏各自在开头认领一次，这个漂移就不可能出现。 */
+  SESSUI.top = 'do';
+
   $('#list').hidden = false;
 
   $('#feed').innerHTML = '';
@@ -5870,21 +5876,32 @@ const SESSUI = {top: 'do'};        // do = 练习 / rec = 我的记录
 function sessTopTabs(){
   const b = (k, nm) => '<button class="rchip' + (SESSUI.top === k ? ' on' : '') +
     '" data-stop="' + k + '">' + nm + '</button>';
+  /* 打磨（Kevin 2026-08-18）夹在中间 —— 它跟「练习」是并列的两种练法，
+     「我的记录」是回看，放最后。 */
   return '<div class="tabs" style="margin-bottom:12px">' +
-    b('do', '练习') + b('rec', '我的记录') + '</div>';
+    b('do', '练习') + b('pol', '打磨') + b('rec', '我的记录') + '</div>';
 }
 
 function bindSessTop(){
   document.querySelectorAll('#feed [data-stop],#list [data-stop]').forEach(x =>
     x.onclick = () => {
-      SESSUI.top = x.dataset.stop;
-      if (SESSUI.top === 'rec') go(showMyRecs, '我的记录');
-      else back();
+      const to = x.dataset.stop;
+      if (to === SESSUI.top) return;        // 点自己不动，别把当前屏又推一层
+      SESSUI.top = to;
+      /* 🚨 先把 NAV 清空再进目标屏。
+         口语根（showList）是在 **NAV 为空**的状态下渲染的（见 TABS.speak），
+         所以这里必须清成 0 而不是留 1 —— 留 1 的话 back() 会把人弹出这个 tab。
+         不清的话「练习↔打磨↔记录」互切会越推越深，返回键要点好几下才出得去。 */
+      NAV.length = 0;
+      if (to === 'rec') go(showMyRecs, '我的记录');
+      else if (to === 'pol') go(showPolish, '口语打磨');
+      else { showList(); paintNav(); }
     });
 }
 
 /* ── 列表 ─────────────────────────────────────────────────── */
 async function showMyRecs(){
+  SESSUI.top = 'rec';                 // 🚨 见 showList 里那段：高亮由本屏认领
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
   const f = $('#feed');
   f.innerHTML = sessTopTabs() + '<div class="note">正在读…</div>';
@@ -6489,7 +6506,7 @@ function sessDB(){
   if (_db) return Promise.resolve(_db);
   return new Promise((res, rej) => {
     let rq;
-    try { rq = indexedDB.open(SESSDB, 3); }   // 3：加了听力的 lrec store
+    try { rq = indexedDB.open(SESSDB, 4); }   // 4：加了口语打磨的 polish store
     catch(e){ return rej(e); }
     rq.onupgradeneeded = () => {
       const db = rq.result;
@@ -6510,6 +6527,10 @@ function sessDB(){
          🚨 加这个 store 同样要把上面 open(SESSDB, N) 的版本号 +1。 */
       if (!db.objectStoreNames.contains('lrec'))
         db.createObjectStore('lrec', {keyPath: 'id'});
+      /* 口语打磨（Kevin 2026-08-18）。跟场景练习分开存 —— 两者不是一回事，
+         混在一起他找不着。🚨 同样要把上面 open(SESSDB, N) 的版本号 +1。 */
+      if (!db.objectStoreNames.contains('polish'))
+        db.createObjectStore('polish', {keyPath: 'id'});
     };
     rq.onsuccess = () => { _db = rq.result; res(_db); };
     rq.onerror = () => rej(rq.error || new Error('打不开本地库'));
@@ -13647,6 +13668,836 @@ async function orderScenario(){
 
 }
 
+
+
+/* ═══════════════════ 口语打磨 ═══════════════════
+
+   Kevin 2026-08-18：「我有时候想让它帮我做一些专项的 English Polish。比如我会想到
+   一些 interview 的回复，可能先用我的 broken English 说出来，然后想让它帮我专项地
+   去做一下口语提升。」「查词那个入口应该更多是做一些词语查询，适合那种短的、临时
+   一下子想起来的……像这种比较长的 polish，应该在一个专项的地方打开。」
+
+   🚨 为什么不能塞进查词：`kindOf()` 把「多于一个词」一律判成 `phrase`，
+      一整段面试回答会走 `DICT_RULES_EN` 那套**词条**校验（defs/coll/spoken/near，
+      且「每条例句必须真的含那个表达」「pick 必须跟某个 en 一字不差」）——
+      等于拿一整段话当一个词汇条目查。
+
+   🚨 为什么不能塞进陪练：陪练是**角色扮演 + 打断预算**（每 3–4 轮才纠、绝不连着
+      两轮）。他要的是「一口气说完，你逐处给我改」——跟打断预算正好相反。
+
+   三条口径（PRD 已确认，别自作主张改）：
+     ① topic **只手输**，不做题库
+     ② 逐处改先给**最值钱的 5 条**，其余折叠
+     ③ 追问**只有一轮**、默认收起 —— 点开才有，且答完就不能再追问下去
+
+   复用现成的：`quoteAnchored` 的锚定思路、`ISSUES` 五选一、`cleanZh` 过滤专业判断、
+   `askBackendAudioOne(part, overridePrompt)` 的**只转写**模式、`toAudioPart` 的
+   16k 重编码 + 切段、`nbAdd`/`subEntry` 收进本子。 */
+
+const POL_DIM_MIN = 3, POL_DIM_MAX = 5;
+const POL_TOP = 5;                       // 先给几条，其余折叠（Kevin 选的 B）
+const POL_HIST = 'alex_pol_topics';      // 最近手输过的 topic
+const POL_TP = 'Transcribe the attached audio verbatim. Output JSON: {"said":"…"}. '
+             + 'Do not judge, do not correct, do not add anything else.';
+
+let POL = null;
+function polReset(){
+  POL = {topic:'', guide:null, said:'', res:null, round:0,
+         busy:false, rec:null, chunks:[], stream:null, t0:0, recing:false,
+         err:'', stage:'',
+         rec_id:null, rec_obj:null,   // 这一题的落盘记录（重说追加成新的一轮）
+         fuUsed:false};               // 追问只有一轮，用过就不再给入口
+}
+polReset();
+
+/* ── 开口前的 guidance ──────────────────────────────────────
+   他明确要的第 4 条：「可以列出对方可能会问什么问题、可能会 expect 你从哪些方面
+   回答」。dims 不是装饰 —— 说完之后要拿它逐条对账（cover），所以 nm 必须稳定。 */
+function polGuidePrompt(topic){
+  return [
+    '你是 Alex —— 英语教练。他要练一段**英语口语表达**，题目是他自己出的。',
+    '你现在只做开口前的准备，**不要替他写答案**，也不要扮演任何角色。',
+    '',
+    '题目：' + topic,
+    '',
+    '他的真实身份：在香港做审计/财务尽调的专业人士，母语中文，英语能沟通但不够地道。',
+    '',
+    '🚨 只讲**英语表达**层面的事：怎么说、用什么词、什么语域。',
+    '   绝不讲专业判断（该不该这么谈、对他有什么后果、职业建议）——那不是你的活。',
+    '',
+    '输出 JSON，只有这三个字段：',
+    '{',
+    ' "asks":[{"en":"对方很可能追问的一句英文原话","zh":"一句中文说明这句在探什么"}],',
+    ' "dims":[{"nm":"维度名（4-10 个中文字，短，后面要拿它逐条对账）",',
+    '          "why":"一句中文：这个场合为什么非讲这一条不可"}],',
+    ' "traps":[{"bad":"中国人在这题上最容易说出口的那一版（英文原句）",',
+    '           "why":"一句中文：它为什么不地道 / 语域偏在哪"}]',
+    '}',
+    '',
+    '- asks 给 3 到 5 条，必须是**完整的英文问句**',
+    '- dims 给 ' + POL_DIM_MIN + ' 到 ' + POL_DIM_MAX + ' 条，**nm 之间不许重复、不许互相包含**',
+    '- traps 给 2 到 3 条',
+    '- 全部中文用标准白话，不要文言腔'
+  ].join('\n');
+}
+
+/* 校验：什么输入会让它失败 —— 少字段、条数不够、nm 重复、asks 不是问句、
+   trap 的 bad 不含英文。全都会真的驳回并重来（`polAsk` 带着原因重试）。 */
+function polGuideBad(g){
+  const bad = [];
+  const arr = k => Array.isArray(g && g[k]) ? g[k] : null;
+  const hasEn = s => /[A-Za-z]/.test(String(s || ''));
+  const a = arr('asks'), d = arr('dims'), t = arr('traps');
+  if (!a) bad.push('asks 不是数组');
+  else {
+    if (a.length < 3 || a.length > 5) bad.push('asks 要 3-5 条，给了 ' + a.length);
+    a.forEach((x, i) => {
+      if (!hasEn(x && x.en)) bad.push('asks[' + i + '].en 不含英文');
+      else if (String(x.en).indexOf('?') < 0) bad.push('asks[' + i + '].en 不是问句（没有问号）');
+      if (!String((x && x.zh) || '').trim()) bad.push('asks[' + i + '].zh 空的');
+    });
+  }
+  if (!d) bad.push('dims 不是数组');
+  else {
+    if (d.length < POL_DIM_MIN || d.length > POL_DIM_MAX)
+      bad.push('dims 要 ' + POL_DIM_MIN + '-' + POL_DIM_MAX + ' 条，给了 ' + d.length);
+    const seen = [];
+    d.forEach((x, i) => {
+      const nm = String((x && x.nm) || '').trim();
+      if (!nm) bad.push('dims[' + i + '].nm 空的');
+      if (!String((x && x.why) || '').trim()) bad.push('dims[' + i + '].why 空的');
+      /* 🚨 不止查全等 —— 「沟通方式」和「沟通」这种互相包含的也算重复，
+         否则对账表上会出现两条实际同义的维度，他一眼就看出是凑数的。 */
+      if (nm && seen.some(s => s === nm || s.indexOf(nm) >= 0 || nm.indexOf(s) >= 0))
+        bad.push('dims 里「' + nm + '」跟前面的重复或互相包含');
+      if (nm) seen.push(nm);
+    });
+  }
+  if (!t) bad.push('traps 不是数组');
+  else {
+    if (t.length < 2) bad.push('traps 至少 2 条，给了 ' + t.length);
+    t.forEach((x, i) => {
+      if (!hasEn(x && x.bad)) bad.push('traps[' + i + '].bad 不含英文');
+      if (!String((x && x.why) || '').trim()) bad.push('traps[' + i + '].why 空的');
+    });
+  }
+  return bad;
+}
+
+/* ── 打磨本体 ────────────────────────────────────────────── */
+function polPrompt(topic, said, dims){
+  return [
+    '你是 Alex —— 英语教练。他刚刚用英语说了一段话，你只做一件事：',
+    '**把他这段话打磨成地道的英语**。',
+    '',
+    '🚨 你不扮演任何角色，不替任何人回话，不跟他一问一答。',
+    '🚨 你写的每一句英文都是**他**要说出口的话 —— 保持同一个言语行为、同一个立场。',
+    '   写完自查：这句是他对着别人说的，还是别人对着他说的？后者一律重写。',
+    '🚨 只讲英语（语法、地道说法、搭配、语域、语气强度）。',
+    '   绝不讲专业判断、后果、策略 —— 那不是你的活。',
+    '',
+    '题目：' + topic,
+    '',
+    '他刚才说的（转写原文，要打磨的就是这一段）：',
+    '"""',
+    said,
+    '"""',
+    '',
+    /* 🚨 给**编号**，让它回编号 —— 别让它抄中文串。
+       2026-08-18 真调用实测：要求「nm 一字不差照抄」，连试三次都对不上，
+       整份被驳、他什么都拿不到。抄字符串是模型最不可靠的活，
+       而「编号→名字」是纯映射 —— 算术归代码。 */
+    '开口前给他列的维度（cover 要**逐条对账**，每条回它的编号 i）：',
+    (dims || []).map((d, i) => '  ' + (i + 1) + '. ' + d.nm + '：' + d.why).join('\n'),
+    '',
+    '输出 JSON：',
+    '{',
+    ' "fixes":[{"quote":"从他原话里**原样摘出来**的一小段（一字不差，别改写）",',
+    '           "issue":"' + ISSUES.join(' / ') + ' 五选一",',
+    '           "native":"母语者这一小段会怎么说（只给这一小段，不是整段）"}],',
+    ' "rewrite":"整段重写：一段可以直接照念的英文，保持他的原意和立场",',
+    ' "cover":[{"i":上面维度的编号（数字）,"ok":true 或 false,',
+    '           "how":"ok=false 时写一句中文：这一条该怎么补（英文例句放在这句里面）；ok=true 时写他哪句话覆盖到了"}],',
+    ' "takeaways":[{"en":"可以带走的英文句式/表达","zh":"一句中文说明什么时候用",',
+    '               "reg":"正式 或 中性 或 口语"}],',
+    ' "followup":{"en":"对方顺着这段话最可能追问的一句英文","zh":"一句中文说明它在探什么"}',
+    '}',
+    '',
+    '- fixes **按值钱程度从高到低排**，有几处写几处（不要凑数，也不要只挑一两处敷衍）',
+    '- 🚨 quote 必须在他原话里**逐字**出现。改写过的、拼接的、你自己造的一律不行',
+    '- rewrite 是**整段**，不是一句；不要中文；不要以 Use/Try/Consider/Change 开头',
+    '  （那是在指挥他，不是给他范例）',
+    '- cover **每个编号都要有一条**，一条不许漏；他确实没讲到的就老实写 false',
+    '- takeaways 3 到 5 条',
+    '- 全部中文用标准白话，不要文言腔'
+  ].join('\n');
+}
+
+/* quote 必须在他原话里逐字找得到 —— 跟 `quoteAnchored` 同一条判据，
+   这里按**每条**判：不合格的丢掉那一条，全丢光才算整份废。 */
+function polQuoteOk(quote, said){
+  const norm = s => (String(s || '').toLowerCase().match(/[a-z0-9']+/g) || []).join(' ');
+  const q = norm(quote);
+  if (!q) return false;
+  return norm(said).indexOf(q) >= 0;
+}
+
+const POL_ORDER = /^(use|try|consider|change|say|make sure|remember|avoid|don't|do not)\b/i;
+
+/* 校验 + 就地清洗。返回 [坏原因...]，空数组＝可用。
+   🚨 会失败的地方（每条都拿坏样本验过）：
+     · quote 编造的 → 该条被丢掉；全编造 → 整份废
+     · rewrite 混中文 / 太短 / 以 Use 开头 → 废
+     · cover 漏了某个维度、或 nm 对不上 → 废
+     · cover 说没说到却不给怎么补 → 废
+   🚨 **故意不查「cover 不许全 true」** —— 他要是真的全讲到了，全 true 就是对的。
+      「不许恒绿」那一条靠 E2E 拿一段只讲一个维度的回答去验，不是靠运行时硬拦。 */
+function polBad(p, said, dims){
+  const bad = [];
+  if (!p || typeof p !== 'object') return ['返回不是对象'];
+
+  // ① fixes：逐条锚定
+  if (!Array.isArray(p.fixes)) bad.push('fixes 不是数组');
+  else {
+    const kept = [];
+    p.fixes.forEach(f => {
+      if (!f) return;
+      if (!polQuoteOk(f.quote, said)) return;         // 摘错了 → 丢掉这一条
+      if (!String(f.native || '').trim()) return;     // 没给母语者说法 → 没用
+      if (!ISSUES.includes(String(f.issue || '').trim())) f.issue = '';
+      kept.push(f);
+    });
+    if (!kept.length) bad.push('fixes 里没有一条的 quote 能在他原话里逐字找到');
+    p.fixes = kept;
+  }
+
+  // ② rewrite：能直接照念
+  const rw = String(p.rewrite || '').trim();
+  const wc = s => (String(s).match(/[A-Za-z']+/g) || []).length;
+  if (!rw) bad.push('rewrite 空的');
+  else {
+    if (/[一-鿿]/.test(rw)) bad.push('rewrite 里混了中文');
+    if (POL_ORDER.test(rw)) bad.push('rewrite 以「' + rw.split(/\s+/)[0] + '」开头 —— 那是指挥不是范例');
+    /* 🚨 判「是不是一段」，不是「够不够长」。
+       第一版按词数比例卡 60%，而他啰嗦说 132 词、模型给一段紧凑的 46 词重写 ——
+       那是**好答案**，却被驳三次，最后他什么都拿不到。
+       比例是错的工具：意图本来就是「不能缩成一句」。
+       所以直接判句数和词数；比例只留 25% 当防掏空的下限。 */
+    const sents = (rw.match(/[.!?]+(\s|$)/g) || []).length;
+    if (wc(rw) < 25 || sents < 2)
+      bad.push('rewrite 只有 ' + wc(rw) + ' 词 / ' + sents + ' 句 —— 缩成一句了，不叫整段重写');
+    else if (wc(rw) < wc(said) * 0.25)
+      bad.push('rewrite 只有 ' + wc(rw) + ' 词，他原话 ' + wc(said) + ' 词 —— 把内容掏掉太多了');
+  }
+
+  /* ③ cover：逐条对账，一个维度都不许漏。
+     🚨 认的是**编号**不是名字 —— 名字由这里映射回去。
+        （真调用实测：让模型抄中文名，三次都对不上，整份被驳。）
+        `nm` 仍然兼容：老记录里存的是名字，且模型偶尔会回名字，能对上就认。 */
+  const want = (dims || []).map(d => String(d.nm || '').trim()).filter(Boolean);
+  if (!Array.isArray(p.cover)) bad.push('cover 不是数组');
+  else if (want.length){
+    const seen = {};
+    const kept = [];
+    p.cover.forEach(c => {
+      if (!c) return;
+      let idx = -1;
+      const i1 = parseInt(c.i, 10);
+      if (i1 >= 1 && i1 <= want.length) idx = i1 - 1;
+      else {
+        const j = want.indexOf(String(c.nm || '').trim());
+        if (j >= 0) idx = j;
+      }
+      if (idx < 0) return;                 // 编号越界／对不上 → 丢掉这一行
+      if (seen[idx]) return;               // 同一个维度回了两遍 → 只留第一条
+      seen[idx] = 1;
+      c.nm = want[idx];                    // 名字由代码填，不靠模型抄
+      c.ok = !!c.ok;
+      kept.push(c);
+      if (!String(c.how || '').trim())
+        bad.push('cover「' + c.nm + '」没写 how（' +
+                 (c.ok ? '要说他哪句覆盖到了' : '要说这一条怎么补') + '）');
+    });
+    want.forEach((nm, i) => {
+      if (!seen[i]) bad.push('cover 漏了维度「' + nm + '」');
+    });
+    /* 按维度顺序排好再交出去 —— 对账表的行序要跟开口前那一屏一致，
+       否则他要在两屏之间来回找。 */
+    p.cover = kept.sort((a, b) => want.indexOf(a.nm) - want.indexOf(b.nm));
+  }
+
+  // ④ takeaways
+  if (!Array.isArray(p.takeaways) || p.takeaways.length < 3)
+    bad.push('takeaways 至少 3 条');
+  else {
+    p.takeaways = p.takeaways.filter(t => t && /[A-Za-z]/.test(String(t.en || '')));
+    if (p.takeaways.length < 3) bad.push('takeaways 里含英文的不足 3 条');
+    p.takeaways.forEach(t => {
+      if (!DREGS.includes(String(t.reg || '').trim())) t.reg = '';
+    });
+  }
+
+  // ⑤ followup：一句英文问句
+  const fu = p.followup || {};
+  if (!/[A-Za-z]/.test(String(fu.en || '')) || String(fu.en).indexOf('?') < 0)
+    bad.push('followup.en 不是英文问句');
+
+  // ⑥ 中文一律过一遍专业判断过滤（跟陪练同一道闸）
+  (p.fixes || []).forEach(f => { f.zh = cleanZh(f.zh || ''); });
+  (p.cover || []).forEach(c => { c.how = cleanZh(c.how || '') || c.how; });
+  (p.takeaways || []).forEach(t => { t.zh = cleanZh(t.zh || '') || t.zh; });
+
+  return bad;
+}
+
+/* 统一的「问一次，最多三轮，带着上一次错在哪重试」——
+   跟 `dictLook` 同一个套路：盲重试等于把同一个 prompt 再送一遍。 */
+async function polAsk(buildPrompt, check, tries){
+  let last = null;
+  for (let i = 0; i < (tries || 3); i++){
+    let j = null;
+    let p = buildPrompt();
+    if (last) p += '\n\n🚨 你上一次的输出被判废了，原因是：' + last + '\n这一次务必避开。';
+    try { j = firstJson(await textCall(p, 0.3)); }
+    catch(err){ last = err.message || String(err); continue; }
+    if (!j){ last = '返回里没有完整的 JSON'; continue; }
+    const bad = check(j);
+    if (!bad.length) return j;
+    last = bad.join('；');
+  }
+  throw new Error(last || '试了三次都没出合格的结果');
+}
+
+async function polMakeGuide(topic){
+  return await polAsk(() => polGuidePrompt(topic), polGuideBad);
+}
+
+async function polMakeResult(topic, said, dims){
+  return await polAsk(() => polPrompt(topic, said, dims), j => polBad(j, said, dims));
+}
+
+/* ── 只转写，不判断 ──────────────────────────────────────────
+   🚨 陪练那条路（askBackendAudio / askGemini）会把**场景卡**塞进 prompt 再让模型
+      顺手做决策。打磨这里绝不能用它：没有场景卡，而且我们要的就是他原话，
+      一个字都不许被改写。 */
+async function polTranscribe(part){
+  const one = async pt => {
+    if (pick('audio') === 'backend'){
+      const d = await askBackendAudioOne(pt, POL_TP);
+      return String((d && d.said) || '').trim();
+    }
+    const txt = await gemini([{text: POL_TP},
+      {inline_data:{mime_type: pt.mime, data: await b64(pt.blob)}}], 0.2);
+    const d = firstJson(txt);
+    return String((d && d.said) || '').trim();
+  };
+
+  const secs = part.pcm && part.rate ? part.pcm.length / part.rate : 0;
+  if (secs > AUDIO_SEG_SEC + 5 && part.pcm){
+    const per = Math.ceil(part.pcm.length / Math.ceil(secs / AUDIO_SEG_SEC));
+    const total = Math.ceil(part.pcm.length / per);
+    const out = [];
+    for (let i = 0, k = 0; i < part.pcm.length; i += per, k++){
+      polStage('在转第 ' + (k + 1) + '/' + total + ' 段');
+      const seg = part.pcm.slice(i, Math.min(i + per, part.pcm.length));
+      out.push(await one({blob: encodeWav(seg, part.rate), mime: 'audio/wav'}));
+    }
+    const said = out.filter(Boolean).join(' ');
+    if (!said) throw new Error('这段录音没转出文字，再说一次');
+    return said;
+  }
+  const said = await one(part);
+  if (!said) throw new Error('这段录音没转出文字，再说一次');
+  return said;
+}
+
+/* ── 存哪 ────────────────────────────────────────────────
+   复用「我的记录」那套 IndexedDB，另开 `polish` store —— 跟场景练习分开列。 */
+function polNew(topic){
+  return {id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          on: TODAY(), t0: Date.now(), topic: topic, rounds: []};
+}
+async function polSave(r){
+  if (!r || !r.rounds || !r.rounds.length) return null;
+  try { await _tx('polish', 'readwrite', st => st.put(r)); return r.id; }
+  catch(e){ try { toast('这一次没存住（本地空间可能满了）'); } catch(_){} return null; }
+}
+async function polList(){
+  try {
+    const all = await _tx('polish', 'readonly', st => st.getAll());
+    return (all || []).sort((a, b) => (b.t0 || 0) - (a.t0 || 0));
+  } catch(e){ return []; }
+}
+async function polGet(id){
+  try { return await _tx('polish', 'readonly', st => st.get(id)); }
+  catch(e){ return null; }
+}
+async function polDel(id){
+  try { await _tx('polish', 'readwrite', st => st.delete(id)); return true; }
+  catch(e){ return false; }
+}
+
+/* 最近手输过的 topic（只手输，不做题库 —— Kevin 选的 A） */
+function polTopics(){
+  try { return JSON.parse(localStorage.getItem(POL_HIST) || '[]') || []; }
+  catch(_){ return []; }
+}
+function polTopicPush(t){
+  const v = String(t || '').trim();
+  if (!v) return;
+  const list = polTopics().filter(x => x !== v);
+  list.unshift(v);
+  try { localStorage.setItem(POL_HIST, JSON.stringify(list.slice(0, 8))); } catch(_){}
+}
+
+
+/* ── 界面 ─────────────────────────────────────────────────
+   🚨 主动作必须在**第一屏**。他为「收藏键在 y=1752 而一屏 812px」顶过一次
+      （「根本没地方点」）。所以出题这一屏只有：输入框 + 一个大按钮 + 最近用过的，
+      guidance 和结果都在下面，滚不到的地方等于不存在。 */
+
+function polStage(msg){
+  POL.stage = msg || '';
+  const el = document.getElementById('polstage');
+  if (el) el.innerHTML = msg ? '<span class="dots">' + esc(msg) + '</span>' : '';
+}
+
+/* 出题（打磨这一档的根屏） */
+function showPolish(){
+  SESSUI.top = 'pol';                 // 🚨 见 showList 里那段：高亮由本屏认领
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = '口语打磨 · 说一整段，逐处帮你改';
+  const f = $('#feed');
+  const his = polTopics();
+  f.innerHTML = sessTopTabs() +
+    '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800;margin-bottom:8px">想练哪一段？</div>' +
+      '<textarea id="poltopic" rows="2" placeholder="例：面试官问我为什么离开上一家事务所" ' +
+        'style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;' +
+        'border:1px solid var(--line-strong);background:var(--surface);' +
+        'color:inherit;font-size:15px;line-height:1.5;resize:vertical"></textarea>' +
+      '<button id="polgo" class="big" style="width:100%;margin-top:10px">开始</button>' +
+      '<div class="t" style="margin-top:8px;color:var(--muted)">' +
+        '先给你列「对方可能问什么、该覆盖哪些方面」，然后你一口气说完，' +
+        '说的过程中不打断。</div>' +
+      '<div id="polerr" class="warn" style="margin-top:8px"></div>' +
+      '<div id="polstage" style="margin-top:8px"></div>' +
+    '</div>' +
+    (his.length ? '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800;margin-bottom:8px">最近练过的</div>' +
+      his.map(t => '<button class="rchip" data-poltop="' + esc(t) + '" ' +
+        'style="margin:0 6px 6px 0;max-width:100%;white-space:normal;text-align:left">' +
+        esc(t) + '</button>').join('') + '</div>' : '') +
+    '<div id="pollist"></div>';
+  bindSessTop();
+
+  const go1 = () => {
+    const v = ($('#poltopic') || {}).value || '';
+    if (!String(v).trim()){
+      $('#polerr').textContent = '先写一句你要练什么，再点开始。';
+      return;
+    }
+    polStart(String(v).trim());
+  };
+  $('#polgo').onclick = go1;
+  document.querySelectorAll('[data-poltop]').forEach(b =>
+    b.onclick = () => { const i = $('#poltopic'); if (i) i.value = b.dataset.poltop; go1(); });
+
+  polPaintList();
+}
+
+/* 打磨过的记录 —— 跟场景练习分开列 */
+async function polPaintList(){
+  const box = document.getElementById('pollist');
+  if (!box) return;
+  const list = await polList();
+  if (!list.length){ box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="k" style="font-weight:800;margin:14px 4px 8px">打磨过的</div>' +
+    list.map(r => '<div class="card" data-polid="' + esc(r.id) + '">' +
+      '<div class="hd"><span class="ct" style="font-size:11.5px;color:var(--brand-dark);' +
+      'font-weight:800">' + esc(String(r.topic || '').slice(0, 40)) + '</span>' +
+      '<span class="done">' + esc(r.on) + '</span></div>' +
+      '<div class="t" style="margin-top:6px">' + r.rounds.length + ' 次' +
+      (r.rounds.length > 1 ? ' · 重说过' : '') + '</div></div>').join('');
+  document.querySelectorAll('#pollist .card[data-polid]').forEach(el =>
+    el.onclick = async () => {
+      const r = await polGet(el.dataset.polid);
+      if (r) go(() => showPolishRec(r), '这一次');
+    });
+}
+
+/* 点「开始」→ 出 guidance → 进准备屏 */
+async function polStart(topic){
+  if (POL.busy) return;
+  polReset();
+  POL.topic = topic; POL.busy = true;
+  $('#polerr').textContent = '';
+  polStage('在给你列「对方会问什么、该讲哪几方面」');
+  const btn = $('#polgo'); if (btn) btn.disabled = true;
+  try {
+    POL.guide = await polMakeGuide(topic);
+    polTopicPush(topic);
+    POL.busy = false;
+    go(showPolishPrep, '开口前');
+  } catch(e){
+    POL.busy = false;
+    polStage('');
+    const el = $('#polerr');
+    if (el) el.textContent = '没能出准备内容：' + (e.message || e);
+    if (btn) btn.disabled = false;
+  }
+}
+
+/* 准备屏：对方会问什么 / 该讲哪几方面 / 雷区 —— 然后开始说 */
+function showPolishPrep(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = POL.topic || '开口前';
+  const g = POL.guide || {};
+  const f = $('#feed');
+
+  /* 🚨 「开始说」放在**最前面**，guidance 在它下面。
+     他要的是先看再说，但主动作不能沉到底下 —— 判据：第一屏就点得到。 */
+  f.innerHTML =
+    '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800">' + esc(POL.topic) + '</div>' +
+      '<div class="t" style="margin-top:6px;color:var(--muted)">' +
+        '一口气说完，中间不会打断你。说完再点一次停止。</div>' +
+      '<button id="polmic" class="big" style="width:100%;margin-top:10px">🎙 点一下开始说</button>' +
+      '<button id="poltype" class="rchip" style="margin-top:8px">改成打字 / 粘贴</button>' +
+      '<div id="poltypebox" hidden style="margin-top:8px">' +
+        '<textarea id="poltypein" rows="5" placeholder="把你想说的英文写在这里（可以是 broken English）" ' +
+          'style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;' +
+          'border:1px solid var(--line-strong);background:var(--surface);color:inherit;' +
+          'font-size:15px;line-height:1.5"></textarea>' +
+        '<button id="poltypego" class="big" style="width:100%;margin-top:8px">交给 Alex 打磨</button>' +
+      '</div>' +
+      '<div id="polerr" class="warn" style="margin-top:8px"></div>' +
+      '<div id="polstage" style="margin-top:8px"></div>' +
+    '</div>' +
+
+    '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800;margin-bottom:8px">对方大概率会问</div>' +
+      (g.asks || []).map(a =>
+        '<div style="margin-bottom:10px"><div style="font-size:15px;line-height:1.5">' +
+        esc(a.en) + '</div><div class="t" style="color:var(--muted);margin-top:2px">' +
+        esc(a.zh) + '</div></div>').join('') +
+    '</div>' +
+
+    '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800;margin-bottom:8px">这几方面要讲到</div>' +
+      (g.dims || []).map((d, i) =>
+        '<div style="margin-bottom:10px"><div style="font-size:15px;font-weight:700">' +
+        (i + 1) + '. ' + esc(d.nm) + '</div>' +
+        '<div class="t" style="color:var(--muted);margin-top:2px">' + esc(d.why) + '</div></div>').join('') +
+      '<div class="t" style="color:var(--muted);margin-top:4px">' +
+        '说完会拿这几条逐个对账，告诉你哪条没讲到。</div>' +
+    '</div>' +
+
+    '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800;margin-bottom:8px">这题的雷区</div>' +
+      (g.traps || []).map(t =>
+        '<div style="margin-bottom:10px"><div style="font-size:14.5px;line-height:1.5;' +
+        'text-decoration:line-through;opacity:.7">' + esc(t.bad) + '</div>' +
+        '<div class="t" style="color:var(--muted);margin-top:2px">' + esc(t.why) + '</div></div>').join('') +
+    '</div>';
+
+  $('#polmic').onclick = polMicToggle;
+  $('#poltype').onclick = () => {
+    const b = $('#poltypebox');
+    if (b) b.hidden = !b.hidden;
+  };
+  $('#poltypego').onclick = () => {
+    const v = ($('#poltypein') || {}).value || '';
+    if (!String(v).trim()){ $('#polerr').textContent = '先写点什么。'; return; }
+    polRun(String(v).trim());
+  };
+}
+
+/* ── 录音（自己一套，不碰陪练那条）─────────────────────────────
+   🚨 不复用 `getRec()`：它把 `rec.onstop` 写死成 `send()`，而 send() 是场景流程
+      （要 S.scn、要 render()、要 MYREC）。共用会把打磨的录音喂进陪练的渲染链。 */
+async function polGetRec(){
+  /* 🚨 用**全局那一条 stream**，不另开一条。
+     自己开一条的话，陪练那条（primeMic 存在 `stream` 里）和这条会同时开着，
+     手机上就是两个麦克风占用、状态栏红点不灭 —— 属于「装的东西去抢他的设备」。
+     只借流，MediaRecorder 和 onstop 仍然是自己的。 */
+  if (!stream || !stream.active){
+    stream = await navigator.mediaDevices.getUserMedia(
+      {audio:{echoCancellation:true, noiseSuppression:true}});
+  }
+  POL.stream = stream;
+  let mime = '';
+  for (const m of ['audio/mp4','audio/webm','audio/ogg']){
+    if (MediaRecorder.isTypeSupported?.(m)){ mime = m; break; }
+  }
+  const r = mime ? new MediaRecorder(stream, {mimeType: mime})
+                 : new MediaRecorder(stream);
+  POL.chunks = [];
+  r.ondataavailable = e => e.data.size && POL.chunks.push(e.data);
+  r.onstop = polOnStop;
+  POL.rec = r;
+  return r;
+}
+
+/* btnId：从结果屏的「答这一句」按下来时，要动的是那颗按钮。
+   🚨 原来写死 `$('#polmic')` —— 在结果屏上它是 null，于是他点了「🎙 答这一句」
+      **界面上什么都不变**（其实已经在录了）。按钮反馈找不到宿主 = 等于没有反馈。 */
+async function polMicToggle(btnId){
+  if (POL.busy) return;
+  const id = (typeof btnId === 'string' && btnId) ? btnId : 'polmic';
+  POL.btnId = POL.recing ? POL.btnId : id;     // 停的时候要动的是当初按下的那颗
+  const btn = document.getElementById(POL.btnId || id);
+  const LBL = (POL.btnId === 'polfumic') ? '🎙 答这一句' : '🎙 点一下开始说';
+  if (POL.recing){                       // 停
+    POL.recing = false;
+    try { POL.rec && POL.rec.state !== 'inactive' && POL.rec.stop(); } catch(_){}
+    if (btn){ btn.textContent = LBL; btn.classList.remove('rec'); }
+    return;
+  }
+  if (!pick('audio')){
+    $('#polerr').innerHTML = '说话这条路现在没有可用通道 —— 去「我的 → 🛰 后端」看看，'
+      + '或者用上面的<b>「改成打字 / 粘贴」</b>。';
+    return;
+  }
+  $('#polerr').textContent = '';
+  try { if (window.unlockTTS) unlockTTS(); } catch(_){}
+  try {
+    const r = await polGetRec();
+    POL.t0 = Date.now();
+    r.start();
+    POL.recing = true;
+    if (btn){ btn.textContent = '⏹ 说完了，停止'; btn.classList.add('rec'); }
+    polStage('在听…说完点一下停止');
+  } catch(err){
+    $('#polerr').textContent = '打不开麦克风：' + (err.message || err)
+      + '　可以先用「改成打字 / 粘贴」。';
+  }
+}
+
+async function polOnStop(){
+  /* 🚨 中途切走（换一题 / 退出打磨）之后 onstop 仍会晚一步触发。
+     不拦的话它会拿着上一题的 topic 去打磨，还把人从别的屏 go() 到结果屏。
+     polReset() 会把 topic 清空 —— 拿它当「还在这一题上吗」的判据。 */
+  if (!POL || !POL.topic){ POL.chunks = []; return; }
+  const blob = new Blob(POL.chunks, {type: (POL.rec && POL.rec.mimeType) || ''});
+  POL.chunks = [];
+  if (!blob.size){ polStage(''); $('#polerr').textContent = '没录到声音，再试一次。'; return; }
+  POL.busy = true;
+  try {
+    polStage('在转写你说的话');
+    const part = await toAudioPart(blob);
+    const said = await polTranscribe(part);
+    POL.busy = false;
+    await polRun(said);
+  } catch(e){
+    POL.busy = false;
+    polStage('');
+    const el = $('#polerr');
+    if (el) el.textContent = '转写没成功：' + (e.message || e) + '　可以改用打字。';
+  }
+}
+
+/* ── 打磨一次 ────────────────────────────────────────────── */
+async function polRun(said){
+  if (POL.busy) return;
+  POL.busy = true;
+  const el = $('#polerr'); if (el) el.textContent = '';
+  polStage('在逐处打磨（不会打断你，一次给完）');
+  try {
+    const res = await polMakeResult(POL.topic, said, (POL.guide || {}).dims || []);
+    POL.said = said; POL.res = res; POL.round++;
+    POL.busy = false;
+    /* 落盘：一条记录 = 一个 topic，重说追加成新的一轮（不另开一条） */
+    if (!POL.rec_id){
+      const r = polNew(POL.topic);
+      r.rounds.push({said: said, res: res, at: Date.now()});
+      POL.rec_id = await polSave(r);
+      POL.rec_obj = r;
+    } else {
+      const r = POL.rec_obj || await polGet(POL.rec_id);
+      if (r){ r.rounds.push({said: said, res: res, at: Date.now()}); POL.rec_obj = r; await polSave(r); }
+    }
+    go(showPolishResult, '打磨结果');
+  } catch(e){
+    POL.busy = false;
+    polStage('');
+    const e2 = $('#polerr');
+    if (e2) e2.textContent = '打磨没成功：' + (e.message || e) + '　再说一次试试。';
+  }
+}
+
+/* ── 结果屏 ──────────────────────────────────────────────
+   五块：逐处改（前 5 + 折叠）／整段重写／维度对账／可以带走的句式／可选追问一轮 */
+function showPolishResult(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = '打磨结果' + (POL.round > 1 ? ' · 第 ' + POL.round + ' 次' : '');
+  const p = POL.res || {}, f = $('#feed');
+  const fixes = p.fixes || [];
+  const top = fixes.slice(0, POL_TOP), rest = fixes.slice(POL_TOP);
+
+  const fixHtml = x =>
+    '<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">' +
+      '<div style="font-size:14.5px;line-height:1.5;text-decoration:line-through;opacity:.65">' +
+        esc(x.quote) + '</div>' +
+      (x.issue ? '<div class="t" style="margin-top:3px;color:var(--brand-dark);font-weight:700">'
+                 + esc(x.issue) + '</div>' : '') +
+      '<div style="font-size:15px;line-height:1.55;margin-top:4px">' + esc(x.native) + '</div>' +
+      (x.zh ? '<div class="t" style="color:var(--muted);margin-top:3px">' + esc(x.zh) + '</div>' : '') +
+    '</div>';
+
+  f.innerHTML =
+    '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800;margin-bottom:4px">你刚才说的</div>' +
+      '<div class="t" style="color:var(--muted);line-height:1.6">' + esc(POL.said) + '</div>' +
+    '</div>' +
+
+    '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800;margin-bottom:10px">逐处改' +
+        (fixes.length > POL_TOP ? '（先给最值钱的 ' + POL_TOP + ' 处）' : '') + '</div>' +
+      top.map(fixHtml).join('') +
+      (rest.length ?
+        '<button id="polmore" class="rchip">还有 ' + rest.length + ' 处，展开看</button>' +
+        '<div id="polrest" hidden style="margin-top:10px">' + rest.map(fixHtml).join('') + '</div>'
+        : '') +
+    '</div>' +
+
+    '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800;margin-bottom:8px">整段可以这么说</div>' +
+      '<div style="font-size:15.5px;line-height:1.65">' + esc(p.rewrite) + '</div>' +
+      '<button id="polspeak" class="rchip" style="margin-top:10px">🔊 念一遍</button>' +
+      '<button id="polcopy" class="rchip" style="margin-top:10px">复制</button>' +
+    '</div>' +
+
+    '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800;margin-bottom:8px">该讲的几方面，讲到了吗</div>' +
+      (p.cover || []).map(c =>
+        '<div style="margin-bottom:10px">' +
+          '<div style="font-size:15px;font-weight:700">' +
+            (c.ok ? '✅ ' : '⚠️ ') + esc(c.nm) + '</div>' +
+          '<div class="t" style="color:var(--muted);margin-top:2px">' + esc(c.how) + '</div>' +
+        '</div>').join('') +
+    '</div>' +
+
+    '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800;margin-bottom:8px">可以带走的说法</div>' +
+      (p.takeaways || []).map((t, i) =>
+        '<div style="margin-bottom:12px">' +
+          '<div style="font-size:15px;line-height:1.5">' + esc(t.en) +
+            (t.reg ? ' <span class="t" style="color:var(--muted)">' + esc(t.reg) + '</span>' : '') +
+          '</div>' +
+          (t.zh ? '<div class="t" style="color:var(--muted);margin-top:2px">' + esc(t.zh) + '</div>' : '') +
+          '<button class="rchip" data-poltake="' + i + '" style="margin-top:6px">☆ 收进本子</button>' +
+        '</div>').join('') +
+    '</div>' +
+
+    /* 🚨 追问**默认收起**、而且**只有一轮** —— Kevin 明确不要 back-and-forth。
+       答完这一轮就不再给追问入口（`POL.fuUsed`）。 */
+    (p.followup && !POL.fuUsed ?
+      '<div class="card" style="padding:14px">' +
+        '<button id="polfu" class="rchip">想再练一下？让对方追问一句</button>' +
+        '<div id="polfubox" hidden style="margin-top:10px">' +
+          '<div style="font-size:15px;line-height:1.5">' + esc(p.followup.en) + '</div>' +
+          '<div class="t" style="color:var(--muted);margin-top:2px">' + esc(p.followup.zh) + '</div>' +
+          '<button id="polfumic" class="big" style="width:100%;margin-top:10px">🎙 答这一句</button>' +
+          '<button id="polfutype" class="rchip" style="margin-top:8px">打字答</button>' +
+          '<div id="polfutypebox" hidden style="margin-top:8px">' +
+            '<textarea id="polfuin" rows="4" style="width:100%;box-sizing:border-box;padding:10px;' +
+              'border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);' +
+              'color:inherit;font-size:15px"></textarea>' +
+            '<button id="polfugo" class="big" style="width:100%;margin-top:8px">交给 Alex 打磨</button>' +
+          '</div>' +
+          '<div class="t" style="color:var(--muted);margin-top:8px">' +
+            '只追问这一轮 —— 这里不做角色扮演。</div>' +
+        '</div>' +
+      '</div>' : '') +
+
+    '<div class="card" style="padding:14px">' +
+      '<button id="polagain" class="rchip">同一题，再说一遍</button>' +
+      '<button id="polnew" class="rchip">换一题</button>' +
+      '<div id="polerr" class="warn" style="margin-top:8px"></div>' +
+      '<div id="polstage" style="margin-top:8px"></div>' +
+    '</div>';
+
+  const more = document.getElementById('polmore');
+  if (more) more.onclick = () => {
+    const b = $('#polrest');
+    if (b){ b.hidden = !b.hidden; more.textContent = b.hidden
+      ? '还有 ' + rest.length + ' 处，展开看' : '收起'; }
+  };
+  const sp = document.getElementById('polspeak');
+  if (sp) sp.onclick = () => { try { say(p.rewrite); } catch(_){ toast('这台设备念不了'); } };
+  const cp = document.getElementById('polcopy');
+  if (cp) cp.onclick = async () => {
+    try { await navigator.clipboard.writeText(p.rewrite || ''); toast('复制好了'); }
+    catch(_){ toast('复制不了，长按选中吧'); }
+  };
+
+  /* 收进本子：**每条各一个键**，id 取英文那一面 —— 他为「三个表达只想收一句」顶过一次。
+     🚨 收完**整块重画**，不各自 paint：同一条可能在别处也出现，各画各的必然
+        一个显 ✓ 一个显 ☆。 */
+  document.querySelectorAll('[data-poltake]').forEach(b =>
+    b.onclick = () => {
+      const t = (p.takeaways || [])[+b.dataset.poltake];
+      if (!t) return;
+      const e = subEntry(t.en, t.zh || '', {reg: t.reg || '', from: '口语打磨 · ' + POL.topic});
+      const r = nbAdd(e, bookFor(e));
+      if (r === 'full') return toast('本子满了或存不下');
+      toast(r === 'same' ? '本子里已经有了' : '收好了');
+      const y = window.scrollY;
+      showPolishResult();
+      window.scrollTo(0, y);
+    });
+
+  const fu = document.getElementById('polfu');
+  if (fu) fu.onclick = () => { const b = $('#polfubox'); if (b) b.hidden = !b.hidden; };
+  const fut = document.getElementById('polfutype');
+  if (fut) fut.onclick = () => { const b = $('#polfutypebox'); if (b) b.hidden = !b.hidden; };
+  const fug = document.getElementById('polfugo');
+  if (fug) fug.onclick = () => {
+    const v = ($('#polfuin') || {}).value || '';
+    if (!String(v).trim()){ $('#polerr').textContent = '先写点什么。'; return; }
+    POL.fuUsed = true;
+    polRun(String(v).trim());
+  };
+  const fum = document.getElementById('polfumic');
+  if (fum) fum.onclick = () => { POL.fuUsed = true; polMicToggle('polfumic'); };
+
+  $('#polagain').onclick = () => { POL.fuUsed = false; go(showPolishPrep, '开口前'); };
+  $('#polnew').onclick = () => { polReset(); go(showPolish, '口语打磨'); };
+}
+
+/* 回看一条打磨记录 */
+function showPolishRec(r){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = String(r.topic || '').slice(0, 30);
+  const f = $('#feed');
+  f.innerHTML = '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800">' + esc(r.topic) + '</div>' +
+      '<div class="t" style="color:var(--muted);margin-top:4px">' +
+        esc(r.on) + ' · ' + r.rounds.length + ' 次</div>' +
+    '</div>' +
+    r.rounds.map((rd, i) => {
+      const p = rd.res || {};
+      return '<div class="card" style="padding:14px">' +
+        '<div class="k" style="font-weight:800;margin-bottom:6px">第 ' + (i + 1) + ' 次</div>' +
+        '<div class="t" style="color:var(--muted);line-height:1.6">' + esc(rd.said) + '</div>' +
+        '<div style="margin-top:10px;font-weight:700;font-size:13px">整段可以这么说</div>' +
+        '<div style="font-size:15px;line-height:1.6;margin-top:4px">' + esc(p.rewrite) + '</div>' +
+        '<div style="margin-top:10px;font-weight:700;font-size:13px">改了 ' +
+          ((p.fixes || []).length) + ' 处</div>' +
+        (p.fixes || []).map(x =>
+          '<div class="t" style="margin-top:6px;line-height:1.5">' +
+            '<span style="text-decoration:line-through;opacity:.6">' + esc(x.quote) + '</span>' +
+            ' → ' + esc(x.native) + '</div>').join('') +
+      '</div>';
+    }).join('') +
+    '<div class="card" style="padding:14px">' +
+      '<button id="poldel" class="rchip">删掉这条记录</button></div>';
+  $('#poldel').onclick = async () => {
+    if (await polDel(r.id)){ toast('删了'); back(); }
+    else toast('删不掉');
+  };
+}
 
 
 /* ═══════════════════ 查词 + 我的本子 ═══════════════════
