@@ -264,6 +264,29 @@ body{margin:0;background:var(--bg);color:var(--fg);font-size:16px;line-height:1.
 
 .btn:active{transform:translateY(2px);border-bottom-width:var(--bd)}
 
+/* ═══ 打磨板块的按钮层级（Grok 2026-08-18 定的数，不是我拍的）═══
+   Kevin：「开始键太小了，而且很丑，又细」→ 改完 →「又太大了，
+   你不能从一个极端到另一个极端」。两次都对：
+     23px = 我自造了没定义的 class，掉回浏览器默认按钮
+     54px 满宽纯白胶囊 = 一整块白板压住整屏
+   我没有校准过的中间值，所以把这件事交给了 Grok。它给的三级：
+     主 40px / 次 36px 透明描边 / 行内 28px，**主按钮不满宽**。
+   🚨 只作用在打磨这几屏（`.pol` 作用域），不动全站其它地方的 .btn。 */
+.pol .btn{min-height:40px;padding:0 22px;border-radius:10px;
+  font-size:15px;font-weight:600;letter-spacing:0;
+  border:none;width:auto;max-width:100%}
+.pol .btn.wide{width:100%}          /* 只有真正的唯一主动作才铺满 */
+.pol .btn:active{transform:translateY(1px)}
+
+.pol .btn2{min-height:36px;padding:0 16px;border-radius:8px;font-size:14px;
+  font-weight:600;background:transparent;color:var(--fg);
+  border:1px solid var(--line-strong);cursor:pointer;font-family:inherit}
+
+.pol .rowbtn{min-height:28px;padding:0 10px;border-radius:6px;font-size:12px;
+  font-weight:600;background:transparent;color:var(--muted);
+  border:1px solid var(--line);cursor:pointer;font-family:inherit;flex:0 0 auto}
+.pol .rowbtn:active{color:var(--fg);border-color:var(--line-strong)}
+
 /* 查词那个键 —— Kevin 2026-08-17：「那么大个『查』字好丑啊」。
    🚨 根因是它套了 `.btn`：胶囊圆角 999px + 纯白实心 `--accent`，
       再塞一个中文字就成了「纯白大圆里一个字」，而且是整页唯一的纯白块。
@@ -13762,6 +13785,28 @@ async function orderScenario(){
    `askBackendAudioOne(part, overridePrompt)` 的**只转写**模式、`toAudioPart` 的
    16k 重编码 + 切段、`nbAdd`/`subEntry` 收进本子。 */
 
+/* ═══ v2：从「改一句」变成「打磨一份稿子」（Kevin 2026-08-18）═══
+   PRD `PRD_口语打磨_v2_深度.md`。他的原话：「这个打磨的力度不太够」
+   「帮我翻译成英文」「这个自我介绍是不是不需要说这么多？重点说哪些、删掉哪些」
+   「留个口子支持后续修改」「对上一轮对话进行补充……目前没办法连续补充」。
+
+   🚨 v1 的建模错在哪：单位是「一次说话 → 一次打磨」，每轮 polRun 都从零重来，
+      上一轮的成稿完全不参与 —— 所以「补几个点」在结构上做不到。
+      而且中文输入**必然报错**（实测：quote 锚定只取 [a-z0-9']+，中文原话里没有英文可锚，
+      逐处改全被丢光 → 整份驳 → 三次重试后报错，即使模型给的英文成稿完全正确）。
+
+   🚨 v2 的地基 = 中间加一层**要点清单**：
+        要点清单 points ──生成──> 英文成稿 draft
+      他的三个新需求如果直接作用在文本上，全是"模型看着办"、谁也验不了；
+      落在要点上就全部可机械验证：
+        补充＝新增 id、删减＝标 cut、定向修改＝只动他指名的 id、勾选删除＝去掉那个 id。
+   🚨 每个要点带一个 `span` —— 它在成稿里对应的那**一小段原文**。
+      `draft.includes(span)` 就是「这个要点真的进稿了吗」的判据，
+      跟 quote 锚定同一个思路，只是方向反过来。 */
+
+const POL_KEEP = ['must', 'ok', 'cut'];        // 必讲 / 可留 / 建议删
+const POL_MODES = ['first', 'add', 'edit', 'drop'];
+
 const POL_DIM_MIN = 3, POL_DIM_MAX = 5;
 const POL_TOP = 5;                       // 先给几条，其余折叠（Kevin 选的 B）
 const POL_HIST = 'alex_pol_topics';      // 最近手输过的 topic
@@ -13773,8 +13818,10 @@ function polReset(){
   POL = {topic:'', guide:null, said:'', res:null, round:0,
          busy:false, rec:null, chunks:[], stream:null, t0:0, recing:false,
          err:'', stage:'',
-         rec_id:null, rec_obj:null,   // 这一题的落盘记录（重说追加成新的一轮）
-         fuUsed:false};               // 追问只有一轮，用过就不再给入口
+         rec_id:null, rec_obj:null,   // 这一题的落盘记录（每一轮追加成一版）
+         fuUsed:false,                // 追问只有一轮，用过就不再给入口
+         lang:'', onResult:false,     // 稿子的语种；是否已经站在结果屏上
+         recMode:'first', lastMode:'first'};
 }
 polReset();
 
@@ -13852,7 +13899,326 @@ function polGuideBad(g){
   return bad;
 }
 
-/* ── 打磨本体 ────────────────────────────────────────────── */
+/* ── v2：语种判定 ──────────────────────────────────────────
+   🚨 不让他选。判据是**汉字占比**，不是"有没有汉字" ——
+      他的英文里夹一句中文注解很常见，那仍然是英文输入。 */
+function polLang(s){
+  const t = String(s || '');
+  const cn = (t.match(/[一-鿿]/g) || []).length;
+  const en = (t.match(/[A-Za-z]+/g) || []).length;
+  if (!cn) return 'en';
+  if (!en) return 'zh';
+  return cn >= en ? 'zh' : 'en';       // 汉字数 vs 英文词数
+}
+
+/* ── v2：一个 prompt 构建器，四种动作共用同一套输出 schema ──
+   🚨 单一配置点：schema 只写一遍。四种动作分开写四份 prompt 的话，
+      改一处必漏其余三处 —— 那是这套代码库里反复出事的形态。 */
+function polPromptV2(o){
+  const mode = POL_MODES.indexOf(o.mode) >= 0 ? o.mode : 'first';
+  const lang = o.lang || 'en';
+  const pts = o.points || [];
+
+  const head = [
+    '你是 Alex —— 英语教练。他要准备一段**当众说出口的英语**，',
+    '你的活是帮他把这段话打磨成能直接照念的稿子，并告诉他**该讲什么、不该讲什么**。',
+    '',
+    '🚨 你不扮演任何角色，不跟他一问一答。',
+    '🚨 只讲**表达**层面的事：该不该讲、讲多长、怎么说才地道。',
+    '   绝不讲专业判断（该不该跳槽、这么说对他有没有利、职业建议）。',
+    '   但「这段自我介绍该讲哪些、哪些留到后面再讲」**属于表达建议，要讲**。',
+    '',
+    '他的真实身份：在香港做审计/财务尽调的专业人士，母语中文。',
+    '题目：' + (o.topic || ''),
+  ];
+
+  const dimBlock = (o.dims || []).length
+    ? ['', '开口前给他列的维度（后面 cover 要按编号逐条对账）：',
+       (o.dims || []).map((d, i) => '  ' + (i + 1) + '. ' + d.nm + '：' + d.why).join('\n')]
+    : [];
+
+  const ptBlock = pts.length
+    ? ['', '**已有的要点清单**（id 必须原样保留，不许改号、不许合并）：',
+       pts.map(p => '  [' + p.id + '] ' + (p.keep === 'cut' ? '(已建议删) ' : '') + p.zh).join('\n'),
+       '', '**上一版成稿**：', '"""', o.draft || '', '"""']
+    : [];
+
+  const act = {
+    first: ['', '他刚才说的（要打磨的就是这一段，语种：' +
+            (lang === 'zh' ? '中文，你要**翻译成英文**' : '英文') + '）：',
+            '"""', o.said || '', '"""',
+            '', '把它拆成要点清单，再生成英文成稿。'],
+    add:   ['', '🚨 这一轮是**补充**。他要往已有的稿子里再加几个点：',
+            '"""', o.said || '', '"""',
+            '', '把新要点**加进**已有清单（新 id 用 p' + (pts.length + 1) + ' 起往后排），',
+            '**原有 id 一个都不许丢、不许改写含义**，然后重新生成成稿。'],
+    edit:  ['', '🚨 这一轮是**定向修改**。他的要求：',
+            '"""', o.said || '', '"""',
+            '', '只动他指的地方，**没提到的部分保持原样**（成稿里那些句子尽量原样搬过来）。',
+            '原有 id 一个都不许丢；他要求删掉的标成 keep="cut"。',
+            '',
+            /* 🚨 真调用实测（2026-08-18）：他说「太长了，砍掉一半」，
+               成稿只从 77 词变成 72 词（−6%）—— 指令根本没被执行。
+               根因有两个，都在这段 prompt 里：
+                 ① 上一句「没提到的部分保持原样」在推它做最小改动，跟「砍一半」直接打架；
+                 ② 没告诉它**砍长度的正确做法是把次要要点降级成 cut**，
+                    它于是去逐句抠词，抠不出多少。
+               所以这里必须写清楚，并且让它**先报出目标词数**，由代码卡住它兑现。 */
+            '🚨 上一版成稿是 **' + (o.prevWords || 0) + ' 词**。',
+            '🚨 **如果他的要求涉及长度**（砍一半／精简／再短一点／还能不能更长）：',
+            '   ⓪ `lenChange` 填 "shorter"；他要更长填 "longer"；没提长度填 "same"。',
+            '      🚨 填 "shorter" 时 `lenTarget` **必须明显小于 ' + (o.prevWords || 0) + '**，',
+            '      「砍一半」就是 ' + Math.round((o.prevWords || 0) / 2) + ' 词上下。',
+            '      填一个跟上一版差不多的数 = 没照他说的做，会被打回。',
+            '   ① 在 `lenTarget` 里写出这一版**应该有多少词**（按他说的算，别含糊）；',
+            '   ② 砍长度的做法是**把次要要点整条降级成 keep="cut"**（并给 `when`），',
+            '      不是把每句话抠掉几个词 —— 抠词抠不出一半，只会让句子变别扭；',
+            '   ③ 这时「保持原样」让位于他的要求：该砍就砍。'],
+    drop:  ['', '🚨 这一轮他**手动删掉了这几条要点**：' + (o.dropped || []).join('、'),
+            '', '把它们从成稿里彻底拿掉（清单里保留这几条但标 keep="cut"），',
+            '其余要点**一条不许少、不许改写**，重新生成一份读起来仍然连贯的成稿。'],
+  }[mode];
+
+  const schema = [
+    '', '输出 JSON：', '{',
+    ' "points":[{"id":"p1","zh":"这个要点在讲什么（一句中文）",',
+    '            "keep":"must 或 ok 或 cut",',
+    '            "why":"为什么是这个档（一句中文）",',
+    '            "when":"keep=cut 时**必填**：这条该留到什么时候讲（例：等对方问到具体项目再展开）",',
+    '            "span":"🚨 这个要点在下面 draft 里对应的那**一小段原文**，一字不差地摘出来；'
+      + 'keep=cut 的要点没进稿，span 留空字符串"}],',
+    ' "draft":"英文成稿，可直接照念。只放 must 和 ok 的要点，cut 的不许出现",',
+    ' "lenChange":"shorter 或 longer 或 same —— 他这次要求是让稿子变短、变长、还是没提长度",',
+    ' "lenTarget":这一版成稿**你打算写多少词**（纯数字）。他要求改长度时按他说的算出来，'
+      + '没要求就填你实际写的词数。🚨 代码会核对两件事：'
+      + '① 你写出来的稿子是不是这个长度；② lenChange 说变短时 lenTarget 是不是真的小了。别乱填,',
+    ' "advice":{"target":"这个场合合理的长度，给**具体数字**（例：45-60 秒，约 110-140 词）",',
+    '           "now":"他现在这版有多长，也给具体数字",',
+    '           "note":"一句中文：长了还是短了、该往哪个方向调",',
+    '           "focus":["该重点讲/该强化的要点 id"],',
+    '           "missing":[{"zh":"这个场合通常该有、但他没讲的","why":"为什么该有"}]},',
+    ' "cover":[{"i":维度编号,"ok":true 或 false,"how":"一句中文"}],',
+    lang === 'zh'
+      ? ' "traps":[{"zh":"从他**中文原话**里一字不差摘出来的一小段",'
+        + '"bad":"中国人最容易直译成的那版英文","good":"地道的说法"}],'
+      : ' "fixes":[{"quote":"从他英文原话里一字不差摘出来的一小段",'
+        + '"issue":"' + ISSUES.join(' / ') + ' 五选一","native":"母语者这一小段怎么说"}],',
+    ' "takeaways":[{"en":"可以带走的英文句式","zh":"什么时候用","reg":"正式 或 中性 或 口语"}],',
+    ' "followup":{"en":"对方最可能追问的一句英文","zh":"它在探什么"}',
+    '}',
+    '',
+    /* 🚨 真调用实测（2026-08-18）：他喂了一段明显过细的中文自我介绍
+       （跑了四个城市、花了三个月、两百多页报告、收入结构/客户集中度/关联方交易），
+       模型判「长度合适」、**一条 cut 都没给** —— 而他要的正是「该删哪些」。
+       根因是模型翻译时已经自己压缩过了，从它的角度看字数达标就没问题。
+       所以得把**编辑标准**明写出来，而不是让它自己拿捏。
+       标准直接用他自己的话：「那些应该是具体介绍工作内容时再讲的」。 */
+    '',
+    '🚨 **怎么判该不该留**（这是他最想要的一块，别含糊）：',
+    '   自我介绍是**开场**，不是汇报。判据是「对方在这一刻需要知道吗」。',
+    '   - 一个项目/一段经历，**最多给一句话的结论**（做过什么、什么规模、什么角色）',
+    '   - 执行过程一律 cut：花了几个月、跑了几个城市、报告多少页、',
+    '     具体分析了哪几个科目、用了什么方法 —— 这些标 keep="cut"，',
+    '     `when` 写「等对方问到这个项目再展开」',
+    '   - 并列清单（做过哪些行业、考过哪几门）压成一句，展不开就 cut',
+    '   - 🚨 **不许为了凑数硬删**：真的每条都该留就都留，但**必须逐条给出判断**，',
+    '     不能因为字数达标就整体放过 —— 字数够不等于内容该讲。',
+    '',
+    '- points 至少 3 条；id 形如 p1/p2/p3',
+    '- 🚨 每个 keep≠cut 的要点，`span` 必须能在 draft 里**逐字**找到',
+    '- 🚨 keep="cut" 的要点必须给 `when`，且**不许出现在 draft 里**',
+    '- draft 不要中文；不要以 Use/Try/Consider/Change 开头',
+    '- advice.target 和 advice.now 里必须有阿拉伯数字',
+    '- takeaways 3 到 5 条',
+    '- 全部中文用标准白话，不要文言腔',
+  ];
+
+  return head.concat(dimBlock, ptBlock, act, schema).join('\n');
+}
+
+/* ── v2 校验器：能真失败的那几条都在这儿 ────────────────────── */
+function polBadV2(p, o){
+  const bad = [];
+  if (!p || typeof p !== 'object') return ['返回不是对象'];
+  const lang = o.lang || 'en';
+  /* 🚨 锚定要用**他原来那段话**，不是这一轮说的。
+     add/edit/drop 那几轮 `said` 是他的**指令**（「太长了砍一半」），
+     拿指令去锚直译陷阱／逐处改必然全部落空 —— 好样本会被判成坏样本。
+     （fixes 那边我先前做了 mode 豁免，traps 漏了，测试当场抓出来。） */
+  const said = o.origSaid || o.said || '';
+  const prev = o.points || [];
+  const draft = String(p.draft || '').trim();
+
+  // ① points
+  if (!Array.isArray(p.points) || p.points.length < 3){
+    bad.push('points 少于 3 条');
+    p.points = Array.isArray(p.points) ? p.points : [];
+  }
+  const seen = {};
+  p.points = p.points.filter(x => {
+    if (!x || !String(x.id || '').trim() || !String(x.zh || '').trim()) return false;
+    if (seen[x.id]) return false;                 // id 重复只留第一条
+    seen[x.id] = 1;
+    if (POL_KEEP.indexOf(x.keep) < 0) x.keep = 'ok';
+    return true;
+  });
+
+  /* 🚨 D7/D17：补充或修改时，**旧 id 一个都不许丢**。
+     这是「连续补充」能不能成立的唯一硬判据 —— 丢了就等于把他之前说的抹掉了。 */
+  if (o.mode !== 'first'){
+    prev.forEach(op => {
+      if (!seen[op.id]) bad.push('把已有要点 [' + op.id + '] ' +
+        String(op.zh).slice(0, 12) + '… 弄丢了');
+    });
+  }
+
+  // ② draft
+  if (!draft) bad.push('draft 空的');
+  else {
+    if (/[一-鿿]/.test(draft)) bad.push('draft 里混了中文');
+    if (POL_ORDER.test(draft))
+      bad.push('draft 以「' + draft.split(/\s+/)[0] + '」开头 —— 那是指挥不是范例');
+    const wc = (draft.match(/[A-Za-z']+/g) || []).length;
+    const sents = (draft.match(/[.!?]+(\s|$)/g) || []).length;
+    if (wc < 25 || sents < 2)
+      bad.push('draft 只有 ' + wc + ' 词 / ' + sents + ' 句 —— 缩成一句了，不叫成稿');
+
+    /* 🚨 让它先报目标词数，再核对它有没有兑现。
+       实测形态：他说「砍掉一半」，稿子 77→72（−6%）—— 指令被当成了软建议。
+       这道闸不判"该不该砍"（那是语义），只判**它说到有没有做到**，
+       所以是纯算术、能真失败，而且不会误伤"本来就不用改长度"的轮次。
+       容差 ±25%：模型算词数本来就不精确，卡太死会把好答案驳掉。 */
+    const tgt = parseInt(p.lenTarget, 10);
+    if (tgt > 0){
+      /* 🚨 容差要有**绝对下限**。纯按 ±25% 算，目标 25 词时只允许差 6 词 ——
+         而英语一个句子就 10 词左右，等于要求它按词数裁句子。
+         真页面实测：它自报 25 写了 34，三次全被驳，最后他看到的是一条报错 ——
+         **判据是对的，可结果比给个差一点的稿子更糟**。
+         所以取「25% 或 10 词」里大的那个：长稿仍按比例卡，短稿留出一句话的余量。 */
+      const allow = Math.max(tgt * 0.25, 10);
+      if (Math.abs(wc - tgt) > allow)
+        bad.push('你自己说这版要 ' + tgt + ' 词，实际写了 ' + wc + ' 词 —— 说到要做到');
+    } else if (o.mode === 'edit'){
+      bad.push('改稿这一轮必须给 lenTarget（你打算写多少词）');
+    }
+
+    /* 🚨 光有「说到做到」不够 —— 模型会**低报目标**来绕过去。
+       实测：他说「砍掉一半」（上一版 58 词），模型自报 lenTarget=60、实际写 58，
+       自洽检查照样放行，而他要的事一点没做。
+       **自洽型检查的通病：被测方同时掌握"承诺"和"兑现"，压低承诺就永远达标。**
+       所以再挂一条**外部锚**：拿上一版词数比。lenChange 说变短，
+       目标就必须真的明显更小 —— 这个数不由模型定，是上一轮的事实。 */
+    /* 🚨 只在 **edit** 轮挂这条。它防的是「他明确要求砍，你没砍」，
+       而 drop 轮的长度变化是**划掉那一条自然带来的**：从 37 词里拿掉一个要点
+       就只少七八个词（19%），套这条规则会把正确结果驳掉 ——
+       真页面实测：划掉一条 → 连驳三次 → 他看到一条报错。
+       闸门挂错适用范围，跟闸门写错一样有害。 */
+    const prevW = (o.mode === 'edit') ? (o.prevWords || 0) : 0;
+    const ch = String(p.lenChange || '').trim();
+    if (prevW > 0 && ch === 'shorter' && tgt > 0 && tgt > prevW * 0.8)
+      bad.push('你说这次要变短，可目标 ' + tgt + ' 词跟上一版 ' + prevW +
+               ' 词差不多 —— 那不叫砍');
+    if (prevW > 0 && ch === 'longer' && tgt > 0 && tgt < prevW * 1.2)
+      bad.push('你说这次要变长，可目标 ' + tgt + ' 词还没超过上一版 ' + prevW + ' 词');
+  }
+
+  /* ③ 🚨 span 锚定：要点到底进没进稿。
+     没有这一条，「补充的点真的进了成稿」就只能靠肉眼看。 */
+  const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9']+/g, ' ').trim();
+  const nd = norm(draft);
+  p.points.forEach(x => {
+    if (x.keep === 'cut'){
+      x.span = '';
+      if (!String(x.when || '').trim())
+        bad.push('要点 [' + x.id + '] 标了 cut 却没说清留到什么时候讲');
+      return;
+    }
+    const sp = norm(x.span);
+    if (!sp || nd.indexOf(sp) < 0)
+      bad.push('要点 [' + x.id + '] 的 span 在成稿里逐字找不到（它到底进没进稿？）');
+  });
+
+  // ④ advice
+  const a = p.advice || {};
+  if (!/\d/.test(String(a.target || ''))) bad.push('advice.target 没给具体数字');
+  if (!/\d/.test(String(a.now || ''))) bad.push('advice.now 没给具体数字');
+  if (!String(a.note || '').trim()) bad.push('advice.note 空的');
+  a.focus = Array.isArray(a.focus) ? a.focus.filter(id => seen[id]) : [];
+  a.missing = Array.isArray(a.missing) ? a.missing.filter(m => m && String(m.zh || '').trim()) : [];
+  a.note = cleanZh(a.note) || a.note;
+  p.advice = a;
+
+  /* ⑤ 直译陷阱（中文输入）/ 逐处改（英文输入）—— 都要锚回他真说过的话 */
+  if (lang === 'zh'){
+    delete p.fixes;
+    const kept = [];
+    (Array.isArray(p.traps) ? p.traps : []).forEach(t => {
+      if (!t) return;
+      const z = String(t.zh || '').trim();
+      if (!z || said.indexOf(z) < 0) return;      // 不是他真说的那句中文 → 丢
+      if (!String(t.bad || '').trim() || !String(t.good || '').trim()) return;
+      kept.push(t);
+    });
+    /* 同 fixes：只有 first 轮要求必须挑得出直译陷阱。 */
+    if (!kept.length && o.mode === 'first')
+      bad.push('traps 里没有一条的中文能在他原话里逐字找到');
+    p.traps = kept;
+  } else {
+    delete p.traps;
+    const kept = [];
+    (Array.isArray(p.fixes) ? p.fixes : []).forEach(f => {
+      if (!f) return;
+      if (!polQuoteOk(f.quote, said)) return;
+      if (!String(f.native || '').trim()) return;
+      if (!ISSUES.includes(String(f.issue || '').trim())) f.issue = '';
+      kept.push(f);
+    });
+    /* 🚨 只有 first 轮要求必须有逐处改。改/补/删那几轮是在动稿子，
+       他这一轮说的是**指令**不是英语，挑不出毛病是正常的。 */
+    if (!kept.length && o.mode === 'first')
+      bad.push('fixes 里没有一条的 quote 能在他原话里逐字找到');
+    p.fixes = kept;
+  }
+
+  // ⑥ cover / takeaways / followup —— 沿用 v1 那套
+  const want = (o.dims || []).map(d => String(d.nm || '').trim()).filter(Boolean);
+  if (want.length){
+    const got = {}, kept = [];
+    (Array.isArray(p.cover) ? p.cover : []).forEach(c => {
+      if (!c) return;
+      let idx = -1;
+      const i1 = parseInt(c.i, 10);
+      if (i1 >= 1 && i1 <= want.length) idx = i1 - 1;
+      else { const j = want.indexOf(String(c.nm || '').trim()); if (j >= 0) idx = j; }
+      if (idx < 0 || got[idx]) return;
+      got[idx] = 1; c.nm = want[idx]; c.ok = !!c.ok; c.how = cleanZh(c.how || '') || c.how;
+      kept.push(c);
+    });
+    want.forEach((nm, i) => { if (!got[i]) bad.push('cover 漏了维度「' + nm + '」'); });
+    p.cover = kept.sort((x, y) => want.indexOf(x.nm) - want.indexOf(y.nm));
+  }
+
+  p.takeaways = (Array.isArray(p.takeaways) ? p.takeaways : [])
+    .filter(t => t && /[A-Za-z]/.test(String(t.en || '')));
+  if (p.takeaways.length < 3) bad.push('takeaways 里含英文的不足 3 条');
+  p.takeaways.forEach(t => {
+    if (!DREGS.includes(String(t.reg || '').trim())) t.reg = '';
+    t.zh = cleanZh(t.zh || '') || t.zh;
+  });
+
+  const fu = p.followup || {};
+  if (!/[A-Za-z]/.test(String(fu.en || '')) || String(fu.en).indexOf('?') < 0)
+    bad.push('followup.en 不是英文问句');
+
+  p.points.forEach(x => { x.why = cleanZh(x.why || '') || x.why; });
+  return bad;
+}
+
+async function polMakeV2(o){
+  return await polAsk(() => polPromptV2(o), j => polBadV2(j, o));
+}
+
+/* ── 打磨本体（v1，保留给回看旧记录用）───────────────────────── */
 function polPrompt(topic, said, dims){
   return [
     '你是 Alex —— 英语教练。他刚刚用英语说了一段话，你只做一件事：',
@@ -14135,18 +14501,19 @@ function polStage(msg, cur, total){
 /* 出题（打磨这一档的根屏） */
 function showPolish(){
   SESSUI.top = 'pol';                 // 🚨 见 showList 里那段：高亮由本屏认领
+  POL.onResult = false;
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
   $('#sub').textContent = '口语打磨 · 说一整段，逐处帮你改';
   const f = $('#feed');
   const his = polTopics();
-  f.innerHTML = sessTopTabs() +
+  f.innerHTML = sessTopTabs() + '<div class="pol">' +
     '<div class="card" style="padding:14px">' +
       '<div class="k" style="font-weight:800;margin-bottom:8px">想练哪一段？</div>' +
       '<textarea id="poltopic" rows="2" placeholder="例：面试官问我为什么离开上一家事务所" ' +
         'style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;' +
         'border:1px solid var(--line-strong);background:var(--surface);' +
         'color:inherit;font-size:15px;line-height:1.5;resize:vertical"></textarea>' +
-      '<button id="polgo" class="big" style="width:100%;margin-top:10px">开始</button>' +
+      '<button id="polgo" class="btn wide" style="width:100%;margin-top:10px">开始</button>' +
       '<div class="t" style="margin-top:8px;color:var(--muted)">' +
         '先给你列「对方可能问什么、该覆盖哪些方面」，然后你一口气说完，' +
         '说的过程中不打断。</div>' +
@@ -14158,7 +14525,7 @@ function showPolish(){
       his.map(t => '<button class="rchip" data-poltop="' + esc(t) + '" ' +
         'style="margin:0 6px 6px 0;max-width:100%;white-space:normal;text-align:left">' +
         esc(t) + '</button>').join('') + '</div>' : '') +
-    '<div id="pollist"></div>';
+    '<div id="pollist"></div></div>';
   bindSessTop();
 
   const go1 = () => {
@@ -14220,6 +14587,7 @@ async function polStart(topic){
 
 /* 准备屏：对方会问什么 / 该讲哪几方面 / 雷区 —— 然后开始说 */
 function showPolishPrep(){
+  POL.onResult = false;              // 离开结果屏，下次出稿要 go() 而不是就地重画
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
   $('#sub').textContent = POL.topic || '开口前';
   const g = POL.guide || {};
@@ -14227,19 +14595,20 @@ function showPolishPrep(){
 
   /* 🚨 「开始说」放在**最前面**，guidance 在它下面。
      他要的是先看再说，但主动作不能沉到底下 —— 判据：第一屏就点得到。 */
-  f.innerHTML =
+  f.innerHTML = '<div class="pol">' +
     '<div class="card" style="padding:14px">' +
       '<div class="k" style="font-weight:800">' + esc(POL.topic) + '</div>' +
       '<div class="t" style="margin-top:6px;color:var(--muted)">' +
-        '一口气说完，中间不会打断你。说完再点一次停止。</div>' +
-      '<button id="polmic" class="big" style="width:100%;margin-top:10px">🎙 点一下开始说</button>' +
-      '<button id="poltype" class="rchip" style="margin-top:8px">改成打字 / 粘贴</button>' +
+        '一口气说完，中间不会打断你。说完再点一次停止。<br>' +
+        '<b>中文英文都行</b> —— 说中文我先翻成英文，再告诉你哪些该删。</div>' +
+      '<button id="polmic" class="btn wide" style="width:100%;margin-top:10px">🎙 点一下开始说</button>' +
+      '<button id="poltype" class="btn2" style="margin-top:8px">改成打字 / 粘贴</button>' +
       '<div id="poltypebox" hidden style="margin-top:8px">' +
-        '<textarea id="poltypein" rows="5" placeholder="把你想说的英文写在这里（可以是 broken English）" ' +
+        '<textarea id="poltypein" rows="6" placeholder="中文或英文都可以。中文我会翻成英文，并告诉你哪些细节该留到后面再讲。" ' +
           'style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;' +
           'border:1px solid var(--line-strong);background:var(--surface);color:inherit;' +
           'font-size:15px;line-height:1.5"></textarea>' +
-        '<button id="poltypego" class="big" style="width:100%;margin-top:8px">交给 Alex 打磨</button>' +
+        '<button id="poltypego" class="btn wide" style="width:100%;margin-top:8px">交给 Alex 打磨</button>' +
       '</div>' +
       '<div id="polerr" class="warn" style="margin-top:8px"></div>' +
       '<div id="polstage" style="margin-top:8px"></div>' +
@@ -14269,9 +14638,9 @@ function showPolishPrep(){
         '<div style="margin-bottom:10px"><div style="font-size:14.5px;line-height:1.5;' +
         'text-decoration:line-through;opacity:.7">' + esc(t.bad) + '</div>' +
         '<div class="t" style="color:var(--muted);margin-top:2px">' + esc(t.why) + '</div></div>').join('') +
-    '</div>';
+    '</div></div>';
 
-  $('#polmic').onclick = polMicToggle;
+  $('#polmic').onclick = () => polMicToggle('polmic');
   $('#poltype').onclick = () => {
     const b = $('#poltypebox');
     if (b) b.hidden = !b.hidden;
@@ -14312,12 +14681,23 @@ async function polGetRec(){
 /* btnId：从结果屏的「答这一句」按下来时，要动的是那颗按钮。
    🚨 原来写死 `$('#polmic')` —— 在结果屏上它是 null，于是他点了「🎙 答这一句」
       **界面上什么都不变**（其实已经在录了）。按钮反馈找不到宿主 = 等于没有反馈。 */
+/* 每颗录音键的原始文案 + 它录完要走哪种模式。
+   🚨 单一配置点：加一个新的录音入口只在这张表里加一行，
+      别再往 polMicToggle 里塞 if。 */
+const POL_MICS = {
+  polmic:     {lbl:'🎙 点一下开始说',   mode:'first'},
+  polfumic:   {lbl:'🎙 答这一句',       mode:'first'},
+  poladdmic:  {lbl:'🎙 说要补充的点',   mode:'add'},
+  poleditmic: {lbl:'🎙 说你要怎么改',   mode:'edit'},
+};
+
 async function polMicToggle(btnId){
   if (POL.busy) return;
-  const id = (typeof btnId === 'string' && btnId) ? btnId : 'polmic';
+  const id = (typeof btnId === 'string' && POL_MICS[btnId]) ? btnId : 'polmic';
   POL.btnId = POL.recing ? POL.btnId : id;     // 停的时候要动的是当初按下的那颗
+  if (!POL.recing) POL.recMode = POL_MICS[id].mode;
   const btn = document.getElementById(POL.btnId || id);
-  const LBL = (POL.btnId === 'polfumic') ? '🎙 答这一句' : '🎙 点一下开始说';
+  const LBL = (POL_MICS[POL.btnId] || POL_MICS.polmic).lbl;
   if (POL.recing){                       // 停
     POL.recing = false;
     try { POL.rec && POL.rec.state !== 'inactive' && POL.rec.stop(); } catch(_){}
@@ -14358,7 +14738,7 @@ async function polOnStop(){
     const part = await toAudioPart(blob);
     const said = await polTranscribe(part);
     POL.busy = false;
-    await polRun(said);
+    await polRun(said, POL.recMode || 'first');
   } catch(e){
     POL.busy = false;
     polStage('');
@@ -14367,27 +14747,63 @@ async function polOnStop(){
   }
 }
 
-/* ── 打磨一次 ────────────────────────────────────────────── */
-async function polRun(said){
+/* ── 打磨一次（v2）──────────────────────────────────────────
+   mode: first 初次 / add 补几个点 / edit 定向修改 / drop 手动删掉某几条
+   🚨 后三种都要把**上一版的要点清单和成稿**喂回去 —— v1 每轮从零重来，
+      这正是「没办法连续补充」的结构性原因。 */
+const POL_STAGE_TXT = {
+  first: '在拆要点、翻成英文、并看看该删哪些',
+  add:   '在把新要点并进稿子里',
+  edit:  '在按你说的改（没提到的地方不动）',
+  drop:  '在把你划掉的那几条从稿子里拿走',
+};
+
+async function polRun(said, mode, dropped){
   if (POL.busy) return;
+  mode = POL_MODES.indexOf(mode) >= 0 ? mode : 'first';
   POL.busy = true;
   const el = $('#polerr'); if (el) el.textContent = '';
-  polStage('在逐处打磨（不会打断你，一次给完）');
+  polStage(POL_STAGE_TXT[mode]);
   try {
-    const res = await polMakeResult(POL.topic, said, (POL.guide || {}).dims || []);
-    POL.said = said; POL.res = res; POL.round++;
+    const prev = POL.res || {};
+    const o = {
+      mode: mode,
+      topic: POL.topic,
+      said: said,
+      /* 锚定用原始那段话 —— 见 polBadV2 里那段注释 */
+      origSaid: mode === 'first' ? said : (POL.said || said),
+      /* 🚨 语种按**这一轮说的内容**判：first 轮是他的稿子，
+         改/补 那几轮他说的是中文指令，但稿子的语种应该沿用上一轮，
+         否则一说中文指令整个界面就切成"直译陷阱"模式了。 */
+      lang: mode === 'first' ? polLang(said) : (POL.lang || polLang(said)),
+      dims: (POL.guide || {}).dims || [],
+      points: mode === 'first' ? [] : (prev.points || []),
+      draft: mode === 'first' ? '' : (prev.draft || ''),
+      /* 上一版有多少词 —— 这是「变短了没有」的**外部锚**，不能让模型自己说 */
+      prevWords: ((String(prev.draft || '').match(/[A-Za-z']+/g) || []).length),
+      dropped: dropped || [],
+    };
+    const res = await polMakeV2(o);
+    if (mode === 'first'){ POL.said = said; POL.lang = o.lang; }
+    POL.res = res; POL.round++;
+    POL.lastMode = mode;
     POL.busy = false;
-    /* 落盘：一条记录 = 一个 topic，重说追加成新的一轮（不另开一条） */
+    /* 落盘：一条记录 = 一个 topic，每一轮（含改/补/删）追加成一版，
+       所以他能回看「这一版比上一版改了什么」。 */
+    const round = {said: said, res: res, at: Date.now(), mode: mode, v: POL.round};
     if (!POL.rec_id){
       const r = polNew(POL.topic);
-      r.rounds.push({said: said, res: res, at: Date.now()});
+      r.rounds.push(round);
       POL.rec_id = await polSave(r);
       POL.rec_obj = r;
     } else {
       const r = POL.rec_obj || await polGet(POL.rec_id);
-      if (r){ r.rounds.push({said: said, res: res, at: Date.now()}); POL.rec_obj = r; await polSave(r); }
+      if (r){ r.rounds.push(round); POL.rec_obj = r; await polSave(r); }
     }
-    go(showPolishResult, '打磨结果');
+    /* 已经在结果屏上时就地重画，不再往 NAV 里压一层 ——
+       否则改三轮之后要点四下返回才出得去。 */
+    if (POL.onResult) showPolishResult();
+    else go(showPolishResult, '打磨结果');
   } catch(e){
     POL.busy = false;
     polStage('');
@@ -14398,113 +14814,259 @@ async function polRun(said){
 
 /* ── 结果屏 ──────────────────────────────────────────────
    五块：逐处改（前 5 + 折叠）／整段重写／维度对账／可以带走的句式／可选追问一轮 */
+/* ── 结果屏（v2）────────────────────────────────────────────
+   顺序按他的关注度排：先「该不该说」，再「怎么说」。
+     ① 英文成稿  ② 该说多长  ③ 要点清单（可勾选删）  ④ 建议删/该强化/缺什么
+     ⑤ 直译陷阱(中文输入) 或 逐处改(英文输入)  ⑥ 可带走的句式  ⑦ 三个口子
+   🚨 版式返工同时做：卡片统一 16px 内距、块标题统一，
+      主操作一律 .btn（v1 我自造了没定义的 class="big"，掉回浏览器默认按钮）。 */
 function showPolishResult(){
+  POL.onResult = true;
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
-  $('#sub').textContent = '打磨结果' + (POL.round > 1 ? ' · 第 ' + POL.round + ' 次' : '');
+  $('#sub').textContent = '打磨结果' + (POL.round > 1 ? ' · 第 ' + POL.round + ' 版' : '');
   const p = POL.res || {}, f = $('#feed');
-  const fixes = p.fixes || [];
-  const top = fixes.slice(0, POL_TOP), rest = fixes.slice(POL_TOP);
+  const A = p.advice || {};
+  const pts = p.points || [];
+  const live = pts.filter(x => x.keep !== 'cut');
+  const cut  = pts.filter(x => x.keep === 'cut');
+  const isZh = (POL.lang || 'en') === 'zh';
 
-  const fixHtml = x =>
-    '<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">' +
-      '<div style="font-size:14.5px;line-height:1.5;text-decoration:line-through;opacity:.65">' +
-        esc(x.quote) + '</div>' +
-      (x.issue ? '<div class="t" style="margin-top:3px;color:var(--brand-dark);font-weight:700">'
-                 + esc(x.issue) + '</div>' : '') +
-      '<div style="font-size:15px;line-height:1.55;margin-top:4px">' + esc(x.native) + '</div>' +
-      (x.zh ? '<div class="t" style="color:var(--muted);margin-top:3px">' + esc(x.zh) + '</div>' : '') +
-    '</div>';
+  const CARD = 'class="card" style="padding:16px"';
+  const H = t => '<div style="font-weight:800;font-size:15px;margin-bottom:10px">' + t + '</div>';
+  const SUB = t => '<div class="t" style="color:var(--muted);margin-top:3px;line-height:1.55">' + t + '</div>';
 
-  f.innerHTML =
-    '<div class="card" style="padding:14px">' +
-      '<div class="k" style="font-weight:800;margin-bottom:4px">你刚才说的</div>' +
-      '<div class="t" style="color:var(--muted);line-height:1.6">' + esc(POL.said) + '</div>' +
-    '</div>' +
+  /* ① 成稿 */
+  let h = '<div ' + CARD + '>' +
+      H(isZh ? '英文成稿（翻自你说的）' : '英文成稿') +
+      '<div style="font-size:16px;line-height:1.7">' + esc(p.draft) + '</div>' +
+      '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button id="polspeak" class="rchip">🔊 念一遍</button>' +
+        '<button id="polcopy" class="rchip">复制</button>' +
+      '</div></div>';
 
-    '<div class="card" style="padding:14px">' +
-      '<div class="k" style="font-weight:800;margin-bottom:10px">逐处改' +
-        (fixes.length > POL_TOP ? '（先给最值钱的 ' + POL_TOP + ' 处）' : '') + '</div>' +
-      top.map(fixHtml).join('') +
-      (rest.length ?
-        '<button id="polmore" class="rchip">还有 ' + rest.length + ' 处，展开看</button>' +
-        '<div id="polrest" hidden style="margin-top:10px">' + rest.map(fixHtml).join('') + '</div>'
-        : '') +
-    '</div>' +
+  /* ② 该说多长 */
+  h += '<div ' + CARD + '>' + H('该说多长') +
+    '<div style="display:flex;gap:18px;flex-wrap:wrap">' +
+      '<div><div class="t" style="color:var(--muted)">合理长度</div>' +
+        '<div style="font-size:15.5px;font-weight:700;margin-top:2px">' + esc(A.target) + '</div></div>' +
+      '<div><div class="t" style="color:var(--muted)">你这版</div>' +
+        '<div style="font-size:15.5px;font-weight:700;margin-top:2px">' + esc(A.now) + '</div></div>' +
+    '</div>' + SUB(esc(A.note)) + '</div>';
 
-    '<div class="card" style="padding:14px">' +
-      '<div class="k" style="font-weight:800;margin-bottom:8px">整段可以这么说</div>' +
-      '<div style="font-size:15.5px;line-height:1.65">' + esc(p.rewrite) + '</div>' +
-      '<button id="polspeak" class="rchip" style="margin-top:10px">🔊 念一遍</button>' +
-      '<button id="polcopy" class="rchip" style="margin-top:10px">复制</button>' +
-    '</div>' +
-
-    '<div class="card" style="padding:14px">' +
-      '<div class="k" style="font-weight:800;margin-bottom:8px">该讲的几方面，讲到了吗</div>' +
-      (p.cover || []).map(c =>
-        '<div style="margin-bottom:10px">' +
-          '<div style="font-size:15px;font-weight:700">' +
-            (c.ok ? '✅ ' : '⚠️ ') + esc(c.nm) + '</div>' +
-          '<div class="t" style="color:var(--muted);margin-top:2px">' + esc(c.how) + '</div>' +
-        '</div>').join('') +
-    '</div>' +
-
-    '<div class="card" style="padding:14px">' +
-      '<div class="k" style="font-weight:800;margin-bottom:8px">可以带走的说法</div>' +
-      (p.takeaways || []).map((t, i) =>
-        '<div style="margin-bottom:12px">' +
-          '<div style="font-size:15px;line-height:1.5">' + esc(t.en) +
-            (t.reg ? ' <span class="t" style="color:var(--muted)">' + esc(t.reg) + '</span>' : '') +
-          '</div>' +
-          (t.zh ? '<div class="t" style="color:var(--muted);margin-top:2px">' + esc(t.zh) + '</div>' : '') +
-          '<button class="rchip" data-poltake="' + i + '" style="margin-top:6px">☆ 收进本子</button>' +
-        '</div>').join('') +
-    '</div>' +
-
-    /* 🚨 追问**默认收起**、而且**只有一轮** —— Kevin 明确不要 back-and-forth。
-       答完这一轮就不再给追问入口（`POL.fuUsed`）。 */
-    (p.followup && !POL.fuUsed ?
-      '<div class="card" style="padding:14px">' +
-        '<button id="polfu" class="rchip">想再练一下？让对方追问一句</button>' +
-        '<div id="polfubox" hidden style="margin-top:10px">' +
-          '<div style="font-size:15px;line-height:1.5">' + esc(p.followup.en) + '</div>' +
-          '<div class="t" style="color:var(--muted);margin-top:2px">' + esc(p.followup.zh) + '</div>' +
-          '<button id="polfumic" class="big" style="width:100%;margin-top:10px">🎙 答这一句</button>' +
-          '<button id="polfutype" class="rchip" style="margin-top:8px">打字答</button>' +
-          '<div id="polfutypebox" hidden style="margin-top:8px">' +
-            '<textarea id="polfuin" rows="4" style="width:100%;box-sizing:border-box;padding:10px;' +
-              'border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);' +
-              'color:inherit;font-size:15px"></textarea>' +
-            '<button id="polfugo" class="big" style="width:100%;margin-top:8px">交给 Alex 打磨</button>' +
-          '</div>' +
-          '<div class="t" style="color:var(--muted);margin-top:8px">' +
-            '只追问这一轮 —— 这里不做角色扮演。</div>' +
+  /* ③ 要点清单 —— 每条一个删/留键（Kevin 选的 B） */
+  h += '<div ' + CARD + '>' + H('这段话里的要点') +
+    SUB('不想讲的直接划掉，我重新给你出一版稿子。') +
+    '<div style="margin-top:12px">' +
+    live.map(x =>
+      '<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 0;' +
+        'border-bottom:1px solid var(--line)">' +
+        '<div style="flex:1">' +
+          '<div style="font-size:15px;line-height:1.5">' +
+            (x.keep === 'must' ? '<span class="t" style="color:var(--brand-dark);font-weight:800">必讲 </span>' : '') +
+            esc(x.zh) + '</div>' +
+          (x.why ? SUB(esc(x.why)) : '') +
         '</div>' +
-      '</div>' : '') +
-
-    '<div class="card" style="padding:14px">' +
-      '<button id="polagain" class="rchip">同一题，再说一遍</button>' +
-      '<button id="polnew" class="rchip">换一题</button>' +
-      '<div id="polerr" class="warn" style="margin-top:8px"></div>' +
-      '<div id="polstage" style="margin-top:8px"></div>' +
+        '<button class="rchip" data-poldrop="' + esc(x.id) + '" ' +
+          'style="flex:0 0 auto;padding:6px 12px">✂️ 划掉</button>' +
+      '</div>').join('') +
+    '</div>' +
+    (cut.length ? '<button id="polcutmore" class="rchip" style="margin-top:12px">' +
+      '已划掉 / 建议删的 ' + cut.length + ' 条</button>' +
+      '<div id="polcutbox" hidden style="margin-top:10px">' +
+      cut.map(x =>
+        '<div style="padding:10px 0;border-bottom:1px solid var(--line)">' +
+          '<div style="font-size:14.5px;line-height:1.5;opacity:.6;text-decoration:line-through">' +
+            esc(x.zh) + '</div>' +
+          (x.why ? SUB(esc(x.why)) : '') +
+          (x.when ? '<div class="t" style="color:var(--brand-dark);margin-top:3px">' +
+            '👉 ' + esc(x.when) + '</div>' : '') +
+          '<button class="rchip" data-polkeep="' + esc(x.id) + '" ' +
+            'style="margin-top:8px;padding:6px 12px">↩︎ 加回来</button>' +
+        '</div>').join('') + '</div>' : '') +
     '</div>';
+
+  /* ④ 该强化 / 缺什么 */
+  const focus = (A.focus || []).map(id => (pts.find(x => x.id === id) || {}).zh).filter(Boolean);
+  if (focus.length || (A.missing || []).length){
+    h += '<div ' + CARD + '>' + H('重点和缺口') +
+      (focus.length ? '<div style="margin-bottom:12px">' +
+        '<div class="t" style="color:var(--muted);margin-bottom:4px">这几条是核心，要讲透</div>' +
+        focus.map(z => '<div style="font-size:15px;line-height:1.6">· ' + esc(z) + '</div>').join('') +
+        '</div>' : '') +
+      ((A.missing || []).length ? '<div>' +
+        '<div class="t" style="color:var(--muted);margin-bottom:4px">这个场合通常有、你没讲的</div>' +
+        (A.missing || []).map(m =>
+          '<div style="margin-bottom:8px"><div style="font-size:15px;line-height:1.5">· ' +
+          esc(m.zh) + '</div>' + (m.why ? SUB(esc(m.why)) : '') + '</div>').join('') +
+        '</div>' : '') +
+      '</div>';
+  }
+
+  /* ⑤ 直译陷阱（中文） / 逐处改（英文） */
+  if (isZh){
+    const tr = p.traps || [];
+    if (tr.length){
+      h += '<div ' + CARD + '>' + H('直译陷阱') +
+        SUB('你这几句中文，顺手直译成英文会不地道。') +
+        '<div style="margin-top:12px">' +
+        tr.map(t =>
+          '<div style="padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--line)">' +
+            '<div class="t" style="color:var(--muted)">' + esc(t.zh) + '</div>' +
+            '<div style="font-size:14.5px;line-height:1.5;margin-top:5px;opacity:.6;' +
+              'text-decoration:line-through">' + esc(t.bad) + '</div>' +
+            '<div style="font-size:15.5px;line-height:1.55;margin-top:4px">' + esc(t.good) + '</div>' +
+          '</div>').join('') + '</div></div>';
+    }
+  } else {
+    const fixes = p.fixes || [];
+    const top = fixes.slice(0, POL_TOP), rest = fixes.slice(POL_TOP);
+    const fixHtml = x =>
+      '<div style="padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--line)">' +
+        '<div style="font-size:14.5px;line-height:1.5;text-decoration:line-through;opacity:.6">' +
+          esc(x.quote) + '</div>' +
+        (x.issue ? '<div class="t" style="margin-top:4px;color:var(--brand-dark);font-weight:700">'
+                   + esc(x.issue) + '</div>' : '') +
+        '<div style="font-size:15.5px;line-height:1.55;margin-top:4px">' + esc(x.native) + '</div>' +
+      '</div>';
+    if (fixes.length){
+      h += '<div ' + CARD + '>' +
+        H('逐处改' + (fixes.length > POL_TOP ? '（先给最值钱的 ' + POL_TOP + ' 处）' : '')) +
+        top.map(fixHtml).join('') +
+        (rest.length ?
+          '<button id="polmore" class="rchip">还有 ' + rest.length + ' 处，展开看</button>' +
+          '<div id="polrest" hidden style="margin-top:12px">' + rest.map(fixHtml).join('') + '</div>'
+          : '') + '</div>';
+    }
+  }
+
+  /* ⑥ 可带走的句式 */
+  h += '<div ' + CARD + '>' + H('可以带走的说法') +
+    (p.takeaways || []).map((t, i) =>
+      '<div style="padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid var(--line)">' +
+        '<div style="font-size:15.5px;line-height:1.55">' + esc(t.en) +
+          (t.reg ? ' <span class="t" style="color:var(--muted)">' + esc(t.reg) + '</span>' : '') + '</div>' +
+        (t.zh ? SUB(esc(t.zh)) : '') +
+        '<button class="rchip" data-poltake="' + i + '" style="margin-top:8px;padding:6px 12px">' +
+          '☆ 收进本子</button>' +
+      '</div>').join('') + '</div>';
+
+  /* ⑦ 三个口子 —— 他明确要的「留个口子支持后续修改」「对上一轮补充」 */
+  h += '<div ' + CARD + '>' + H('还想再改？') +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px">' +
+      '<button id="poleditopen" class="rchip">✍️ 我要改</button>' +
+      '<button id="poladdopen" class="rchip">➕ 补几个点</button>' +
+      '<button id="polagain" class="rchip">🔁 整段重说</button>' +
+      '<button id="polnew" class="rchip">换一题</button>' +
+    '</div>' +
+
+    '<div id="poleditbox" hidden style="margin-top:12px">' +
+      SUB('说说要改哪里，比如「太长了砍一半」「第二段别这么谦虚」「别提离职原因」。') +
+      '<textarea id="poleditin" rows="3" placeholder="要怎么改？中文说就行" ' +
+        'style="width:100%;box-sizing:border-box;margin-top:8px;padding:12px;border-radius:10px;' +
+        'border:1px solid var(--line-strong);background:var(--surface);color:inherit;font-size:15px"></textarea>' +
+      '<button id="poleditgo" class="btn wide" style="width:100%;margin-top:10px">按这个改</button>' +
+      '<button id="poleditmic" class="rchip" style="margin-top:8px">🎙 说你要怎么改</button>' +
+    '</div>' +
+
+    '<div id="poladdbox" hidden style="margin-top:12px">' +
+      SUB('还漏了什么？说出来我并进现有稿子，原来的点一条都不会丢。') +
+      '<textarea id="poladdin" rows="3" placeholder="还想补充哪几点？中文说就行" ' +
+        'style="width:100%;box-sizing:border-box;margin-top:8px;padding:12px;border-radius:10px;' +
+        'border:1px solid var(--line-strong);background:var(--surface);color:inherit;font-size:15px"></textarea>' +
+      '<button id="poladdgo" class="btn wide" style="width:100%;margin-top:10px">补进去</button>' +
+      '<button id="poladdmic" class="rchip" style="margin-top:8px">🎙 说要补充的点</button>' +
+    '</div>' +
+
+    (p.followup && !POL.fuUsed ?
+      '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">' +
+        '<button id="polfu" class="rchip">想练一下？让对方追问一句</button>' +
+        '<div id="polfubox" hidden style="margin-top:10px">' +
+          '<div style="font-size:15.5px;line-height:1.55">' + esc(p.followup.en) + '</div>' +
+          SUB(esc(p.followup.zh)) +
+          '<textarea id="polfuin" rows="3" placeholder="答这一句（中文英文都行）" ' +
+            'style="width:100%;box-sizing:border-box;margin-top:8px;padding:12px;border-radius:10px;' +
+            'border:1px solid var(--line-strong);background:var(--surface);color:inherit;' +
+            'font-size:15px"></textarea>' +
+          '<button id="polfugo" class="btn wide" style="width:100%;margin-top:10px">交给 Alex 打磨</button>' +
+          '<button id="polfumic" class="rchip" style="margin-top:8px">🎙 说给它听</button>' +
+          SUB('只追问这一轮 —— 这里不做角色扮演。') +
+        '</div></div>' : '') +
+
+    '<div id="polerr" class="warn" style="margin-top:10px"></div>' +
+    '<div id="polstage" style="margin-top:10px"></div>' +
+    '</div>';
+
+  /* 🚨 包一层 .pol 而不是往 #feed 上打类：#feed 是所有屏共用的容器，
+     打在它身上的类没人负责清，迟早漏到别的板块去。包一层就自成作用域。 */
+  f.innerHTML = '<div class="pol">' + h + '</div>';
+  bindPolishResult(p, live, cut);
+}
+
+/* 结果屏的事件绑定单独抽出来 —— 上面那个函数已经够长了。
+   🚨 绑定**无条件执行**：v1 踩过「按钮只在某个分支里绑了 onclick，
+      从别的入口打开就点了没反应」。这里每个都用 `el && (el.onclick=…)`。 */
+function bindPolishResult(p, live, cut){
+  const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = fn; };
+  const val = id => String((document.getElementById(id) || {}).value || '').trim();
+
+  on('polspeak', () => { try { say(p.draft); } catch(_){ toast('这台设备念不了'); } });
+  on('polcopy', async () => {
+    try { await navigator.clipboard.writeText(p.draft || ''); toast('复制好了'); }
+    catch(_){ toast('复制不了，长按选中吧'); }
+  });
 
   const more = document.getElementById('polmore');
   if (more) more.onclick = () => {
     const b = $('#polrest');
-    if (b){ b.hidden = !b.hidden; more.textContent = b.hidden
-      ? '还有 ' + rest.length + ' 处，展开看' : '收起'; }
+    if (b){ b.hidden = !b.hidden;
+            more.textContent = b.hidden ? '还有 ' + (p.fixes.length - POL_TOP) + ' 处，展开看' : '收起'; }
   };
-  const sp = document.getElementById('polspeak');
-  if (sp) sp.onclick = () => { try { say(p.rewrite); } catch(_){ toast('这台设备念不了'); } };
-  const cp = document.getElementById('polcopy');
-  if (cp) cp.onclick = async () => {
-    try { await navigator.clipboard.writeText(p.rewrite || ''); toast('复制好了'); }
-    catch(_){ toast('复制不了，长按选中吧'); }
-  };
+  const cm = document.getElementById('polcutmore');
+  if (cm) cm.onclick = () => { const b = $('#polcutbox'); if (b) b.hidden = !b.hidden; };
 
-  /* 收进本子：**每条各一个键**，id 取英文那一面 —— 他为「三个表达只想收一句」顶过一次。
-     🚨 收完**整块重画**，不各自 paint：同一条可能在别处也出现，各画各的必然
-        一个显 ✓ 一个显 ☆。 */
+  /* 勾选删 / 加回 —— 都要重新出稿（成稿必须跟着清单走，不能只改界面） */
+  document.querySelectorAll('[data-poldrop]').forEach(b =>
+    b.onclick = () => {
+      const id = b.dataset.poldrop;
+      if (live.length <= 1) return toast('至少得留一条');
+      polRun('划掉要点 ' + id, 'drop', [id]);
+    });
+  document.querySelectorAll('[data-polkeep]').forEach(b =>
+    b.onclick = () => {
+      const it = (p.points || []).find(x => x.id === b.dataset.polkeep);
+      polRun('把这一条加回来讲：' + ((it && it.zh) || b.dataset.polkeep), 'edit');
+    });
+
+  /* 三个口子 */
+  on('poleditopen', () => { const b = $('#poleditbox'); if (b) b.hidden = !b.hidden; });
+  on('poladdopen',  () => { const b = $('#poladdbox');  if (b) b.hidden = !b.hidden; });
+  on('poleditgo', () => {
+    const v = val('poleditin');
+    if (!v) return void ($('#polerr').textContent = '先说说要改哪里。');
+    polRun(v, 'edit');
+  });
+  on('poladdgo', () => {
+    const v = val('poladdin');
+    if (!v) return void ($('#polerr').textContent = '先写要补充什么。');
+    polRun(v, 'add');
+  });
+  on('poleditmic', () => polMicToggle('poleditmic'));
+  on('poladdmic',  () => polMicToggle('poladdmic'));
+
+  on('polfu', () => { const b = $('#polfubox'); if (b) b.hidden = !b.hidden; });
+  on('polfumic', () => { POL.fuUsed = true; polMicToggle('polfumic'); });
+  on('polfugo', () => {
+    const v = val('polfuin');
+    if (!v) return void ($('#polerr').textContent = '先写点什么。');
+    POL.fuUsed = true;
+    POL.onResult = false;              // 追问那一轮是新的一稿，允许 go() 进去
+    polRun(v, 'first');
+  });
+
+  on('polagain', () => { POL.fuUsed = false; POL.onResult = false; go(showPolishPrep, '开口前'); });
+  on('polnew', () => { polReset(); go(showPolish, '口语打磨'); });
+
+  /* 收句式：每条各一个键，收完整块重画并保留滚动位置 */
   document.querySelectorAll('[data-poltake]').forEach(b =>
     b.onclick = () => {
       const t = (p.takeaways || [])[+b.dataset.poltake];
@@ -14517,23 +15079,6 @@ function showPolishResult(){
       showPolishResult();
       window.scrollTo(0, y);
     });
-
-  const fu = document.getElementById('polfu');
-  if (fu) fu.onclick = () => { const b = $('#polfubox'); if (b) b.hidden = !b.hidden; };
-  const fut = document.getElementById('polfutype');
-  if (fut) fut.onclick = () => { const b = $('#polfutypebox'); if (b) b.hidden = !b.hidden; };
-  const fug = document.getElementById('polfugo');
-  if (fug) fug.onclick = () => {
-    const v = ($('#polfuin') || {}).value || '';
-    if (!String(v).trim()){ $('#polerr').textContent = '先写点什么。'; return; }
-    POL.fuUsed = true;
-    polRun(String(v).trim());
-  };
-  const fum = document.getElementById('polfumic');
-  if (fum) fum.onclick = () => { POL.fuUsed = true; polMicToggle('polfumic'); };
-
-  $('#polagain').onclick = () => { POL.fuUsed = false; go(showPolishPrep, '开口前'); };
-  $('#polnew').onclick = () => { polReset(); go(showPolish, '口语打磨'); };
 }
 
 /* 回看一条打磨记录 */
@@ -14548,17 +15093,34 @@ function showPolishRec(r){
     '</div>' +
     r.rounds.map((rd, i) => {
       const p = rd.res || {};
-      return '<div class="card" style="padding:14px">' +
-        '<div class="k" style="font-weight:800;margin-bottom:6px">第 ' + (i + 1) + ' 次</div>' +
+      /* 🚨 v1 存的是 `rewrite`，v2 存的是 `draft`。只认一个的话，
+         这次上线之前存下来的记录点进去全是空白 —— 两个都认。 */
+      const draft = p.draft || p.rewrite || '';
+      const MODE = {first:'第一版', add:'补了几点', edit:'按你说的改', drop:'划掉了要点'};
+      return '<div class="card" style="padding:16px">' +
+        '<div style="font-weight:800;margin-bottom:6px">第 ' + (i + 1) + ' 版' +
+          (rd.mode && MODE[rd.mode] && i ? ' · ' + MODE[rd.mode] : '') + '</div>' +
         '<div class="t" style="color:var(--muted);line-height:1.6">' + esc(rd.said) + '</div>' +
-        '<div style="margin-top:10px;font-weight:700;font-size:13px">整段可以这么说</div>' +
-        '<div style="font-size:15px;line-height:1.6;margin-top:4px">' + esc(p.rewrite) + '</div>' +
-        '<div style="margin-top:10px;font-weight:700;font-size:13px">改了 ' +
-          ((p.fixes || []).length) + ' 处</div>' +
-        (p.fixes || []).map(x =>
-          '<div class="t" style="margin-top:6px;line-height:1.5">' +
-            '<span style="text-decoration:line-through;opacity:.6">' + esc(x.quote) + '</span>' +
-            ' → ' + esc(x.native) + '</div>').join('') +
+        '<div style="margin-top:12px;font-weight:700;font-size:13px">成稿</div>' +
+        '<div style="font-size:15px;line-height:1.65;margin-top:4px">' + esc(draft) + '</div>' +
+        ((p.points || []).length ?
+          '<div style="margin-top:12px;font-weight:700;font-size:13px">要点 ' +
+            (p.points || []).filter(x => x.keep !== 'cut').length + ' 条（划掉 ' +
+            (p.points || []).filter(x => x.keep === 'cut').length + ' 条）</div>' : '') +
+        ((p.fixes || []).length ?
+          '<div style="margin-top:12px;font-weight:700;font-size:13px">改了 ' +
+            (p.fixes || []).length + ' 处</div>' +
+          (p.fixes || []).map(x =>
+            '<div class="t" style="margin-top:6px;line-height:1.5">' +
+              '<span style="text-decoration:line-through;opacity:.6">' + esc(x.quote) + '</span>' +
+              ' → ' + esc(x.native) + '</div>').join('') : '') +
+        ((p.traps || []).length ?
+          '<div style="margin-top:12px;font-weight:700;font-size:13px">直译陷阱 ' +
+            (p.traps || []).length + ' 处</div>' +
+          (p.traps || []).map(x =>
+            '<div class="t" style="margin-top:6px;line-height:1.5">' + esc(x.zh) + '：' +
+              '<span style="text-decoration:line-through;opacity:.6">' + esc(x.bad) + '</span>' +
+              ' → ' + esc(x.good) + '</div>').join('') : '') +
       '</div>';
     }).join('') +
     '<div class="card" style="padding:14px">' +
