@@ -15725,8 +15725,36 @@ function betterBad(better, said, level){
   /* 下限 3 词：'went hiking'(2) 这种片段要拦住，
      但 'Yes, I did.'(3) 是他只说了一句 Yes 时**正确**的整句回答，不能误杀。 */
   if (bw < 3) return 'better 只有 ' + bw + ' 词，是个片段不是整句';
-  if (sw >= 8 && bw < Math.round(sw * 0.6))
+  /* 🚨🚨 **长段不许按比例卡长度**。Kevin 2026-08-20 两次撞到「没点评上」，
+     根因就是这条：他说了 750 词的口水话，模型给了个 370 词的**紧凑重写** ——
+     那是正确答案，而我要求 ≥60% → 连驳三次 → 他什么都拿不到。
+
+     🚨 更该记的是：**「打磨」那边早就栽过一模一样的坑并写进了 STATE**
+     （「rewrite 的长度判据不许按比例卡：他啰嗦说 132 词 + 模型给紧凑 46 词重写，
+       那是正确答案，按比例卡会误杀」），我做闲聊时又犯了一遍。
+     同一条教训在两个模块各栽一次 —— 判据的形状要跟着**目的**走：
+     这里的目的是「他能照着重说一遍」，不是「跟他说得一样长」。
+     他啰嗦，正确的范例本来就该更短。
+
+     所以分两档：
+       短句（< 40 词）：还用比例，因为半截和整句差别明显
+       长段（≥ 40 词）：只判「像不像一段完整的话」（≥2 句且 ≥25 词）
+                        + 一个很松的防掏空下限（20%） */
+  if (sw >= 40){
+    const sents = (b.match(/[.!?？。！]+/g) || []).length;
+    if (sents < 2 || bw < 25)
+      return 'better 不像一段完整的话（' + bw + ' 词 / ' + sents + ' 句）';
+    /* 🚨 防掏空的下限**必须封顶**，不能跟着他说的长度一直涨。
+       实测：20% 在 750 词时还行，到 2540 词（约 17 分钟口水话）就变成要求 508 词 ——
+       而模型给 265 词的浓缩版是**合理答案**，于是又连驳三次、他还是什么都拿不到。
+       这跟 easy 那条「容差要有绝对下限」是同一个道理的反面：
+       **要求本身要有上限**。他说得越久，正确的范例反而越该是浓缩的。 */
+    const floor = Math.min(80, Math.max(25, Math.round(sw * 0.2)));
+    if (bw < floor)
+      return 'better 只有 ' + bw + ' 词（至少要 ' + floor + ' 词），像是被掏空了';
+  } else if (sw >= 8 && bw < Math.round(sw * 0.6)){
     return 'better ' + bw + ' 词 vs 他原话 ' + sw + ' 词，像是只改了半截、没给整句';
+  }
   return '';
 }
 
@@ -16336,10 +16364,17 @@ function chatCritHTML(t, i){
       if (log[log.length - 1] !== line){ log.push(line);
         localStorage.setItem('alex_crit_err', JSON.stringify(log.slice(-12))); }
     } catch(_){}
-    return '<div class="tags" style="margin:-4px 0 10px 4px;color:var(--muted);font-size:12px">' +
-           '这句没点评上（网络或模型没配合），聊天不受影响 ' +
+    /* 🚨 按钮**单独一行、放在提示下面**，文案用他自己说的「再次尝试」
+       （Kevin 2026-08-20：「在『没点评上，聊天不受影响』这段话的下面，
+        再加一个『再次尝试』」）。他那段话已经在手里了，重跑一次就是一个动作，
+        **不能就这么完了就没了**。 */
+    return '<div class="card" style="margin:-4px 0 10px 12px;padding:10px;' +
+           'border-left:3px solid var(--line-strong)">' +
+           '<div style="color:var(--muted);font-size:12.5px">' +
+           '这句没点评上（网络不好或模型没配合），聊天不受影响。' +
+           '你说的话已经存下来了，点一下就能重跑。</div>' +
            '<button class="rchip" data-chatrecrit="' + i +
-           '" style="padding:2px 10px;font-size:12px;margin-left:4px">重新点评</button></div>';
+           '" style="margin-top:8px">🔁 再次尝试</button></div>';
   }
 
   /* 🚨 顺序就是他的阅读顺序：**先给能照念的整句**，再说为什么。
@@ -16434,7 +16469,7 @@ function chatBindTakes(){
     b.onclick = async () => {
       const idx = +b.dataset.chatrecrit, t = CHAT.turns[idx];
       if (!t || !t.said || b.disabled) return;
-      b.disabled = true; b.textContent = '⏳ 在点评…';
+      b.disabled = true; b.textContent = '⏳ 在重新点评…';
       try {
         const crit = await chatAsk(() => chatCritPrompt(t.said),
                                    (c, last) => chatCritBad(c, t.said, last));
@@ -16445,7 +16480,7 @@ function chatBindTakes(){
         const y = window.scrollY; chatPaintRoom(false); window.scrollTo(0, y);
         ttsWarm(t.better); ttsWarm(t.easy);
       } catch(e){
-        b.disabled = false; b.textContent = '重新点评';
+        b.disabled = false; b.textContent = '🔁 再次尝试';
         toast('还是没成：' + String(e.message || e).slice(0, 40), 3600);
       }
     });
