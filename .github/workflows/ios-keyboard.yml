@@ -17,9 +17,19 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    # 🚨 钉在 macos-15 + Xcode 16，不用 macos-latest。
+    #    latest 已经滚到 Xcode 26.6 / iOS 26.5 SDK —— 2026-08-20 用它编的键盘扩展
+    #    在 Kevin 的 iPhone 上「列表里有、选中就弹回上一个键盘」，装/权限/plist 逐项
+    #    核过全对，最新工具链本身就是嫌疑之一。iOS 18 SDK 是键盘扩展被验证最充分的一代。
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+
+      - name: 选 Xcode 16
+        run: |
+          ls /Applications | grep -i xcode || true
+          sudo xcode-select -s /Applications/Xcode_16.4.app || sudo xcode-select -s /Applications/Xcode_16.2.app || sudo xcode-select -s /Applications/Xcode_16.1.app
+          xcodebuild -version
 
       - name: 装 XcodeGen
         run: brew install xcodegen

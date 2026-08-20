@@ -30,7 +30,11 @@ final class KeyboardViewController: UIInputViewController {
     private let toneButton = UIButton(type: .system)
     private let fallbackButton = UIButton(type: .system)
 
-    private let voice = Voice()
+    // 🚨 懒加载，不在扩展启动瞬间创建。
+    //    Voice() 里会 init AVAudioEngine + SFSpeechRecognizer —— 键盘扩展的启动预算
+    //    只有几十 MB / 极短的看门狗时限，启动路径上任何重活都可能被系统直接杀掉，
+    //    表现就是「选了键盘却弹回上一个」且没有明显报错。录音引擎等第一次按麦克风再建。
+    private lazy var voice = Voice()
     private var phase: Phase = .idle
     private var silenceTimer: Timer?
     private var lastPartialAt = Date()
