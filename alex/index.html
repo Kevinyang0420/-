@@ -7907,6 +7907,62 @@ function showVoice(){
 
   }
 
+  /* ═══ Alex 的声音（2026-08-20 加）═══
+     Kevin：「现在自带的男声都很难听，含含糊糊像嘴里含着痰」。
+     下面那一长串是**这台设备自带的**嗓子，音质取决于手机装了什么；
+     这一块是**后端合成的微软神经语音**（跟他听过的「晓晓」同一家），
+     跟设备无关、换手机也不变。所以它排在最上面。 */
+  const NVOICES = [
+    ['andrew', 'Andrew', '美音 · 温暖、自信（他挑的）'],
+    ['brian', 'Brian', '美音 · 随意、像朋友'],
+    ['ryan', 'Ryan', '英音 · 友好'],
+    ['christopher', 'Christopher', '美音 · 沉稳、正式一点'],
+    ['guy', 'Guy', '美音 · 有劲'],
+    ['steffan', 'Steffan', '美音 · 冷静'],
+    ['eric', 'Eric', '美音 · 理性'],
+    ['thomas', 'Thomas', '英音 · 偏正式'],
+  ];
+  const NDEMO = "Hey, how's your week going? I really like this weather, "
+              + "but yesterday I went hiking and I felt very tired.";
+  const nbox = document.createElement('div');
+  nbox.className = 'card';
+  nbox.innerHTML = '<div class="k" style="font-weight:800;margin-bottom:6px">'
+    + 'Alex 的声音（联网合成，跟手机无关）</div>'
+    + '<div class="t" style="color:var(--muted);margin-bottom:10px">'
+    + '比手机自带的好听很多，换手机也不变。网络不通时会自动退回下面那些自带嗓子。</div>'
+    + '<div id="nvlist"></div>'
+    + '<button id="nvdev" class="rchip" style="margin-top:10px">'
+    + (ttsMode() === 'device' ? '✓ ' : '') + '不用联网，就用手机自带的</button>';
+  f.appendChild(nbox);
+
+  const paintN = () => {
+    const box = document.getElementById('nvlist');
+    if (!box) return;
+    box.innerHTML = NVOICES.map(([k, nm, d]) =>
+      '<button class="rchip" data-nv="' + k + '" style="margin:0 6px 6px 0">'
+      + ((ttsMode() === 'neural' && ttsVoice() === k) ? '✓ ' : '') + esc(nm)
+      + ' <span style="font-weight:400;opacity:.7">' + esc(d) + '</span></button>').join('');
+    const dev = document.getElementById('nvdev');
+    if (dev) dev.textContent = (ttsMode() === 'device' ? '✓ ' : '')
+                             + '不用联网，就用手机自带的';
+    box.querySelectorAll('[data-nv]').forEach(b =>
+      b.onclick = () => {
+        /* 🚨 解锁要在这次点击的手势里（iOS 只认手势），
+           而且**先设置再试听** —— 反了的话他听到的是上一个嗓子。 */
+        try { unlockTTS(); unlockNeural(); } catch(_){}
+        ttsSet('neural', b.dataset.nv);
+        paintN();
+        nsay(NDEMO);
+      });
+  };
+  paintN();
+  nbox.querySelector('#nvdev').onclick = () => {
+    try { unlockTTS(); unlockNeural(); } catch(_){}
+    ttsSet('device');
+    paintN();
+    say(NDEMO, 'en');
+  };
+
   const cur = localStorage.getItem('alex_voice_en');
 
   const DEMO = 'Under HKAS 1, the loan must be classified as current.';
@@ -14825,7 +14881,7 @@ async function polMicToggle(btnId){
     return;
   }
   $('#polerr').textContent = '';
-  try { if (window.unlockTTS) unlockTTS(); } catch(_){}
+  try { if (window.unlockTTS) unlockTTS(); unlockNeural(); } catch(_){}
   try {
     const r = await polGetRec();
     POL.t0 = Date.now();
@@ -15848,7 +15904,7 @@ async function chatStart(topic){
   const t = String(topic || '').trim();
   chatReset();
   CHAT.busy = true;
-  try { if (window.unlockTTS) unlockTTS(); } catch(_){}   // 🚨 必须在这颗按钮的手势里
+  try { if (window.unlockTTS) unlockTTS(); unlockNeural(); } catch(_){}   // 🚨 必须在这颗按钮的手势里
   const el = $('#chaterr'); if (el) el.textContent = '';
   const btn = $('#chatgo'); if (btn) btn.disabled = true;
   chatStage('Alex 在想开个什么话头');
@@ -15872,9 +15928,142 @@ async function chatStart(topic){
   }
 }
 
+/* ═══ Alex 的声音 ═══════════════════════════════════════════
+   Kevin 2026-08-20：「我的诉求就是换一个好听点的男的声音，因为要匹配得上
+   这个 App 的名字嘛，叫 Alex」「现在自带的男声都很难听，含含糊糊像嘴里含着痰」。
+
+   根因：网页版原来只用浏览器的 speechSynthesis，音质取决于**他手机上装了什么**，
+   苹果那几个压缩音（compact）就是他说的那个感觉。他在别处听过的「晓晓」是
+   **微软神经语音**，服务端合成的，完全不是一个档次。
+
+   现在：后端 `/api/tts` 用手写的 edge-tts（纯 stdlib、免费、不要 key）合成，
+   前端拿 mp3 播。他从 9 个男声里挑了 **Andrew**（Warm / Confident / Authentic）。
+   实测端到端 2.6 秒，火山函数出得去微软，回来的 mp3 跟本机逐字节相同。
+
+   🚨 **必须有兜底**：网络/后端/微软任何一环挂了，就退回 `say()` 用自带嗓子 ——
+      声音难听总好过一声不响。他聊到一半没声音会以为整个功能坏了。 */
+
+const TTS_MODE_LS  = 'alex_tts_mode';    // 'neural'（默认）| 'device'
+const TTS_VOICE_LS = 'alex_tts_voice';   // 'andrew' 等，见后端 edge_tts_lite.VOICES
+const TTS_CACHE = new Map();             // 同一句念第二遍不再合成
+const TTS_CACHE_MAX = 24;
+
+/* 一段 0 采样的合法 WAV。只用来在**用户手势里**把播放解锁，不出声。 */
+const TTS_SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=';
+
+let _ttsEl = null, _ttsReady = false;
+
+const ttsMode  = () => { try { return localStorage.getItem(TTS_MODE_LS) || 'neural'; }
+                         catch(_){ return 'neural'; } };
+const ttsVoice = () => { try { return localStorage.getItem(TTS_VOICE_LS) || 'andrew'; }
+                         catch(_){ return 'andrew'; } };
+function ttsSet(mode, voice){
+  try {
+    if (mode)  localStorage.setItem(TTS_MODE_LS, mode);
+    if (voice) localStorage.setItem(TTS_VOICE_LS, voice);
+  } catch(_){}
+}
+
+/* 🚨 iOS 只允许在用户手势里开始播放，而合成是**异步**的 —— 音频到手时
+   早就不在那次点击里了，直接 new Audio().play() 会被拦掉、静默无声。
+   解法是标准做法：手势里先拿同一个 <audio> 元素播一段静音，
+   之后**复用这个已解锁的元素**换 src 就能放。
+   跟 unlockTTS() 一起在同一个手势里调（它管 speechSynthesis，这个管 <audio>，
+   两套机制各解各的锁，少一个都会在他手机上哑掉）。 */
+function unlockNeural(){
+  if (_ttsReady) return;
+  try {
+    _ttsEl = _ttsEl || new Audio();
+    _ttsEl.playsInline = true;
+    _ttsEl.src = TTS_SILENT;
+    const p = _ttsEl.play();
+    if (p && p.catch) p.catch(() => {});
+    _ttsReady = true;
+  } catch(_){}
+}
+
+/* 下单 + 轮询。**单独写一个**而不是复用 poll()：那条返回的是 text 语义，
+   这条要的是 audio，硬塞进去会让两边都变难读。 */
+async function ttsFetch(text, voice){
+  const base = apiBase();
+  /* 🚨 下单这一发**必须重试**，而且不能直接 r.json()。
+     实测（2026-08-20，两句并发）：网关会回一段**纯文本** `upstream request timeout`，
+     `r.json()` 于是抛「Unexpected token 'u'」—— 一个 504 被包装成看不懂的解析错误，
+     真原因整个被盖住（我差点去查音频格式）。
+     这是全站已知的老毛病（见 RETRY_STATUS 那段：上游慢过约 0.1 秒就 504），
+     文字和音频那两条路早就在重试，只有我这条新的忘了。**用同一张表，别另写一套。** */
+  let j = null, last = '';
+  for (let i = 0; i < 3; i++){
+    if (i) await new Promise(f => setTimeout(f, 400 * i));
+    let r;
+    try {
+      r = await fetch(base + '/api/tts', {
+        method: 'POST',
+        headers: Object.assign({'Content-Type': 'application/json'}, passHdr()),
+        body: JSON.stringify({text: text, voice: voice})
+      });
+    } catch(e){ last = '网络：' + (e.message || e); continue; }
+    if (r.status === 401) throw new Error('口令不对');
+    const body = await r.text();                 // 先当文本读，别假设是 JSON
+    if (!r.ok){
+      last = 'HTTP ' + r.status + ' ' + body.slice(0, 60);
+      if (RETRY_STATUS.indexOf(r.status) < 0) throw new Error(last);
+      continue;                                   // 504 这类是暂时的，再来一次
+    }
+    try { j = JSON.parse(body); }
+    catch(_){ last = '返回不是 JSON：' + body.slice(0, 60); continue; }
+    break;
+  }
+  if (!j) throw new Error(last || '下单失败');
+  if (!j.job) throw new Error(j.error || '后端没给 job');
+  const t0 = Date.now();
+  let wait = 300;
+  while (Date.now() - t0 < 30000){                 // 合成一句约 2 秒，30 秒够宽
+    await new Promise(f => setTimeout(f, wait));
+    wait = Math.min(wait * 1.25, 1200);
+    let q;
+    try { q = await fetch(base + '/api/job?id=' + encodeURIComponent(j.job),
+                          {headers: passHdr()}); }
+    catch(_){ continue; }
+    if (!q.ok) continue;
+    const d = await q.json();
+    if (!d.done) continue;
+    if (d.error) throw new Error(d.error);
+    if (!d.audio) throw new Error('后端没回音频');
+    return 'data:' + (d.mime || 'audio/mpeg') + ';base64,' + d.audio;
+  }
+  throw new Error('合成超时');
+}
+
+/* 念一句。neural 走后端好嗓子，失败或他选了 device 就退回自带嗓子。 */
+async function nsay(text){
+  const t = String(text || '').trim();
+  if (!t) return;
+  if (ttsMode() === 'device' || !apiOn()) { try { say(t, 'en'); } catch(_){} return; }
+  const key = ttsVoice() + '|' + t;
+  try {
+    let url = TTS_CACHE.get(key);
+    if (!url){
+      url = await ttsFetch(t, ttsVoice());
+      TTS_CACHE.set(key, url);
+      // 别让缓存无限涨（一句 mp3 约 30KB，24 句 ≈ 0.7MB）
+      while (TTS_CACHE.size > TTS_CACHE_MAX) TTS_CACHE.delete(TTS_CACHE.keys().next().value);
+    }
+    audioClaim('tts', () => { try { _ttsEl && _ttsEl.pause(); } catch(_){} });
+    _ttsEl = _ttsEl || new Audio();
+    _ttsEl.playsInline = true;
+    _ttsEl.src = url;
+    await _ttsEl.play();
+  } catch(e){
+    /* 🚨 兜底一定要真的响：网络差/后端凉/微软抽风，都退回自带嗓子，
+       而不是让他对着一个不出声的 App 发愣。 */
+    try { say(t, 'en'); } catch(_){}
+  }
+}
+
 function chatSpeak(txt){
   if (!txt || !chatSpeakOn()) return;
-  try { say(txt, 'en'); } catch(_){}     // 🚨 'en' —— 见 pickVoice 顶上那段
+  nsay(txt);
 }
 
 /* 聊天屏。整块重画 —— 收藏键那种「一个显 ✓ 一个显 ☆」的错，
@@ -15918,7 +16107,7 @@ function chatPaintRoom(scrollBottom){
 
   document.querySelectorAll('[data-chatsay]').forEach(b =>
     b.onclick = () => { const t = CHAT.turns[+b.dataset.chatsay];
-                        if (t && t.reply) { try { say(t.reply, 'en'); } catch(_){} } });
+                        if (t && t.reply) nsay(t.reply); });
   chatBindTakes();
   $('#chatmic').onclick = () => chatMicToggle();
   $('#chattype').onclick = () => chatTypeIn();
@@ -15989,7 +16178,7 @@ function chatBindTakes(){
       const v = b.dataset.chatspk, t = CHAT.turns[+v.slice(1)];
       if (!t) return;
       const en = v[0] === 'b' ? t.better : t.easy;
-      if (en) { try { unlockTTS(); say(en, 'en'); } catch(_){} }
+      if (en) { try { unlockTTS(); unlockNeural(); } catch(_){} nsay(en); }
     });
 }
 
@@ -16028,7 +16217,7 @@ async function chatMicToggle(){
     return;
   }
   CHAT.err = '';
-  try { if (window.unlockTTS) unlockTTS(); } catch(_){}
+  try { if (window.unlockTTS) unlockTTS(); unlockNeural(); } catch(_){}
   try {
     const r = await chatGetRec();
     CHAT.t1 = Date.now();
