@@ -49,7 +49,15 @@ jobs:
           body += "    static let prompt = %s\n" % json.dumps(prompt, ensure_ascii=False)
           body += "}\n"
           out.write_text(body, encoding="utf-8")
-          print("Secrets.swift 生成完毕，prompt %d 字符" % len(prompt))
+          # 闸门就在这儿验，别等编译完去 strings 二进制 ——
+          # ALEX_PASS 只有 14 字符，Swift 的小字符串优化(<=15 字节)会把它编成
+          # 指令里的立即数，根本不进 __cstring，strings 永远找不到。
+          # 查错对象 = 白查。
+          written = out.read_text(encoding="utf-8")
+          assert pw in written, "Secrets.swift 里没有口令"
+          assert "PASS 2 - STRUCTURE" in written, "Secrets.swift 里没有提示词"
+          assert len(written) > 3000, "Secrets.swift 太小，提示词八成没进去"
+          print("Secrets.swift 生成完毕：prompt %d 字符，口令已注入，%d 字节" % (len(prompt), len(written)))
           PY
 
       - name: 生成 Xcode 工程
@@ -91,10 +99,15 @@ jobs:
               || { echo "::error::App Info.plist 缺 $k"; exit 1; }
           done
 
-          # 闸门：口令必须真的编进二进制了
-          if ! strings "$EXT/Keyboard" | grep -q "$(echo "${{ secrets.ALEX_PASS }}" | cut -c1-6)"; then
-            echo "::error::口令没编进键盘二进制"; exit 1
+          # 闸门：提示词必须真的编进键盘二进制。
+          # 用它而不是口令 —— 提示词 3588 字节，一定落在 __cstring 里，strings 找得到；
+          # 口令只有 14 字符，被 Swift 小字符串优化编成立即数，strings 永远找不到（踩过）。
+          strings "$EXT/Keyboard" | grep -q "PASS 2 - STRUCTURE"             || { echo "::error::提示词没编进键盘二进制"; exit 1; }
+          # 阴性对照：一个绝不该出现的串必须查不到，否则说明这条 grep 是恒真的
+          if strings "$EXT/Keyboard" | grep -q "ZZ-THIS-MUST-NOT-EXIST-ZZ"; then
+            echo "::error::阴性对照命中了，这道闸是假的"; exit 1
           fi
+          echo "二进制含提示词 ✓（阴性对照未命中 ✓）"
 
           mkdir -p Payload && cp -R "$APP" Payload/
           zip -qry ShuoYingwen.ipa Payload
