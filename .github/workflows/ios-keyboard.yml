@@ -109,6 +109,19 @@ jobs:
           fi
           echo "二进制含提示词 ✓（阴性对照未命中 ✓）"
 
+          # 闸门：icon 必须真的被编进去。
+          # 判据不是「Assets.xcassets 目录在仓库里」—— 那只证明源文件在，
+          # 不证明 actool 跑过、也不证明 iOS 会去用它。要查两样都成立：
+          #   ① 编出了 Assets.car（actool 真跑了）
+          #   ② Info.plist 里 CFBundleIcons 指名了 AppIcon（系统才会去 car 里找）
+          test -f "$APP/Assets.car" \
+            || { echo "::error::没有 Assets.car，icon 没被编译进去"; exit 1; }
+          /usr/libexec/PlistBuddy -c \
+            "Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName" "$APP/Info.plist" \
+            | grep -q AppIcon \
+            || { echo "::error::Info.plist 没指向 AppIcon，桌面上会是白图标"; exit 1; }
+          echo "icon 已编入 ✓（Assets.car + Info.plist 双判据）"
+
           mkdir -p Payload && cp -R "$APP" Payload/
           zip -qry Transless.ipa Payload
           ls -lh Transless.ipa
