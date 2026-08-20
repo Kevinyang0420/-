@@ -13952,7 +13952,7 @@ const POL_TP = 'Transcribe the attached audio verbatim. Output JSON: {"said":"�
 
 let POL = null;
 function polReset(){
-  POL = {topic:'', guide:null, said:'', res:null, round:0,
+  POL = {topic:'', who:'', guide:null, said:'', res:null, round:0,
          busy:false, rec:null, chunks:[], stream:null, t0:0, recing:false,
          err:'', stage:'',
          rec_id:null, rec_obj:null,   // 这一题的落盘记录（每一轮追加成一版）
@@ -14067,6 +14067,12 @@ function polPromptV2(o){
     '',
     '他的真实身份：在香港做审计/财务尽调的专业人士，母语中文。',
     '题目：' + (o.topic || ''),
+    /* 🚨 对方是谁，决定同一句话的分量（Kevin 2026-08-21 点名要的）。
+       他自己那份德勤面试准备里最值钱的判断全是从这儿来的：
+       「她是**前 PwC 香港所**的人 → 你说『在 PwC 从事 FDD』她会追问哪个组、谁带你」。
+       不知道对方是谁，就只能给通用建议。 */
+    (o.who ? '🚨 听你说话的是：' + o.who +
+             '\n   —— 同一句话对不同的人分量不同，下面的判断都要考虑这个人。' : ''),
   ];
 
   const dimBlock = (o.dims || []).length
@@ -14134,6 +14140,18 @@ function polPromptV2(o){
     '           "note":"一句中文：长了还是短了、该往哪个方向调",',
     '           "focus":["该重点讲/该强化的要点 id"],',
     '           "missing":[{"zh":"这个场合通常该有、但他没讲的","why":"为什么该有"}]},',
+    /* 🚨🚨 这两块是 2026-08-21 补的，补的是「App 的点评 vs 他自己那份面试准备」的差距。
+       他原话：「基本上只是把我原话的语法稍微改了一下，并没有提出一些更好的表达技巧。」
+       实测同一段自我介绍：App 只说了「working in KuCoin as FP&A 有点生硬」，
+       而他那份面试准备说的是「『帮朋友处理审计底稿』在四大合伙人面前会同时触发
+       保密、独立性、数据出境三个警报，删掉」。**一个在改怎么说，一个在改说什么。** */
+    ' "risks":[{"quote":"从他原话里一字不差摘出来的一小段",',
+    '            "why":"一句中文：这句**在这个场合会怎么害他**（对方会怎么理解、',
+    '                   会引出什么他不想要的追问、会不会自曝短处）",',
+    '            "fix":"改成什么 / 还是干脆删掉"}],',
+    ' "order":{"first":"这个场合**第一句就该出现**的是哪个要点 id，为什么（一句中文）",',
+    '           "buried":[{"id":"被埋没的要点 id","why":"它是主菜却排太后/给的篇幅太少"}],',
+    '           "merge":[{"ids":["p2","p3"],"why":"这两条会被听成同一件事，该合并或分工说死"}]},',
     ' "cover":[{"i":维度编号,"ok":true 或 false,"how":"一句中文"}],',
     lang === 'zh'
       ? ' "traps":[{"zh":"从他**中文原话**里一字不差摘出来的一小段",'
@@ -14161,6 +14179,17 @@ function polPromptV2(o){
     '   - 🚨 **不许为了凑数硬删**：真的每条都该留就都留，但**必须逐条给出判断**，',
     '     不能因为字数达标就整体放过 —— 字数够不等于内容该讲。',
     '',
+    '🚨 **risks 是他最想要的一块，别敷衍**（下面是他自己写过的真实例子，照这个水准来）：',
+    '   ·「在 KuCoin 的**最后几个月**」→ 等于当场宣布自己在离职倒计时，主动权交出去',
+    '   ·「帮朋友处理**审计底稿**」→ 在四大合伙人面前同时触发保密、独立性、数据出境三个警报',
+    '   ·「这个项目是**我带的**」→ 对方能打电话核实，一个字都不能夸大',
+    '   判据是「**这句话被最挑剔的那个听众听到，会往哪个方向想**」。',
+    '   真的一条风险都没有就给空数组，**但不许因为懒而空**；',
+    '   也不许把「说得不够地道」塞进 risks —— 那是 fixes 那一块的活。',
+    '',
+    '🚨 **order 判的是「排在哪、给多长」，不是「该不该讲」**（该不该讲是 points 的活）。',
+    '   同一件事排第一句还是第五句，对方记住的完全不同。',
+    '',
     '- points 至少 3 条；id 形如 p1/p2/p3',
     '- 🚨 每个 keep≠cut 的要点，`span` 必须能在 draft 里**逐字**找到',
     '- 🚨 keep="cut" 的要点必须给 `when`，且**不许出现在 draft 里**',
@@ -14185,6 +14214,31 @@ function polBadV2(p, o){
   const said = o.origSaid || o.said || '';
   const prev = o.points || [];
   const draft = String(p.draft || '').trim();
+
+  /* ⓪ risks / order（2026-08-21 加，补的是「只改语法、不改内容」那个差距）。
+     🚨 判据的形状跟 fixes 一样：**quote 必须能在他原话里逐字找到**，
+        锚不住的那条丢掉 —— 编出来的风险比没有更糟，他会照着删掉本来没问题的话。
+     🚨 但**整份不驳**：risks 是锦上添花，全丢了他仍然拿得到成稿和该删什么。 */
+  if (Array.isArray(p.risks)){
+    p.risks = p.risks.filter(r => {
+      if (!r || !String(r.why || '').trim() || !String(r.fix || '').trim()) return false;
+      const q = String(r.quote || '').trim();
+      return q && polQuoteOk(q, said, lang);
+    });
+  } else p.risks = [];
+  if (p.order && typeof p.order === 'object'){
+    const ids = {};
+    (p.points || []).forEach(x => { if (x && x.id) ids[x.id] = 1; });
+    // 引用了不存在的要点 id 就丢掉那一条，别在界面上指向一个空气
+    if (Array.isArray(p.order.buried))
+      p.order.buried = p.order.buried.filter(b => b && ids[b.id] && String(b.why || '').trim());
+    if (Array.isArray(p.order.merge))
+      p.order.merge = p.order.merge.filter(m => m && Array.isArray(m.ids) &&
+        m.ids.length >= 2 && m.ids.every(i => ids[i]) && String(m.why || '').trim());
+    if (p.order.first && !ids[String(p.order.first).split(/[^\w]/)[0]]) {
+      // first 里通常写「p1，因为…」，取前面那段 id 比对；对不上就不显示
+    }
+  } else p.order = null;
 
   // ① points
   if (!Array.isArray(p.points) || p.points.length < 3){
@@ -14433,8 +14487,15 @@ function polPrompt(topic, said, dims){
 function polQuoteOk(quote, said){
   const norm = s => (String(s || '').toLowerCase().match(/[a-z0-9']+/g) || []).join(' ');
   const q = norm(quote);
-  if (!q) return false;
-  return norm(said).indexOf(q) >= 0;
+  if (q) return norm(said).indexOf(q) >= 0;
+  /* 🚨 中文原话没有英文可锚 —— 这正是 v1 里「中文输入必然报错」的老根因
+     （只取 [a-z0-9']，中文全被过滤成空 → 判成锚不住 → 整份驳）。
+     risks 这一块对中文稿也要能用，所以补一条中文的锚：
+     按汉字序列比对（去掉标点和空白），逐字出现才算数。 */
+  const zh = s => (String(s || '').match(/[\u4e00-\u9fa5]/g) || []).join('');
+  const zq = zh(quote);
+  if (!zq) return false;
+  return zh(said).indexOf(zq) >= 0;
 }
 
 const POL_ORDER = /^(use|try|consider|change|say|make sure|remember|avoid|don't|do not)\b/i;
@@ -14734,6 +14795,13 @@ function showPolish(){
         'style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;' +
         'border:1px solid var(--line-strong);background:var(--surface);' +
         'color:inherit;font-size:15px;line-height:1.5;resize:vertical"></textarea>' +
+      '<div class="k" style="font-weight:800;margin:12px 0 6px">对方是谁？（可留空）</div>' +
+      '<input id="polwho" placeholder="例：德勤合伙人，前 PwC 香港所同事，不熟" ' +
+        'style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;' +
+        'border:1px solid var(--line-strong);background:var(--surface);' +
+        'color:inherit;font-size:15px">' +
+      '<div class="t" style="margin-top:6px;color:var(--muted)">' +
+        '填了才判得出「这句话对**这个人**意味着什么」—— 同一句话对不同的人分量不同。</div>' +
       '<button id="polgo" class="btn wide" style="width:100%;margin-top:10px">开始</button>' +
       '<div class="t" style="margin-top:8px;color:var(--muted)">' +
         '先给你列「对方可能问什么、该覆盖哪些方面」，然后你一口气说完，' +
@@ -14751,6 +14819,7 @@ function showPolish(){
 
   const go1 = () => {
     const v = ($('#poltopic') || {}).value || '';
+    POL_PENDING_WHO = String((($('#polwho') || {}).value) || '').trim();
     if (!String(v).trim()){
       $('#polerr').textContent = '先写一句你要练什么，再点开始。';
       return;
@@ -14785,10 +14854,12 @@ async function polPaintList(){
 }
 
 /* 点「开始」→ 出 guidance → 进准备屏 */
+let POL_PENDING_WHO = '';
+
 async function polStart(topic){
   if (POL.busy) return;
   polReset();
-  POL.topic = topic; POL.busy = true;
+  POL.topic = topic; POL.who = POL_PENDING_WHO; POL.busy = true;
   $('#polerr').textContent = '';
   polStage('在给你列「对方会问什么、该讲哪几方面」');
   const btn = $('#polgo'); if (btn) btn.disabled = true;
@@ -14994,6 +15065,9 @@ async function polRun(said, mode, dropped){
     const o = {
       mode: mode,
       topic: POL.topic,
+      /* 对方是谁 —— 2026-08-21 加。他那份德勤面试准备里最值钱的判断全从这儿来
+         （「她是前 PwC 香港所的人 → 你说『在 PwC 从事 FDD』她会追问哪个组」）。 */
+      who: POL.who || '',
       said: said,
       /* 锚定用原始那段话 —— 见 polBadV2 里那段注释 */
       origSaid: mode === 'first' ? said : (POL.said || said),
@@ -15091,6 +15165,38 @@ function showPolishResult(){
         '<button id="polspeak" class="rchip">🔊 念一遍</button>' +
         '<button id="polcopy" class="rchip">复制</button>' +
       '</div></div>';
+
+  /* ①.5 🚨 哪句会害你 —— 排在「该说多长」前面，因为这是他最想要的一块
+     （Kevin 2026-08-21：「只是把我原话的语法稍微改了一下，并没有提出更好的表达技巧」）。
+     他自己那份面试准备里最值钱的就是这类判断：
+     「『帮朋友处理审计底稿』会同时触发保密、独立性、数据出境三个警报」。 */
+  if ((p.risks || []).length){
+    h += '<div ' + CARD + ' style="border-left:3px solid #e8563f">' + H('⚠️ 这几句会害你') +
+      p.risks.map(r =>
+        '<div class="t" style="margin-top:10px">' +
+        '<div style="font-weight:700">「' + esc(r.quote) + '」</div>' +
+        '<div style="margin-top:2px">' + esc(r.why) + '</div>' +
+        '<div style="margin-top:2px;color:var(--brand-dark)">→ ' + esc(r.fix) + '</div>' +
+        '</div>').join('') + '</div>';
+  }
+
+  /* ①.6 顺序和重点分配 —— 判的是「排在哪、给多长」，不是「该不该讲」 */
+  if (p.order && (p.order.first || (p.order.buried || []).length || (p.order.merge || []).length)){
+    const nameOf = id => {
+      const x = (p.points || []).find(y => y.id === id);
+      return x ? x.zh : id;
+    };
+    h += '<div ' + CARD + '>' + H('顺序和重点') +
+      (p.order.first ? '<div class="t" style="margin-top:8px">🥇 <b>第一句就该出现</b>：' +
+        esc(p.order.first) + '</div>' : '') +
+      (p.order.buried || []).map(b =>
+        '<div class="t" style="margin-top:8px">📌 <b>' + esc(nameOf(b.id)) + '</b> 被埋没了：' +
+        esc(b.why) + '</div>').join('') +
+      (p.order.merge || []).map(m =>
+        '<div class="t" style="margin-top:8px">🔗 <b>' +
+        esc(m.ids.map(nameOf).join(' + ')) + '</b>：' + esc(m.why) + '</div>').join('') +
+      '</div>';
+  }
 
   /* ② 该说多长 */
   h += '<div ' + CARD + '>' + H('该说多长') +
