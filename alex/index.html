@@ -4946,6 +4946,20 @@ function voiceScore(v){
 
 function pickVoice(lang){
 
+  /* 🚨 归一化必须在这里收口，别指望每个调用点都记得传 'en'。
+     Kevin 2026-08-20：「其他的都是用 Samantha 的，为什么这个不行啊？」
+     —— 他在设置里选的嗓子存的键**只有一个** `alex_voice_en`（见下面那个选嗓子的界面），
+     而调用点实际传过三种东西，后两种都让他选的嗓子失效：
+       · 'en'      ✅ 正常
+       · 'en-US'   ❌ 闲聊传的 —— 去读 `alex_voice_en-US`，那个键根本不存在 →
+                      读不到他选的 → 掉进下面的自动打分，挑出另一个嗓子
+       · undefined ❌ 打磨「念一遍成稿」传的 —— `startsWith(undefined)` 对谁都不成立 →
+                      候选 0 个 → 直接 return null → 用浏览器默认嗓子
+     两种形态都**不报错**，只是声音不对，所以一直没被发现。
+     取前两位：'en-US'→'en'、'zh-CN'→'zh'、不传→'en'（跟下面 say() 里
+     `lang === 'zh' ? 'zh-CN' : 'en-GB'` 的口径一致，不传就是英文）。 */
+  lang = String(lang || 'en').toLowerCase().slice(0, 2);
+
   const want = localStorage.getItem('alex_voice_' + lang);
 
   const all = VOICES.filter(v =>
@@ -15137,7 +15151,9 @@ function bindPolishResult(p, live, cut){
   const on = (id, fn) => { const e = document.getElementById(id); if (e) e.onclick = fn; };
   const val = id => String((document.getElementById(id) || {}).value || '').trim();
 
-  on('polspeak', () => { try { say(p.draft); } catch(_){ toast('这台设备念不了'); } });
+  /* 🚨 原来这里不传 lang，等于用浏览器默认嗓子念，他在设置里选的 Samantha 白选了。
+     pickVoice 现在会把不传当成 'en'，这里也显式写上（两道都补，别只补一道）。 */
+  on('polspeak', () => { try { say(p.draft, 'en'); } catch(_){ toast('这台设备念不了'); } });
   on('polcopy', async () => {
     try { await navigator.clipboard.writeText(p.draft || ''); toast('复制好了'); }
     catch(_){ toast('复制不了，长按选中吧'); }
@@ -15813,7 +15829,7 @@ async function chatStart(topic){
 
 function chatSpeak(txt){
   if (!txt || !chatSpeakOn()) return;
-  try { say(txt, 'en-US'); } catch(_){}
+  try { say(txt, 'en'); } catch(_){}     // 🚨 'en' —— 见 pickVoice 顶上那段
 }
 
 /* 聊天屏。整块重画 —— 收藏键那种「一个显 ✓ 一个显 ☆」的错，
@@ -15857,7 +15873,7 @@ function chatPaintRoom(scrollBottom){
 
   document.querySelectorAll('[data-chatsay]').forEach(b =>
     b.onclick = () => { const t = CHAT.turns[+b.dataset.chatsay];
-                        if (t && t.reply) { try { say(t.reply, 'en-US'); } catch(_){} } });
+                        if (t && t.reply) { try { say(t.reply, 'en'); } catch(_){} } });
   chatBindTakes();
   $('#chatmic').onclick = () => chatMicToggle();
   $('#chattype').onclick = () => chatTypeIn();
