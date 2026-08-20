@@ -6283,9 +6283,13 @@ function onResumeMic(){
 
   if (document.visibilityState !== 'visible') return;
 
-  if (!S.scn) return;                       // 不在口语场景就不碰麦克风
+  /* 🚨 原来只认 `S.scn`（场景练习）—— **闲聊没有 S.scn**，于是他切出去接个电话
+     或锁一次屏，iOS 把麦克风流掐掉之后，这段自愈**整个跳过闲聊**。
+     Kevin 2026-08-20：「我有一次打开之后说了半天，结果它说听不到，让我重新录」。
+     判据要问「现在这一屏用不用麦克风」，而不是「在不在场景练习里」。 */
+  if (!S.scn && !(CHAT && CHAT.opened)) return;
 
-  if (stream && stream.active) return;      // 流还活着，什么都不用做
+  if (stream && micLive()) return;          // 流还活着且轨道真的在采，什么都不用做
 
   stream = null; micPrimed = false;
 
@@ -6294,6 +6298,18 @@ function onResumeMic(){
 }
 
 
+
+/* 🚨 `stream.active` 靠不住：iOS 被打断（来电、锁屏、切后台）之后常常
+   **留着轨道但把它 muted / ended**，`active` 照样是 true，而录出来是空的 ——
+   表现就是「说了半天，最后告诉我没录到」。所以要看轨道本身。 */
+function micLive(){
+  try {
+    if (!stream || !stream.active) return false;
+    const ts = stream.getAudioTracks ? stream.getAudioTracks() : [];
+    if (!ts.length) return false;
+    return ts.some(t => t.readyState === 'live' && !t.muted);
+  } catch(_){ return false; }
+}
 
 async function primeMic(){
 
@@ -15442,8 +15458,14 @@ const CHAT_CRIT_FIELDS = ['level','quote','issue','better','native','easy','alex
 
 let CHAT = null;
 function chatReset(){
+  /* 换一场时把跑秒停掉，别留个孤儿定时器。
+     🚨 包一层：`chatReset()` 在**模块加载期**就会跑一次，
+        环境里没有 clearInterval 就当场炸掉整段脚本 —— 在浏览器里就是白屏。
+        本轮已经栽过一次同型的（那个 document 监听器），不重复第三遍。 */
+  try { if (typeof clearInterval === 'function' && CHAT && CHAT.tick) clearInterval(CHAT.tick); }
+  catch(_){}
   CHAT = {id:'', on:'', t0:0, topic:'', src:'', turns:[],
-          busy:false, rec:null, chunks:[], recing:false, t1:0,
+          busy:false, rec:null, chunks:[], recing:false, t1:0, tick:0,
           err:'', stage:'', noAsk:0, opened:false, done:false};
 }
 chatReset();
@@ -15681,7 +15703,10 @@ function betterBad(better, said, level){
   return '';
 }
 
-function chatCritBad(c, said){
+/* `lastTry` 为真时跳过**软判据** —— 软的定义很明确：
+   scrubChat 能把它清干净、而且清掉之后他仍然拿得到有用的东西。
+   硬判据（没给 better、判了 fine 还硬纠、level 不合法）任何时候都驳。 */
+function chatCritBad(c, said, lastTry){
   const bad = [];
   const lv = String((c && c.level) || '');
   if (['error','polish','fine'].indexOf(lv) < 0) bad.push('level 不是 error/polish/fine');
@@ -15694,10 +15719,12 @@ function chatCritBad(c, said){
                         String((c && c.easy) || '').trim()))
     bad.push('判了 fine 却还给改法 —— 说得好就别硬编毛病（判据 E7）');
   const q = String((c && c.quote) || '').trim();
-  if (q && !quoteAnchored({quote: q, said: said}))
-    bad.push('quote 在他那句话里逐字找不到（判据 E5）');
+  // ↓ 软：scrubChat 会把锚不住的 quote/native 清掉，better 照样留着
+  if (!lastTry && q && !quoteAnchored({quote: q, said: said}))
+    bad.push('quote 必须从他那句话里**原样**摘，一个字都不许改');
+  // ↓ 软：easy 不合格 scrubChat 会丢掉它，better 不受影响
   const eb = easyBad(c && c.easy, said);
-  if (eb) bad.push(eb + '（判据 E6）');
+  if (!lastTry && eb) bad.push(eb);
   const bb = betterBad(c && c.better, said, lv);
   if (bb) bad.push(bb + '（判据 E14）');
   return bad;
@@ -15733,15 +15760,21 @@ function scrubChat(d){
 /* ── 调用 ────────────────────────────────────────────────── */
 
 async function chatAsk(build, check, tries){
+  const N = tries || 3;
   let last = null;
-  for (let i = 0; i < (tries || 3); i++){
+  for (let i = 0; i < N; i++){
     let j = null;
     let p = build();
     if (last) p += '\n\n🚨 你上一次的输出被判废了，原因是：' + last + '\n这一次务必避开。';
     try { j = firstJson(await textCall(p, 0.6)); }
     catch(err){ last = err.message || String(err); continue; }
     if (!j){ last = '返回里没有完整的 JSON'; continue; }
-    const bad = check(j);
+    /* 🚨 最后一次要放宽。check 收得到 `lastTry`，那些**下游洗得掉**的毛病
+       （quote 锚不住、easy 不够简单）在最后一次就别再驳了 ——
+       scrubChat 会把它们清掉而**保住整句范例**，那才是他要的东西。
+       Kevin 2026-08-20 撞到的就是这个：说了一长段，模型引用时顺手改了两个词，
+       三次全被驳 → 他什么都没拿到，还看到一句「quote 逐字找不到（判据 E5）」。 */
+    const bad = check(j, i === N - 1);
     if (!bad.length) return j;
     last = bad.join('；');
   }
@@ -16112,6 +16145,21 @@ async function nsay(text){
   }
 }
 
+/* 后台预热：把一句话提前合成好塞进缓存，之后点「🔊 听一遍」就是**秒响**。
+   Kevin 2026-08-20：「点『听一遍』会很卡，每次点一下都要等很久」——
+   根因就是每点一次都现合成一次（约 2~3 秒）。
+   🚨 只预热、不出声；失败一声不吭（预热失败不该打扰他，点的时候还有兜底）。 */
+function ttsWarm(text){
+  const t = String(text || '').trim();
+  if (!t || ttsMode() !== 'neural' || !apiOn()) return;
+  const key = ttsVoice() + '|' + t;
+  if (TTS_CACHE.has(key)) return;
+  ttsFetch(t, ttsVoice()).then(url => {
+    TTS_CACHE.set(key, url);
+    while (TTS_CACHE.size > TTS_CACHE_MAX) TTS_CACHE.delete(TTS_CACHE.keys().next().value);
+  }).catch(() => {});
+}
+
 function chatSpeak(txt){
   if (!txt || !chatSpeakOn()) return;
   nsay(txt);
@@ -16158,7 +16206,12 @@ function chatPaintRoom(scrollBottom){
 
   document.querySelectorAll('[data-chatsay]').forEach(b =>
     b.onclick = () => { const t = CHAT.turns[+b.dataset.chatsay];
-                        if (t && t.reply) nsay(t.reply); });
+                        if (t && t.reply){
+                          try { unlockTTS(); unlockNeural(); } catch(_){}
+                          const o = b.textContent; b.textContent = '⏳ 读取中';
+                          b.disabled = true;
+                          nsay(t.reply).finally(() => { b.textContent = o; b.disabled = false; });
+                        } });
   chatBindTakes();
   $('#chatmic').onclick = () => chatMicToggle();
   $('#chattype').onclick = () => chatTypeIn();
@@ -16171,9 +16224,14 @@ function chatPaintRoom(scrollBottom){
 
 /* 贴边的那一小条（分叉①：不打断对话流，挂在他自己那句下面） */
 function chatCritHTML(t, i){
-  if (t.critErr)
+  /* 🚨 说人话。原来把**校验器的内部原话**直接甩到界面上
+     （「quote 在他那句话里逐字找不到（判据 E5）」）—— Kevin 2026-08-20：
+     「我也不知道什么意思」。技术细节留给控制台，界面上只说他关心的事。 */
+  if (t.critErr){
+    try { console.warn('[alex] 这轮点评没成：', t.critErr); } catch(_){}
     return '<div class="tags" style="margin:-4px 0 10px 4px;color:var(--muted);font-size:12px">' +
-           '这一句没点评上（' + esc(String(t.critErr).slice(0, 40)) + '）—— 聊天没受影响</div>';
+           '这句没点评上（网络或模型没配合），聊天不受影响 —— 想要的话再说一遍试试</div>';
+  }
 
   /* 🚨 顺序就是他的阅读顺序：**先给能照念的整句**，再说为什么。
      Kevin 2026-08-20：「他只是提了意见、指出哪里不对，没有把改好后的完整说法发给我。」
@@ -16225,11 +16283,17 @@ function chatBindTakes(){
   /* 🚨 「🔊 听一遍」也要绑 —— 画了不绑就是他点了没反应（死键，还不报错）。
      用的是全站同一个 say(txt,'en')，所以念出来就是他自己选的那把嗓子。 */
   document.querySelectorAll('[data-chatspk]').forEach(b =>
-    b.onclick = () => {
+    b.onclick = async () => {
       const v = b.dataset.chatspk, t = CHAT.turns[+v.slice(1)];
       if (!t) return;
       const en = v[0] === 'b' ? t.better : t.easy;
-      if (en) { try { unlockTTS(); unlockNeural(); } catch(_){} nsay(en); }
+      if (!en) return;
+      try { unlockTTS(); unlockNeural(); } catch(_){}
+      /* 🚨 点下去必须**立刻**有反馈。没预热到的那次要等两三秒，
+         按钮一动不动的话他只会以为点坏了 —— 然后连点，更慢。 */
+      const old = b.textContent;
+      b.textContent = '⏳'; b.disabled = true;
+      try { await nsay(en); } finally { b.textContent = old; b.disabled = false; }
     });
 }
 
@@ -16237,9 +16301,14 @@ function chatBindTakes(){
 async function chatGetRec(){
   /* 🚨 借全局那一条 stream，不另开 —— 自己开一条的话手机上就是两个麦克风占用、
      状态栏红点不灭，属于「装的东西去抢他的设备」。 */
-  if (!stream || !stream.active){
+  /* 🚨 判据用 micLive() 不用 stream.active —— 见它上面那段注释。
+     被打断过的流要**整个丢掉重申请**，接着用只会又录出一段空的。 */
+  if (!micLive()){
+    try { stream && stream.getTracks && stream.getTracks().forEach(t => t.stop()); } catch(_){}
+    stream = null; micPrimed = false;
     stream = await navigator.mediaDevices.getUserMedia(
       {audio:{echoCancellation:true, noiseSuppression:true}});
+    micPrimed = true;
   }
   let mime = '';
   for (const m of ['audio/mp4','audio/webm','audio/ogg']){
@@ -16258,6 +16327,7 @@ async function chatMicToggle(){
   const btn = $('#chatmic');
   if (CHAT.recing){
     CHAT.recing = false;
+    clearInterval(CHAT.tick);
     try { CHAT.rec && CHAT.rec.state !== 'inactive' && CHAT.rec.stop(); } catch(_){}
     if (btn){ btn.textContent = '🎙 点一下开始说'; btn.classList.remove('rec'); }
     return;
@@ -16272,10 +16342,35 @@ async function chatMicToggle(){
   try {
     const r = await chatGetRec();
     CHAT.t1 = Date.now();
-    r.start();
+    /* 🚨 带 timeslice 起录（每秒回一块），不是 `r.start()` 空跑到底。
+       Kevin 2026-08-20：「说了半天，结果它说听不到，让我重新录」——
+       不带 timeslice 的话数据只在 stop 那一刻才吐出来，
+       麦克风早就哑了也**要等他说完才知道**。每秒回一块就能当场发现。 */
+    r.start(1000);
     CHAT.recing = true;
-    if (btn){ btn.textContent = '⏹ 说完了，停止'; btn.classList.add('rec'); }
-    chatStage('在听…说完点一下停止');
+    if (btn){ btn.classList.add('rec'); }
+    chatStage('');
+
+    // 跑秒 + 看门狗：让他看见它活着，录不到当场说
+    clearInterval(CHAT.tick);
+    CHAT.tick = setInterval(() => {
+      if (!CHAT.recing){ clearInterval(CHAT.tick); return; }
+      const sec = Math.floor((Date.now() - CHAT.t1) / 1000);
+      const b2 = document.getElementById('chatmic');
+      const got = CHAT.chunks.reduce((n, c) => n + (c.size || 0), 0);
+      if (b2) b2.textContent = '⏹ 说完了（' + Math.floor(sec / 60) + ':' +
+        String(sec % 60).padStart(2, '0') + '）' + (got ? '' : ' · 没听到声音');
+      /* 3 秒还是 0 字节 = 麦克风被别的 App 占了 / 被系统掐了。
+         🚨 当场停下并说清楚，别让他对着一个死掉的麦克风讲两分钟。 */
+      if (sec >= 3 && got === 0){
+        clearInterval(CHAT.tick);
+        CHAT.recing = false;
+        try { CHAT.rec && CHAT.rec.state !== 'inactive' && CHAT.rec.stop(); } catch(_){}
+        CHAT.err = '麦克风没采到声音（可能被别的 App 占着，或系统把它掐了）。'
+                 + '把这个页面切走再切回来通常就好了，或者先用「⌨️ 打字」。';
+        chatPaintRoom(false);
+      }
+    }, 500);
   } catch(err){
     CHAT.err = '打不开麦克风：' + (err.message || err) + '　可以点「⌨️ 打字」。';
     chatPaintRoom(false);
@@ -16288,7 +16383,14 @@ async function chatOnStop(){
   if (!CHAT || !CHAT.opened){ CHAT.chunks = []; return; }
   const blob = new Blob(CHAT.chunks, {type: (CHAT.rec && CHAT.rec.mimeType) || ''});
   CHAT.chunks = [];
-  if (!blob.size){ chatStage(''); CHAT.err = '没录到声音，再试一次。'; chatPaintRoom(false); return; }
+  clearInterval(CHAT.tick);
+  if (!blob.size){
+    chatStage('');
+    CHAT.err = '麦克风没采到声音 —— 多半是被别的 App 占着，或系统把它掐了。'
+             + '把页面切走再切回来通常就好，或者先用「⌨️ 打字」。';
+    chatPaintRoom(false);
+    return;
+  }
   CHAT.busy = true;
   try {
     chatStage('在转写你说的话');
@@ -16329,6 +16431,10 @@ async function chatSay(said, blob){
     chatStage('');
     chatPaintRoom();
     chatSpeak(d.reply);
+    /* 🚨 趁他在读文字，把这两句先合成好 —— 他点「🔊」时就不用干等。
+       reply 那句 chatSpeak 已经顺手缓存了，这里只补 better / easy。
+       朗读开关关着时也照样预热：关的是「自动念」，不是「不许听」。 */
+    ttsWarm(d.better); ttsWarm(d.easy);
     try { markDaily('speak'); } catch(_){}        // 说了一句就算今天练过口语
     await chatSave();                             // 每轮都落盘，别等他点「聊完了」
   } catch(e){
