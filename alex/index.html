@@ -15953,12 +15953,23 @@ async function chatPaintList(){
         '<span class="done">' + esc(r.on) + '</span></div>' +
         '<div class="t" style="margin-top:6px">' + s.n + ' 轮' +
         (s.lv.error ? ' · ' + s.lv.error + ' 处要改' : ' · 没说错') +
-        (s.lv.polish ? ' · ' + s.lv.polish + ' 处能更自然' : '') + '</div></div>';
+        (s.lv.polish ? ' · ' + s.lv.polish + ' 处能更自然' : '') + '</div>' +
+        /* 一步就能接着聊，不用先点进去再找按钮 */
+        '<button class="rchip" data-chaton="' + esc(r.id) + '" ' +
+        'style="margin-top:8px">接着聊 →</button></div>';
     }).join('');
   document.querySelectorAll('#chatlist .card[data-chatid]').forEach(el =>
     el.onclick = async () => {
       const r = await chatGet(el.dataset.chatid);
       if (r) go(() => showChatRec(r), '这一场');
+    });
+  /* 🚨 stopPropagation：这颗按钮在卡片里面，不拦的话会连带触发卡片的
+     onclick，先进详情再进聊天屏 —— 多推一层，返回键就要多点一下。 */
+  document.querySelectorAll('#chatlist [data-chaton]').forEach(b =>
+    b.onclick = async ev => {
+      ev.stopPropagation();
+      const r = await chatGet(b.dataset.chaton);
+      if (r) chatResume(r);
     });
 }
 
@@ -16525,6 +16536,34 @@ async function chatFinish(){
   go(() => showChatRec(rec, true), '这一场');
 }
 
+/* ── 接着这一场聊 ────────────────────────────────────────
+   把整条记录原样装回 CHAT，**不重新开场白** —— 重开等于把话题从头再来一遍，
+   而他要的是接着上次那个话头。
+   🚨 `id` 沿用原来的，所以 `chatSave()` 更新的是**同一条**记录，不会分裂成两场
+      （场景练习那边「只存 id、题库一换就接不回来」是同型的坑）。
+   🚨 `t0` 往前挪 `sec` 秒：时长要接着累计，不能把中间隔的几天算进去。 */
+function chatResume(rec){
+  if (!rec || !rec.turns || !rec.turns.length) return;
+  chatReset();
+  CHAT.id = rec.id; CHAT.on = rec.on; CHAT.topic = rec.topic || '闲聊';
+  CHAT.src = rec.src || '';
+  CHAT.t0 = Date.now() - (rec.sec || 0) * 1000;
+  CHAT.turns = rec.turns.slice();
+  CHAT.opened = true;
+  /* 「连着几轮没抛问题」的计数也要接回去，否则一接上就可能立刻被判成
+     「天要聊死了」而强行要求问句。往回数到最近一次带问号的回话为止。 */
+  let n = 0;
+  for (let i = CHAT.turns.length - 1; i >= 0; i--){
+    const r = String(CHAT.turns[i].reply || '');
+    if (!r) continue;
+    if (r.indexOf('?') >= 0) break;
+    n++;
+  }
+  CHAT.noAsk = n;
+  go(showChatRoom, '闲聊');
+  toast('接上了，从第 ' + CHAT.turns.filter(t => t.said).length + ' 轮继续', 2600);
+}
+
 /* 回看一场（也是「聊完了」之后那一屏） */
 function showChatRec(rec, justDone){
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
@@ -16534,7 +16573,15 @@ function showChatRec(rec, justDone){
     ? s.top.map(k => k + ' ' + s.iss[k] + ' 次').join(' · ')
     : '没有反复出现的毛病';
   const f = $('#feed');
+  /* 🚨 **第一个按钮必须是「接着这一场聊」**。
+     Kevin 2026-08-11 为「练习」说过一次（「点进去就真的是历史了，没法再接回去」），
+     练习那边因此有了「接着这一场继续说」、打磨有「接着打磨」——
+     **只有闲聊我没做**，2026-08-20 他又说了一遍：
+     「我练过的这些你也不要就终止嘛……聊过的继续接着聊，怎么就不能接着聊了呢？」
+     所以这一页的重点不是好看的归档，是**能接着往下说**，按钮要在最上面。 */
   f.innerHTML = '<div class="pol">' +
+    '<button id="chatgoon" class="btn wide" style="width:100%;margin-bottom:12px">' +
+    '接着这一场聊</button>' +
     (justDone ? '<div class="card" style="padding:14px">' +
       '<div class="k" style="font-weight:800;margin-bottom:8px">这一场</div>' +
       '<div class="t">说了 <b>' + s.n + '</b> 轮 · ' +
@@ -16565,6 +16612,8 @@ function showChatRec(rec, justDone){
     '<button id="chatdel" class="btn sm" style="margin-top:14px">删掉这一场</button>' +
     '</div>';
 
+  const goon = document.getElementById('chatgoon');
+  if (goon) goon.onclick = () => chatResume(rec);
   const more = document.getElementById('chatmore');
   if (more) more.onclick = () => { chatReset(); go(showChat, '闲聊'); };
   document.querySelectorAll('[data-chatplay]').forEach(b =>
