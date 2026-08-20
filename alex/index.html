@@ -15481,7 +15481,8 @@ const CHAT_DAILY = [
      better  整句、地道 —— 他照着重说一遍就行（**主角**）
      easy    整句、简单 —— 同一个意思，他现在水平张口就来的那版
      native  那一小段  —— 只用来说明「改的是哪儿」，不是给他念的 */
-const CHAT_CRIT_FIELDS = ['level','quote','issue','better','native','easy','alex_zh','phrase'];
+const CHAT_CRIT_FIELDS = ['level','quote','issue','better','native','easy','alex_zh','phrase',
+                          '__partOf'];
 
 let CHAT = null;
 function chatReset(){
@@ -15741,15 +15742,21 @@ function betterBad(better, said, level){
        长段（≥ 40 词）：只判「像不像一段完整的话」（≥2 句且 ≥25 词）
                         + 一个很松的防掏空下限（20%） */
   if (sw >= 40){
-    const sents = (b.match(/[.!?？。！]+/g) || []).length;
-    if (sents < 2 || bw < 25)
-      return 'better 不像一段完整的话（' + bw + ' 词 / ' + sents + ' 句）';
+    /* 🚨 **不要求「至少两句」**。实测：180 词的一段，模型给 29 词的**一句话**
+       是完全合理的答案，而这条规则把它驳掉了 —— 又一次「判据正确但结果更糟」。
+       掏空这件事下面那个词数下限已经拦住了（8 词那种一定过不去），
+       句数这条挡不住真问题、只会误杀。 */
     /* 🚨 防掏空的下限**必须封顶**，不能跟着他说的长度一直涨。
        实测：20% 在 750 词时还行，到 2540 词（约 17 分钟口水话）就变成要求 508 词 ——
        而模型给 265 词的浓缩版是**合理答案**，于是又连驳三次、他还是什么都拿不到。
        这跟 easy 那条「容差要有绝对下限」是同一个道理的反面：
        **要求本身要有上限**。他说得越久，正确的范例反而越该是浓缩的。 */
-    const floor = Math.min(80, Math.max(25, Math.round(sw * 0.2)));
+    /* 下限只要够拦住「掏空」就行，不必逼近他原话的长度。
+       实测校准：180 词的一段 → 模型给 29 词是合理的；2540 词 → 265 词也是合理的。
+       所以 15%、封顶 60 词、地板 20 词。
+       （真正的掏空形态是 "You should say it better." 那种，
+        它先被上面的「指挥口气」正则拦了，这里只是第二道。） */
+    const floor = Math.min(60, Math.max(20, Math.round(sw * 0.15)));
     if (bw < floor)
       return 'better 只有 ' + bw + ' 词（至少要 ' + floor + ' 词），像是被掏空了';
   } else if (sw >= 8 && bw < Math.round(sw * 0.6)){
@@ -15802,7 +15809,10 @@ function scrubChat(d){
   /* 🚨 quote 锚不住时**不动 better** —— better 是「他整句该怎么说」，
      它的正确性不依赖 quote 摘得准不准；一起清掉的话，模型偶尔一次没摘好引用，
      他就连最想要的那句范例都拿不到了（而那正是他两次点名要的东西）。 */
-  if (!quoteAnchored(d)){ d.quote = ''; d.issue = ''; d.native = ''; d.easy = ''; }
+  const anchorSaid = d.__partOf || d.said;
+  if (!quoteAnchored({quote: d.quote, said: anchorSaid})){
+    d.quote = ''; d.issue = ''; d.native = ''; d.easy = '';
+  }
   if (bled(d.native, d.reply)) d.native = '';     // 串台：把对方的台词当成他该说的话
   if (bled(d.easy, d.reply)) d.easy = '';
   if (bled(d.better, d.reply)) d.better = '';     // 同上，better 更要防（他会照念）
@@ -15840,6 +15850,37 @@ async function chatAsk(build, check, tries){
   throw new Error(last || '试了三次都没出合格的结果');
 }
 
+/* 说得特别长时的降级（Kevin 2026-08-20：「不能够就这么完了就没了」）。
+
+   🚨 实测：他说到 **19 分钟（2780 词）** 时，模型干脆放弃给完整重写，
+      只回 18 词一句话 —— 这次不是判据太严，是**「一个整句范例」对这么长的独白
+      本来就不成立**：没人会照着重说 19 分钟。
+   所以先按整段试；试不出来就**只点评最后一小段**，并且**明说只覆盖了哪一段** ——
+   给他一个有用的东西，好过给他一句「没点评上」。
+   🚨 绝不静默截断：`partOf` 会带到界面上说清楚，不然他以为整段都点评过了。 */
+const CRIT_TAIL_WORDS = 180;
+
+function chatTail(said, n){
+  const parts = String(said || '').trim().split(/\s+/);
+  return parts.length <= n ? String(said || '').trim()
+                           : parts.slice(-n).join(' ');
+}
+
+async function askCritSmart(said){
+  try {
+    return await chatAsk(() => chatCritPrompt(said),
+                         (c, last) => chatCritBad(c, said, last), 4);
+  } catch(e){
+    const words = (String(said).match(/[a-z']+/gi) || []).length;
+    if (words <= 250) throw e;                    // 不长还失败，那是别的毛病
+    const tail = chatTail(said, CRIT_TAIL_WORDS);
+    const c = await chatAsk(() => chatCritPrompt(tail),
+                            (cc, last) => chatCritBad(cc, tail, last), 3);
+    c.__partOf = tail;                            // 界面上要说清楚只改了这一段
+    return c;
+  }
+}
+
 async function chatOpen(seed){
   return await chatAsk(() => chatOpenPrompt(seed), chatOpenBad);
 }
@@ -15858,8 +15899,7 @@ async function chatTurn(said){
   const [scene, crit] = await Promise.all([
     chatAsk(() => chatPrompt(said, mustAsk), j => chatReplyBad(j, mustAsk))
       .catch(e => ({__err: e.message || String(e)})),
-    chatAsk(() => chatCritPrompt(said), (c, last) => chatCritBad(c, said, last), 4)
-      .catch(e => ({__err: e.message || String(e)}))
+    askCritSmart(said).catch(e => ({__err: e.message || String(e)}))
   ]);
   const sceneOk = scene && !scene.__err;
   const d = mergeChat(sceneOk ? scene : {said: said, reply: ''},
@@ -15867,7 +15907,15 @@ async function chatTurn(said){
   d.said = said;                                  // 他那句永远以本地转写为准
   if (!sceneOk) d.replyErr = scene.__err;         // 对方没接上，但他那句和点评都在
   if (crit && crit.__err) d.critErr = crit.__err; // 判据 E12
-  return scrubChat(d);
+  const out = scrubChat(d);
+  /* 🚨 兜底：洗完之后**没有整句范例**就当这次点评没成。
+     他要的就是「改成什么样重说一遍」，给一条没有范例的点评等于没给。
+     这样它会走「自动重试 + 再次尝试」那条路，而不是悄悄交一份半成品。
+     （2026-08-20 撞到过一次：校验时 better 明明在，洗完却是空的，
+      同样输入再跑又正常 —— 模型偶发，复现不了。**复现不了就兜住**。） */
+  if (!out.critErr && (out.level === 'error' || out.level === 'polish') && !out.better)
+    out.critErr = '这次没给出可照念的整句';
+  return out;
 }
 
 /* ── 落盘 ────────────────────────────────────────────────── */
@@ -16399,6 +16447,11 @@ function chatCritHTML(t, i){
     '" style="padding:2px 8px;font-size:12px" title="收进本子">' + star(en) + '</button>';
 
   const bits = [];
+  /* 🚨 只点评了一段就**明说**，别让他以为整段都改过了 */
+  if (t.__partOf) bits.push(
+    '<div style="color:var(--muted);font-size:12px;margin-bottom:6px">' +
+    '你这段说得很长，下面这条只针对**最后一小段**（「…' +
+    esc(String(t.__partOf).slice(-42)) + '」）</div>');
   if (t.better) bits.push(
     '<div style="font-size:15px;font-weight:700;line-height:1.5">' +
     '✅ 这样重说一遍：<br>' + esc(t.better) + key('b', 'n', t.better) + '</div>');
@@ -16471,8 +16524,7 @@ function chatBindTakes(){
       if (!t || !t.said || b.disabled) return;
       b.disabled = true; b.textContent = '⏳ 在重新点评…';
       try {
-        const crit = await chatAsk(() => chatCritPrompt(t.said),
-                                   (c, last) => chatCritBad(c, t.said, last));
+        const crit = await askCritSmart(t.said);
         const merged = scrubChat(mergeChat({said: t.said, reply: t.reply}, crit));
         delete t.critErr;
         Object.assign(t, merged);
@@ -16667,8 +16719,7 @@ function chatAutoRecrit(idx){
     const t = CHAT.turns[idx];
     if (!t || !t.said || !t.critErr) return;
     try {
-      const crit = await chatAsk(() => chatCritPrompt(t.said),
-                                 (c, last) => chatCritBad(c, t.said, last), 2);
+      const crit = await askCritSmart(t.said);
       const merged = scrubChat(mergeChat({said: t.said, reply: t.reply || ''}, crit));
       delete t.critErr;
       Object.assign(t, merged);
