@@ -1,0 +1,74 @@
+# XcodeGen 工程定义。CI 上 `xcodegen generate` 出 .xcodeproj 再编译。
+# 用它而不是手写 .pbxproj —— .pbxproj 是一坨机器格式，手写必出错且没法 review。
+name: ShuoYingwen
+options:
+  bundleIdPrefix: com.kevin.shuoyingwen
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    CODE_SIGNING_ALLOWED: NO
+    CODE_SIGNING_REQUIRED: NO
+    CODE_SIGN_IDENTITY: ""
+    ENABLE_BITCODE: NO
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+
+targets:
+  # 容器 App：iOS 规定键盘扩展必须挂在一个 App 里。
+  # 这个 App 本身只做一件事：告诉他去哪儿启用键盘。
+  ShuoYingwen:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Shared
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: 说英文
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        # 🚨 键盘扩展弹不出系统权限框，必须由容器 App 先要过一次。
+        #    少了这两个 key，App 一调录音就直接崩（不是报错，是崩）。
+        NSMicrophoneUsageDescription: 用来听你说的中文，转成文字后整理并译成英文。
+        NSSpeechRecognitionUsageDescription: 把你说的中文转成文字，再整理并译成英文。
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kevin.shuoyingwen
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+    dependencies:
+      - target: Keyboard
+        embed: true
+
+  # 键盘扩展本体
+  Keyboard:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Keyboard
+      - path: Shared
+    info:
+      path: Keyboard/Info.plist
+      properties:
+        CFBundleDisplayName: 说英文
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.keyboard-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
+          NSExtensionAttributes:
+            IsASCIICapable: false
+            PrefersRightToLeftLayout: false
+            PrimaryLanguage: zh-Hans
+            # 🚨 必须 true，否则键盘扩展发不出任何网络请求。
+            #    他还要在 设置>键盘>说英文 里手动打开「允许完全访问」。
+            RequestsOpenAccess: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kevin.shuoyingwen.keyboard
