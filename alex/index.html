@@ -7897,16 +7897,11 @@ function showVoice(){
 
 
 
-  if (!en.length){
-
-    const w = document.createElement('div');
-
-    w.className = 'note'; w.textContent = '这台设备上没找到英语语音。';
-
-    f.appendChild(w); return;
-
-  }
-
+  /* 🚨 神经语音这一块要排在「没找到英语语音就 return」**之前**。
+     顺序反了的话，设备一个英文嗓子都没有时会提前 return，
+     这一块永远不显示 —— 而那恰恰是最需要它的情形（2026-08-20 实测抓到：
+     无头浏览器零系统嗓子，选嗓子屏上一个神经语音都没有）。
+     方向要记清楚：**设备嗓子越差，越该看得见联网这条。** */
   /* ═══ Alex 的声音（2026-08-20 加）═══
      Kevin：「现在自带的男声都很难听，含含糊糊像嘴里含着痰」。
      下面那一长串是**这台设备自带的**嗓子，音质取决于手机装了什么；
@@ -7962,6 +7957,18 @@ function showVoice(){
     paintN();
     say(NDEMO, 'en');
   };
+
+
+  if (!en.length){
+
+    const w = document.createElement('div');
+
+    w.className = 'note';
+    w.textContent = '这台设备上没找到英语语音 —— 用上面那个联网合成的就行。';
+
+    f.appendChild(w); return;
+
+  }
 
   const cur = localStorage.getItem('alex_voice_en');
 
