@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="说英文">
+<meta name="theme-color" content="#0b0d10">
+<title>说英文 · 口水话转结构化英文</title>
+<style>
+:root{
+  --bg:#f6f7f9; --card:#fff; --fg:#14171a; --dim:#6b7480; --line:#e3e6ea;
+  --accent:#2563eb; --accent-fg:#fff; --ok:#0d9488; --warn:#b45309;
+  --radius:14px;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#0b0d10; --card:#151920; --fg:#e8eaed; --dim:#8b95a1; --line:#252b34;
+         --accent:#3b82f6; --ok:#2dd4bf; --warn:#f59e0b; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--fg);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  padding:max(12px,env(safe-area-inset-top)) 12px calc(24px + env(safe-area-inset-bottom));
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:640px;margin:0 auto}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+h1{font-size:17px;margin:0;font-weight:650;letter-spacing:-.01em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin-bottom:10px}
+textarea{
+  width:100%;min-height:132px;resize:vertical;border:0;outline:0;background:transparent;
+  color:var(--fg);font:inherit;line-height:1.6;
+}
+textarea::placeholder{color:var(--dim)}
+.tones{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 10px}
+.tone{
+  border:1px solid var(--line);background:var(--card);color:var(--dim);
+  padding:6px 12px;border-radius:999px;font-size:13px;cursor:pointer;
+}
+.tone[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.go{
+  width:100%;padding:15px;border:0;border-radius:var(--radius);
+  background:var(--accent);color:var(--accent-fg);font-size:17px;font-weight:600;
+  cursor:pointer;-webkit-appearance:none;
+}
+.go:disabled{opacity:.55}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.sec{background:var(--card);border:1px solid var(--line);color:var(--fg);
+     padding:12px;border-radius:var(--radius);font-size:15px;font-weight:550;cursor:pointer}
+.out{white-space:pre-wrap;word-break:break-word;font-size:17px;line-height:1.6}
+.zh{white-space:pre-wrap;word-break:break-word;font-size:14px;color:var(--dim);line-height:1.6}
+.lbl{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.meta{font-size:12px;color:var(--dim);margin-top:8px}
+.hide{display:none}
+.err{color:var(--warn);font-size:14px;white-space:pre-wrap}
+.hist{font-size:13px;color:var(--dim);border-top:1px solid var(--line);padding:9px 0;cursor:pointer}
+.hist:last-child{border-bottom:0}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;
+      border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>说英文</h1>
+  </header>
+
+  <!-- 输入 -->
+  <div class="card">
+    <textarea id="src" placeholder="点系统键盘上的 🎤 直接说 —— 想到哪说到哪，口水话不用管。"></textarea>
+  </div>
+
+  <div class="tones" id="tones"></div>
+
+  <button class="go" id="go">整理 + 译成英文</button>
+
+  <!-- 结果 -->
+  <div class="card hide" id="result" style="margin-top:10px">
+    <div class="lbl">English</div>
+    <div class="out" id="en"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="sec" id="copy">复制</button>
+      <button class="sec hide" id="share">发送…</button>
+    </div>
+    <div class="meta" id="meta"></div>
+    <div style="margin-top:14px">
+      <div class="lbl">中文核对稿</div>
+      <div class="zh" id="zh"></div>
+    </div>
+  </div>
+
+  <div class="card hide" id="errBox"><div class="err" id="err"></div></div>
+
+  <div class="card hide" id="histBox">
+    <div class="lbl">最近</div>
+    <div id="hist"></div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+/* ==== 由 build_web.py 注入，勿手改 ====
+   同一套模板构建出两种形态：
+   A) 联网版 index.html —— APP_TOKEN 有值，KEY/PROMPT 为空，调同源 /api。
+      页面是公开的，所以绝不能把 key 或 prompt 放进来。
+   B) 离线版 说英文.html —— KEY/PROMPT 有值，直连 DeepSeek，不需要任何服务器。
+      这一份只存在他自己的设备上，不上传、不公开。                      */
+const TONES = {"work": "a direct work message to a colleague or counterpart (Slack / WhatsApp / Teams). Professional but not stiff. Contractions are fine.", "email": "a business email body. Slightly more formal, complete sentences, no greeting line and no sign-off unless the speaker said one.", "casual": "a casual message to someone you know well. Relaxed, short, contractions.", "formal": "a formal written communication to a client, regulator or auditor. Precise, hedged where the speaker hedged, no slang."};
+const DEFAULT_TONE = "work";
+const BACKEND = "https://sqg75i2mlmanf4sqde6nh.apigateway-cn-beijing.volceapi.com";
+const PROMPT = "You are a message-composition engine. The input is a raw Chinese speech-to-text transcript: rambling, with fillers, repetitions, self-corrections and ASR errors. Your job is to turn it into a clean English message that is ready to send as-is.\n\nRun three passes internally, then output only the result.\n\nPASS 1 - CLEAN\n- The transcript may have little or no punctuation. Infer sentence boundaries\n  before anything else. Do not fuse two adjacent nouns into one compound just\n  because no punctuation separates them (e.g. \"I'm travelling Wednesday\" +\n  \"the meeting\" is two facts, not one \"business trip meeting\").\n- When the speaker states a reason and then makes a request, keep the causal\n  link explicit (\"I'm travelling Wednesday, so can we move the meeting\").\n- Remove fillers, hesitations, repetitions, false starts and throwaway asides.\n- When the speaker corrects themselves, keep ONLY the corrected version.\n- Repair obvious speech-recognition errors using context.\n- NEVER drop, round, or alter: numbers, amounts, percentages, dates, deadlines,\n  names of people / companies / products / files, conditions (\"if\", \"unless\",\n  \"only when\"), and negations. If a number is garbled, keep it verbatim rather\n  than guessing.\n\nPASS 2 - STRUCTURE  (this is the pass most likely to go wrong - be strict)\n- Count the distinct points the speaker actually made.\n  * 1 point  -> ONE sentence. No bullets, no lead-in, no heading.\n  * 2 points -> two short sentences, or two bullets if they are genuinely parallel.\n  * 3+ points -> one short lead sentence stating the ask or the topic, then\n                 REAL BULLETS, one point per bullet, each line starting with \"- \".\n                 This is mandatory, not a preference. Never render three or more\n                 points as a running paragraph.\n- Never enumerate inside prose (\"first ... second ... third ...\"). If you find\n  yourself writing \"first\" or \"second\" mid-sentence, convert to bullets instead.\n- Put the ASK (what the speaker wants the reader to do) in the first or last\n  position, never buried in the middle.\n- Never invent a point, a reason, a deadline or a next step that was not said.\n- Never pad. The output must be shorter than the input. If you cannot make it\n  shorter, you have added something that was not there.\n- Do not add a closing line (\"Let me know\", \"Thanks\") unless the speaker said one.\n\nPASS 3 - RENDER IN ENGLISH\n- Write it the way a native speaker would write that message, not a literal\n  translation of the Chinese.\n- Match the register described below.\n- Keep proper nouns in their original form when they have no standard English name.\n\nOUTPUT FORMAT - follow exactly, no deviation:\n<<<EN>>>\n(the final English message)\n<<<ZH>>>\n(the same message in concise Chinese, same structure - this is a check copy so the\n user can confirm nothing was misunderstood; plain modern Chinese, no literary style)\n\nRules for the output block:\n- Nothing before <<<EN>>> and nothing after the Chinese. No preamble, no notes,\n  no \"Here is\".\n- No markdown headings. Bullets are \"- \".\n- Do not use em dashes.\n\nWORKED EXAMPLE (3 points -> bullets, note there is NO \"First / Second / Third\"):\n\nInput:\n\"就是那个啊,我想说几个事,一个是那个下个季度的预算啊还没批下来,嗯,\n财务那边说要再等一周。然后还有就是那个新来的实习生,呃,下周一报到,\n需要给他配个电脑。哦对了还有,那个客户的合同我已经发过去了,等他们签回来。\"\n\nOutput:\n<<<EN>>>\nThree updates:\n- Next quarter's budget still isn't approved; Finance says another week.\n- The new intern starts Monday and needs a laptop set up.\n- I've sent the client contract over and we're waiting on their signature.\n<<<ZH>>>\n三件事:\n- 下季度预算还没批,财务说还要一周。\n- 新实习生下周一报到,需要配电脑。\n- 客户合同已发出,等他们签回。\n";
+/* ==== 注入结束 ==== */
+
+/* 这个页面挂在公开的 GitHub Pages 上，所以**里面没有任何密钥**。
+   后端口令由一条一次性链接（二维码）带进来，存本机 localStorage，
+   随即把它从地址栏抹掉。
+   🚨 fragment（# 后面那段）浏览器不会发给服务器，GitHub 那边看不到它。
+   🚨 别改成把口令写进页面 —— 页面是公开的，写进去等于公开他的后端额度。 */
+function resolvePass(){
+  try{
+    const m = location.hash.match(/[#&]p=([^&]*)/);
+    if (m && m[1]){
+      localStorage.setItem("vime.pass", decodeURIComponent(m[1]));
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+    return localStorage.getItem("vime.pass") || "";
+  } catch(e){ return ""; }
+}
+let PASS = resolvePass();
+
+const $ = id => document.getElementById(id);
+const LS = { tone:"vime.tone", hist:"vime.hist" };
+
+let tone = localStorage.getItem(LS.tone) || DEFAULT_TONE;
+
+// --- 语气档位 ---
+const TONE_LABEL = { work:"工作消息", email:"邮件", casual:"随意", formal:"正式" };
+function renderTones(){
+  $("tones").innerHTML = "";
+  Object.keys(TONES).forEach(k=>{
+    const b = document.createElement("button");
+    b.className = "tone"; b.textContent = TONE_LABEL[k] || k;
+    b.setAttribute("aria-pressed", String(k === tone));
+    b.onclick = () => { tone = k; localStorage.setItem(LS.tone, k); renderTones(); };
+    $("tones").appendChild(b);
+  });
+}
+renderTones();
+
+// --- 离线版要自己做切分和破折号兜底（联网版由 Worker 做）---
+// 🚨 模型偶尔把 ZH 块吐两遍：<<<EN>>>…<<<ZH>>>中文<<<ZH>>>中文
+//    所以中文取「最后一个 ZH 标记之后」。engine.py 的 _split 必须同步。
+function splitZh(raw){
+  const s = (raw||"").trim();
+  const A = "<<<EN>>>", B = "<<<ZH>>>";
+  const i = s.indexOf(A), j = s.indexOf(B);
+  if (i < 0 || j < 0 || j < i) return { en:s, zh:"" };
+  const strip = t => t.split(A).join("").split(B).join("").trim();
+  const parts = s.split(B);
+  return { en: strip(s.slice(i+A.length, j)), zh: strip(parts[parts.length-1]) };
+}
+// 🚨 prompt 里禁了破折号但模型照样吐（实测），代码里兜死。
+function postprocess(s){
+  if (!s) return s;
+  const EM = "—", EN = "–";
+  s = s.split(" "+EM+" ").join("; ").split(EM).join("; ");
+  s = s.split(" "+EN+" ").join("; ");
+  let out = "";
+  for (let i = 0; i < s.length; i++){
+    if (s[i] === EN){
+      const p = s[i-1] || "", n = s[i+1] || "";
+      out += (/\d/.test(p) && /\d/.test(n)) ? "-" : ", ";
+    } else out += s[i];
+  }
+  while (out.indexOf("  ") >= 0) out = out.split("  ").join(" ");
+  return out.split(" ;").join(";").split(" ,").join(",").trim();
+}
+
+function showErr(m){ $("err").textContent = m; $("errBox").classList.remove("hide"); }
+function clearErr(){ $("errBox").classList.add("hide"); }
+
+// --- 主流程 ---
+async function run(){
+  const text = $("src").value.trim();
+  clearErr();
+  if (!text) { showErr("先说点什么。"); return; }
+  PASS = PASS || resolvePass();
+  if (!PASS){
+    showErr("这台设备还没开通。扫一次 Claude 发你的开通二维码就好（只需一次）。");
+    return;
+  }
+
+  $("go").disabled = true;
+  $("go").innerHTML = '<span class="spin"></span> 处理中…';
+  const t0 = performance.now();
+
+  try{
+    const H = { "Content-Type":"application/json; charset=utf-8", "X-Alex-Pass": PASS };
+
+    // 🚨 必须走「提交 job + 轮询」，不能用 sync=1。
+    //    API 网关对同步调用会直接回 504 upstream request timeout（实测过）。
+    const start = await fetch(BACKEND + "/api/llm", {
+      method:"POST", headers:H,
+      body: JSON.stringify({
+        messages:[
+          { role:"system", content: PROMPT },
+          { role:"user", content:"Register: " + TONES[tone] +
+            "\n\nRaw transcript:\n\"\"\"\n" + text + "\n\"\"\"\n" }
+        ],
+        temperature: 0.3, max_tokens: 1200
+      })
+    });
+    if (start.status === 401) throw new Error("后端口令不对 —— 重新扫一次开通二维码");
+    if (start.status === 429) throw new Error((await start.json()).error || "额度用完了");
+    if (!start.ok) throw new Error("HTTP " + start.status);
+    const job = (await start.json()).job;
+    if (!job) throw new Error("后端没给 job id");
+
+    let raw = "", provider = "";
+    for (let i = 0; i < 90; i++){
+      await new Promise(r => setTimeout(r, 700));
+      let d;
+      try {
+        const p = await fetch(BACKEND + "/api/job?id=" + encodeURIComponent(job), { headers:H });
+        d = await p.json();
+      } catch(e){ continue; }                       // 网络抖一下就再问一次
+      if (d.error && !d.done) throw new Error(d.error);
+      if (d.done){
+        if (d.error) throw new Error(d.error);
+        raw = d.text || ""; provider = d.provider || "";
+        break;
+      }
+    }
+    if (!raw) throw new Error("等太久了，再试一次");
+
+    const parsed = splitZh(raw);
+    const en = postprocess(parsed.en), zh = postprocess(parsed.zh), model = provider;
+
+    if (!en) throw new Error("返回了空结果");
+
+    $("en").textContent = en;
+    $("zh").textContent = zh || "（模型没按格式输出）";
+    $("meta").textContent = ((performance.now()-t0)/1000).toFixed(1) + "s · " + model;
+    $("result").classList.remove("hide");
+    $("result").scrollIntoView({behavior:"smooth", block:"start"});
+    pushHist(text, en);
+  } catch(e){
+    showErr("失败：" + e.message);
+  } finally {
+    $("go").disabled = false;
+    $("go").textContent = "整理 + 译成英文";
+  }
+}
+$("go").onclick = run;
+
+// --- 复制 / 分享 ---
+$("copy").onclick = async () => {
+  try { await navigator.clipboard.writeText($("en").textContent); }
+  catch(e){
+    const t = document.createElement("textarea");
+    t.value = $("en").textContent; document.body.appendChild(t);
+    t.select(); document.execCommand("copy"); t.remove();
+  }
+  $("copy").textContent = "已复制 ✓";
+  setTimeout(()=>{ $("copy").textContent = "复制"; }, 1400);
+};
+if (navigator.share){
+  $("share").classList.remove("hide");
+  $("share").onclick = () => navigator.share({ text: $("en").textContent }).catch(()=>{});
+}
+
+// --- 历史 ---
+function pushHist(src, en){
+  let h = [];
+  try { h = JSON.parse(localStorage.getItem(LS.hist) || "[]"); } catch(e){}
+  h.unshift({ src, en, t: Date.now() });
+  h = h.slice(0, 10);
+  localStorage.setItem(LS.hist, JSON.stringify(h));
+  renderHist();
+}
+function renderHist(){
+  let h = [];
+  try { h = JSON.parse(localStorage.getItem(LS.hist) || "[]"); } catch(e){}
+  if (!h.length){ $("histBox").classList.add("hide"); return; }
+  $("histBox").classList.remove("hide");
+  $("hist").innerHTML = "";
+  h.forEach(item=>{
+    const d = document.createElement("div");
+    d.className = "hist";
+    d.textContent = item.en.replace(/\n+/g," ").slice(0,80) + (item.en.length>80?"…":"");
+    d.onclick = () => {
+      $("src").value = item.src;
+      $("en").textContent = item.en;
+      $("result").classList.remove("hide");
+    };
+    $("hist").appendChild(d);
+  });
+}
+renderHist();
+</script>
+<!-- BUILD-417fc7344e -->
+</body>
+</html>
