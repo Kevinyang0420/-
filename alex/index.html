@@ -8181,7 +8181,13 @@ function showBackup(){
 /* 🚨 `alex_nb`（单词本 / 专业表达本）必须在备份里：那是他一条条自己攒的，
    清一次浏览器缓存就全没了，而且没有任何提示 —— 正是这个备份功能存在的理由。
    查过的词条缓存（alex_dict_cache）不进备份：丢了重查一次就有，没必要撑大文件。 */
-const BACKUP_KEYS = ['alex_state', 'alex_sessions', 'alex_lsn_seen', 'alex_dens', 'alex_nb'];
+/* 🚨 `alex_kept`（阅读收藏 + 应用指南）2026-08-20 补进来 —— 之前**一直没在备份里**，
+   他换手机就没了，而那是他一条条自己挑出来的东西。
+   查到这个是因为他问「收藏的在哪里看」，顺手数了一遍收藏都存在哪。
+   🚨 加键**必须同时加 importData 里的合并分支**：那个循环没有 else，
+      光加键的话会被导出、导入时**静默跳过** —— 看着像备份了，其实恢复不回来。 */
+const BACKUP_KEYS = ['alex_state', 'alex_sessions', 'alex_lsn_seen', 'alex_dens',
+                     'alex_nb', 'alex_kept'];
 
 
 
@@ -8353,6 +8359,27 @@ function importData(text, replace){
       if (!nbSave(merged)) throw new Error('本子存不下（浏览器存储满了）');
 
       stats.push(`本子 +${merged.length - before} 条（共 ${merged.length}）`);
+
+    } else if (k === 'alex_kept'){
+
+      /* 阅读收藏：按 id 去重合并，跟 alex_sessions 同一个思路。
+         🚨 不能覆盖 —— 他很可能在手机和电脑上各收过一些句子。 */
+
+      let inc = [];
+
+      try { inc = JSON.parse(d.data[k]) || []; } catch(_){}
+
+      const cur = kept();
+
+      const seen = new Set(cur.map(x => x && x.id));
+
+      const add = inc.filter(x => x && !seen.has(x.id));
+
+      try { localStorage.setItem(k, JSON.stringify(cur.concat(add))); }
+
+      catch(_){ throw new Error('阅读收藏存不下（浏览器存储满了）'); }
+
+      stats.push(`阅读收藏 +${add.length} 条（共 ${cur.length + add.length}）`);
 
     }
 
@@ -16220,7 +16247,10 @@ function chatPaintRoom(scrollBottom){
       '<div style="display:flex;gap:6px;margin-top:8px">' +
         '<button id="chattype" class="btn sm" style="flex:1">⌨️ 打字</button>' +
         '<button id="chatspk" class="btn sm" style="flex:0 0 auto">' +
-          (chatSpeakOn() ? '🔊 朗读开' : '🔇 朗读关') + '</button>' +
+          (chatSpeakOn() ? '🔊' : '🔇') + '</button>' +
+        /* Kevin 2026-08-20：「收藏过的这些内容，我在哪里看呢？」——
+           在他收藏的地方就给一个去处，别让他自己去「我的」里翻。 */
+        '<button id="chatfav" class="btn sm" style="flex:0 0 auto">★</button>' +
         '<button id="chatend" class="btn sm" style="flex:0 0 auto">✅ 聊完了</button>' +
       '</div>' +
     '</div></div>';
@@ -16237,6 +16267,7 @@ function chatPaintRoom(scrollBottom){
   $('#chatmic').onclick = () => chatMicToggle();
   $('#chattype').onclick = () => chatTypeIn();
   $('#chatspk').onclick = () => { chatSpeakSet(!chatSpeakOn()); chatPaintRoom(); };
+  $('#chatfav').onclick = () => go(showAllFav, '我的收藏');
   $('#chatend').onclick = () => chatFinish();
   if (scrollBottom !== false) window.scrollTo(0, document.body.scrollHeight);
   if (CHAT.stage) chatStage(CHAT.stage);
@@ -16258,24 +16289,36 @@ function chatCritHTML(t, i){
      Kevin 2026-08-20：「他只是提了意见、指出哪里不对，没有把改好后的完整说法发给我。」
      所以 better 排第一、字号最大、自带「🔊 听一遍」——
      解释（alex_zh）沉到最后，它是补充，不是主角。 */
-  const key = (k, n) => ' <button class="rchip" data-chatspk="' + k + i +
+  /* 🚨 收藏键要**看得出收没收**。Kevin 2026-08-20：「点收藏的时候那个星星图标
+     不会发生变化，容易让人以为没有点成功」。
+     空心 ☆ = 没收，实心 ★（黄）= 已收 —— 状态由 `nbFind` **现算**，
+     不靠点击时翻一下：翻标志位的话重画一次就打回原形，而且同一句话在页面上
+     可能出现两处（推荐那句也在候选里），各翻各的必然一个 ✓ 一个 ☆。 */
+  const star = en => {
+    const saved = en && (typeof nbFind === 'function') && nbFind(qId(en));
+    return saved
+      ? '<span style="color:#f5b301;font-size:15px" title="已收进' +
+        esc(BOOKS[saved.book] || '本子') + '">★</span>'
+      : '<span style="font-size:15px">☆</span>';
+  };
+  const key = (k, n, en) => ' <button class="rchip" data-chatspk="' + k + i +
     '" style="padding:2px 8px;font-size:12px" title="听一遍">🔊</button>' +
     '<button class="rchip" data-chattake="' + n + i +
-    '" style="padding:2px 8px;font-size:12px" title="收进本子">☆</button>';
+    '" style="padding:2px 8px;font-size:12px" title="收进本子">' + star(en) + '</button>';
 
   const bits = [];
   if (t.better) bits.push(
     '<div style="font-size:15px;font-weight:700;line-height:1.5">' +
-    '✅ 这样重说一遍：<br>' + esc(t.better) + key('b', 'n') + '</div>');
+    '✅ 这样重说一遍：<br>' + esc(t.better) + key('b', 'n', t.better) + '</div>');
   if (t.easy && t.easy !== t.better) bits.push(
-    '<div style="margin-top:8px">🙂 <b>更简单</b>：' + esc(t.easy) + key('e', 'e') + '</div>');
+    '<div style="margin-top:8px">🙂 <b>更简单</b>：' + esc(t.easy) + key('e', 'e', t.easy) + '</div>');
   if (t.native && t.quote) bits.push(
     '<div style="margin-top:8px;color:var(--muted);font-size:12.5px">' +
     '改的是这儿：「' + esc(t.quote) + '」→ ' + esc(t.native) + '</div>');
   if (t.phrase) bits.push(
     '<div style="margin-top:8px">📌 <b>能带走</b>：' + esc(t.phrase) +
     ' <button class="rchip" data-chattake="p' + i +
-    '" style="padding:2px 8px;font-size:12px">☆</button></div>');
+    '" style="padding:2px 8px;font-size:12px">' + star(t.phrase) + '</button></div>');
   if (t.alex_zh && t.level !== 'fine') bits.push(
     '<div style="margin-top:8px;color:var(--muted);font-size:12.5px">' + esc(t.alex_zh) + '</div>');
 
@@ -16299,7 +16342,12 @@ function chatBindTakes(){
       const e = subEntry(en, t.alex_zh || '', {from: '闲聊 · ' + (CHAT.topic || '')});
       const r = nbAdd(e, bookFor(e));
       if (r === 'full') return toast('本子满了或存不下');
-      toast(r === 'same' ? '本子里已经有了' : '收好了');
+      toast(r === 'same' ? '移到另一本了' : r === 'moved' ? '移到另一本了' : '收好了 ★');
+      /* 🚨 整块重画、保留滚动位置 —— 查词那边踩过：各自 paint 的话
+         同一个表达出现两处时必然一个显 ★ 一个显 ☆。 */
+      const y = window.scrollY;
+      chatPaintRoom(false);
+      window.scrollTo(0, y);
     });
   /* 🚨 「🔊 听一遍」也要绑 —— 画了不绑就是他点了没反应（死键，还不报错）。
      用的是全站同一个 say(txt,'en')，所以念出来就是他自己选的那把嗓子。 */
@@ -17405,6 +17453,79 @@ function dictRender(e, cached){
 /* 主词条的收藏行现在长在 wordCard / zhCard 里（`bookRow`），
    原来那张单独的「📒 收进本子」卡已经删掉 —— 留着就是第二套状态，迟早走样。 */
 
+/* ═══ ★ 我的收藏：把散在两处的收藏汇总到一屏 ═══════════════
+   Kevin 2026-08-20：「收藏过的这些内容，我在哪里看呢？我只能看到我聊过的，
+   但没看到我的收藏在哪里……应该有一个统一的地方，就不只是口语。」
+
+   🚨 **只汇总、不另存**。收藏的真源仍然是那两处（`alex_nb` / `alex_kept`），
+      这一屏每次现读。再建第三份存储的话，改一处另两处不同步，
+      而「哪一份是真的」这种问题最难查。 */
+function showAllFav(){
+  /* 🚨 别的屏开头都有这三行，我第一版漏了 —— 于是 #list/#brief/#bar 还占着位置，
+     把内容整个顶到 y=1625（一屏才 812），**第一屏什么都看不见**。
+     这正是他抱怨过的「根本没地方点」那一类，判据可量：第一张卡 top < innerHeight。
+     （量的时候要先把视口设成真机尺寸 —— pane 没显示时 innerHeight 是 0，
+      「在不在第一屏」恒为 false，那种测量不成立。） */
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  const f = $('#feed');
+  $('#sub').textContent = '收藏过的都在这儿';
+  const nb = (typeof nbAll === 'function' ? nbAll() : []);
+  const kp = (typeof kept === 'function' ? kept() : []);
+  const q = String((FAVQ.q || '')).trim().toLowerCase();
+  const hit = s => !q || String(s || '').toLowerCase().indexOf(q) >= 0;
+
+  const word = nb.filter(x => x.book === 'word' && (hit(x.q) || hit(x.w)));
+  const pro  = nb.filter(x => x.book === 'pro'  && (hit(x.q) || hit(x.w)));
+  const rd   = kp.filter(c => hit(c.en) || hit(c.zh));
+
+  const sec = (title, n, items, render, jump, jumpTxt) =>
+    '<div class="card" style="padding:14px">' +
+      '<div class="hd"><span class="role">' + title + '</span>' +
+      '<span class="done">' + n + ' 条</span></div>' +
+      (items.length ? items.map(render).join('')
+        : '<div class="t" style="color:var(--muted);margin-top:8px">' +
+          (q ? '没有匹配的' : '还没有') + '</div>') +
+      (n ? '<button class="rchip" data-favjump="' + jump + '" ' +
+           'style="margin-top:10px">' + jumpTxt + '</button>' : '') +
+    '</div>';
+
+  const line = (main, sub) =>
+    '<div class="t" style="margin-top:8px;padding-left:2px;border-left:2px solid var(--line)">' +
+    '<span style="padding-left:8px">' + esc(String(main).slice(0, 90)) + '</span>' +
+    (sub ? '<div style="padding-left:8px;color:var(--muted);font-size:12px">' +
+           esc(String(sub).slice(0, 60)) + '</div>' : '') + '</div>';
+
+  f.innerHTML =
+    '<div class="pol">' +
+    '<input id="favq" placeholder="搜一下收藏过的…" value="' + esc(FAVQ.q || '') + '" ' +
+      'style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;' +
+      'border:1px solid var(--line-strong);background:var(--surface);' +
+      'color:inherit;font-size:15px;margin-bottom:12px">' +
+    sec('📗 单词本', word.length, word.slice(0, 12),
+        x => line(x.q || x.w, (x.e && x.e.from) || ''), 'word', '打开单词本 →') +
+    sec('📘 专业表达本', pro.length, pro.slice(0, 12),
+        x => line(x.q || x.w, (x.e && x.e.from) || ''), 'pro', '打开专业表达本 →') +
+    sec('📄 阅读收藏', rd.length, rd.slice(0, 12),
+        c => line(c.en, c.zh || ''), 'read', '打开阅读收藏 →') +
+    ((word.length > 12 || pro.length > 12 || rd.length > 12)
+      ? '<div class="note">每类先显示 12 条，点下面的按钮看全部。</div>' : '') +
+    '</div>';
+
+  const inp = document.getElementById('favq');
+  if (inp) inp.oninput = () => { FAVQ.q = inp.value; const y = window.scrollY;
+                                 showAllFav(); window.scrollTo(0, y);
+                                 const i2 = document.getElementById('favq');
+                                 if (i2){ i2.focus(); i2.setSelectionRange(i2.value.length, i2.value.length); } };
+  document.querySelectorAll('[data-favjump]').forEach(b =>
+    b.onclick = () => {
+      const k = b.dataset.favjump;
+      if (k === 'read'){ READ.top = 'fav'; goTab('read'); return; }
+      DICT.top = 'nb'; DICT.book = k;          // 打开对应那一本
+      go(showNotebook, '我的本子');
+    });
+}
+const FAVQ = {q: ''};
+
 /* ═══ 我的本子 ═══ */
 function showNotebook(){
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
@@ -17888,6 +18009,18 @@ function showMe(){
     c.onclick = fn; f.appendChild(c);
 
   };
+
+  /* ★ 统一的收藏入口（Kevin 2026-08-20：「收藏过的这些内容，我在哪里看呢？
+     ……应该有一个统一的地方，可以让我看到所有收藏的东西吧？就不只是口语」）。
+     🚨 收藏本来就散在**两个互不相通的存储**里：
+       `alex_nb`   单词本 / 专业表达本（查词、打磨、闲聊都往这儿收）
+       `alex_kept` 阅读收藏（范文里划选的句子 + 应用指南）
+     这一屏只做**汇总和跳转**，不另建第三份存储 —— 再存一份必然三边不同步。 */
+  const nbN = (typeof nbAll === 'function' ? nbAll() : []).length;
+  const keptN = (typeof kept === 'function' ? kept() : []).length;
+  row('★','我的收藏',
+      '一共 ' + (nbN + keptN) + ' 条 · 本子 ' + nbN + ' · 阅读 ' + keptN,
+      () => go(showAllFav, '我的收藏'));
 
   row('📒','我的本子','查过的词和表达都在这儿，可以复习', () => {
     DICT.top = 'nb'; go(showNotebook, '我的本子');
