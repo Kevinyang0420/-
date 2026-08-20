@@ -1,4 +1,4 @@
-name: 说英文 iOS 键盘
+name: Transless iOS 键盘
 
 # 在 GitHub 免费的 macOS runner 上编译出 IPA（公开仓库不限量免费）。
 # Kevin 不需要 Mac。
@@ -69,8 +69,8 @@ jobs:
         run: |
           set -euo pipefail
           xcodebuild \
-            -project ShuoYingwen.xcodeproj \
-            -scheme ShuoYingwen \
+            -project Transless.xcodeproj \
+            -scheme Transless \
             -configuration Release \
             -sdk iphoneos \
             -derivedDataPath build \
@@ -81,7 +81,7 @@ jobs:
         working-directory: ios
         run: |
           set -euo pipefail
-          APP="build/Build/Products/Release-iphoneos/ShuoYingwen.app"
+          APP="build/Build/Products/Release-iphoneos/Transless.app"
           test -d "$APP" || { echo "::error::没产出 .app"; exit 1; }
 
           # 闸门：键盘扩展必须真的被打进 App 里，否则装上去看不到键盘
@@ -110,11 +110,11 @@ jobs:
           echo "二进制含提示词 ✓（阴性对照未命中 ✓）"
 
           mkdir -p Payload && cp -R "$APP" Payload/
-          zip -qry ShuoYingwen.ipa Payload
-          ls -lh ShuoYingwen.ipa
+          zip -qry Transless.ipa Payload
+          ls -lh Transless.ipa
           echo "闸门全过"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ShuoYingwen-ipa
-          path: ios/ShuoYingwen.ipa
+          name: Transless-ipa
+          path: ios/Transless.ipa
