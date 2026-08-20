@@ -15817,20 +15817,29 @@ async function chatOpen(seed){
 }
 
 /* 🚨 两次调用，谁也够不着谁。打字这条路他那句话现成，两发**并行**，不多等一秒。 */
+/* 🚨🚨 **点评比回答重要**（Kevin 2026-08-20 原话：「我更期待的是这个点评，
+   而不是这个回答；这个回答有时候回答得很傻，但是这个点评很重要啊」）。
+   所以这里有两处按这个优先级来：
+     ① 点评多给一次重试机会（4 次 vs 回话 3 次）
+     ② **两半各自成败、互不牵连**。原来聊天那半一挂就整个 throw，
+        `chatSay` 的 catch 把这一轮 pop 掉 —— **连他说的那句和点评一起没了**。
+        那正好把最重要的东西赔进去了。现在：回话挂了就留个 `replyErr`，
+        他那句话和点评照样留在屏幕上。 */
 async function chatTurn(said){
   const mustAsk = CHAT.noAsk >= CHAT_NOASK_MAX;
   const [scene, crit] = await Promise.all([
-    chatAsk(() => chatPrompt(said, mustAsk), j => chatReplyBad(j, mustAsk)),
-    chatAsk(() => chatCritPrompt(said), c => chatCritBad(c, said))
+    chatAsk(() => chatPrompt(said, mustAsk), j => chatReplyBad(j, mustAsk))
+      .catch(e => ({__err: e.message || String(e)})),
+    chatAsk(() => chatCritPrompt(said), (c, last) => chatCritBad(c, said, last), 4)
       .catch(e => ({__err: e.message || String(e)}))
   ]);
-  if (!scene.said) scene.said = said;
-  if (crit && crit.__err){
-    const d = mergeChat(scene, null);
-    d.critErr = crit.__err;                       // 判据 E12：点评挂了对话照常走
-    return scrubChat(d);
-  }
-  return scrubChat(mergeChat(scene, crit));
+  const sceneOk = scene && !scene.__err;
+  const d = mergeChat(sceneOk ? scene : {said: said, reply: ''},
+                      (crit && !crit.__err) ? crit : null);
+  d.said = said;                                  // 他那句永远以本地转写为准
+  if (!sceneOk) d.replyErr = scene.__err;         // 对方没接上，但他那句和点评都在
+  if (crit && crit.__err) d.critErr = crit.__err; // 判据 E12
+  return scrubChat(d);
 }
 
 /* ── 落盘 ────────────────────────────────────────────────── */
@@ -16261,6 +16270,14 @@ function chatPaintRoom(scrollBottom){
       h += '<div class="turn ai"><div class="who">Alex</div>' +
            '<div class="bub">' + esc(t.reply) + '</div>' +
            '<button class="play" data-chatsay="' + i + '">🔊 听一遍</button></div>';
+    } else if (t.replyErr){
+      /* 🚨 回话挂了**不影响**他那句和点评 —— 那两样才是他要的
+         （他原话：「这个回答有时候回答得很傻，但是这个点评很重要」）。
+         这里只轻轻说一句，给个补一句的按钮，不打断阅读。 */
+      h += '<div class="tags" style="margin:-2px 0 10px 4px;color:var(--muted);font-size:12px">' +
+           'Alex 这轮没接上话 ' +
+           '<button class="rchip" data-chatreply="' + i +
+           '" style="padding:2px 10px;font-size:12px;margin-left:4px">让他回一句</button></div>';
     }
     return h;
   }).join('');
@@ -16389,6 +16406,27 @@ function chatBindTakes(){
       chatPaintRoom(false);
       window.scrollTo(0, y);
     });
+  /* 「让他回一句」：只补对方那半，点评那半原样不动 */
+  document.querySelectorAll('[data-chatreply]').forEach(b =>
+    b.onclick = async () => {
+      const idx = +b.dataset.chatreply, t = CHAT.turns[idx];
+      if (!t || !t.said || b.disabled) return;
+      b.disabled = true; b.textContent = '⏳';
+      try {
+        const mustAsk = CHAT.noAsk >= CHAT_NOASK_MAX;
+        const sc = await chatAsk(() => chatPrompt(t.said, mustAsk),
+                                 j => chatReplyBad(j, mustAsk));
+        delete t.replyErr;
+        t.reply = String(sc.reply || '').trim();     // 🚨 只动 reply，点评不碰
+        await chatSave();
+        const y = window.scrollY; chatPaintRoom(false); window.scrollTo(0, y);
+        chatSpeak(t.reply);
+      } catch(e){
+        b.disabled = false; b.textContent = '让他回一句';
+        toast('还是没成：' + String(e.message || e).slice(0, 40), 3600);
+      }
+    });
+
   /* 「重新点评」：拿他原来那句话再跑一次点评引擎，只补这一轮。
      🚨 只换点评那几个字段，`said` / `reply` 一个字不动 —— 那是聊天引擎的地盘，
         白名单 mergeChat 管着，这里也别绕过去。 */
@@ -16558,7 +16596,8 @@ async function chatSay(said, blob){
       const key = CHAT.id + '_' + (CHAT.turns.length - 1);
       if (await sessPutAudio(key, blob)) t.audio = key;
     }
-    CHAT.noAsk = String(d.reply || '').indexOf('?') >= 0 ? 0 : CHAT.noAsk + 1;
+    // 🚨 对方压根没回话时别推进这个计数（没回不等于"没抛问题"）
+    if (d.reply) CHAT.noAsk = d.reply.indexOf('?') >= 0 ? 0 : CHAT.noAsk + 1;
     CHAT.busy = false;
     chatStage('');
     chatPaintRoom();
@@ -16567,15 +16606,42 @@ async function chatSay(said, blob){
        reply 那句 chatSpeak 已经顺手缓存了，这里只补 better / easy。
        朗读开关关着时也照样预热：关的是「自动念」，不是「不许听」。 */
     ttsWarm(d.better); ttsWarm(d.easy);
+    if (d.critErr) chatAutoRecrit(CHAT.turns.length - 1);   // 点评挂了自己再试一次
     try { markDaily('speak'); } catch(_){}        // 说了一句就算今天练过口语
     await chatSave();                             // 每轮都落盘，别等他点「聊完了」
   } catch(e){
     CHAT.busy = false;
     chatStage('');
-    CHAT.turns.pop();                             // 这一轮整个没成，别留半条
-    CHAT.err = '这一句没接上：' + (e.message || e) + '　再说一次试试。';
+    /* 🚨 **别再 pop 掉他那句话**。他说了一长段，结果整条被抹掉、要他重说，
+       那是把最贵的东西（他已经说出口的话）赔进去。
+       留在屏幕上，两半各自给重试按钮。 */
+    const t = CHAT.turns[CHAT.turns.length - 1];
+    if (t && !t.reply && !t.better){
+      t.critErr = t.critErr || (e.message || String(e));
+      t.replyErr = t.replyErr || (e.message || String(e));
+    }
+    CHAT.err = '';
     chatPaintRoom();
   }
+}
+
+/* 点评挂了就**自己再试一次**（隔 1.5 秒，避开刚才那阵拥堵），
+   成了他根本不会看见那条报错。他最在乎的就是点评，别让他动手。 */
+function chatAutoRecrit(idx){
+  setTimeout(async () => {
+    const t = CHAT.turns[idx];
+    if (!t || !t.said || !t.critErr) return;
+    try {
+      const crit = await chatAsk(() => chatCritPrompt(t.said),
+                                 (c, last) => chatCritBad(c, t.said, last), 2);
+      const merged = scrubChat(mergeChat({said: t.said, reply: t.reply || ''}, crit));
+      delete t.critErr;
+      Object.assign(t, merged);
+      await chatSave();
+      const y = window.scrollY; chatPaintRoom(false); window.scrollTo(0, y);
+      ttsWarm(t.better); ttsWarm(t.easy);
+    } catch(_){ /* 还是不成就留着那个按钮，他想要再点 */ }
+  }, 1500);
 }
 
 /* ── 聊完了 → 小结（全是数出来的，不调模型）───────────────── */
