@@ -16382,7 +16382,10 @@ function chatPaintRoom(scrollBottom){
                           b.disabled = true;
                           nsay(t.reply).finally(() => { b.textContent = o; b.disabled = false; });
                         } });
-  chatBindTakes();
+  chatBindCrit({turns: CHAT.turns, topic: CHAT.topic,
+                save: chatSave,
+                repaint: () => { const y = window.scrollY;
+                                 chatPaintRoom(false); window.scrollTo(0, y); }});
   $('#chatmic').onclick = () => chatMicToggle();
   $('#chattype').onclick = () => chatTypeIn();
   $('#chatspk').onclick = () => { chatSpeakSet(!chatSpeakOn()); chatPaintRoom(); };
@@ -16477,27 +16480,38 @@ function chatCritHTML(t, i){
          'border-left:3px solid var(--brand-dark)">' + bits.join('') + '</div>';
 }
 
-function chatBindTakes(){
+/* 🚨🚨 **画了按钮就必须绑，两个屏都绑**。
+   Kevin 2026-08-20：「我点这个再次尝试，点完之后一直没反应」——
+   根因是 `showChatRec`（记录页）照样渲染了 `chatCritHTML`，
+   却**一个事件都没绑**：再次尝试 / ☆ 收藏 / 🔊 听一遍 在记录页里**全是死键**，
+   而且不报错，点了就是毫无反应。
+   （同型的错这个项目里犯过不止一次：「画了 chip 没绑路由」「收藏键在屏幕外」。）
+
+   所以抽成一份，靠 `ctx` 说清楚「这一屏的数据在哪、存哪、怎么重画」：
+     ctx.turns   这一屏在显示哪一组轮次（聊天屏是 CHAT.turns，记录页是 rec.turns）
+     ctx.save()  改完存回哪儿
+     ctx.repaint() 怎么重画这一屏
+   聊天屏和记录页各传各的，行为完全一致。 */
+function chatBindCrit(ctx){
+  const turns = ctx.turns, save = ctx.save, repaint = ctx.repaint;
   document.querySelectorAll('[data-chattake]').forEach(b =>
     b.onclick = () => {
-      const v = b.dataset.chattake, i = +v.slice(1), t = CHAT.turns[i];
+      const v = b.dataset.chattake, i = +v.slice(1), t = turns[i];
       if (!t) return;
       const en = v[0] === 'n' ? (t.better || t.native) : v[0] === 'e' ? t.easy : t.phrase;
       if (!en) return;
-      const e = subEntry(en, t.alex_zh || '', {from: '闲聊 · ' + (CHAT.topic || '')});
+      const e = subEntry(en, t.alex_zh || '', {from: '闲聊 · ' + (ctx.topic || '')});
       const r = nbAdd(e, bookFor(e));
       if (r === 'full') return toast('本子满了或存不下');
       toast(r === 'same' ? '移到另一本了' : r === 'moved' ? '移到另一本了' : '收好了 ★');
       /* 🚨 整块重画、保留滚动位置 —— 查词那边踩过：各自 paint 的话
          同一个表达出现两处时必然一个显 ★ 一个显 ☆。 */
-      const y = window.scrollY;
-      chatPaintRoom(false);
-      window.scrollTo(0, y);
+      repaint();
     });
   /* 「让他回一句」：只补对方那半，点评那半原样不动 */
   document.querySelectorAll('[data-chatreply]').forEach(b =>
     b.onclick = async () => {
-      const idx = +b.dataset.chatreply, t = CHAT.turns[idx];
+      const idx = +b.dataset.chatreply, t = turns[idx];
       if (!t || !t.said || b.disabled) return;
       b.disabled = true; b.textContent = '⏳';
       try {
@@ -16506,8 +16520,8 @@ function chatBindTakes(){
                                  j => chatReplyBad(j, mustAsk));
         delete t.replyErr;
         t.reply = String(sc.reply || '').trim();     // 🚨 只动 reply，点评不碰
-        await chatSave();
-        const y = window.scrollY; chatPaintRoom(false); window.scrollTo(0, y);
+        await save();
+        repaint();
         chatSpeak(t.reply);
       } catch(e){
         b.disabled = false; b.textContent = '让他回一句';
@@ -16520,7 +16534,7 @@ function chatBindTakes(){
         白名单 mergeChat 管着，这里也别绕过去。 */
   document.querySelectorAll('[data-chatrecrit]').forEach(b =>
     b.onclick = async () => {
-      const idx = +b.dataset.chatrecrit, t = CHAT.turns[idx];
+      const idx = +b.dataset.chatrecrit, t = turns[idx];
       if (!t || !t.said || b.disabled) return;
       b.disabled = true; b.textContent = '⏳ 在重新点评…';
       try {
@@ -16528,8 +16542,8 @@ function chatBindTakes(){
         const merged = scrubChat(mergeChat({said: t.said, reply: t.reply}, crit));
         delete t.critErr;
         Object.assign(t, merged);
-        await chatSave();
-        const y = window.scrollY; chatPaintRoom(false); window.scrollTo(0, y);
+        await save();
+        repaint();
         ttsWarm(t.better); ttsWarm(t.easy);
       } catch(e){
         b.disabled = false; b.textContent = '🔁 再次尝试';
@@ -16541,7 +16555,7 @@ function chatBindTakes(){
      用的是全站同一个 say(txt,'en')，所以念出来就是他自己选的那把嗓子。 */
   document.querySelectorAll('[data-chatspk]').forEach(b =>
     b.onclick = async () => {
-      const v = b.dataset.chatspk, t = CHAT.turns[+v.slice(1)];
+      const v = b.dataset.chatspk, t = turns[+v.slice(1)];
       if (!t) return;
       const en = v[0] === 'b' ? t.better : t.easy;
       if (!en) return;
@@ -16815,6 +16829,17 @@ function showChatRec(rec, justDone){
     }).join('') +
     '<button id="chatdel" class="btn sm" style="margin-top:14px">删掉这一场</button>' +
     '</div>';
+
+  /* 🚨 记录页也要绑 —— 不绑的话「🔁 再次尝试」「☆ 收藏」「🔊 听一遍」
+     在这一屏全是**死键**，点了毫无反应且不报错（Kevin 2026-08-20 就是在这儿点的）。
+     存回的是**这条记录本身**，不是当前会话（他可能在翻一场早就结束的）。 */
+  chatBindCrit({
+    turns: rec.turns || [],
+    topic: rec.topic || '',
+    save: () => _tx('chat', 'readwrite', st => st.put(rec)).catch(() => {}),
+    repaint: () => { const y = window.scrollY;
+                     showChatRec(rec, justDone); window.scrollTo(0, y); }
+  });
 
   const goon = document.getElementById('chatgoon');
   if (goon) goon.onclick = () => chatResume(rec);
