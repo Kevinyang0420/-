@@ -15989,6 +15989,41 @@ function unlockNeural(){
   } catch(_){}
 }
 
+/* 🚨 兜底解锁：**全站第一次触摸/点击**就把两把锁都解了。
+   只在闲聊那几个按钮里解是不够的 —— 他完全可能先点首页、先翻记录，
+   再从别的入口进到会出声的地方，那时候第一次播放就不在手势里了，
+   iOS 直接静默拦掉，表现成「Alex 不出声」而且一个错都不报。
+   `once:true` + capture：只花一次，之后自己摘掉，不留监听器。 */
+/* 🚨 整段包起来 + 先探 document 在不在。
+   它是**锦上添花**的东西，绝不能因为它挂掉把整段脚本带走 ——
+   模块加载期抛异常在浏览器里就是白屏，而报错只在控制台里，
+   看着完全不像「多了个解锁监听器」造成的。
+   （2026-08-20 实测：测试用 eval 跑页面代码、没有 document，当场炸了。
+    这类环境差异正好替我暴露了这个隐患。） */
+try {
+  if (typeof document !== 'undefined' && document.addEventListener){
+    const _prime = () => {
+      try { if (typeof unlockTTS === 'function') unlockTTS(); unlockNeural(); } catch(_){}
+    };
+    ['touchend', 'click', 'keydown'].forEach(ev =>
+      document.addEventListener(ev, _prime, {once: true, capture: true, passive: true}));
+  }
+} catch(_){}
+
+/* 播放被拦掉时**说一句**，别静默退回。
+   🚨 静默兜底最坏的地方不是难听，是他没法告诉我发生了什么 ——
+      他只会说「怎么还是难听」，而我分不清是没合成成功、还是合成了播不出。
+      一整场只提示一次，不烦人。 */
+let _ttsWarned = false;
+function ttsFellBack(why){
+  if (_ttsWarned) return;
+  _ttsWarned = true;
+  try {
+    toast(why === 'play' ? '这台设备拦了自动播放，先用手机自带嗓子。点一下屏幕再试'
+                         : '好嗓子没取到，先用手机自带的（网络或后端）', 4200);
+  } catch(_){}
+}
+
 /* 下单 + 轮询。**单独写一个**而不是复用 poll()：那条返回的是 text 语义，
    这条要的是 audio，硬塞进去会让两边都变难读。 */
 async function ttsFetch(text, voice){
@@ -16048,22 +16083,31 @@ async function nsay(text){
   if (!t) return;
   if (ttsMode() === 'device' || !apiOn()) { try { say(t, 'en'); } catch(_){} return; }
   const key = ttsVoice() + '|' + t;
+  /* 🚨 合成和播放**分开 catch**：这两件事的后果完全不同，
+     混在一个 catch 里我就只知道「兜底了」，分不清是没合成出来、
+     还是合成好了被 iOS 拦住播不出 —— 而这两者的修法南辕北辙。 */
+  let url = null;
   try {
-    let url = TTS_CACHE.get(key);
+    url = TTS_CACHE.get(key);
     if (!url){
       url = await ttsFetch(t, ttsVoice());
       TTS_CACHE.set(key, url);
       // 别让缓存无限涨（一句 mp3 约 30KB，24 句 ≈ 0.7MB）
       while (TTS_CACHE.size > TTS_CACHE_MAX) TTS_CACHE.delete(TTS_CACHE.keys().next().value);
     }
+  } catch(e){
+    ttsFellBack('fetch');
+    try { say(t, 'en'); } catch(_){}
+    return;
+  }
+  try {
     audioClaim('tts', () => { try { _ttsEl && _ttsEl.pause(); } catch(_){} });
     _ttsEl = _ttsEl || new Audio();
     _ttsEl.playsInline = true;
     _ttsEl.src = url;
     await _ttsEl.play();
   } catch(e){
-    /* 🚨 兜底一定要真的响：网络差/后端凉/微软抽风，都退回自带嗓子，
-       而不是让他对着一个不出声的 App 发愣。 */
+    ttsFellBack('play');
     try { say(t, 'en'); } catch(_){}
   }
 }
