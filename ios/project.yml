@@ -49,6 +49,51 @@ targets:
       - target: Keyboard
         embed: true
 
+  # ---- 探针（对照组）：最小键盘，用来分辨「代码问题」vs「签装问题」 ----
+  TransProbe:
+    type: application
+    platform: iOS
+    sources:
+      - path: Probe/App
+    info:
+      path: Probe/App/Info.plist
+      properties:
+        CFBundleDisplayName: TransProbe
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kevin.tprobe
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+    dependencies:
+      - target: ProbeKeyboard
+        embed: true
+
+  ProbeKeyboard:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Probe/Keyboard
+    info:
+      path: Probe/Keyboard/Info.plist
+      properties:
+        CFBundleDisplayName: TransProbe
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.keyboard-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
+          NSExtensionAttributes:
+            IsASCIICapable: false
+            PrefersRightToLeftLayout: false
+            PrimaryLanguage: zh-Hans
+            # 探针故意不要完全访问 —— 它不联网。也顺便测掉这个变量。
+            RequestsOpenAccess: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kevin.tprobe.keyboard
+
   # 键盘扩展本体
   Keyboard:
     type: app-extension

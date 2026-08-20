@@ -137,7 +137,32 @@ jobs:
           ls -lh Transless.ipa
           echo "闸门全过"
 
+      - name: 编译探针（最小对照键盘）
+        working-directory: ios
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project Transless.xcodeproj \
+            -scheme TransProbe \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
+          P="build/Build/Products/Release-iphoneos/TransProbe.app"
+          test -d "$P/PlugIns/ProbeKeyboard.appex" || { echo "::error::探针键盘没打进去"; exit 1; }
+          rm -rf /tmp/probe && mkdir -p /tmp/probe/Payload
+          cp -R "$P" /tmp/probe/Payload/
+          (cd /tmp/probe && zip -qry TransProbe.ipa Payload)
+          cp /tmp/probe/TransProbe.ipa .
+          ls -lh TransProbe.ipa
+
       - uses: actions/upload-artifact@v4
         with:
           name: Transless-ipa
           path: ios/Transless.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TransProbe-ipa
+          path: ios/TransProbe.ipa
