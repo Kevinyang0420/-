@@ -1,0 +1,107 @@
+name: 说英文 iOS 键盘
+
+# 在 GitHub 免费的 macOS runner 上编译出 IPA（公开仓库不限量免费）。
+# Kevin 不需要 Mac。
+#
+# 🚨 口令走仓库 Secret（ALEX_PASS），不进公开代码。
+#    Secrets.swift 是构建时生成的，不提交。
+#
+# 🚨 产物是**未签名**的 .ipa，用 AltStore / SideStore 侧载。
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios-keyboard.yml"
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 装 XcodeGen
+        run: brew install xcodegen
+
+      - name: 生成 Secrets.swift（口令来自 Secret，提示词来自仓库里的 prompt.txt）
+        env:
+          ALEX_PASS: ${{ secrets.ALEX_PASS }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ALEX_PASS}" ]; then
+            echo "::error::仓库 Secret ALEX_PASS 没配，装出来的包用不了"
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path("ios")
+          prompt = (root / "prompt.txt").read_text(encoding="utf-8")
+          if "PASS 2 - STRUCTURE" not in prompt:
+              raise SystemExit("prompt.txt 不对劲，缺特征串")
+          pw = os.environ["ALEX_PASS"]
+          def swift(s):
+              return json.dumps(s, ensure_ascii=False).replace("\\u", "\\u{").replace("}", "}")
+          out = root / "Shared" / "Secrets.swift"
+          body = "// 构建时生成，勿提交。提示词来自 ios/prompt.txt（源头是 engine.py）。\n"
+          body += "enum Secrets {\n"
+          body += "    static let pass = %s\n" % json.dumps(pw)
+          body += "    static let prompt = %s\n" % json.dumps(prompt, ensure_ascii=False)
+          body += "}\n"
+          out.write_text(body, encoding="utf-8")
+          print("Secrets.swift 生成完毕，prompt %d 字符" % len(prompt))
+          PY
+
+      - name: 生成 Xcode 工程
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: 编译（不签名）
+        working-directory: ios
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project ShuoYingwen.xcodeproj \
+            -scheme ShuoYingwen \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: 打成 IPA + 收工闸
+        working-directory: ios
+        run: |
+          set -euo pipefail
+          APP="build/Build/Products/Release-iphoneos/ShuoYingwen.app"
+          test -d "$APP" || { echo "::error::没产出 .app"; exit 1; }
+
+          # 闸门：键盘扩展必须真的被打进 App 里，否则装上去看不到键盘
+          EXT="$APP/PlugIns/Keyboard.appex"
+          test -d "$EXT" || { echo "::error::键盘扩展没被打包进去"; exit 1; }
+
+          # 闸门：扩展的 Info.plist 必须声明 RequestsOpenAccess，否则发不出网络请求
+          /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionAttributes:RequestsOpenAccess" \
+            "$EXT/Info.plist" | grep -q true \
+            || { echo "::error::RequestsOpenAccess 不是 true"; exit 1; }
+
+          # 闸门：App 的 Info.plist 必须有两个权限说明，否则一调录音就崩
+          for k in NSMicrophoneUsageDescription NSSpeechRecognitionUsageDescription; do
+            /usr/libexec/PlistBuddy -c "Print :$k" "$APP/Info.plist" >/dev/null \
+              || { echo "::error::App Info.plist 缺 $k"; exit 1; }
+          done
+
+          # 闸门：口令必须真的编进二进制了
+          if ! strings "$EXT/Keyboard" | grep -q "$(echo "${{ secrets.ALEX_PASS }}" | cut -c1-6)"; then
+            echo "::error::口令没编进键盘二进制"; exit 1
+          fi
+
+          mkdir -p Payload && cp -R "$APP" Payload/
+          zip -qry ShuoYingwen.ipa Payload
+          ls -lh ShuoYingwen.ipa
+          echo "闸门全过"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ShuoYingwen-ipa
+          path: ios/ShuoYingwen.ipa
