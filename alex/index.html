@@ -16050,7 +16050,14 @@ function ttsSet(mode, voice){
    两套机制各解各的锁，少一个都会在他手机上哑掉）。 */
 function unlockNeural(){
   if (_ttsReady) return;
+  /* 🚨🚨 **正在放就别碰它**。Kevin 2026-08-20：「我在听的时候他在讲嘛，
+     但是我划一下他就不讲了」——根因是上一轮我把解锁改成「每次手势都重试」，
+     而解锁那一发是往**同一个 `<audio>` 元素**上塞静音探针：
+     他一划屏幕就 touchend → 重试 → `_ttsEl.src = 静音` → Alex 当场闭嘴。
+     （iOS 的解锁是**按元素**算的，所以不能换个元素去探；只能等它不放的时候再探。）
+     🚨 这是**我修上一个 bug 时引进来的新 bug**，两个都得留着判据。 */
   try {
+    if (_ttsEl && !_ttsEl.paused && !_ttsEl.ended) return;
     _ttsEl = _ttsEl || new Audio();
     _ttsEl.playsInline = true;
     _ttsEl.src = TTS_SILENT;
@@ -16198,6 +16205,10 @@ async function nsay(text){
     _ttsEl.playsInline = true;
     _ttsEl.src = url;
     await _ttsEl.play();
+    /* 🚨 真播成一次 = 这个元素**确实已经解锁**了。把标志位补上，
+       解锁监听器才会摘掉、不再有人来抢这个元素。
+       （否则解锁探针一直失败的话，监听器永远挂着，他每划一次都赌一次运气。） */
+    _ttsReady = true;
   } catch(e){
     ttsFellBack('play');
     try { say(t, 'en'); } catch(_){}
