@@ -16017,9 +16017,20 @@ function unlockNeural(){
     _ttsEl.playsInline = true;
     _ttsEl.src = TTS_SILENT;
     const p = _ttsEl.play();
-    if (p && p.catch) p.catch(() => {});
-    _ttsReady = true;
-  } catch(_){}
+    /* 🚨🚨 只有**真的播成了**才算解锁。
+       上一版写的是 `p.catch(()=>{}); _ttsReady = true;` —— 把失败吞掉之后
+       无条件标成已解锁，于是：解锁其实没成 → `if (_ttsReady) return` 永远跳过重试
+       → 全站那个 once 监听器又早摘了 → **它永远解不开**。
+       表现就是 Kevin 2026-08-20 撞到的：Alex 自己开口时报「拦了自动播放」，
+       而他手动点一下 🔊（新的手势）又好了。
+       这是**谎报成功**，跟「检查写了但恒真」是同一类错：标志位必须由结果来写。 */
+    if (p && p.then){
+      p.then(() => { _ttsReady = true; })
+       .catch(() => { _ttsReady = false; });      // 没解开就别谎报，留给下一次手势
+    } else {
+      _ttsReady = true;                            // 老浏览器 play() 不返回 promise
+    }
+  } catch(_){ _ttsReady = false; }
 }
 
 /* 🚨 兜底解锁：**全站第一次触摸/点击**就把两把锁都解了。
@@ -16035,11 +16046,19 @@ function unlockNeural(){
     这类环境差异正好替我暴露了这个隐患。） */
 try {
   if (typeof document !== 'undefined' && document.addEventListener){
+    const EVS = ['touchend', 'click', 'keydown'];
+    /* 🚨 **不能用 once**：第一次手势可能解不开（iOS 挑时机），once 一摘就再没有第二次机会，
+       他后面怎么点都是「拦了自动播放」。改成一直听着，**真解开了才摘**。
+       代价只是几个 passive 监听器，解开之后自己清掉。 */
     const _prime = () => {
       try { if (typeof unlockTTS === 'function') unlockTTS(); unlockNeural(); } catch(_){}
+      // unlockNeural 是异步确认的，等一拍再看结果
+      setTimeout(() => {
+        if (_ttsReady) EVS.forEach(ev => document.removeEventListener(ev, _prime, true));
+      }, 300);
     };
-    ['touchend', 'click', 'keydown'].forEach(ev =>
-      document.addEventListener(ev, _prime, {once: true, capture: true, passive: true}));
+    EVS.forEach(ev =>
+      document.addEventListener(ev, _prime, {capture: true, passive: true}));
   }
 } catch(_){}
 
@@ -16052,7 +16071,9 @@ function ttsFellBack(why){
   if (_ttsWarned) return;
   _ttsWarned = true;
   try {
-    toast(why === 'play' ? '这台设备拦了自动播放，先用手机自带嗓子。点一下屏幕再试'
+    /* 🚨 说清楚**他能做什么**，而不是只报一个现象。
+       声音已经合成好在缓存里了，点一下那句旁边的 🔊 就能听到 —— 这才是他要的下一步。 */
+    toast(why === 'play' ? '这句系统不让自动播，点一下它旁边的 🔊 就能听（声音已经备好了）'
                          : '好嗓子没取到，先用手机自带的（网络或后端）', 4200);
   } catch(_){}
 }
