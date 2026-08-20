@@ -1,4 +1,4 @@
-# XcodeGen 工程定义。CI 上 `xcodegen generate` 出 .xcodeproj 再编译。
+﻿# XcodeGen 工程定义。CI 上 `xcodegen generate` 出 .xcodeproj 再编译。
 # 用它而不是手写 .pbxproj —— .pbxproj 是一坨机器格式，手写必出错且没法 review。
 name: Transless
 options:
@@ -31,7 +31,7 @@ targets:
       properties:
         CFBundleDisplayName: Transless
         CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "3"
+        CFBundleVersion: "4"
         UILaunchScreen: {}
         # 🚨 键盘扩展弹不出系统权限框，必须由容器 App 先要过一次。
         #    少了这两个 key，App 一调录音就直接崩（不是报错，是崩）。
@@ -106,7 +106,7 @@ targets:
       properties:
         CFBundleDisplayName: Transless
         CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "3"
+        CFBundleVersion: "4"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController

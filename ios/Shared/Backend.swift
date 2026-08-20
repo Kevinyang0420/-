@@ -28,6 +28,22 @@ enum Backend {
 
     static func polish(text: String, tone: String,
                        done: @escaping (Result<String, Failure>) -> Void) {
+        submit(text: text, tone: tone, attempt: 0, done: done)
+    }
+
+    /// 🚨 提交那一发也会 504（网关冷启动/抖动，2026-08-21 Kevin 真机撞到）。
+    ///    5xx 和传输错误都自动重试，最多 4 发、间隔递增；401/429 是明确答复，不重试。
+    private static func submit(text: String, tone: String, attempt: Int,
+                               done: @escaping (Result<String, Failure>) -> Void) {
+        func retryOrFail(_ f: Failure) {
+            if attempt < 3 {
+                DispatchQueue.global().asyncAfter(deadline: .now() + Double(attempt + 1) * 2) {
+                    submit(text: text, tone: tone, attempt: attempt + 1, done: done)
+                }
+            } else {
+                done(.failure(f))
+            }
+        }
         let system = Secrets.prompt
         let user = "Register: \(Prompts.tone(tone))\n\nRaw transcript:\n\"\"\"\n\(text)\n\"\"\"\n"
         let body: [String: Any] = [
@@ -50,13 +66,14 @@ enum Backend {
         req.httpBody = data
 
         URLSession.shared.dataTask(with: req) { d, resp, err in
-            if let err = err { return done(.failure(.message(err.localizedDescription))) }
+            if let err = err { return retryOrFail(.message(err.localizedDescription)) }
             let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
             if code == 401 { return done(.failure(.unauthorized)) }
             let obj = d.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
             if code == 429 {
                 return done(.failure(.quota((obj?["error"] as? String) ?? "额度用完了")))
             }
+            if code >= 500 { return retryOrFail(.http(code)) }
             // 🚨 提交 job 返回的是 **202 Accepted**，不是 200（2026-08-20 实测：
             //    `{"job": "..."}` 配 HTTP 202）。第一版写死 code == 200，
             //    真机上就直接报 "HTTP 202" 失败。
