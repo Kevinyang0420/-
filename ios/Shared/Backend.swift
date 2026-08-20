@@ -57,7 +57,12 @@ enum Backend {
             if code == 429 {
                 return done(.failure(.quota((obj?["error"] as? String) ?? "额度用完了")))
             }
-            guard code == 200, let job = obj?["job"] as? String else {
+            // 🚨 提交 job 返回的是 **202 Accepted**，不是 200（2026-08-20 实测：
+            //    `{"job": "..."}` 配 HTTP 202）。第一版写死 code == 200，
+            //    真机上就直接报 "HTTP 202" 失败。
+            //    而我的 Python 验证脚本压根没查状态码、直接读 j['job']，所以一路绿灯 ——
+            //    典型的假检查：两边判据不一致时，宽松的那边先通过，严格的那边才炸。
+            guard code == 200 || code == 202, let job = obj?["job"] as? String else {
                 return done(.failure(.http(code)))
             }
             poll(job: job, tries: 0, done: done)
