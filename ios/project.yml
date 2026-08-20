@@ -1,8 +1,8 @@
 # XcodeGen 工程定义。CI 上 `xcodegen generate` 出 .xcodeproj 再编译。
 # 用它而不是手写 .pbxproj —— .pbxproj 是一坨机器格式，手写必出错且没法 review。
-name: ShuoYingwen
+name: Transless
 options:
-  bundleIdPrefix: com.kevin.shuoyingwen
+  bundleIdPrefix: com.kevin.transless
   deploymentTarget:
     iOS: "16.0"
   createIntermediateGroups: true
@@ -19,7 +19,7 @@ settings:
 targets:
   # 容器 App：iOS 规定键盘扩展必须挂在一个 App 里。
   # 这个 App 本身只做一件事：告诉他去哪儿启用键盘。
-  ShuoYingwen:
+  Transless:
     type: application
     platform: iOS
     sources:
@@ -28,7 +28,7 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: 说英文
+        CFBundleDisplayName: Transless
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "1"
         UILaunchScreen: {}
@@ -40,7 +40,7 @@ targets:
           - UIInterfaceOrientationPortrait
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.kevin.shuoyingwen
+        PRODUCT_BUNDLE_IDENTIFIER: com.kevin.transless
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
     dependencies:
       - target: Keyboard
@@ -56,7 +56,7 @@ targets:
     info:
       path: Keyboard/Info.plist
       properties:
-        CFBundleDisplayName: 说英文
+        CFBundleDisplayName: Transless
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "1"
         NSExtension:
@@ -67,8 +67,8 @@ targets:
             PrefersRightToLeftLayout: false
             PrimaryLanguage: zh-Hans
             # 🚨 必须 true，否则键盘扩展发不出任何网络请求。
-            #    他还要在 设置>键盘>说英文 里手动打开「允许完全访问」。
+            #    他还要在 设置>键盘>Transless 里手动打开「允许完全访问」。
             RequestsOpenAccess: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.kevin.shuoyingwen.keyboard
+        PRODUCT_BUNDLE_IDENTIFIER: com.kevin.transless.keyboard
