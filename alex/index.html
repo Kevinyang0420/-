@@ -1432,7 +1432,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
 
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
 
-const BANKV = 'b030551b';
+const BANKV = 'cd01fd8f';
 
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
@@ -5357,7 +5357,11 @@ const GRP = [['dd_','尽调'], ['aud_','审计'], ['wk_','职场'],
 
              ['itv_','面试'],
 
-             ['life_','生活'], ['talk_','闲聊'], ['soc_','人际'], ['hob_','兴趣']];
+             /* 🚨 talk_ 那类原来在界面上就叫「闲聊」，跟口语顶部新加的「闲聊」tab 撞名
+                （Kevin 2026-08-20 拍板：顶部叫「闲聊」，让路的是这个分类名）。
+                只改**显示名**，id 前缀 talk_ 一个字不动 —— 495 张卡不用重出，
+                已存的记录、分片、排序全部不受影响。 */
+             ['life_','生活'], ['talk_','表达观点'], ['soc_','人际'], ['hob_','兴趣']];
 
 /* 🚨 `itv_` 是从他自己收藏的小红书笔记转过来的面试题（`xhs_to_speak.py` 出卡）。
    加新前缀**必须同时改这里** —— 题库靠 id 前缀分类，这张表里没有的前缀，
@@ -5968,9 +5972,14 @@ function sessTopTabs(){
   const b = (k, nm) => '<button class="rchip' + (SESSUI.top === k ? ' on' : '') +
     '" data-stop="' + k + '">' + nm + '</button>';
   /* 打磨（Kevin 2026-08-18）夹在中间 —— 它跟「练习」是并列的两种练法，
-     「我的记录」是回看，放最后。 */
+     「我的记录」是回看，放最后。
+     闲聊（Kevin 2026-08-20）排在练习后面：它是门槛最低、天天能开的那一个，
+     打磨是要正襟危坐说一整段的重活，放后面。
+     🚨 四个 chip 量过：68+68+68+96 + 3×6 间距 = 318px < 375px 的手机屏，
+        不需要横滑就全看得见（`.tabs` 本身是 overflow-x:auto，多了也不会挤爆）。 */
   return '<div class="tabs" style="margin-bottom:12px">' +
-    b('do', '练习') + b('pol', '打磨') + b('rec', '我的记录') + '</div>';
+    b('do', '练习') + b('chat', '闲聊') + b('pol', '打磨') +
+    b('rec', '我的记录') + '</div>';
 }
 
 function bindSessTop(){
@@ -5986,6 +5995,7 @@ function bindSessTop(){
       NAV.length = 0;
       if (to === 'rec') go(showMyRecs, '我的记录');
       else if (to === 'pol') go(showPolish, '口语打磨');
+      else if (to === 'chat') go(showChat, '闲聊');
       else { showList(); paintNav(); }
     });
 }
@@ -6597,7 +6607,7 @@ function sessDB(){
   if (_db) return Promise.resolve(_db);
   return new Promise((res, rej) => {
     let rq;
-    try { rq = indexedDB.open(SESSDB, 4); }   // 4：加了口语打磨的 polish store
+    try { rq = indexedDB.open(SESSDB, 5); }   // 5：加了闲聊的 chat store
     catch(e){ return rej(e); }
     rq.onupgradeneeded = () => {
       const db = rq.result;
@@ -6622,6 +6632,13 @@ function sessDB(){
          混在一起他找不着。🚨 同样要把上面 open(SESSDB, N) 的版本号 +1。 */
       if (!db.objectStoreNames.contains('polish'))
         db.createObjectStore('polish', {keyPath: 'id'});
+      /* 闲聊（Kevin 2026-08-20）。跟场景练习分开存：练习是一张卡打一场、有通关条件，
+         闲聊没有 task 也不设轮数，混进 sess 会把「练过的沉底」那套排序算乱。
+         🚨 同样要把上面 open(SESSDB, N) 的版本号 +1（这次 4 → 5）。
+            不 +1 的话 onupgradeneeded 根本不触发，store 永远建不出来，
+            而报错长得像「代码写错」——判据 E10 查的就是这个。 */
+      if (!db.objectStoreNames.contains('chat'))
+        db.createObjectStore('chat', {keyPath: 'id'});
     };
     rq.onsuccess = () => { _db = rq.result; res(_db); };
     rq.onerror = () => rej(rq.error || new Error('打不开本地库'));
@@ -15274,6 +15291,790 @@ function showPolishRec(r){
   $('#poldel').onclick = async () => {
     if (await polDel(r.id)){ toast('删了'); back(); }
     else toast('删不掉');
+  };
+}
+
+
+/* ═══════════════════ 闲聊 ═══════════════════
+
+   Kevin 2026-08-20：「一开始由 AI 主动开聊，在聊天过程中帮我修正口语，
+   提供更地道、更简单的表达方式。主要支持我跟 AI 日常沟通，
+   提供一个实时说英语的语言环境。」
+
+   PRD `PRD_闲聊.md`，四个分叉他已拍板：
+     ① 纠错**贴边不打断** —— 对方照常把话接下去，点评挂在他自己那条气泡下面
+     ② 话题源三个叠加：错题本+本子（打底）／随机日常（兜底）／他先给一个
+     ③ native（母语者怎么说）+ easy（他现在水平说得出口的那版）**两条都给**，
+        easy 加**代码层硬判据**，不靠模型自觉
+     ④ 顶部就叫「闲聊」，练习里 talk_ 那类的显示名让路改成「表达观点」
+
+   🚨 为什么不能塞进「练习」：练习是**角色扮演 + 打断预算**（每 3–4 轮才纠、
+      绝不连着两轮），而且 `buildPrompt()` 开头就是 `const scn = S.scn`，
+      整段在拼场景卡的 ai/you/task/sit/tgt/traps。闲聊没有场景卡，
+      硬塞一张假卡等于骗自己。所以这里是**另一套 prompt**，`S.scn` 一个字都不碰。
+
+   🚨🚨 闲聊比练习更容易串台，所以两次调用这件事在这儿更不能省：
+      练习里说话的是「一个客户/一个房东」，跟 Alex 是两个人，模型还有个身份差可抓；
+      **闲聊里陪他聊天的和纠正他的都是 Alex 本人** —— 一个筐里两件事，
+      串起来毫无阻力。08-14 串了 better、08-15 串了 native，两次根因都是
+      「同一次调用里既写他该怎么说、又写对方怎么回」。
+      所以：聊天引擎的 schema 里**没有任何点评字段**，点评引擎的 schema 里
+      **没有 reply** —— 见 CHAT_CRIT_FIELDS / mergeChat。 */
+
+const CHAT_TOPICS_LS = 'alex_chat_topics';   // 他自己给过的话题
+const CHAT_SPK_LS    = 'alex_chat_speak';    // 自动朗读开关（记住）
+const CHAT_HIST      = 6;                    // 喂回去的上下文轮数
+const CHAT_EASY_RATIO = 1.2;                 // easy 的词数上限倍数
+const CHAT_EASY_FLOOR = 8;                   // 🚨 绝对下限：他说 1 个词时也准给 8 个词
+const CHAT_NOASK_MAX  = 3;                   // 连着几轮没抛问题就强制要问句
+
+/* 只转写、不判断 —— 跟打磨那条共用同一份 prompt（单一配置点）。 */
+const CHAT_TP = POL_TP;
+
+/* easy 里不许出现的书面词。
+   🚨 这张表**只放真正的书面腔**：however / regarding / require 这些口语里天天说，
+      放进来就会把对的答案误杀（「判据正确但结果更糟，也是没做对」）。 */
+const CHAT_FORMAL = ['furthermore','moreover','nevertheless','notwithstanding',
+  'accordingly','henceforth','thereby','whereby','herein','aforementioned',
+  'pursuant','endeavour','endeavor','utilise','utilize','ascertain','commence',
+  'subsequently','hitherto','albeit','whilst','shall','aforesaid','heretofore'];
+
+/* 兜底话题：错题本和本子都空的时候用。写死在代码里 = 不花一次调用。
+   身份是真的（他住深圳、跨境到香港上班），别换成泛泛的「talk about your day」。 */
+const CHAT_DAILY = [
+  'weekend plans', 'what he ate today', 'the weather in Shenzhen',
+  'the commute / crossing the border to Hong Kong', 'something he watched or read recently',
+  'coffee vs tea', 'how his week is going', 'a place he wants to travel to',
+  'his morning routine', 'exercise and sports', 'a film or series he liked',
+  'the neighbourhood he lives in'];
+
+/* 点评引擎能贡献的字段，仅此而已。said / reply 永远来自聊天引擎。
+   🚨 这一行就是「点评够不着对方的回话」的结构保证 —— 不是又一道过滤器。 */
+const CHAT_CRIT_FIELDS = ['level','quote','issue','native','easy','alex_zh','phrase'];
+
+let CHAT = null;
+function chatReset(){
+  CHAT = {id:'', on:'', t0:0, topic:'', src:'', turns:[],
+          busy:false, rec:null, chunks:[], recing:false, t1:0,
+          err:'', stage:'', noAsk:0, opened:false, done:false};
+}
+chatReset();
+
+const chatWords = s => (String(s || '').toLowerCase().match(/[a-z']+/g) || []);
+const chatHasZh = s => /[一-龥]/.test(String(s || ''));
+
+function chatSpeakOn(){
+  try { return localStorage.getItem(CHAT_SPK_LS) !== '0'; } catch(_){ return true; }
+}
+function chatSpeakSet(v){
+  try { localStorage.setItem(CHAT_SPK_LS, v ? '1' : '0'); } catch(_){}
+}
+
+/* ── 话题源（分叉②：三个叠加）────────────────────────────────
+   错题本和本子都是现成的数据，白放着不用可惜 —— 闲聊顺便变成复习场：
+   Alex 装作随口一问，其实在诱他把那个说法用出来。 */
+function chatSeeds(){
+  const out = [];
+  try {
+    (typeof drilling === 'function' ? drilling() : []).slice(0, 5)
+      .forEach(e => { if (e && e.pat) out.push({k:'drill', v: String(e.pat), n: e.n || 0}); });
+  } catch(_){}
+  try {
+    (typeof nbAll === 'function' ? nbAll() : []).slice(0, 8)
+      .forEach(x => { const w = (x && (x.pick || x.q || x.w)) || '';
+                      if (w && !chatHasZh(w)) out.push({k:'word', v: String(w)}); });
+  } catch(_){}
+  return out;
+}
+
+/* 这一场聊什么。他给了话题就用他的；没给就从错题本/本子里挑，都空了才用日常表。 */
+function chatPickSeed(topic){
+  if (String(topic || '').trim()) return {src:'his', hint: String(topic).trim()};
+  const s = chatSeeds();
+  if (s.length){
+    const p = s[Math.floor(Math.random() * s.length)];
+    return {src: p.k, hint: p.v};
+  }
+  return {src:'daily', hint: CHAT_DAILY[Math.floor(Math.random() * CHAT_DAILY.length)]};
+}
+
+/* ── Alex 在闲聊里是谁 ──────────────────────────────────────
+   不演角色（那是练习那边的活），就是个能一直陪他用英语说话的人。 */
+const CHAT_WHO = [
+  '你是 Alex —— 他的英语教练，但现在你们只是在**用英语闲聊**。',
+  '你不演任何角色（不是客户、不是房东、不是面试官）。你就是 Alex 本人。',
+  '',
+  '他是谁：中国人，母语中文，住深圳、跨境到香港做审计/财务尽调。',
+  '英语能沟通，但不够地道，需要一个能天天说英语的环境。',
+  '',
+  '你说话的方式：',
+  '  - **短**。一次 1 到 3 句，别长篇大论 —— 说话的应该是他，不是你。',
+  '  - **简单日常的英语**。这是聊天不是听力考试，别用书面词。',
+  '  - 大多数轮次要**把话头递回去**（问他一个具体的问题，别问 How are you 这种空问题）。',
+  '  - 他说的内容你要真的接住 —— 顺着他讲的往下问，不要换个话题重开。'
+].join('\n');
+
+/* ── 开场：AI 主动开口（他的第一条需求）───────────────────────
+   🚨 练习那条路是**他先说**（start() 里写着「点下面的按钮开始说英语」），
+      这里正相反：进屏他什么都不用做，Alex 先开口。 */
+function chatOpenPrompt(seed){
+  const how = {
+    his:   '他指定了想聊的：' + seed.hint,
+    drill: '话题从他的错题本来 —— 他反复说错的是「' + seed.hint + '」。'
+         + '\n🚨 别提「这是你的错题」，也别讲语法。开一个**日常话题**，'
+         + '让他自然而然要用到这个说法。',
+    word:  '话题从他的单词本来 —— 他最近收了「' + seed.hint + '」这个说法。'
+         + '\n🚨 别考他这个词，也别提本子。开一个日常话题，让这个词自然用得上。',
+    daily: '随便开个日常话题：' + seed.hint
+  }[seed.src] || ('随便开个日常话题：' + seed.hint);
+
+  return [
+    CHAT_WHO, '',
+    '现在是这一场的**第一句话**，由你先开口。',
+    how, '',
+    '只输出一个 JSON，不要 markdown 围栏、不要别的话:',
+    '{',
+    ' "topic":"这一场在聊什么（4-12 个中文字，给他看的标题）",',
+    ' "reply":"你的开场白，英文，1-2 句，**必须以一个具体的问题结尾**"',
+    '}'
+  ].join('\n');
+}
+
+/* ── 聊天引擎：只出 said + reply ──────────────────────────────
+   🚨 schema 里没有任何点评字段。点评由 chatCritPrompt 那条路单独做，
+      你在这儿写了也会被 mergeChat 丢掉（CHAT_CRIT_FIELDS 白名单）。 */
+function chatPrompt(said, mustAsk){
+  const tail = CHAT.turns.slice(-CHAT_HIST).map(t =>
+    'HIM: ' + (t.said || '') + '\nYOU: ' + (t.reply || '')).join('\n');
+  return [
+    CHAT_WHO, '',
+    '这一场在聊：' + (CHAT.topic || ''),
+    '',
+    '之前几轮：\n' + (tail || '(刚开场)'),
+    '',
+    'HE JUST SAID —— 顺着这句往下聊:\n' + said,
+    '',
+    (mustAsk ? '🚨 你已经连着 ' + CHAT_NOASK_MAX + ' 轮没有问他问题了，天要聊死了。'
+             + '这一轮**必须**以一个具体的问题结尾。\n' : ''),
+    '🚨 你这一轮**只负责聊天**：把他这句原样转抄进 "said"，然后接话。',
+    '   纠错、点评、更地道的说法 —— 一个字都不要写，那是另一条路的活，写了也会被丢掉。',
+    '',
+    '只输出一个 JSON，不要 markdown 围栏、不要别的话:',
+    '{"said":"把上面那句原样抄进来",',
+    ' "reply":"你的回话，英文，1-3 句，日常口语"}'
+  ].filter(Boolean).join('\n');
+}
+
+/* ── 点评引擎：只看他那一句 ──────────────────────────────────
+   🚨 schema 里**没有 reply** —— 对方这一轮怎么回，它看不到，也跟它无关。
+   🚨 分叉③：native 和 easy 两条都给。native 是「母语者会怎么说」，
+      easy 是「以他现在的水平，能张口就来的那一版」——
+      在他的工作场景里，母语者的说法常常更正式更长（We are unable to assess… pending…），
+      而闲聊要的正好是反方向，所以 easy 单独一条，还配了代码层硬判据。 */
+function chatCritPrompt(said){
+  const drill = (typeof drilling === 'function' ? drilling() : []).slice(0, 6);
+  return [
+    '你是 Alex —— 英语教练。你只做一件事：点评**他刚才说的这一句英语**。',
+    '',
+    '🚨 你不是聊天里的任何一方，不替任何人回话。这一轮对方怎么接，你看不到，也跟你无关。',
+    '🚨 你写的每一句英文（native / easy）都是**他**要说出口的话，保持同一个言语行为：',
+    '   他在问就还是问、在讲自己的事就还是讲自己的事，只是换成更好的说法。',
+    '   写完自查一句：这句是他对着别人说的，还是别人对着他说的？后者一律重写。',
+    '',
+    '场合是**日常闲聊**，不是工作汇报 —— 别把他往正式书面语上带。',
+    '',
+    (drill.length ? '他的错题本（重犯的要算重）:\n'
+      + drill.map(e => '  - ' + e.pat + '  (错过 ' + (e.n || 0) + ' 次)').join('\n') + '\n' : ''),
+    'HE JUST SAID —— 要点评的就是这一句:\n' + said,
+    '',
+    '只输出一个 JSON，不要 markdown 围栏、不要别的话:',
+    '{',
+    ' "level":"error|polish|fine",',
+    ' "quote":"从上面那一句里**原样摘出**的一小段（2-10 词），必须能逐字找到；没有就 null",',
+    ' "issue":"只能是这五个之一：语法 | 中式直译 | 搭配不地道 | 语域偏了 | 语气强度；level=fine 时给 null",',
+    ' "native":"**他**那一小段母语者会怎么说；没有就 null",',
+    ' "easy":"同一个意思，**用他现在的水平张口就能说的那一版** —— 短、常用词、口语。',
+    '          🚨 不许比他原话还长，不许用书面词（furthermore / subsequently 这类）。',
+    '          实在没有更简单的说法就给 null，别硬凑。",',
+    ' "alex_zh":"中文，≤2 句，只讲这句英语本身怎么了；不许讲后果（「这会让对方…」一律不要）",',
+    ' "phrase":"2-5 词、人们真的会说出口的搭配，值得他收进本子的；没有就 null"',
+    '}',
+    '',
+    '分级要诚实：',
+    '  level="error"  他真说错了（语法错 / 中式直译到听不懂）。quote 必须有。',
+    '  level="polish" 他说得对，只是有更自然的说法。**不要说成他错了。**',
+    '  level="fine"   就是好的。native / easy / issue 全给 null，alex_zh 一句话点出他做对了什么。',
+    '🚨 实测抓到过的失败形态：先夸「你说得很自然」，然后照样判 error、硬编一个毛病出来。',
+    '   说得好就给 fine —— 硬纠比不纠更糟，之后他连真的纠错也不信了。'
+  ].filter(Boolean).join('\n');
+}
+
+/* ── 校验（每一条都能真的失败）─────────────────────────────── */
+
+function chatOpenBad(j){
+  const bad = [];
+  const r = String((j && j.reply) || '').trim();
+  if (!r) bad.push('reply 空的');
+  else {
+    if (chatHasZh(r)) bad.push('reply 里有中文，开场白必须是英文');
+    if (r.indexOf('?') < 0) bad.push('开场白没有以问题结尾（判据 E8）');
+    if (chatWords(r).length > 45) bad.push('开场白 ' + chatWords(r).length + ' 词，太长了');
+  }
+  if (!String((j && j.topic) || '').trim()) bad.push('topic 空的');
+  return bad;
+}
+
+function chatReplyBad(j, mustAsk){
+  const bad = [];
+  const r = String((j && j.reply) || '').trim();
+  if (!r) bad.push('reply 空的');
+  else {
+    if (chatHasZh(r)) bad.push('reply 里有中文');
+    if (chatWords(r).length > 60) bad.push('reply ' + chatWords(r).length + ' 词，闲聊不该这么长');
+    if (mustAsk && r.indexOf('?') < 0)
+      bad.push('已经连着 ' + CHAT_NOASK_MAX + ' 轮没问他问题了，这轮必须有问句（判据 E8）');
+  }
+  /* 🚨 聊天引擎写点评字段 = 它越界了，当场驳回重来。
+     光靠 mergeChat 白名单丢掉也行，但那样它会一直写、一直白烧 token。 */
+  for (const k of CHAT_CRIT_FIELDS){
+    if (j && j[k] !== undefined && j[k] !== null && j[k] !== '')
+      bad.push('聊天引擎写了点评字段 ' + k + ' —— 那是另一条路的活（判据 E4）');
+  }
+  return bad;
+}
+
+/* easy 的硬判据（分叉③他选的「加代码层判据」）。
+   返回空串 = 合格；返回一句话 = 不合格，那一条丢掉。
+   什么输入会让它失败：easy 比他原话还长 / 里面有书面词 / 混了中文。 */
+function easyBad(easy, said){
+  /* 🚨 中文这一条必须排在「没给就不算错」**前面**。
+     纯中文的 easy 一个拉丁词都没有 → chatWords 返回空数组 → 被当成「没给」放行，
+     然后原样显示在「🙂 更简单」那一栏里。测试是这么抓到的（2026-08-20）。 */
+  if (chatHasZh(easy)) return 'easy 里混了中文';
+  const e = chatWords(easy);
+  if (!e.length) return '';                      // 没给不算错（有时候确实没有更简单的说法）
+  const s = chatWords(said);
+  /* 🚨 绝对下限：他说「Yes.」时 1×1.2 = 1.2 词，那这条判据就永远在响。
+     纯比例的容差，上一轮在打磨那边刚栽过一次。 */
+  const cap = Math.max(Math.round(s.length * CHAT_EASY_RATIO), s.length + 3, CHAT_EASY_FLOOR);
+  if (e.length > cap)
+    return 'easy 有 ' + e.length + ' 词，他原话才 ' + s.length + ' 词（上限 ' + cap + '），不叫更简单';
+  const hit = e.find(w => CHAT_FORMAL.indexOf(w) >= 0);
+  if (hit) return 'easy 里有书面词 “' + hit + '”，闲聊里没人这么说';
+  return '';
+}
+
+function chatCritBad(c, said){
+  const bad = [];
+  const lv = String((c && c.level) || '');
+  if (['error','polish','fine'].indexOf(lv) < 0) bad.push('level 不是 error/polish/fine');
+  if (!String((c && c.alex_zh) || '').trim()) bad.push('alex_zh 空的');
+  /* 说他错了就必须指出是哪一段 —— 指不出来的「错」就是编的。 */
+  if (lv === 'error' && !String((c && c.quote) || '').trim())
+    bad.push('判了 error 却没摘出是哪一段（quote 空）');
+  /* level=fine 还硬给改法 = 那个「先夸再硬纠」的形态（判据 E7）。 */
+  if (lv === 'fine' && (String((c && c.native) || '').trim() ||
+                        String((c && c.easy) || '').trim()))
+    bad.push('判了 fine 却还给改法 —— 说得好就别硬编毛病（判据 E7）');
+  const q = String((c && c.quote) || '').trim();
+  if (q && !quoteAnchored({quote: q, said: said}))
+    bad.push('quote 在他那句话里逐字找不到（判据 E5）');
+  const eb = easyBad(c && c.easy, said);
+  if (eb) bad.push(eb + '（判据 E6）');
+  return bad;
+}
+
+/* ── 合并：谁的字段只能从谁那儿来 ─────────────────────────────
+   🚨 这个函数是 E3/E4 的结构保证。改它之前先读顶上那段注释。 */
+function mergeChat(scene, crit){
+  const d = {said: String((scene && scene.said) || '').trim(),
+             reply: String((scene && scene.reply) || '').trim()};
+  for (const k of CHAT_CRIT_FIELDS){
+    if (crit && crit[k] !== undefined && crit[k] !== null) d[k] = crit[k];
+  }
+  return d;
+}
+
+/* 显示/落盘前洗一遍。最后一道，不是唯一一道。 */
+function scrubChat(d){
+  if (!d) return d;
+  if (!quoteAnchored(d)){ d.quote = ''; d.issue = ''; d.native = ''; d.easy = ''; }
+  if (bled(d.native, d.reply)) d.native = '';     // 串台：把对方的台词当成他该说的话
+  if (bled(d.easy, d.reply)) d.easy = '';
+  if (easyBad(d.easy, d.said)) d.easy = '';       // 硬判据（E6）
+  if (d.alex_zh) d.alex_zh = cleanZh(d.alex_zh);  // 专业判断按句丢掉（E9）
+  return d;
+}
+
+/* ── 调用 ────────────────────────────────────────────────── */
+
+async function chatAsk(build, check, tries){
+  let last = null;
+  for (let i = 0; i < (tries || 3); i++){
+    let j = null;
+    let p = build();
+    if (last) p += '\n\n🚨 你上一次的输出被判废了，原因是：' + last + '\n这一次务必避开。';
+    try { j = firstJson(await textCall(p, 0.6)); }
+    catch(err){ last = err.message || String(err); continue; }
+    if (!j){ last = '返回里没有完整的 JSON'; continue; }
+    const bad = check(j);
+    if (!bad.length) return j;
+    last = bad.join('；');
+  }
+  throw new Error(last || '试了三次都没出合格的结果');
+}
+
+async function chatOpen(seed){
+  return await chatAsk(() => chatOpenPrompt(seed), chatOpenBad);
+}
+
+/* 🚨 两次调用，谁也够不着谁。打字这条路他那句话现成，两发**并行**，不多等一秒。 */
+async function chatTurn(said){
+  const mustAsk = CHAT.noAsk >= CHAT_NOASK_MAX;
+  const [scene, crit] = await Promise.all([
+    chatAsk(() => chatPrompt(said, mustAsk), j => chatReplyBad(j, mustAsk)),
+    chatAsk(() => chatCritPrompt(said), c => chatCritBad(c, said))
+      .catch(e => ({__err: e.message || String(e)}))
+  ]);
+  if (!scene.said) scene.said = said;
+  if (crit && crit.__err){
+    const d = mergeChat(scene, null);
+    d.critErr = crit.__err;                       // 判据 E12：点评挂了对话照常走
+    return scrubChat(d);
+  }
+  return scrubChat(mergeChat(scene, crit));
+}
+
+/* ── 落盘 ────────────────────────────────────────────────── */
+function chatNew(topic, src){
+  return {id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          on: TODAY(), t0: Date.now(), topic: topic || '闲聊', src: src || '', turns: []};
+}
+async function chatSave(){
+  if (!CHAT || !CHAT.id || !CHAT.turns.length) return null;
+  const rec = {id: CHAT.id, on: CHAT.on, t0: CHAT.t0, topic: CHAT.topic, src: CHAT.src,
+               sec: Math.round((Date.now() - CHAT.t0) / 1000), turns: CHAT.turns};
+  try { await _tx('chat', 'readwrite', st => st.put(rec)); return rec.id; }
+  catch(e){
+    // 🚨 存不下要出声 —— 静默失败的话他聊完一场，回头发现什么都没有。
+    try { toast('这一场没存住（本地空间可能满了）'); } catch(_){}
+    return null;
+  }
+}
+async function chatList(){
+  try {
+    const all = await _tx('chat', 'readonly', st => st.getAll());
+    return (all || []).sort((a, b) => (b.t0 || 0) - (a.t0 || 0));
+  } catch(e){ return []; }
+}
+async function chatGet(id){
+  try { return await _tx('chat', 'readonly', st => st.get(id)); }
+  catch(e){ return null; }
+}
+async function chatDel(id){
+  try { await _tx('chat', 'readwrite', st => st.delete(id)); return true; }
+  catch(e){ return false; }
+}
+
+/* 他自己给过的话题（跟打磨那边的 topic 历史分开存） */
+function chatTopics(){
+  try { return JSON.parse(localStorage.getItem(CHAT_TOPICS_LS) || '[]') || []; }
+  catch(_){ return []; }
+}
+function chatTopicPush(t){
+  const v = String(t || '').trim();
+  if (!v) return;
+  const list = chatTopics().filter(x => x !== v);
+  list.unshift(v);
+  try { localStorage.setItem(CHAT_TOPICS_LS, JSON.stringify(list.slice(0, 8))); } catch(_){}
+}
+
+/* ── 小结：全是数出来的，不调模型 ─────────────────────────────
+   算术归代码 —— 这一块没有任何编造空间，也不花一次调用。 */
+function chatSummary(rec){
+  const ts = ((rec && rec.turns) || []).filter(t => t && t.said);
+  const lv = {error: 0, polish: 0, fine: 0};
+  const iss = {};
+  ts.forEach(t => {
+    if (t.level && lv[t.level] !== undefined) lv[t.level]++;
+    if (t.issue) iss[t.issue] = (iss[t.issue] || 0) + 1;
+  });
+  const top = Object.keys(iss).sort((a, b) => iss[b] - iss[a]).slice(0, 3);
+  const fixes = ts.filter(t => t.level === 'error' && (t.native || t.easy))
+                  .map(t => ({q: t.quote || '', native: t.native || '', easy: t.easy || ''}));
+  return {n: ts.length, lv: lv, iss: iss, top: top, fixes: fixes};
+}
+
+/* ── 界面 ─────────────────────────────────────────────────
+   🚨 主动作必须在**第一屏**。他为「收藏键在 y=1752 而一屏 812px」顶过一次
+      （「根本没地方点」）。所以根屏第一块就是那颗「开聊」大按钮。 */
+
+function chatStage(msg){
+  CHAT.stage = msg || '';
+  const el = document.getElementById('chatstage');
+  if (el) el.innerHTML = msg ? dotWait(msg) : '';
+}
+
+/* 根屏 */
+function showChat(){
+  SESSUI.top = 'chat';               // 🚨 见 showList 里那段：高亮由本屏认领
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = '闲聊 · 用英语随便聊，说错的地方顺手给你拨回来';
+  const his = chatTopics();
+  $('#feed').innerHTML = sessTopTabs() + '<div class="pol">' +
+    '<div class="card" style="padding:14px">' +
+      '<button id="chatgo" class="btn wide" style="width:100%">开聊</button>' +
+      '<div class="t" style="margin-top:8px;color:var(--muted)">' +
+        'Alex 先开口，你接着说就行。<b>不打断你</b> —— ' +
+        '更自然、更简单的说法会挂在你自己那句话下面。</div>' +
+      '<div id="chaterr" class="warn" style="margin-top:8px"></div>' +
+      '<div id="chatstage" style="margin-top:8px"></div>' +
+    '</div>' +
+    '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800;margin-bottom:8px">想聊点特定的？（可留空）</div>' +
+      '<input id="chattopic" placeholder="例：我上周末去爬山了" ' +
+        'style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;' +
+        'border:1px solid var(--line-strong);background:var(--surface);' +
+        'color:inherit;font-size:15px">' +
+      (his.length ? '<div style="margin-top:10px">' + his.map(t =>
+        '<button class="rchip" data-chattop="' + esc(t) + '" ' +
+        'style="margin:0 6px 6px 0;max-width:100%;white-space:normal;text-align:left">' +
+        esc(t) + '</button>').join('') + '</div>' : '') +
+      '<div class="t" style="margin-top:8px;color:var(--muted)">' +
+        '留空的话 Alex 会自己挑 —— 优先从你的错题本和单词本里挑，' +
+        '让你自然用上那些说法。</div>' +
+    '</div>' +
+    '<div id="chatlist"></div></div>';
+  bindSessTop();
+
+  const go1 = () => chatStart((($('#chattopic') || {}).value) || '');
+  $('#chatgo').onclick = go1;
+  document.querySelectorAll('[data-chattop]').forEach(b =>
+    b.onclick = () => { const i = $('#chattopic'); if (i) i.value = b.dataset.chattop; go1(); });
+
+  chatPaintList();
+}
+
+async function chatPaintList(){
+  const box = document.getElementById('chatlist');
+  if (!box) return;
+  const list = await chatList();
+  if (!list.length){ box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="k" style="font-weight:800;margin:14px 4px 8px">聊过的</div>' +
+    list.map(r => {
+      const s = chatSummary(r);
+      return '<div class="card" data-chatid="' + esc(r.id) + '">' +
+        '<div class="hd"><span class="ct" style="font-size:11.5px;color:var(--brand-dark);' +
+        'font-weight:800">' + esc(String(r.topic || '闲聊').slice(0, 40)) + '</span>' +
+        '<span class="done">' + esc(r.on) + '</span></div>' +
+        '<div class="t" style="margin-top:6px">' + s.n + ' 轮' +
+        (s.lv.error ? ' · ' + s.lv.error + ' 处要改' : ' · 没说错') +
+        (s.lv.polish ? ' · ' + s.lv.polish + ' 处能更自然' : '') + '</div></div>';
+    }).join('');
+  document.querySelectorAll('#chatlist .card[data-chatid]').forEach(el =>
+    el.onclick = async () => {
+      const r = await chatGet(el.dataset.chatid);
+      if (r) go(() => showChatRec(r), '这一场');
+    });
+}
+
+/* 点「开聊」→ Alex 先开口 → 进聊天屏
+   🚨 判据 E2：iOS 上 speechSynthesis 必须在**用户手势里真的 speak 过一次**才解锁。
+      AI 主动开聊 = 第一句不是他点出来的，不在这颗按钮的手势里解锁的话，
+      开场白**根本不会出声** —— 而「实时说英语的语言环境」正是他要的东西。 */
+async function chatStart(topic){
+  if (CHAT.busy) return;
+  const t = String(topic || '').trim();
+  chatReset();
+  CHAT.busy = true;
+  try { if (window.unlockTTS) unlockTTS(); } catch(_){}   // 🚨 必须在这颗按钮的手势里
+  const el = $('#chaterr'); if (el) el.textContent = '';
+  const btn = $('#chatgo'); if (btn) btn.disabled = true;
+  chatStage('Alex 在想开个什么话头');
+  try {
+    const seed = chatPickSeed(t);
+    const j = await chatOpen(seed);
+    if (t) chatTopicPush(t);
+    const rec = chatNew(String(j.topic || t || '闲聊').trim(), seed.src);
+    CHAT.id = rec.id; CHAT.on = rec.on; CHAT.t0 = rec.t0;
+    CHAT.topic = rec.topic; CHAT.src = rec.src;
+    CHAT.turns = [{said: '', reply: String(j.reply || '').trim()}];   // 第 0 轮：只有 Alex 开口
+    CHAT.noAsk = 0; CHAT.opened = true; CHAT.busy = false;
+    chatStage('');
+    go(showChatRoom, '闲聊');
+    chatSpeak(String(j.reply || ''));
+  } catch(e){
+    CHAT.busy = false;
+    chatStage('');
+    if (el) el.textContent = '没开成：' + (e.message || e);
+    if (btn) btn.disabled = false;
+  }
+}
+
+function chatSpeak(txt){
+  if (!txt || !chatSpeakOn()) return;
+  try { say(txt, 'en-US'); } catch(_){}
+}
+
+/* 聊天屏。整块重画 —— 收藏键那种「一个显 ✓ 一个显 ☆」的错，
+   就是各画各的造出来的（查词那边踩过）。 */
+function showChatRoom(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = CHAT.topic || '闲聊';
+  chatPaintRoom();
+}
+
+function chatPaintRoom(scrollBottom){
+  const f = $('#feed');
+  if (!f) return;
+  const rows = CHAT.turns.map((t, i) => {
+    let h = '';
+    if (t.said){
+      h += '<div class="turn me"><div class="who">你</div>' +
+           '<div class="bub">' + esc(t.said) + '</div></div>';
+      h += chatCritHTML(t, i);
+    }
+    if (t.reply){
+      h += '<div class="turn ai"><div class="who">Alex</div>' +
+           '<div class="bub">' + esc(t.reply) + '</div>' +
+           '<button class="play" data-chatsay="' + i + '">🔊 听一遍</button></div>';
+    }
+    return h;
+  }).join('');
+
+  f.innerHTML = '<div class="pol">' + rows +
+    '<div id="chatstage" style="margin:8px 4px"></div>' +
+    '<div id="chaterr" class="warn" style="margin:0 4px"></div>' +
+    '<div class="card" style="position:sticky;bottom:8px;padding:10px;margin-top:10px">' +
+      '<button id="chatmic" class="btn wide" style="width:100%">🎙 点一下开始说</button>' +
+      '<div style="display:flex;gap:6px;margin-top:8px">' +
+        '<button id="chattype" class="btn sm" style="flex:1">⌨️ 打字</button>' +
+        '<button id="chatspk" class="btn sm" style="flex:0 0 auto">' +
+          (chatSpeakOn() ? '🔊 朗读开' : '🔇 朗读关') + '</button>' +
+        '<button id="chatend" class="btn sm" style="flex:0 0 auto">✅ 聊完了</button>' +
+      '</div>' +
+    '</div></div>';
+
+  document.querySelectorAll('[data-chatsay]').forEach(b =>
+    b.onclick = () => { const t = CHAT.turns[+b.dataset.chatsay];
+                        if (t && t.reply) { try { say(t.reply, 'en-US'); } catch(_){} } });
+  chatBindTakes();
+  $('#chatmic').onclick = () => chatMicToggle();
+  $('#chattype').onclick = () => chatTypeIn();
+  $('#chatspk').onclick = () => { chatSpeakSet(!chatSpeakOn()); chatPaintRoom(); };
+  $('#chatend').onclick = () => chatFinish();
+  if (scrollBottom !== false) window.scrollTo(0, document.body.scrollHeight);
+  if (CHAT.stage) chatStage(CHAT.stage);
+  if (CHAT.err){ const e = $('#chaterr'); if (e) e.textContent = CHAT.err; }
+}
+
+/* 贴边的那一小条（分叉①：不打断对话流，挂在他自己那句下面） */
+function chatCritHTML(t, i){
+  if (t.critErr)
+    return '<div class="tags" style="margin:-4px 0 10px 4px;color:var(--muted);font-size:12px">' +
+           '这一句没点评上（' + esc(String(t.critErr).slice(0, 40)) + '）—— 聊天没受影响</div>';
+  const bits = [];
+  if (t.native) bits.push('<div style="margin-top:2px">💬 <b>更自然</b>：' + esc(t.native) +
+    ' <button class="rchip sm" data-chattake="n' + i + '" style="padding:2px 8px;font-size:12px">☆</button></div>');
+  if (t.easy) bits.push('<div style="margin-top:2px">🙂 <b>更简单</b>：' + esc(t.easy) +
+    ' <button class="rchip sm" data-chattake="e' + i + '" style="padding:2px 8px;font-size:12px">☆</button></div>');
+  if (t.phrase) bits.push('<div style="margin-top:2px">📌 <b>能带走</b>：' + esc(t.phrase) +
+    ' <button class="rchip sm" data-chattake="p' + i + '" style="padding:2px 8px;font-size:12px">☆</button></div>');
+  const lvTxt = {error:'要改', polish:'能更自然', fine:'这句没问题'}[t.level] || '';
+  const head = (t.level === 'fine')
+    ? '<div style="color:var(--ok,#2e9e5b);font-weight:700">✅ ' + esc(t.alex_zh || lvTxt) + '</div>'
+    : (t.alex_zh ? '<div>' + esc(t.alex_zh) + '</div>' : '');
+  if (!head && !bits.length) return '';
+  return '<div class="card" style="margin:-4px 0 10px 12px;padding:10px;font-size:13.5px;' +
+         'border-left:3px solid var(--brand-dark)">' + head + bits.join('') + '</div>';
+}
+
+function chatBindTakes(){
+  document.querySelectorAll('[data-chattake]').forEach(b =>
+    b.onclick = () => {
+      const v = b.dataset.chattake, i = +v.slice(1), t = CHAT.turns[i];
+      if (!t) return;
+      const en = v[0] === 'n' ? t.native : v[0] === 'e' ? t.easy : t.phrase;
+      if (!en) return;
+      const e = subEntry(en, t.alex_zh || '', {from: '闲聊 · ' + (CHAT.topic || '')});
+      const r = nbAdd(e, bookFor(e));
+      if (r === 'full') return toast('本子满了或存不下');
+      toast(r === 'same' ? '本子里已经有了' : '收好了');
+    });
+}
+
+/* ── 说一句 ──────────────────────────────────────────────── */
+async function chatGetRec(){
+  /* 🚨 借全局那一条 stream，不另开 —— 自己开一条的话手机上就是两个麦克风占用、
+     状态栏红点不灭，属于「装的东西去抢他的设备」。 */
+  if (!stream || !stream.active){
+    stream = await navigator.mediaDevices.getUserMedia(
+      {audio:{echoCancellation:true, noiseSuppression:true}});
+  }
+  let mime = '';
+  for (const m of ['audio/mp4','audio/webm','audio/ogg']){
+    if (MediaRecorder.isTypeSupported?.(m)){ mime = m; break; }
+  }
+  const r = mime ? new MediaRecorder(stream, {mimeType: mime}) : new MediaRecorder(stream);
+  CHAT.chunks = [];
+  r.ondataavailable = e => e.data.size && CHAT.chunks.push(e.data);
+  r.onstop = chatOnStop;
+  CHAT.rec = r;
+  return r;
+}
+
+async function chatMicToggle(){
+  if (CHAT.busy) return;
+  const btn = $('#chatmic');
+  if (CHAT.recing){
+    CHAT.recing = false;
+    try { CHAT.rec && CHAT.rec.state !== 'inactive' && CHAT.rec.stop(); } catch(_){}
+    if (btn){ btn.textContent = '🎙 点一下开始说'; btn.classList.remove('rec'); }
+    return;
+  }
+  if (!pick('audio')){
+    CHAT.err = '说话这条路现在没有可用通道 —— 去「我的 → 🛰 后端」看看，或者点「⌨️ 打字」。';
+    chatPaintRoom(false);
+    return;
+  }
+  CHAT.err = '';
+  try { if (window.unlockTTS) unlockTTS(); } catch(_){}
+  try {
+    const r = await chatGetRec();
+    CHAT.t1 = Date.now();
+    r.start();
+    CHAT.recing = true;
+    if (btn){ btn.textContent = '⏹ 说完了，停止'; btn.classList.add('rec'); }
+    chatStage('在听…说完点一下停止');
+  } catch(err){
+    CHAT.err = '打不开麦克风：' + (err.message || err) + '　可以点「⌨️ 打字」。';
+    chatPaintRoom(false);
+  }
+}
+
+async function chatOnStop(){
+  /* 🚨 中途切走之后 onstop 仍会晚一步触发。opened 清掉了就当没这回事，
+     否则它会拿着上一场的上下文继续，还把人从别的屏 go() 回来。 */
+  if (!CHAT || !CHAT.opened){ CHAT.chunks = []; return; }
+  const blob = new Blob(CHAT.chunks, {type: (CHAT.rec && CHAT.rec.mimeType) || ''});
+  CHAT.chunks = [];
+  if (!blob.size){ chatStage(''); CHAT.err = '没录到声音，再试一次。'; chatPaintRoom(false); return; }
+  CHAT.busy = true;
+  try {
+    chatStage('在转写你说的话');
+    const part = await toAudioPart(blob);
+    const said = await polTranscribe(part);       // 只转写、不判断（跟打磨共用一份）
+    CHAT.busy = false;
+    await chatSay(said, blob);
+  } catch(e){
+    CHAT.busy = false;
+    chatStage('');
+    CHAT.err = '转写没成功：' + (e.message || e) + '　可以改用打字。';
+    chatPaintRoom(false);
+  }
+}
+
+function chatTypeIn(){
+  const v = prompt('打字说这一句（英文）：');
+  if (v && String(v).trim()) chatSay(String(v).trim(), null);
+}
+
+/* 说了一句 → 两次调用并行 → 贴边给点评、对话照常往下走 */
+async function chatSay(said, blob){
+  if (CHAT.busy || !said) return;
+  CHAT.busy = true; CHAT.err = '';
+  CHAT.turns.push({said: said, reply: ''});       // 先把他那句画上去，别让他等着看空屏
+  chatPaintRoom();
+  chatStage('Alex 在接话，同时在看你这句怎么说更好');
+  try {
+    const d = await chatTurn(said);
+    const t = CHAT.turns[CHAT.turns.length - 1];
+    Object.assign(t, d);
+    if (blob){
+      const key = CHAT.id + '_' + (CHAT.turns.length - 1);
+      if (await sessPutAudio(key, blob)) t.audio = key;
+    }
+    CHAT.noAsk = String(d.reply || '').indexOf('?') >= 0 ? 0 : CHAT.noAsk + 1;
+    CHAT.busy = false;
+    chatStage('');
+    chatPaintRoom();
+    chatSpeak(d.reply);
+    try { markDaily('speak'); } catch(_){}        // 说了一句就算今天练过口语
+    await chatSave();                             // 每轮都落盘，别等他点「聊完了」
+  } catch(e){
+    CHAT.busy = false;
+    chatStage('');
+    CHAT.turns.pop();                             // 这一轮整个没成，别留半条
+    CHAT.err = '这一句没接上：' + (e.message || e) + '　再说一次试试。';
+    chatPaintRoom();
+  }
+}
+
+/* ── 聊完了 → 小结（全是数出来的，不调模型）───────────────── */
+async function chatFinish(){
+  if (CHAT.busy) return;
+  await chatSave();
+  const rec = {id: CHAT.id, on: CHAT.on, t0: CHAT.t0, topic: CHAT.topic,
+               src: CHAT.src, turns: CHAT.turns};
+  CHAT.done = true; CHAT.opened = false;
+  go(() => showChatRec(rec, true), '这一场');
+}
+
+/* 回看一场（也是「聊完了」之后那一屏） */
+function showChatRec(rec, justDone){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  $('#sub').textContent = String(rec.topic || '闲聊').slice(0, 30);
+  const s = chatSummary(rec);
+  const issTxt = s.top.length
+    ? s.top.map(k => k + ' ' + s.iss[k] + ' 次').join(' · ')
+    : '没有反复出现的毛病';
+  const f = $('#feed');
+  f.innerHTML = '<div class="pol">' +
+    (justDone ? '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800;margin-bottom:8px">这一场</div>' +
+      '<div class="t">说了 <b>' + s.n + '</b> 轮 · ' +
+        '<b>' + s.lv.error + '</b> 处要改 · <b>' + s.lv.polish + '</b> 处能更自然 · ' +
+        '<b>' + s.lv.fine + '</b> 句本来就好</div>' +
+      '<div class="t" style="margin-top:6px">反复出现的：' + esc(issTxt) + '</div>' +
+      (s.fixes.length ? '<div class="k" style="font-weight:800;margin:12px 0 6px">' +
+        '真说错的那几处</div>' + s.fixes.map(x =>
+        '<div class="t" style="margin-top:6px">「' + esc(x.q) + '」<br>' +
+        (x.native ? '　💬 ' + esc(x.native) + '<br>' : '') +
+        (x.easy ? '　🙂 ' + esc(x.easy) : '') + '</div>').join('') : '') +
+      '<button id="chatmore" class="btn wide" style="width:100%;margin-top:12px">再聊一场</button>' +
+      '</div>' : '') +
+    (rec.turns || []).map((t, i) => {
+      let h = '';
+      if (t.said){
+        h += '<div class="turn me"><div class="who">你</div>' +
+             '<div class="bub">' + esc(t.said) + '</div>' +
+             (t.audio ? '<button class="play" data-chatplay="' + esc(t.audio) +
+                        '">🎙 听我刚才说的</button>' : '') + '</div>';
+        h += chatCritHTML(t, i);
+      }
+      if (t.reply)
+        h += '<div class="turn ai"><div class="who">Alex</div>' +
+             '<div class="bub">' + esc(t.reply) + '</div></div>';
+      return h;
+    }).join('') +
+    '<button id="chatdel" class="btn sm" style="margin-top:14px">删掉这一场</button>' +
+    '</div>';
+
+  const more = document.getElementById('chatmore');
+  if (more) more.onclick = () => { chatReset(); go(showChat, '闲聊'); };
+  document.querySelectorAll('[data-chatplay]').forEach(b =>
+    b.onclick = async () => {
+      const blob = await sessGetAudio(b.dataset.chatplay);
+      if (!blob) return toast('这段录音已经过期清掉了（只留 30 天）');
+      try { const u = URL.createObjectURL(blob); const a = new Audio(u);
+            a.onended = () => URL.revokeObjectURL(u); a.play(); } catch(_){}
+    });
+  const del = document.getElementById('chatdel');
+  if (del) del.onclick = async () => {
+    if (!confirm('删掉这一场？删了就回不来了。')) return;
+    await chatDel(rec.id);
+    chatReset();
+    go(showChat, '闲聊');
   };
 }
 

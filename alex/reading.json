@@ -33820,6 +33820,96 @@
    "src": "SEC 10-K",
    "srcen": "SEC 10-K filing",
    "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_locked_in",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "have been locked in a tit-for-tat tariffs war",
+   "why": "中国人常写 \"have a long-term dispute\"。\"locked in\" 形象地传达出双方陷入僵局、动弹不得的胶着状态，比普通的 \"in conflict\" 更具表现力。",
+   "when": "用于描述目标公司与大客户、供应商或前员工之间长期未决、互不相让的法律诉讼或商业纠纷。",
+   "slot": "have been locked in a [...]",
+   "swap": [
+    "have been embroiled in a [...] (强调陷入混乱、难以脱身的负面处境)",
+    "are engaged in a protracted [...] (语气更正式，强调纠纷持续时间极长)"
+   ],
+   "para": "China's foreign ministry spokesperson Mao Ning described the tariffs as an \"excuse for political manipulation\". Washington and Beijing have been locked in a tit-for-tat tariffs war which is currently on hold.",
+   "srctitle": "",
+   "src": "BBC 商业",
+   "srcen": "BBC Business",
+   "url": "https://www.bbc.co.uk/news/articles/cy4kp8jd0ppo?at_medium=RSS&at_campaign=rss"
+  },
+  {
+   "id": "ph_attracted_attention",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Vietnam has attracted considerable attention as a potential major beneficiary of the 2018-19 U.S.-China tariff increases",
+   "why": "中国人常写 'Many people pay attention to...' 或 'X is considered to benefit from...'。原句用 'attracted considerable attention' 显得客观专业，并用 'potential major beneficiary'（潜在主要受益者）进行合理留白与避险（hedge），非常符合审计和尽调报告中对未确定性事实的陈述习惯。",
+   "when": "在尽调报告中描述某家公司、行业或资产因外部政策、市场变动而可能获得重大利好时。",
+   "slot": "[...] has attracted considerable attention as a potential major beneficiary of [...]",
+   "swap": [
+    "[...] is widely regarded as a key candidate to benefit from [...] (语气更肯定，强调市场共识)",
+    "[...] stands out as a prime prospect to gain from [...] (语气更积极，突出其优势地位)"
+   ],
+   "para": "In recent years, Vietnam has attracted considerable attention as a potential major beneficiary of the 2018-19 U.S.-China tariff increases, reflecting substantial trade diversion as exports shifted away from China (Alfaro and Chor, 2023; Freund et al., 2024). As shown in the left panel of Figure 1, U.S. imports from China declined sharply after the 2018-19 tariffs, while imports from Vietnam tripled by 2025.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_respond_in_real_time",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "analyze and respond to economic shocks in real time",
+   "why": "中国人常写 \"analyze and solve problems immediately\"，用词中式且不够严谨。原文用 \"respond to\"（应对）替代 \"solve\"（有些外部冲击无法被彻底“解决”，只能“应对”），用 \"in real time\" 替代 \"immediately\"，更契合现代企业风险管理的专业语境。",
+   "when": "用于尽职调查报告中，评价管理层对市场波动、系统故障、财务异动或外部风险的实时监控与应急响应能力。",
+   "slot": "analyze and respond to [...] in real time",
+   "swap": [
+    "monitor and mitigate [...] on an ongoing basis (语气更偏向持续性的日常风控，强调“持续监控与缓解”)",
+    "identify and address [...] promptly (语气更强调行动的迅速性，适合描述发现合规漏洞后的立即整改)"
+   ],
+   "para": "Thank you for the kind introduction. I am delighted to be here at Stanford University today to discuss a topic that is central to the Federal Reserve's work: how policymakers analyze and respond to economic shocks in real time. 1",
+   "srctitle": "Jefferson, Navigating Economic Shocks: A Monetary Policymaker’s Perspective",
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
+  },
+  {
+   "id": "ph_delighted_to_discuss",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "I am delighted to be here at Stanford University today to discuss",
+   "why": "在项目启动会（Kick-off）或向客户高管汇报时，中国人常说 \"I am very happy to come here to talk about...\"，显得口语化且气场不足。原文用 \"delighted\" 代替 \"happy\"，用 \"discuss\" 代替 \"talk about\"，专业、得体且不失温度。",
+   "when": "用于现场尽调首次会议、审计入场会或向管理层/董事会进行现场汇报时的开场致辞。",
+   "slot": "I am delighted to be here at [...] today to discuss [...]",
+   "swap": [
+    "It is a pleasure to meet with the [...] team today to present [...] (语气更具商务仪式感，适合正式的成果汇报)",
+    "We appreciate the opportunity to convene at [...] today to review [...] (语气更谦逊、职业，强调双方协作回顾审计发现)"
+   ],
+   "para": "Thank you for the kind introduction. I am delighted to be here at Stanford University today to discuss a topic that is central to the Federal Reserve's work: how policymakers analyze and respond to economic shocks in real time. 1",
+   "srctitle": "Jefferson, Navigating Economic Shocks: A Monetary Policymaker’s Perspective",
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
+  },
+  {
+   "id": "ph_replaced_by_levy",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "were replaced by a temporary 10% levy on",
+   "why": "中国人写税收或收费常套用 tax 或 fee，且句式易写成 changed to。这里用 replaced by a temporary... levy on，用 levy（征税/收费）替代 tax，且用 temporary 修饰，极其精准地描述了过渡性政策的更替。",
+   "when": "用于尽调报告中描述过渡期税率、附加费或监管收费的调整与替代。",
+   "slot": "[...] were replaced by a temporary [...] levy on [...]",
+   "swap": [
+    "were substituted with a provisional [...] tax on (provisional更具临时过渡意味，但不如temporary常用)",
+    "were succeeded by a short-term [...] charge on (charge更偏向服务收费而非行政征税，语气较温和)"
+   ],
+   "para": "The tariffs that were struck down were replaced by a temporary 10% levy on all global imports. Those tariffs expired in July.",
+   "srctitle": "",
+   "src": "BBC 商业",
+   "srcen": "BBC Business",
+   "url": "https://www.bbc.co.uk/news/articles/cy4kp8jd0ppo?at_medium=RSS&at_campaign=rss"
   }
  ]
 }
