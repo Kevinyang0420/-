@@ -31,7 +31,7 @@ final class SetupViewController: UIViewController {
         view.backgroundColor = .systemBackground
 
         let title = UILabel()
-        title.text = "说英文"
+        title.text = "Transless"
         title.font = .systemFont(ofSize: 30, weight: .bold)
 
         let sub = UILabel()
@@ -48,8 +48,8 @@ final class SetupViewController: UIViewController {
         }
         let askBtn = button("允许麦克风和语音识别", #selector(askPerms))
 
-        let s2 = step("第 2 步 · 启用「说英文」键盘",
-                      "设置 > 通用 > 键盘 > 键盘 > 添加新键盘 > 说英文，"
+        let s2 = step("第 2 步 · 启用 Transless 键盘",
+                      "设置 > 通用 > 键盘 > 键盘 > 添加新键盘 > Transless，"
                     + "然后点进它把「允许完全访问」打开（不开就发不出网络请求）。")
         let openBtn = button("打开系统设置", #selector(openSettings))
 
