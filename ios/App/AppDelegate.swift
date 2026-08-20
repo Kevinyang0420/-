@@ -2,9 +2,13 @@ import UIKit
 import AVFoundation
 import Speech
 
-// 容器 App。iOS 规定键盘扩展必须挂在一个 App 里。
-// 它只干两件事：把两个权限要过一次（键盘扩展里弹不出系统权限框），
-// 以及告诉他去哪儿启用键盘。
+// Transless 容器 App —— 现在它自己就是主战场。
+//
+// 🚨 为什么主界面是大按钮而不是设置页（2026-08-21 定的）：
+//    iOS 26.6 + 免费证书侧载，键盘扩展一启动就被代码签名校验击杀
+//    （CODESIGNING / Invalid Page，探针键盘同样被杀 → 与代码无关）。
+//    键盘那条路要换签名通道才能通；在那之前，App 内完成同样的事：
+//    按一下说中文 → 再按一下 → 自动转写+整理+译英 → 自动进剪贴板 → 去微信粘贴。
 
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -13,12 +17,200 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ app: UIApplication,
                      didFinishLaunchingWithOptions o: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         let w = UIWindow(frame: UIScreen.main.bounds)
-        w.rootViewController = SetupViewController()
+        w.rootViewController = UINavigationController(rootViewController: MainViewController())
         w.makeKeyAndVisible()
         window = w
         return true
     }
 }
+
+// MARK: - 主界面：一个大按钮
+
+final class MainViewController: UIViewController {
+
+    private enum Phase { case idle, listening, thinking }
+
+    private let tones = ["work", "email", "casual", "formal"]
+    private let toneLabels = ["工作", "邮件", "随意", "正式"]
+    private var tone = UserDefaults.standard.string(forKey: "vime.tone") ?? "work"
+
+    private let hintLabel = UILabel()
+    private let heardLabel = UILabel()
+    private let resultView = UITextView()
+    private let micButton = UIButton(type: .system)
+    private let toneButton = UIButton(type: .system)
+
+    private lazy var voice = Voice()
+    private var phase: Phase = .idle
+    private var elapsedTimer: Timer?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = UIColor(red: 0.06, green: 0.07, blue: 0.09, alpha: 1)
+        title = "Transless"
+        navigationController?.navigationBar.tintColor = .white
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "权限", style: .plain, target: self, action: #selector(openSetup))
+
+        hintLabel.font = .systemFont(ofSize: 15)
+        hintLabel.textColor = UIColor(white: 0.6, alpha: 1)
+        hintLabel.textAlignment = .center
+        hintLabel.numberOfLines = 3
+        hintLabel.text = "按一下开始说中文\n说完再按一下，英文自动复制好"
+
+        heardLabel.font = .systemFont(ofSize: 15)
+        heardLabel.textColor = UIColor(white: 0.9, alpha: 1)
+        heardLabel.textAlignment = .center
+        heardLabel.numberOfLines = 4
+
+        resultView.font = .systemFont(ofSize: 17)
+        resultView.textColor = .white
+        resultView.backgroundColor = UIColor(white: 0.12, alpha: 1)
+        resultView.layer.cornerRadius = 12
+        resultView.isEditable = false
+        resultView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
+
+        micButton.setTitle("🎤", for: .normal)
+        micButton.titleLabel?.font = .systemFont(ofSize: 64)
+        micButton.backgroundColor = UIColor(red: 0.15, green: 0.39, blue: 0.92, alpha: 1)
+        micButton.layer.cornerRadius = 70
+        micButton.addTarget(self, action: #selector(tapMic), for: .touchUpInside)
+
+        toneButton.setTitle("语气：" + toneTitle(), for: .normal)
+        toneButton.setTitleColor(UIColor(white: 0.6, alpha: 1), for: .normal)
+        toneButton.titleLabel?.font = .systemFont(ofSize: 15)
+        toneButton.backgroundColor = UIColor(white: 0.13, alpha: 1)
+        toneButton.layer.cornerRadius = 10
+        toneButton.addTarget(self, action: #selector(cycleTone), for: .touchUpInside)
+
+        [hintLabel, heardLabel, resultView, micButton, toneButton].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview($0)
+        }
+        NSLayoutConstraint.activate([
+            hintLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 18),
+            hintLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            hintLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+
+            micButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            micButton.topAnchor.constraint(equalTo: hintLabel.bottomAnchor, constant: 26),
+            micButton.widthAnchor.constraint(equalToConstant: 140),
+            micButton.heightAnchor.constraint(equalToConstant: 140),
+
+            toneButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            toneButton.topAnchor.constraint(equalTo: micButton.bottomAnchor, constant: 16),
+            toneButton.widthAnchor.constraint(equalToConstant: 130),
+            toneButton.heightAnchor.constraint(equalToConstant: 36),
+
+            heardLabel.topAnchor.constraint(equalTo: toneButton.bottomAnchor, constant: 14),
+            heardLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            heardLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+
+            resultView.topAnchor.constraint(equalTo: heardLabel.bottomAnchor, constant: 14),
+            resultView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            resultView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            resultView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+        ])
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        // 权限没给过就先把设置页推出来要一次
+        let mic = AVAudioSession.sharedInstance().recordPermission == .granted
+        let sp = SFSpeechRecognizer.authorizationStatus() == .authorized
+        if !(mic && sp) {
+            navigationController?.pushViewController(SetupViewController(), animated: true)
+        }
+    }
+
+    private func toneTitle() -> String { toneLabels[tones.firstIndex(of: tone) ?? 0] }
+
+    @objc private func openSetup() {
+        navigationController?.pushViewController(SetupViewController(), animated: true)
+    }
+
+    @objc private func cycleTone() {
+        let i = tones.firstIndex(of: tone) ?? 0
+        tone = tones[(i + 1) % tones.count]
+        UserDefaults.standard.set(tone, forKey: "vime.tone")
+        toneButton.setTitle("语气：" + toneTitle(), for: .normal)
+    }
+
+    private func setPhase(_ p: Phase, hint: String) {
+        phase = p
+        hintLabel.text = hint
+        switch p {
+        case .idle:
+            micButton.setTitle("🎤", for: .normal)
+            micButton.backgroundColor = UIColor(red: 0.15, green: 0.39, blue: 0.92, alpha: 1)
+            micButton.isEnabled = true
+        case .listening:
+            micButton.setTitle("■", for: .normal)
+            micButton.backgroundColor = UIColor(red: 0.85, green: 0.25, blue: 0.25, alpha: 1)
+            micButton.isEnabled = true
+        case .thinking:
+            micButton.setTitle("…", for: .normal)
+            micButton.backgroundColor = UIColor(white: 0.3, alpha: 1)
+            micButton.isEnabled = false
+        }
+    }
+
+    @objc private func tapMic() {
+        if phase == .listening {
+            elapsedTimer?.invalidate(); elapsedTimer = nil
+            setPhase(.thinking, hint: "识别中…")
+            voice.stop()
+            return
+        }
+        if phase == .thinking { return }
+
+        heardLabel.text = ""
+        resultView.text = ""
+        setPhase(.listening, hint: "听着呢，想到哪说到哪（最长 15 分钟）\n说完再按一下红色按钮")
+        elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            guard let self = self, self.phase == .listening else { return }
+            let s = Int(self.voice.elapsed)
+            self.hintLabel.text = String(format: "听着呢 %d:%02d　·　说完再按一下红色按钮", s / 60, s % 60)
+        }
+
+        voice.start(onPartial: { [weak self] partial in
+            DispatchQueue.main.async { self?.heardLabel.text = partial }
+        }, onDone: { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.elapsedTimer?.invalidate(); self.elapsedTimer = nil
+                switch result {
+                case .success(let zh):
+                    let t = zh.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if t.isEmpty { self.setPhase(.idle, hint: "没听清，再说一次"); return }
+                    self.heardLabel.text = t
+                    self.polish(t)
+                case .failure(let f):
+                    self.setPhase(.idle, hint: "\(f)")
+                }
+            }
+        })
+    }
+
+    private func polish(_ zh: String) {
+        setPhase(.thinking, hint: "整理并译成英文…")
+        Backend.polish(text: zh, tone: tone) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                switch result {
+                case .success(let en):
+                    self.resultView.text = en
+                    UIPasteboard.general.string = en   // 自动进剪贴板
+                    self.setPhase(.idle, hint: "已复制 ✓　去微信长按输入框 → 粘贴\n再按一下麦克风说下一条")
+                case .failure(let err):
+                    self.setPhase(.idle, hint: "失败：\(err)")
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 权限/自测页（原来的首页，降级成二级页）
 
 final class SetupViewController: UIViewController {
 
@@ -29,44 +221,23 @@ final class SetupViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        title = "权限与自测"
 
-        let title = UILabel()
-        title.text = "Transless"
-        title.font = .systemFont(ofSize: 30, weight: .bold)
-
-        let sub = UILabel()
-        sub.text = "说中文，出结构化英文。什么都不用填，下面两步做完就能用。"
-        sub.font = .systemFont(ofSize: 14)
-        sub.textColor = .secondaryLabel
-        sub.numberOfLines = 0
-
-        let s1 = step("第 1 步 · 允许麦克风和语音识别",
-                      "键盘扩展自己弹不出权限框，只能在这里给一次。")
+        let s1 = step("第 1 步 · 允许麦克风和语音识别", "只用要一次。")
         [micState, speechState].forEach {
             $0.font = .systemFont(ofSize: 14)
             $0.numberOfLines = 0
         }
         let askBtn = button("允许麦克风和语音识别", #selector(askPerms))
 
-        let s2 = step("第 2 步 · 启用 Transless 键盘",
-                      "设置 > 通用 > 键盘 > 键盘 > 添加新键盘 > Transless，"
-                    + "然后点进它把「允许完全访问」打开（不开就发不出网络请求）。")
-        let openBtn = button("打开系统设置", #selector(openSettings))
-
-        let s3 = step("自测 · 先跑一遍再去键盘里用", "")
+        let s2 = step("自测 · 后端通不通", "")
         let testBtn = button("测一次", #selector(selfTest))
         testOut.font = .systemFont(ofSize: 13)
         testOut.numberOfLines = 0
 
-        let stack = UIStackView(arrangedSubviews: [
-            title, sub,
-            s1, micState, speechState, askBtn,
-            s2, openBtn,
-            s3, testBtn, testOut,
-        ])
+        let stack = UIStackView(arrangedSubviews: [s1, micState, speechState, askBtn, s2, testBtn, testOut])
         stack.axis = .vertical
         stack.spacing = 10
-        stack.setCustomSpacing(22, after: sub)
 
         let scroll = UIScrollView()
         scroll.translatesAutoresizingMaskIntoConstraints = false
@@ -134,12 +305,6 @@ final class SetupViewController: UIViewController {
         }
     }
 
-    @objc private func openSettings() {
-        if let u = URL(string: UIApplication.openSettingsURLString) {
-            UIApplication.shared.open(u)
-        }
-    }
-
     /// 自测：判据不是"没报错"，是英文里必须保住关键事实。
     @objc private func selfTest() {
         let sample = "哎那个我跟你说一下啊,就是那个报表啊,嗯,我明天早上,"
@@ -156,12 +321,12 @@ final class SetupViewController: UIViewController {
                     let name = en.contains("Annie")
                     let time = en.contains("3") || en.lowercased().contains("afternoon")
                     let dropped = !en.lowercased().contains("morning")
-                    var s = "输入：\n\(sample)\n\n输出：\n\(en)\n\n判据：\n"
+                    var s = "输出：\n\(en)\n\n判据：\n"
                     s += name ? "  ✓ 人名 Annie 保住了\n" : "  ✗ 人名 Annie 丢了\n"
                     s += time ? "  ✓ 改口后的时间保住了\n" : "  ✗ 改口后的时间丢了\n"
                     s += dropped ? "  ✓ 说错的「早上」已丢弃\n" : "  ✗ 说错的「早上」还在\n"
                     let all = name && time && dropped
-                    s += all ? "\n通过 —— 可以去键盘里用了" : "\n有问题 —— 把这一屏发给 Claude"
+                    s += all ? "\n通过" : "\n有问题 —— 把这一屏发给 Claude"
                     self.testOut.text = s
                     self.testOut.textColor = all ? .systemTeal : .systemOrange
                 }
