@@ -15617,7 +15617,7 @@ function chatReset(){
   try { if (typeof clearInterval === 'function' && CHAT && CHAT.tick) clearInterval(CHAT.tick); }
   catch(_){}
   CHAT = {id:'', on:'', t0:0, topic:'', src:'', turns:[],
-          busy:false, rec:null, chunks:[], recing:false, t1:0, tick:0,
+          busy:false, rec:null, chunks:[], recing:false, t1:0, tick:0, hintedAt:null,
           err:'', stage:'', noAsk:0, opened:false, done:false};
 }
 chatReset();
@@ -16106,6 +16106,35 @@ function chatSummary(rec){
    🚨 主动作必须在**第一屏**。他为「收藏键在 y=1752 而一屏 812px」顶过一次
       （「根本没地方点」）。所以根屏第一块就是那颗「开聊」大按钮。 */
 
+/* ═══ 说着说着在练正式稿子 → 提醒他去「打磨」═══════════════
+   Kevin 2026-08-21 拿闲聊练了面试自我介绍，然后说点评「只是把语法稍微改了一下」。
+   —— 他没做错，**是我没告诉他这儿不管那个**：闲聊的 prompt 明写「场合是日常闲聊」
+   且「不许讲后果」，所以它**结构上**给不出「哪句会害你」。那是「打磨」的活。
+   他拍板时选的就是「归打磨、闲聊不动」，并且要「闲聊里检测到就提醒」。
+
+   🚨 判据要**保守**：日常闲聊里误弹一次，比漏掉一次烦人得多。
+      所以两个条件同时成立才提醒 —— 说得够长（闲聊很少一口气 60 词）
+      **且**出现正式场合的标志词。而且一整场只提醒一次。 */
+const CHAT_FORMAL_MARKS = [
+  '面试', 'interview', '自我介绍', 'introduce myself', 'my name is',
+  '汇报', 'presentation', 'pitch', '简历', 'resume', '应聘', '求职',
+  'hiring manager', 'my background', 'years of experience'
+];
+
+function chatLooksFormal(said){
+  /* 🚨 长度要**中英都算**。`chatWords` 只认拉丁字母，
+     拿它量中文稿会得到 3 —— 跟 `polQuoteOk` 当初「只取 [a-z0-9']、中文必然锚不住」
+     是同一个病根，本轮同一天里犯了第二次。中文按 2 字 ≈ 1 词折算。
+     🚨 门槛定在 30 不是 60：真实自我介绍 50~160 词，60 会漏掉一半；
+        而真正挡住误弹的是**标志词**，长度只负责挡「我昨天面试了」这种一句带过。 */
+  const s = String(said || '');
+  const zh = (s.match(/[\u4e00-\u9fa5]/g) || []).length;
+  const w = chatWords(s).length + Math.round(zh / 2);
+  if (w < 30) return false;
+  const low = s.toLowerCase();
+  return CHAT_FORMAL_MARKS.some(k => low.indexOf(k.toLowerCase()) >= 0);
+}
+
 function chatStage(msg){
   CHAT.stage = msg || '';
   const el = document.getElementById('chatstage');
@@ -16483,6 +16512,9 @@ function chatPaintRoom(scrollBottom){
       h += '<div class="turn me"><div class="who">你</div>' +
            '<div class="bub">' + esc(t.said) + '</div></div>';
       h += chatCritHTML(t, i);
+      /* 一整场只提醒一次：只在**第一条**够格的轮次上挂 */
+      if (chatLooksFormal(t.said) && !CHAT.hintedAt) CHAT.hintedAt = i;
+      if (CHAT.hintedAt === i) h += chatFormalHintHTML(i);
     }
     if (t.reply){
       h += '<div class="turn ai"><div class="who">Alex</div>' +
@@ -16536,6 +16568,16 @@ function chatPaintRoom(scrollBottom){
   if (scrollBottom !== false) window.scrollTo(0, document.body.scrollHeight);
   if (CHAT.stage) chatStage(CHAT.stage);
   if (CHAT.err){ const e = $('#chaterr'); if (e) e.textContent = CHAT.err; }
+}
+
+function chatFormalHintHTML(i){
+  return '<div class="card" style="margin:-4px 0 10px 12px;padding:10px;' +
+    'border-left:3px solid var(--brand-dark)">' +
+    '<div class="t">这段像是在准备<b>正式场合要说的稿子</b>。' +
+    '闲聊这儿只帮你改语法和说法 —— <b>哪句会害你、该讲什么、什么顺序</b>，' +
+    '在「打磨」那边才有。</div>' +
+    '<button class="rchip" data-chat2pol="' + i + '" style="margin-top:8px">' +
+    '把这段拿去打磨 →</button></div>';
 }
 
 /* 贴边的那一小条（分叉①：不打断对话流，挂在他自己那句下面） */
@@ -16650,6 +16692,28 @@ function chatBindCrit(ctx){
          同一个表达出现两处时必然一个显 ★ 一个显 ☆。 */
       repaint();
     });
+  /* 「把这段拿去打磨」：把他说的这段原样带过去，别让他重说一遍 */
+  document.querySelectorAll('[data-chat2pol]').forEach(b =>
+    b.onclick = () => {
+      const t2 = turns[+b.dataset.chat2pol];
+      if (!t2 || !t2.said) return;
+      polReset();
+      /* 🚨 带过去的是**他原话**。打磨那边 first 轮就吃 said，
+         所以直接进准备屏、让他填「对方是谁」再开跑 —— 不重说、不丢内容。 */
+      POL.topic = '（从闲聊带过来）' + String(t2.said).slice(0, 40) + '…';
+      POL.carried = t2.said;
+      SESSUI.top = 'pol';
+      NAV.length = 0;
+      go(showPolish, '口语打磨');
+      setTimeout(() => {
+        const ta = document.getElementById('poltopic');
+        if (ta){ ta.value = POL.topic; }
+        const w = document.getElementById('polwho');
+        if (w) w.focus();
+        toast('这段话带过来了 —— 填一下「对方是谁」再点开始', 4200);
+      }, 250);
+    });
+
   /* 「让他回一句」：只补对方那半，点评那半原样不动 */
   document.querySelectorAll('[data-chatreply]').forEach(b =>
     b.onclick = async () => {
