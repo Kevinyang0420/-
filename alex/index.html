@@ -15366,7 +15366,16 @@ const CHAT_DAILY = [
 
 /* 点评引擎能贡献的字段，仅此而已。said / reply 永远来自聊天引擎。
    🚨 这一行就是「点评够不着对方的回话」的结构保证 —— 不是又一道过滤器。 */
-const CHAT_CRIT_FIELDS = ['level','quote','issue','native','easy','alex_zh','phrase'];
+/* 🚨 `better` = **完整整句、可以直接照念**。Kevin 2026-08-20 又点名一次：
+   「他只是提了意见、指出哪里不对，没有把改好后的完整说法发给我。」
+   ——这条他 2026-08-01 在陪练那边就点过（「我到底应该怎么说」），
+   陪练因此加了 `better`，而我做闲聊时**只给了 `native`（那一小段）**，
+   等于把同一个错又犯了一遍。
+   三者分工别再混：
+     better  整句、地道 —— 他照着重说一遍就行（**主角**）
+     easy    整句、简单 —— 同一个意思，他现在水平张口就来的那版
+     native  那一小段  —— 只用来说明「改的是哪儿」，不是给他念的 */
+const CHAT_CRIT_FIELDS = ['level','quote','issue','better','native','easy','alex_zh','phrase'];
 
 let CHAT = null;
 function chatReset(){
@@ -15508,8 +15517,11 @@ function chatCritPrompt(said){
     ' "level":"error|polish|fine",',
     ' "quote":"从上面那一句里**原样摘出**的一小段（2-10 词），必须能逐字找到；没有就 null",',
     ' "issue":"只能是这五个之一：语法 | 中式直译 | 搭配不地道 | 语域偏了 | 语气强度；level=fine 时给 null",',
-    ' "native":"**他**那一小段母语者会怎么说；没有就 null",',
-    ' "easy":"同一个意思，**用他现在的水平张口就能说的那一版** —— 短、常用词、口语。',
+    ' "better":"🚨 **他那句话整句改好的版本**，英文完整一句，他能直接照着重说一遍。',
+    '            不是方向、不是建议、不是模板 —— 就是可以照念的那一整句。',
+    '            level=fine 时给 null，其余情况**必须给**。",',
+    ' "native":"只是**改动的那一小段**该怎么说（用来说明改的是哪儿）；没有就 null",',
+    ' "easy":"同一个意思的**完整一句**，**用他现在的水平张口就能说的那一版** —— 短、常用词、口语。',
     '          🚨 不许比他原话还长，不许用书面词（furthermore / subsequently 这类）。',
     '          实在没有更简单的说法就给 null，别硬凑。",',
     ' "alex_zh":"中文，≤2 句，只讲这句英语本身怎么了；不许讲后果（「这会让对方…」一律不要）",',
@@ -15519,7 +15531,10 @@ function chatCritPrompt(said){
     '分级要诚实：',
     '  level="error"  他真说错了（语法错 / 中式直译到听不懂）。quote 必须有。',
     '  level="polish" 他说得对，只是有更自然的说法。**不要说成他错了。**',
-    '  level="fine"   就是好的。native / easy / issue 全给 null，alex_zh 一句话点出他做对了什么。',
+    '  level="fine"   就是好的。better / native / easy / issue 全给 null，',
+    '                 alex_zh 一句话点出他做对了什么。',
+    '🚨 error 和 polish 这两档，`better` **必须给** —— 他要的就是「改成什么样重说一遍」。',
+    '   只说哪里不对而不给整句，等于没帮到他（他为这件事点过两次名了）。',
     '🚨 实测抓到过的失败形态：先夸「你说得很自然」，然后照样判 error、硬编一个毛病出来。',
     '   说得好就给 fine —— 硬纠比不纠更糟，之后他连真的纠错也不信了。'
   ].filter(Boolean).join('\n');
@@ -15580,6 +15595,29 @@ function easyBad(easy, said){
   return '';
 }
 
+/* `better` 的判据：他要的是「照着重说一遍」，所以必须是**完整一句**、可直接照念。
+   什么输入会让它失败：混中文 / 只给了个片段 / 写成「你应该用 …」这种指挥口气。
+   🚨 「指挥不是范例」这条是陪练那边验过会响的（记忆 project_english_coach）—— 照搬过来。 */
+const CHAT_ORDER = /^(use|say|try|change|consider|instead|maybe|you should|it would|better to|rephrase)\b/i;
+
+function betterBad(better, said, level){
+  const lv = String(level || '');
+  const b = String(better || '').trim();
+  if (lv === 'fine') return b ? '判了 fine 就不该再给 better' : '';
+  if (!b) return '没给 better —— 他要的就是「改成什么样重说一遍」，这条不能空';
+  if (chatHasZh(b)) return 'better 里混了中文，他要的是能直接照念的英文整句';
+  if (CHAT_ORDER.test(b)) return 'better 写成了指挥口气（“' + b.slice(0, 24) + '…”），那是建议不是范例';
+  const bw = chatWords(b).length, sw = chatWords(said).length;
+  /* 🚨 下限要同时挡住两种「不是整句」：太短的碎片、以及明显短于他原话的半截。
+     绝对下限 4 词 —— 他要是只说了 "Yes."，正确的 better 本来就短，别在这儿误杀。 */
+  /* 下限 3 词：'went hiking'(2) 这种片段要拦住，
+     但 'Yes, I did.'(3) 是他只说了一句 Yes 时**正确**的整句回答，不能误杀。 */
+  if (bw < 3) return 'better 只有 ' + bw + ' 词，是个片段不是整句';
+  if (sw >= 8 && bw < Math.round(sw * 0.6))
+    return 'better ' + bw + ' 词 vs 他原话 ' + sw + ' 词，像是只改了半截、没给整句';
+  return '';
+}
+
 function chatCritBad(c, said){
   const bad = [];
   const lv = String((c && c.level) || '');
@@ -15597,6 +15635,8 @@ function chatCritBad(c, said){
     bad.push('quote 在他那句话里逐字找不到（判据 E5）');
   const eb = easyBad(c && c.easy, said);
   if (eb) bad.push(eb + '（判据 E6）');
+  const bb = betterBad(c && c.better, said, lv);
+  if (bb) bad.push(bb + '（判据 E14）');
   return bad;
 }
 
@@ -15614,9 +15654,14 @@ function mergeChat(scene, crit){
 /* 显示/落盘前洗一遍。最后一道，不是唯一一道。 */
 function scrubChat(d){
   if (!d) return d;
+  /* 🚨 quote 锚不住时**不动 better** —— better 是「他整句该怎么说」，
+     它的正确性不依赖 quote 摘得准不准；一起清掉的话，模型偶尔一次没摘好引用，
+     他就连最想要的那句范例都拿不到了（而那正是他两次点名要的东西）。 */
   if (!quoteAnchored(d)){ d.quote = ''; d.issue = ''; d.native = ''; d.easy = ''; }
   if (bled(d.native, d.reply)) d.native = '';     // 串台：把对方的台词当成他该说的话
   if (bled(d.easy, d.reply)) d.easy = '';
+  if (bled(d.better, d.reply)) d.better = '';     // 同上，better 更要防（他会照念）
+  if (betterBad(d.better, d.said, d.level)) d.better = '';
   if (easyBad(d.easy, d.said)) d.easy = '';       // 硬判据（E6）
   if (d.alex_zh) d.alex_zh = cleanZh(d.alex_zh);  // 专业判断按句丢掉（E9）
   return d;
@@ -15889,20 +15934,40 @@ function chatCritHTML(t, i){
   if (t.critErr)
     return '<div class="tags" style="margin:-4px 0 10px 4px;color:var(--muted);font-size:12px">' +
            '这一句没点评上（' + esc(String(t.critErr).slice(0, 40)) + '）—— 聊天没受影响</div>';
+
+  /* 🚨 顺序就是他的阅读顺序：**先给能照念的整句**，再说为什么。
+     Kevin 2026-08-20：「他只是提了意见、指出哪里不对，没有把改好后的完整说法发给我。」
+     所以 better 排第一、字号最大、自带「🔊 听一遍」——
+     解释（alex_zh）沉到最后，它是补充，不是主角。 */
+  const key = (k, n) => ' <button class="rchip" data-chatspk="' + k + i +
+    '" style="padding:2px 8px;font-size:12px" title="听一遍">🔊</button>' +
+    '<button class="rchip" data-chattake="' + n + i +
+    '" style="padding:2px 8px;font-size:12px" title="收进本子">☆</button>';
+
   const bits = [];
-  if (t.native) bits.push('<div style="margin-top:2px">💬 <b>更自然</b>：' + esc(t.native) +
-    ' <button class="rchip sm" data-chattake="n' + i + '" style="padding:2px 8px;font-size:12px">☆</button></div>');
-  if (t.easy) bits.push('<div style="margin-top:2px">🙂 <b>更简单</b>：' + esc(t.easy) +
-    ' <button class="rchip sm" data-chattake="e' + i + '" style="padding:2px 8px;font-size:12px">☆</button></div>');
-  if (t.phrase) bits.push('<div style="margin-top:2px">📌 <b>能带走</b>：' + esc(t.phrase) +
-    ' <button class="rchip sm" data-chattake="p' + i + '" style="padding:2px 8px;font-size:12px">☆</button></div>');
-  const lvTxt = {error:'要改', polish:'能更自然', fine:'这句没问题'}[t.level] || '';
-  const head = (t.level === 'fine')
-    ? '<div style="color:var(--ok,#2e9e5b);font-weight:700">✅ ' + esc(t.alex_zh || lvTxt) + '</div>'
-    : (t.alex_zh ? '<div>' + esc(t.alex_zh) + '</div>' : '');
-  if (!head && !bits.length) return '';
-  return '<div class="card" style="margin:-4px 0 10px 12px;padding:10px;font-size:13.5px;' +
-         'border-left:3px solid var(--brand-dark)">' + head + bits.join('') + '</div>';
+  if (t.better) bits.push(
+    '<div style="font-size:15px;font-weight:700;line-height:1.5">' +
+    '✅ 这样重说一遍：<br>' + esc(t.better) + key('b', 'n') + '</div>');
+  if (t.easy && t.easy !== t.better) bits.push(
+    '<div style="margin-top:8px">🙂 <b>更简单</b>：' + esc(t.easy) + key('e', 'e') + '</div>');
+  if (t.native && t.quote) bits.push(
+    '<div style="margin-top:8px;color:var(--muted);font-size:12.5px">' +
+    '改的是这儿：「' + esc(t.quote) + '」→ ' + esc(t.native) + '</div>');
+  if (t.phrase) bits.push(
+    '<div style="margin-top:8px">📌 <b>能带走</b>：' + esc(t.phrase) +
+    ' <button class="rchip" data-chattake="p' + i +
+    '" style="padding:2px 8px;font-size:12px">☆</button></div>');
+  if (t.alex_zh && t.level !== 'fine') bits.push(
+    '<div style="margin-top:8px;color:var(--muted);font-size:12.5px">' + esc(t.alex_zh) + '</div>');
+
+  if (t.level === 'fine')
+    return '<div class="card" style="margin:-4px 0 10px 12px;padding:10px;font-size:13.5px;' +
+           'border-left:3px solid var(--ok,#2e9e5b)">' +
+           '<div style="color:var(--ok,#2e9e5b);font-weight:700">✅ ' +
+           esc(t.alex_zh || '这句没问题') + '</div></div>';
+  if (!bits.length) return '';
+  return '<div class="card" style="margin:-4px 0 10px 12px;padding:10px;' +
+         'border-left:3px solid var(--brand-dark)">' + bits.join('') + '</div>';
 }
 
 function chatBindTakes(){
@@ -15910,12 +15975,21 @@ function chatBindTakes(){
     b.onclick = () => {
       const v = b.dataset.chattake, i = +v.slice(1), t = CHAT.turns[i];
       if (!t) return;
-      const en = v[0] === 'n' ? t.native : v[0] === 'e' ? t.easy : t.phrase;
+      const en = v[0] === 'n' ? (t.better || t.native) : v[0] === 'e' ? t.easy : t.phrase;
       if (!en) return;
       const e = subEntry(en, t.alex_zh || '', {from: '闲聊 · ' + (CHAT.topic || '')});
       const r = nbAdd(e, bookFor(e));
       if (r === 'full') return toast('本子满了或存不下');
       toast(r === 'same' ? '本子里已经有了' : '收好了');
+    });
+  /* 🚨 「🔊 听一遍」也要绑 —— 画了不绑就是他点了没反应（死键，还不报错）。
+     用的是全站同一个 say(txt,'en')，所以念出来就是他自己选的那把嗓子。 */
+  document.querySelectorAll('[data-chatspk]').forEach(b =>
+    b.onclick = () => {
+      const v = b.dataset.chatspk, t = CHAT.turns[+v.slice(1)];
+      if (!t) return;
+      const en = v[0] === 'b' ? t.better : t.easy;
+      if (en) { try { unlockTTS(); say(en, 'en'); } catch(_){} }
     });
 }
 
