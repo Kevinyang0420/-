@@ -15443,6 +15443,24 @@ function showPolishRec(r){
       所以：聊天引擎的 schema 里**没有任何点评字段**，点评引擎的 schema 里
       **没有 reply** —— 见 CHAT_CRIT_FIELDS / mergeChat。 */
 
+/* ═══ 面包屑：这个 App 到底有没有被重载过 ═══════════════════
+   Kevin 2026-08-20：「刚点完的一瞬间，它把我直接登出了，退回到了一开始的界面」。
+   `autoConnect()` 里那句 `goTab('home')` **只在启动时**跑得到 ——
+   所以那不是被导航走，是**整个页面被重载了**（iOS 内存紧张会把 PWA 杀掉重开）。
+   但这是推断，我复现不出来。所以埋一条能**穿过重载**的记录：
+   每次启动追加一行，出问题时一看就知道是不是重启，以及重启前他在干什么。
+   🚨 只写 localStorage、只留最近 20 条，不打扰他。 */
+try {
+  const bl = JSON.parse(localStorage.getItem('alex_boot_log') || '[]');
+  bl.push({t: new Date().toISOString().slice(5, 19),
+           last: localStorage.getItem('alex_last_act') || ''});
+  localStorage.setItem('alex_boot_log', JSON.stringify(bl.slice(-20)));
+} catch(_){}
+function markAct(what){
+  try { localStorage.setItem('alex_last_act',
+        new Date().toISOString().slice(11, 19) + ' ' + what); } catch(_){}
+}
+
 const CHAT_TOPICS_LS = 'alex_chat_topics';   // 他自己给过的话题
 const CHAT_SPK_LS    = 'alex_chat_speak';    // 自动朗读开关（记住）
 const CHAT_HIST      = 6;                    // 喂回去的上下文轮数
@@ -16113,12 +16131,25 @@ async function chatStart(topic){
 const TTS_MODE_LS  = 'alex_tts_mode';    // 'neural'（默认）| 'device'
 const TTS_VOICE_LS = 'alex_tts_voice';   // 'andrew' 等，见后端 edge_tts_lite.VOICES
 const TTS_CACHE = new Map();             // 同一句念第二遍不再合成
-const TTS_CACHE_MAX = 24;
+const TTS_CACHE_MAX = 12;
 
 /* 一段 0 采样的合法 WAV。只用来在**用户手势里**把播放解锁，不出声。 */
 const TTS_SILENT = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YQAAAAA=';
 
 let _ttsEl = null, _ttsReady = false;
+
+/* 🚨 淘汰时**必须 revoke**，否则 Blob 一直被浏览器留着 —— 换成 Blob 却不 revoke
+   等于把内存问题从字符串搬到了别处。上限也从 24 降到 12：
+   闲聊一轮最多用到三段（回话/整句/更简单），12 段够翻回去听几轮了。 */
+function ttsCacheSet(key, url){
+  TTS_CACHE.set(key, url);
+  while (TTS_CACHE.size > TTS_CACHE_MAX){
+    const k = TTS_CACHE.keys().next().value;
+    const u = TTS_CACHE.get(k);
+    TTS_CACHE.delete(k);
+    try { if (u && u.indexOf('blob:') === 0) URL.revokeObjectURL(u); } catch(_){}
+  }
+}
 
 const ttsMode  = () => { try { return localStorage.getItem(TTS_MODE_LS) || 'neural'; }
                          catch(_){ return 'neural'; } };
@@ -16260,7 +16291,17 @@ async function ttsFetch(text, voice){
     if (!d.done) continue;
     if (d.error) throw new Error(d.error);
     if (!d.audio) throw new Error('后端没回音频');
-    return 'data:' + (d.mime || 'audio/mpeg') + ';base64,' + d.audio;
+    /* 🚨 转成 **Blob URL**，不留 base64 字符串在内存里。
+       Kevin 2026-08-20：点完「再次尝试」App 被踢回一开始的界面 ——
+       那不是被导航走（autoConnect 只在启动时跑一次），是**整个页面被重载了**，
+       iOS 在内存紧张时会把 PWA 杀掉重开、状态全丢，看着就像"登出"。
+       原来一段音频以 base64 字符串形式常驻（24 段 ≈ 1MB，还要浏览器每次解码），
+       而 Blob 可以 revoke。这条教训代码库里本来就有
+       （录音回放那儿写着「不 revoke 内存只涨不落」），我这儿没照做。 */
+    const bin = atob(d.audio);
+    const buf = new Uint8Array(bin.length);
+    for (let k = 0; k < bin.length; k++) buf[k] = bin.charCodeAt(k);
+    return URL.createObjectURL(new Blob([buf], {type: d.mime || 'audio/mpeg'}));
   }
   throw new Error('合成超时');
 }
@@ -16279,9 +16320,7 @@ async function nsay(text){
     url = TTS_CACHE.get(key);
     if (!url){
       url = await ttsFetch(t, ttsVoice());
-      TTS_CACHE.set(key, url);
-      // 别让缓存无限涨（一句 mp3 约 30KB，24 句 ≈ 0.7MB）
-      while (TTS_CACHE.size > TTS_CACHE_MAX) TTS_CACHE.delete(TTS_CACHE.keys().next().value);
+      ttsCacheSet(key, url);
     }
   } catch(e){
     ttsFellBack('fetch');
@@ -16313,10 +16352,7 @@ function ttsWarm(text){
   if (!t || ttsMode() !== 'neural' || !apiOn()) return;
   const key = ttsVoice() + '|' + t;
   if (TTS_CACHE.has(key)) return;
-  ttsFetch(t, ttsVoice()).then(url => {
-    TTS_CACHE.set(key, url);
-    while (TTS_CACHE.size > TTS_CACHE_MAX) TTS_CACHE.delete(TTS_CACHE.keys().next().value);
-  }).catch(() => {});
+  ttsFetch(t, ttsVoice()).then(url => ttsCacheSet(key, url)).catch(() => {});
 }
 
 function chatSpeak(txt){
@@ -16537,6 +16573,8 @@ function chatBindCrit(ctx){
       const idx = +b.dataset.chatrecrit, t = turns[idx];
       if (!t || !t.said || b.disabled) return;
       b.disabled = true; b.textContent = '⏳ 在重新点评…';
+      markAct('点了再次尝试 · 说了 ' +
+        (String(t.said||'').match(/[a-z']+/gi)||[]).length + ' 词');
       try {
         const crit = await askCritSmart(t.said);
         const merged = scrubChat(mergeChat({said: t.said, reply: t.reply}, crit));
@@ -16544,7 +16582,11 @@ function chatBindCrit(ctx){
         Object.assign(t, merged);
         await save();
         repaint();
-        ttsWarm(t.better); ttsWarm(t.easy);
+        /* 🚨 预热**错开一点再发**。原来紧接着重跑完就并发两发合成，
+           加上刚跑完的那发点评，一瞬间三条请求 + 两段音频进内存 ——
+           他就是在这一刻被 iOS 把整个 App 杀掉重开的（表现成"登出、回到一开始的界面"）。
+           他要的是范例本身，音频晚 1.2 秒到完全没关系。 */
+        setTimeout(() => { ttsWarm(t.better); ttsWarm(t.easy); }, 1200);
       } catch(e){
         b.disabled = false; b.textContent = '🔁 再次尝试';
         toast('还是没成：' + String(e.message || e).slice(0, 40), 3600);
