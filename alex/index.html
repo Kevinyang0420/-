@@ -17011,7 +17011,10 @@ async function nsay(text, akey){
     }
   } catch(e){
     ttsFellBack('fetch');
-    try { say(t, 'en'); } catch(_){}
+    /* 🚨 兜底也要带 akey，否则通道被认领成默认的 'tts'，
+       按钮的「是不是我在响」永远不成立 → 再点一次变成又播一遍。
+       而**兜底恰恰是后端慢/连不上时最常走的那条**。 */
+    try { say(t, 'en', undefined, akey); } catch(_){}
     return;
   }
   try {
@@ -17026,7 +17029,7 @@ async function nsay(text, akey){
     _ttsReady = true;
   } catch(e){
     ttsFellBack('play');
-    try { say(t, 'en'); } catch(_){}
+    try { say(t, 'en', undefined, akey); } catch(_){}   // 🚨 同上，别丢 key
   }
 }
 
@@ -17100,14 +17103,13 @@ function chatPaintRoom(scrollBottom){
       '</div>' +
     '</div></div>';
 
-  document.querySelectorAll('[data-chatsay]').forEach(b =>
-    b.onclick = () => { const t = CHAT.turns[+b.dataset.chatsay];
-                        if (t && t.reply){
-                          try { unlockTTS(); unlockNeural(); } catch(_){}
-                          const o = b.textContent; b.textContent = '⏳ 读取中';
-                          b.disabled = true;
-                          nsay(t.reply).finally(() => { b.textContent = o; b.disabled = false; });
-                        } });
+  /* 🚨 跟 `[data-chatspk]` 是同一个毛病、只是在另一个函数里：
+     有「⏳ 读取中」但**没有 ⏹、停不下来**，而且 `finally` 在播放刚开始
+     那一刻就把状态收回去。同一条规矩第三次漏在出口上，这次全部走 bindPlay。 */
+  document.querySelectorAll('[data-chatsay]').forEach(b => {
+    const t3 = CHAT.turns[+b.dataset.chatsay];
+    if (t3 && t3.reply) bindPlay(b, t3.reply, b.textContent || '🔊');
+  });
   chatBindCrit({turns: CHAT.turns, topic: CHAT.topic,
                 save: chatSave,
                 repaint: () => { const y = window.scrollY;
@@ -17684,13 +17686,14 @@ function showChatRec(rec, justDone){
   if (goon) goon.onclick = () => chatResume(rec);
   const more = document.getElementById('chatmore');
   if (more) more.onclick = () => { chatReset(); go(showChat, '对话'); };
-  document.querySelectorAll('[data-chatplay]').forEach(b =>
-    b.onclick = async () => {
-      const blob = await sessGetAudio(b.dataset.chatplay);
-      if (!blob) return toast('这段录音已经过期清掉了（只留 30 天）');
-      try { const u = URL.createObjectURL(blob); const a = new Audio(u);
-            a.onended = () => URL.revokeObjectURL(u); a.play(); } catch(_){}
-    });
+  /* 🚨 他自己的录音 —— **这就是他说的「N 个人在读」那颗**。
+     原来是 `const a = new Audio(u); a.play();`：每点一次新建一个 Audio，
+     既不认领通道、也没有停，点 N 次就 N 个声音叠在一起。
+     现在跟别的播放键走同一个 `bindPlay`：⏳ → ⏹ → 再点一次停。 */
+  document.querySelectorAll('[data-chatplay]').forEach(b => {
+    const id = b.dataset.chatplay;
+    bindPlay(b, () => sessGetAudio(id), b.textContent || '🎙', 'rec:' + id);
+  });
   const del = document.getElementById('chatdel');
   if (del) del.onclick = async () => {
     if (!confirm('删掉这一场？删了就回不来了。')) return;
@@ -18339,9 +18342,16 @@ async function doLook(q){
    🚨 「真的在响」有**两个**信号都要认：后端 Andrew 走 `<audio>`，
       兜底的自带嗓子走 `speechSynthesis` —— 只认前者的话，网络差退回自带嗓子时
       漏斗会一直转到超时，比没状态更糟。 */
-function bindPlay(b, text, idle){
+/* `src` 两种形态：
+     字符串        → 走 nsay 合成（英文句子）
+     () => Promise<Blob|null>  → 播一段现成的音频（他自己的录音）
+   🚨 两种都必须**认领同一条音频通道**，否则就会出现他说的
+   「点一次读一遍、点一次又读一遍，好像有连续 N 个人在读」。 */
+function bindPlay(b, src, idle, keyHint){
+  const isBlob = typeof src === 'function';
+  const text = isBlob ? '' : src;
   const label = idle || b.textContent || '🔊';
-  const key = 'play:' + String(text || '').slice(0, 60);
+  const key = 'play:' + String(keyHint || text || '').slice(0, 60);
   const reset = () => { b.textContent = label; b.classList.remove('on'); };
 
   const spSpeaking = () => {
@@ -18352,7 +18362,7 @@ function bindPlay(b, text, idle){
   b.onclick = async ev => {
     if (ev && ev.stopPropagation) ev.stopPropagation();
     const t2 = String(text || '').trim();
-    if (!t2) return;
+    if (!isBlob && !t2) return;
     /* 再点一次 = 停。这个行为 2026-08-14 被我去掉过（怕「没听到再点一下」
        变成静音），2026-08-21 他明确要回来 —— 现在有 ⏳/⏹ 两个可见状态兜着，
        那个坑不成立了。 */
@@ -18368,7 +18378,25 @@ function bindPlay(b, text, idle){
       try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch(_){}
     });
 
-    try { await nsay(t2, key); } catch(_){}
+    if (isBlob){
+      /* 🚨 复用**同一个** <audio> 元素（`_ttsEl`），不 new 一个新的 ——
+         每点一次 new Audio() 正是「N 个人在读」的成因。
+         用同一个元素时，先 pause 再换 src 不会叠。 */
+      let blob = null;
+      try { blob = await src(); } catch(_){}
+      if (!blob){ audioStop(); reset(); return toast('这段录音已经过期清掉了（只留 30 天）'); }
+      if (AUDIO.key !== key){ reset(); return; }      // 等取录音时他已经点了别的
+      try {
+        const u = URL.createObjectURL(blob);
+        _ttsEl = _ttsEl || new Audio();
+        _ttsEl.playsInline = true;
+        _ttsEl.onended = () => { try { URL.revokeObjectURL(u); } catch(_){} };
+        _ttsEl.src = u;
+        await _ttsEl.play();
+      } catch(_){ audioStop(); reset(); return toast('这段放不出来'); }
+    } else {
+      try { await nsay(t2, key); } catch(_){}
+    }
 
     if (AUDIO.key !== key){ reset(); return; }
     let started = false;
