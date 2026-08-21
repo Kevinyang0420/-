@@ -17625,14 +17625,49 @@ const DSTOP = new Set(['a','an','the','of','in','on','to','for','with','at','by'
 const reEsc = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const dStem = w => w.length <= 4 ? w : w.slice(0, Math.max(4, w.length - 3));
 
+/* 🚨 不规则动词表。2026-08-21 实测的事故：查 `take a view on`，模型给的例句是
+   “We **took** a view on the valuation.” —— 完全正确 —— 却被判成
+   「例句里没出现『take』」，三次全废、等了 15 秒，他看到的是「没查出来」。
+
+   根因：`dStem('take')` 就是 'take'（≤4 字原样返回），`\btake` 匹配不了 'took'；
+   而两个实词时容差是 0，一个都不许少。**判据想守的东西没错（例句得真用上这个词），
+   但它认不出这个词的合法形态**，于是把正确答案挡在门外。
+
+   只收**不规则**的：规则变化（-s/-ed/-ing）本来就被截断式 dStem 兜住了。
+   一律小写，值里不必再写基本形。 */
+const DIRREG = {
+  take:['took','taken'], get:['got','gotten'], give:['gave','given'],
+  go:['went','gone'], come:['came'], run:['ran'], hold:['held'],
+  draw:['drew','drawn'], put:['put'], keep:['kept'], lead:['led'],
+  meet:['met'], pay:['paid'], set:['set'], sit:['sat'], stand:['stood'],
+  break:['broke','broken'], bring:['brought'], build:['built'], buy:['bought'],
+  catch:['caught'], choose:['chose','chosen'], cut:['cut'], deal:['dealt'],
+  fall:['fell','fallen'], feel:['felt'], find:['found'], hear:['heard'],
+  know:['knew','known'], lose:['lost'], make:['made'], mean:['meant'],
+  read:['read'], say:['said'], see:['saw','seen'], sell:['sold'], send:['sent'],
+  speak:['spoke','spoken'], spend:['spent'], stick:['stuck'], teach:['taught'],
+  tell:['told'], think:['thought'], throw:['threw','thrown'], win:['won'],
+  write:['wrote','written'], withdraw:['withdrew','withdrawn'],
+  understand:['understood'], rise:['rose','risen'], leave:['left'],
+  do:['did','done'], have:['had'], be:['was','were','been','is','are','am'],
+};
+
+/* 一个词的所有可接受写法：截断词干 + 不规则形态。命中任意一个就算「出现了」。 */
+function dForms(w){
+  const lo = String(w).toLowerCase();
+  return [dStem(lo)].concat(DIRREG[lo] || []);
+}
+
 function stemsMissing(q, text){
   const t = String(text == null ? '' : text);
   const words = normQ(q).toLowerCase().match(/[a-z][a-z'-]*/g) || [];
   if (!words.length) return [];
   const content = words.filter(w => !DSTOP.has(w));
   const pool = content.length ? content : words;
+  /* 🚨 用 dForms 不是 dStem —— 不规则动词的过去式也算「出现了」。
+     不这么做的话 “We took a view on…” 会被判成没出现 take（实测事故）。 */
   const miss = pool.filter(w =>
-    !(new RegExp('\\b' + reEsc(dStem(w)), 'i').test(t)));
+    !dForms(w).some(f => new RegExp('\\b' + reEsc(f), 'i').test(t)));
   /* 单词和两词搭配要求全中；再长就容 30%（floor，所以 3 个实词仍然要全中）——
      "going concern basis of preparation" 这种长词条，地道的例句本来就会写成
      "prepared on a going concern basis"，一个实词都不许少会把好卡全判废。 */
