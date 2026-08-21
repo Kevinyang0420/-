@@ -33910,6 +33910,96 @@
    "src": "BBC 商业",
    "srcen": "BBC Business",
    "url": "https://www.bbc.co.uk/news/articles/cy4kp8jd0ppo?at_medium=RSS&at_campaign=rss"
+  },
+  {
+   "id": "ph_generally_do_not_stock_inventory",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Our partners generally do not stock inventory received from us",
+   "why": "中国人描述渠道库存时常写 'Our partners usually don't keep our products in their warehouse'。原句将 'stock' 用作动词，搭配 'inventory received from us'，不仅行文极简，而且在财务上精确界定了‘未保留库存所有权风险’，对判断是 Sell-in 还是 Sell-through 确认收入至关重要。",
+   "when": "在进行财务尽调、分析分销商库存积压风险（Channel Stuffing）或评估退货政策时。",
+   "slot": "Our [...] generally do not stock inventory received from [...]",
+   "swap": [
+    "Our [...] typically carry no inventory supplied by [...] (carry inventory是财务常用表达，语气较为中性客观)",
+    "Our [...] do not routinely hold stock delivered by [...] (routinely hold强调常规性操作，常用于描述寄售或即时配送模式)"
+   ],
+   "para": "We market and sell our products through our direct sales force and in partnership with our channel partners, including distributors, value-added resellers, systems integrators and original equipment manufacturer (\"OEM\") partners. We also partner with various technology companies to sell our products. To facilitate channel coordination and increase productivity, we have established the Arista Partner Program, designed to engage partners who provide value-added services and extend our reach into the marketplace. Authorized training partners deliver technical training to our channel partners and end customers. Our partners typically receive an order from an end customer before placing an order with us, and we verify the end customer's identification before accepting such orders. Our partners generally do not stock inventory received from us.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_potentially_influence",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "who could potentially influence a bank's lending decisions",
+   "why": "中国人写审计报告常武断地写 who will influence，缺乏客观度。用 could potentially influence（可能潜在影响）体现了审计师的审慎态度（professional skepticism），既指出风险又不绝对化。",
+   "when": "适用于尽职调查中评估关联方、实际控制人或高管对公司关键决策、关联交易的潜在干预风险。",
+   "slot": "who could potentially influence [...]'s [...] decisions",
+   "swap": [
+    "who may exert significant influence over [...]'s [...] decisions (语气更正式，符合国际会计准则中“重大影响”的表述)",
+    "who are in a position to bias [...]'s [...] processes (语气更具警示性，暗示存在利益冲突或偏见风险)"
+   ],
+   "para": "The Federal Reserve Board on Friday requested comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions. The proposal updates outdated thresholds while maintaining safeguards against preferential treatment.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731b.htm"
+  },
+  {
+   "id": "ph_declined_sharply_while_tripled_688",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "declined sharply after the 2018-19 tariffs, while imports from Vietnam tripled by 2025",
+   "why": "国人对比数据时常写 'A decreased, but B increased'。原文用 'declined sharply' 搭配 'tripled by'，并用 'while' 形成强烈的画面对比，且 'tripled' 直接作动词，比 'increased by three times' 简练得多。",
+   "when": "在审计报告中对比两个子公司、两个业务板块或两个市场在同一时期的业绩消长时。",
+   "slot": "[...] declined sharply after [...], while [...] tripled by [...]",
+   "swap": [
+    "dropped precipitously following [...], whereas [...] surged threefold by [...] (precipitously 和 surge 语气极强，适合描述剧烈的市场波动)",
+    "contracted significantly post-[...], while [...] experienced a threefold increase by [...] (contracted 语气更专业、更书面化，适合极其正式的审计报告)"
+   ],
+   "para": "In recent years, Vietnam has attracted considerable attention as a potential major beneficiary of the 2018-19 U.S.-China tariff increases, reflecting substantial trade diversion as exports shifted away from China (Alfaro and Chor, 2023; Freund et al., 2024). As shown in the left panel of Figure 1, U.S. imports from China declined sharply after the 2018-19 tariffs, while imports from Vietnam tripled by 2025.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_neither_nor_agreement_121",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "neither we nor our contract manufacturers have a written agreement with these component providers to guarantee the supply of the key components used in our products",
+   "why": "中国人表达“双方都没有协议”时，习惯用 We don't have... and they also don't have...，句式零碎。使用 neither A nor B have a written agreement with C to guarantee... 结构极其严谨，一气呵成，完美展现了审计中对“无书面保障”这一法律与财务风险的定性。",
+   "when": "在尽调报告中披露目标公司与核心供应商/客户之间缺乏长期法律约束、存在供应中断风险时。",
+   "slot": "neither we nor our […] have a written agreement with […] to guarantee the supply of […]",
+   "swap": [
+    "there is no binding agreement between us or our [...] and [...] regarding the guaranteed supply of [...] (侧重于'无约束力协议'，法务色彩更浓)",
+    "we lack formal contractual arrangements with [...] to secure the supply of [...] (更简练，侧重于'缺乏正式合同安排'这一事实)"
+   ],
+   "para": "Our products rely on key components, including merchant silicon, integrated circuit components and power supplies, which are purchased from a limited number of suppliers, including certain sole source providers. We may also see increased consolidation among our component suppliers. In particular, we are primarily reliant upon our predominant merchant silicon vendor, Broadcom, for our switching chips. Generally, neither we nor our contract manufacturers have a written agreement with these component providers to guarantee the supply of the key components used in our products, nor do we have exclusive rights to such key components. Furthermore, our arrangements with contract manufacturers and suppliers typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_impose_purchase_obligations",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "arrangements with contract manufacturers and suppliers typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts",
+   "why": "中国人表达“不需要买超过订单数量的货”时，常写 we don't need to buy more than our orders。原文用 do not impose purchase obligations for specific quantities beyond the amounts established in...，用 impose purchase obligations（强加购买义务）和 amounts established in（确定的金额/数量），用词极具商业合同规范感，尽显审计报告的专业度。",
+   "when": "在审计中评估购买承诺（Purchase Commitments）或表外负债风险，说明公司并无超额购买的强制义务时。",
+   "slot": "arrangements with […] typically do not impose purchase obligations for specific quantities beyond the amounts established in […]",
+   "swap": [
+    "we are under no obligation to purchase volumes in excess of those specified in [...] (更直接，强调'免除义务'的法律状态)",
+    "our commitments to [...] are strictly limited to the quantities confirmed in [...] (侧重于'承诺额度严格受限于...'，语气更温和)"
+   ],
+   "para": "Our products rely on key components, including merchant silicon, integrated circuit components and power supplies, which are purchased from a limited number of suppliers, including certain sole source providers. We may also see increased consolidation among our component suppliers. In particular, we are primarily reliant upon our predominant merchant silicon vendor, Broadcom, for our switching chips. Generally, neither we nor our contract manufacturers have a written agreement with these component providers to guarantee the supply of the key components used in our products, nor do we have exclusive rights to such key components. Furthermore, our arrangements with contract manufacturers and suppliers typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
   }
  ]
 }

@@ -4120,6 +4120,190 @@
     "Failing to note the lack of supporting evidence for management's reuse plan, should highlight the gap between representation and documentation",
     "Using absolute terms like \"must be impaired\" which is overly definitive, should use \"potential impairment risk identified\""
    ]
+  },
+  {
+   "id": "mail_travel_expense",
+   "t": "差旅费合规性核查",
+   "lvl": "★★☆",
+   "brief": "写给目标公司财务总监的邮件，指出9M26大额差旅费报销中存在的凭证缺失和合规疑问，要求提供补充证明。",
+   "facts": [
+    "管理层口头表示，9M26新增的120万元差旅费主要用于拓展华西区新客户的差旅支出。",
+    "我们抽查了其中25笔、共计80万元的报销凭证，发现其中6笔（共计35万元）无酒店结账水单或机票行程单，仅附有普通发票。",
+    "我们比对了差旅系统记录与报销日期，发现有3笔报销的出行时间段处于法定节假日，且无加班审批记录。",
+    "截至发稿日，我们仍未收到目标公司销售部门提供的这6笔报销所对应的业务拜访记录或客户会议纪要。"
+   ],
+   "tgt": [
+    "allegedly incurred for",
+    "subject to further verification",
+    "pending the receipt of",
+    "appear to deviate from"
+   ],
+   "traps": [
+    "使用绝对化指控如 \"These expenses are fake\"。应使用 \"These expenses appear to deviate from standard policies and their business substance remains subject to further verification\"。",
+    "直译「管理层口头说」为 \"Management orally said\"。应使用更符合审计报告规范的 \"Management represented that...\" 或 \"According to management's representations...\"。",
+    "表示「至今未收到」时用 \"We didn't receive until now\"。应使用 \"As of the date of this email, we have yet to receive...\" 或 \"...remain outstanding\"。"
+   ]
+  },
+  {
+   "id": "mail_offshore_consulting",
+   "t": "境外咨询费扣缴税款核查",
+   "lvl": "★★☆",
+   "brief": "写给客户投资总监的邮件，说明在尽调中发现目标公司支付境外关联方咨询费未见代扣代缴凭证的税务风险。",
+   "facts": [
+    "财务账面显示，目标公司在FY25向其境外母公司支付咨询服务费50万美元。",
+    "管理层口头解释称，该咨询服务完全由境外专家线上提供，不属于境内所得，因此未在境内代扣代缴预提所得税。",
+    "我们审阅了咨询合同，发现合同中并未明确服务交付地，且未约定税费承担方。",
+    "截至发稿日，目标公司仍未向我们提供主管税务机关出具的免税备案或不予征税认定材料。"
+   ],
+   "tgt": [
+    "potentially subject to withholding tax",
+    "remains unvalidated",
+    "absent supporting tax clearance",
+    "management asserted that"
+   ],
+   "traps": [
+    "直接下法律结论说 \"The company must pay tax\"。应使用 \"The transaction could potentially be subject to withholding tax exposure in China\" 表达潜在风险。",
+    "直译「合同里没有明确说」为 \"The contract didn't write it clearly\"。应使用 \"The contract does not explicitly specify...\" 或 \"The contract is silent on...\"。",
+    "直译「我们想要免税材料」为 \"We want you to give us the tax free documents\"。应使用 \"Please provide any relevant tax clearance or tax filing documentation to support this tax position.\"。"
+   ]
+  },
+  {
+   "id": "mail_environmental_penalty",
+   "t": "环保罚款潜在负债核实",
+   "lvl": "★★☆",
+   "brief": "写给目标公司法务负责人的邮件，要求核实因FY25废气排放超标导致的潜在行政处罚及预计负债计提。",
+   "facts": [
+    "公开信息查询显示，目标公司于FY25年11月因排污问题被当地环保局立案调查。",
+    "管理层口头表示，由于已在当年12月完成整改，预计最终罚款金额不会超过5万元，故未在财务报表中计提预计负债。",
+    "我们审阅了整改报告，发现环保局在FY26年1月进行了二次复查，但尚未出具最终结案意见或行政处罚决定书。",
+    "截至发稿日，目标公司仍未向我们提供外部法律顾问对该处罚结果及罚款金额的专业评估意见书。"
+   ],
+   "tgt": [
+    "has been initiated against",
+    "is highly dependent on",
+    "remains subject to final determination",
+    "the likelihood of outflow"
+   ],
+   "traps": [
+    "用 \"The government will definitely fine the company\" 进行预测。应使用 \"The company may face potential regulatory penalties, the amount of which remains subject to final determination...\"。",
+    "直译「我们看整改报告发现」为 \"We read the report and found...\"。应使用 \"Our review of the rectification report indicated that...\"。",
+    "用 \"We didn't see the provision\" 表达未计提。在讨论未确定负债时，应使用更具会计专业感的 \"No provision has been recognized in the financial statements in respect of this matter.\"。"
+   ]
+  },
+  {
+   "id": "mail_severance_pay",
+   "t": "高管离职补偿金计提确认",
+   "lvl": "★★☆",
+   "brief": "写给买方财务总监的邮件，分析目标公司FY25因副总经理离职计提的辞退福利（Severance Pay）是否充足及潜在差异。",
+   "facts": [
+    "管理层口头表示，前副总经理于FY25年10月因个人原因辞职，双方协商补偿金为60万元，公司已于当期全额计提并于FY26年1月付清。",
+    "银行流水显示，目标公司于FY26年1月实际向该高管银行账户转账支付了80万元。",
+    "我们抽查了该高管的离职协议草案，发现其中包含一项关于「限制性股票加速行权补偿」的补充条款，涉及金额20万元。",
+    "截至发稿日，目标公司仍未向我们提供该高管最终签署的正式离职协议及对应的董事会决议文件。"
+   ],
+   "tgt": [
+    "is yet to be substantiated",
+    "discrepancy of",
+    "pursuant to the draft agreement",
+    "would tentatively suggest"
+   ],
+   "traps": [
+    "直译「银行流水显示」为 \"Bank statement shows that...\"。应使用 \"Our review of the bank statements revealed that...\" 或 \"According to the bank slip, ...\"。",
+    "用 \"The data has errors\" 形容两处金额不一致。应使用 \"We noted a discrepancy of RMB 200,000 between the accrued severance and the actual bank payment.\"。",
+    "直译「因为没有正式协议，所以不确定」为 \"Because there is no formal agreement, so we are not sure\"。应使用 \"Pending the receipt of the executed agreement, the final settlement amount remains yet to be substantiated.\"。"
+   ]
+  },
+  {
+   "id": "mail_litigation_provision",
+   "t": "诉讼预计负债计提依据核查",
+   "lvl": "★★☆",
+   "brief": "写给项目主管合伙人的邮件，沟通目标公司FY25一起买卖合同纠纷诉讼未足额计提预计负债的潜在风险。",
+   "facts": [
+    "公开诉讼信息显示，原告向目标公司索赔违约金500万元，该案于FY25年12月一审判决目标公司败诉并赔偿300万元。",
+    "管理层口头解释，公司已于当年末提起上诉，且其代理律师评估二审改判概率极高，因此在FY25末仅计提了50万元的预计负债。",
+    "我们审阅了一审判决书，发现判决书中认定的违约事实清楚，且原告提供的核心证据充分。",
+    "截至发稿日，我们仍未收到目标公司外部律师出具的法律意见书，无法独立评估二审改判的概率。"
+   ],
+   "tgt": [
+    "the ruling of the first instance",
+    "the adequacy of the provision",
+    "preliminary assessment indicates",
+    "remains highly uncertain"
+   ],
+   "traps": [
+    "主观下定论说 \"The company will definitely lose in the second instance\"。应使用更客观的语气：\"The ruling of the first instance against the company suggest that the liability may exceed the current provision.\"。",
+    "直译「律师觉得可以改判」为 \"The lawyer thinks they can change the judgment\"。应写为 \"The legal counsel represented that there is a high probability of reversing the judgment on appeal.\"。",
+    "直译「因为没拿到法律意见书所以没法评估」为 \"We cannot assess because we don't have the legal opinion\"。应写为 \"Without access to the formal legal opinion, we are unable to independently verify the likelihood of a successful appeal.\"。"
+   ]
+  },
+  {
+   "id": "mail_reversal_writedown",
+   "t": "存货跌价准备转回依据核实",
+   "lvl": "★★☆",
+   "brief": "写给目标公司财务经理的邮件，询问FY25大额转回已计提存货跌价准备的合理性与期后销售支持证据。",
+   "facts": [
+    "财务账面显示，目标公司在FY25末转回了前一年度计提的180万元存货跌价准备。",
+    "管理层口头表示，该转回是因为该批呆滞存货的期后市场售价出现回升，且在FY26年第一季度已全部售出。",
+    "我们抽查了期后销售明细账及出库单，发现该批存货中仅有30%在FY26年一季度完成销售，且实际平均售价低于其历史成本。",
+    "截至发稿日，我们仍未收到该批存货在FY25年末的可变现净值（NRV）详细测算表及相关销售合同。"
+   ],
+   "tgt": [
+    "the validity of the reversal",
+    "is not fully supported by",
+    "subsequent sales performance",
+    "pending further clarification on"
+   ],
+   "traps": [
+    "语气过于生硬指责客户 \"Your oral explanation is different from the books\"。应使用 \"The management's representation regarding the full disposal is not fully aligned with the subsequent sales ledgers.\"。",
+    "直译「我们抽查期后销售发现」为 \"We sampled subsequent sales and found...\"。应使用 \"Our sample testing of subsequent sales records indicated that...\"。",
+    "直译「请给我们发测算表」为 \"Please send us the calculation sheet\"。应写为 \"We would appreciate it if you could provide the detailed net realizable value (NRV) assessment worksheet for our review.\"。"
+   ]
+  },
+  {
+   "id": "mail_free_rebates",
+   "t": "客户买赠返利账务处理核对",
+   "lvl": "★★☆",
+   "brief": "写给目标公司财务经理的邮件，质疑其9M26促销活动中「买十赠一」实物返利的收入确认与成本归集方式。",
+   "facts": [
+    "管理层口头表示，9M26期间针对华东区大客户开展了「买十赠一」活动，赠送的产品已直接在出库时作为「销售费用-促销费」核算。",
+    "我们抽查了15笔该活动的销售出库凭证，发现赠送的商品均未在发票中列明，且未作为单项履约义务分摊交易价格。",
+    "我们比对了主营业务收入与成本明细，发现这批赠送商品对应的成本（约45万元）被直接结转至了主营业务成本，而非销售费用。",
+    "截至发稿日，销售部仍未提供本次促销活动批准方案的最终签署版本。"
+   ],
+   "tgt": [
+    "allocation of transaction price",
+    "distinct performance obligation",
+    "inconsistency between accounting treatment and",
+    "subject to reconciliation"
+   ],
+   "traps": [
+    "直接指责对方 \"Your accounting is wrong under IFRS 15\"。应使用更客观的建议口吻：\"The current accounting treatment may not fully comply with IFRS 15 / CAS 14 regarding the allocation of transaction prices to distinct performance obligations.\"。",
+    "直译「成本去错了科目」为 \"The cost went to the wrong account\"。应使用 \"The cost of free goods was misclassified into COGS rather than selling expenses, resulting in an inconsistency with management's stated policy.\"。",
+    "直译「我们还没拿到盖章方案」为 \"We haven't got the stamped scheme yet\"。应写为 \"The executed promotion scheme remains outstanding as of the date of this inquiry.\"。"
+   ]
+  },
+  {
+   "id": "mail_interest_free_loan",
+   "t": "关联方免息借款公允价值调整",
+   "lvl": "★★☆",
+   "brief": "写给目标公司CFO的邮件，沟通其向关联方借入的1000万元免息借款在FY25末是否需要进行折现及确认权益性交易。",
+   "facts": [
+    "账面显示，目标公司于FY25年初向其大股东借入1000万元，约定3年期满归还，利率为0%。",
+    "管理层口头表示，这是股东对公司的无偿支持，期末直接按1000万元面值列报在「其他应付款」中，不需做任何折现调整。",
+    "我们根据当前市场同类贷款利率（约4.5%）进行测算，若按公允价值折现，需要在FY25初将约120万元的折现差额（即利息豁免部分）计入资本公积。",
+    "截至发稿日，我们仍未收到大股东就该笔借款不收取任何形式回报的正式书面承诺函。"
+   ],
+   "tgt": [
+    "measured at fair value on initial recognition",
+    "the present value of",
+    "deemed capital contribution",
+    "is conditional upon receipt of"
+   ],
+   "traps": [
+    "直译「你应该按公允价值折现」为 \"You should discount it with fair value\"。应写为 \"The interest-free loan is required to be recognized at fair value initially, utilizing an appropriate market interest rate.\"。",
+    "直译「我们算了一下发现要调整120万」为 \"We calculated and found we need to adjust 1.2M\"。应写为 \"Our preliminary assessment indicates that a potential adjustment of approximately RMB 1.2m may be required to reflect the discount...\"。",
+    "把「其他应付款」直接写成大写的 \"Other Payables\"。由于这是会计科目，在英文中非句首或专有名词定义时不应盲目大写，应写为 \"other payables\" 或 \"amounts due to related parties\"。"
+   ]
   }
  ]
 }

@@ -1432,7 +1432,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
 
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
 
-const BANKV = 'cd01fd8f';
+const BANKV = 'c35d10d1';
 
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
@@ -14148,7 +14148,19 @@ function polPromptV2(o){
     ' "risks":[{"quote":"从他原话里一字不差摘出来的一小段",',
     '            "why":"一句中文：这句**在这个场合会怎么害他**（对方会怎么理解、',
     '                   会引出什么他不想要的追问、会不会自曝短处）",',
-    '            "fix":"改成什么 / 还是干脆删掉"}],',
+    '            "fix":"改成什么 / 还是干脆删掉",',
+    /* 🚨🚨 这两个字段是 2026-08-21 加的，加的原因是他发火：
+       「我需要的是打磨之后的最终效果，而不是你只告诉我哪里要改。」
+       实测当时：risks 说「『最后几个月』改成『在 KuCoin 期间』」「底稿那句删掉」，
+       而**成稿里原封不动写着** `In my final months at KuCoin` 和
+       `using AI to assist friends with audit workpapers` ——
+       把问题列给他、再把没改的稿子给他，等于没做。
+       现在用这两个字段把「说的」和「做的」**焊死**，并且代码会核对。 */
+    '            "gone":"🚨 改完之后**绝对不该再出现在成稿里**的那个英文说法',
+    '                    （例：final months / friends with audit workpapers）。',
+    '                    整条删掉也要填 —— 代码会去成稿里搜，搜到就判你没改。",',
+    '            "draftNow":"这一处**现在**在成稿里长什么样，逐字从 draft 里摘；',
+    '                        整条删掉了就填空字符串"}],',
     ' "order":{"first":"这个场合**第一句就该出现**的是哪个要点 id，为什么（一句中文）",',
     '           "buried":[{"id":"被埋没的要点 id","why":"它是主菜却排太后/给的篇幅太少"}],',
     '           "merge":[{"ids":["p2","p3"],"why":"这两条会被听成同一件事，该合并或分工说死"}]},',
@@ -14178,6 +14190,12 @@ function polPromptV2(o){
     '   - 并列清单（做过哪些行业、考过哪几门）压成一句，展不开就 cut',
     '   - 🚨 **不许为了凑数硬删**：真的每条都该留就都留，但**必须逐条给出判断**，',
     '     不能因为字数达标就整体放过 —— 字数够不等于内容该讲。',
+    '',
+    '🚨🚨 **成稿必须是「改完之后」的样子，不是原话的翻译。**',
+    '   risks 里说要改/要删的，`draft` 里**必须已经改好、删掉** ——',
+    '   risks 只是告诉他「我为什么这么改」，**不是留给他自己动手的待办清单**。',
+    '   他为这件事发过火：「我需要的是打磨之后的最终效果，而不是你只告诉我哪里要改。」',
+    '   代码会拿每条 risk 的 `gone` 去成稿里搜，搜到就整份驳回重来。',
     '',
     '🚨 **risks 是他最想要的一块，别敷衍**（下面是他自己写过的真实例子，照这个水准来）：',
     '   ·「在 KuCoin 的**最后几个月**」→ 等于当场宣布自己在离职倒计时，主动权交出去',
@@ -14224,6 +14242,24 @@ function polBadV2(p, o){
       if (!r || !String(r.why || '').trim() || !String(r.fix || '').trim()) return false;
       const q = String(r.quote || '').trim();
       return q && polQuoteOk(q, said, lang);
+    });
+    /* 🚨🚨 **说改了就得真的改**（2026-08-21 他发火那条）。
+       实测当时：risks 说「『最后几个月』改成『在 KuCoin 期间』」「底稿那句删掉」，
+       而成稿里原封不动写着 `In my final months at KuCoin` 和
+       `assist friends with audit workpapers`。
+       他要的是**打磨之后的最终效果**，不是一张待办清单。
+       所以这是**硬判据**：`gone` 还留在成稿里就整份驳回重来。
+       什么输入会让它失败：模型列了风险却没动稿子 —— 正是当时那个形态。 */
+    const dlow = draft.toLowerCase();
+    const norm = s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    p.risks.forEach(r => {
+      const gone = norm(r.gone);
+      if (gone && gone.length >= 4 && dlow.replace(/\s+/g, ' ').indexOf(gone) >= 0)
+        bad.push('你说要去掉「' + String(r.gone).slice(0, 30) + '」，'
+               + '但成稿里还留着 —— 成稿必须是**改完之后**的样子，不是待办清单');
+      /* draftNow 编出来的就丢掉这一条（跟 points 的 span 同一个思路） */
+      const now = norm(r.draftNow);
+      if (now && dlow.replace(/\s+/g, ' ').indexOf(now) < 0) r.draftNow = '';
     });
   } else p.risks = [];
   if (p.order && typeof p.order === 'object'){
@@ -15177,6 +15213,12 @@ function showPolishResult(){
         '<div style="font-weight:700">「' + esc(r.quote) + '」</div>' +
         '<div style="margin-top:2px">' + esc(r.why) + '</div>' +
         '<div style="margin-top:2px;color:var(--brand-dark)">→ ' + esc(r.fix) + '</div>' +
+        /* 🚨 直接把「成稿里现在长这样」贴出来 —— 他要看的是**改完的效果**，
+           不是让他自己回去对照着找。 */
+        (r.draftNow
+          ? '<div class="t" style="margin-top:4px;padding-left:8px;' +
+            'border-left:2px solid var(--line)">成稿里现在是：' + esc(r.draftNow) + '</div>'
+          : '<div class="t" style="margin-top:4px;color:var(--muted)">已从成稿里拿掉</div>') +
         '</div>').join('') + '</div>';
   }
 
