@@ -33,6 +33,13 @@ final class MainViewController: UIViewController {
     private let toneLabels = ["工作", "邮件", "随意", "正式"]
     private var tone = UserDefaults.standard.string(forKey: "vime.tone") ?? "work"
 
+    /// 输出模式：译成英文（默认）/ 只转写。跟安卓一致。
+    private var mode: Backend.Mode =
+        Backend.Mode(rawValue: UserDefaults.standard.string(forKey: "vime.mode") ?? "en") ?? .en
+    private let modeEnButton = UIButton(type: .system)
+    private let modeZhButton = UIButton(type: .system)
+    private let toneStack = UIStackView()
+
     private let hintLabel = UILabel()
     private let heardLabel = UILabel()
     private let resultView = UITextView()
@@ -45,61 +52,78 @@ final class MainViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.06, green: 0.07, blue: 0.09, alpha: 1)
+        view.backgroundColor = Theme.bg
         title = "Transless"
-        navigationController?.navigationBar.tintColor = .white
+        navigationController?.navigationBar.tintColor = Theme.accent
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: "权限", style: .plain, target: self, action: #selector(openSetup))
 
+        // 模式切换：译成英文（默认）/ 只转写
+        for (b, t, sel) in [(modeEnButton, "译成英文", #selector(pickEn)),
+                            (modeZhButton, "只转写", #selector(pickZh))] {
+            b.setTitle(t, for: .normal)
+            b.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+            b.layer.cornerRadius = 16
+            b.addTarget(self, action: sel, for: .touchUpInside)
+        }
+        let modeStack = UIStackView(arrangedSubviews: [modeEnButton, modeZhButton])
+        modeStack.axis = .horizontal
+        modeStack.spacing = 8
+        modeStack.distribution = .fillEqually
+
         hintLabel.font = .systemFont(ofSize: 15)
-        hintLabel.textColor = UIColor(white: 0.6, alpha: 1)
+        hintLabel.textColor = Theme.dim
         hintLabel.textAlignment = .center
         hintLabel.numberOfLines = 3
-        hintLabel.text = "按一下开始说中文\n说完再按一下，英文自动复制好"
 
         heardLabel.font = .systemFont(ofSize: 15)
-        heardLabel.textColor = UIColor(white: 0.9, alpha: 1)
+        heardLabel.textColor = Theme.text
         heardLabel.textAlignment = .center
         heardLabel.numberOfLines = 4
 
         resultView.font = .systemFont(ofSize: 17)
-        resultView.textColor = .white
-        resultView.backgroundColor = UIColor(white: 0.12, alpha: 1)
+        resultView.textColor = Theme.text
+        resultView.backgroundColor = Theme.panel
         resultView.layer.cornerRadius = 12
         resultView.isEditable = false
         resultView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
 
         micButton.setTitle("🎤", for: .normal)
-        micButton.titleLabel?.font = .systemFont(ofSize: 64)
-        micButton.backgroundColor = UIColor(red: 0.15, green: 0.39, blue: 0.92, alpha: 1)
-        micButton.layer.cornerRadius = 70
+        micButton.titleLabel?.font = .systemFont(ofSize: 56)
+        micButton.backgroundColor = Theme.accent
+        micButton.layer.cornerRadius = 60
         micButton.addTarget(self, action: #selector(tapMic), for: .touchUpInside)
 
         toneButton.setTitle("语气：" + toneTitle(), for: .normal)
-        toneButton.setTitleColor(UIColor(white: 0.6, alpha: 1), for: .normal)
+        toneButton.setTitleColor(Theme.dim, for: .normal)
         toneButton.titleLabel?.font = .systemFont(ofSize: 15)
-        toneButton.backgroundColor = UIColor(white: 0.13, alpha: 1)
-        toneButton.layer.cornerRadius = 10
+        toneButton.backgroundColor = Theme.key
+        toneButton.layer.cornerRadius = 16
         toneButton.addTarget(self, action: #selector(cycleTone), for: .touchUpInside)
 
-        [hintLabel, heardLabel, resultView, micButton, toneButton].forEach {
+        [modeStack, hintLabel, heardLabel, resultView, micButton, toneButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
         }
         NSLayoutConstraint.activate([
-            hintLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 18),
+            modeStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+            modeStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
+            modeStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            modeStack.heightAnchor.constraint(equalToConstant: 34),
+
+            hintLabel.topAnchor.constraint(equalTo: modeStack.bottomAnchor, constant: 14),
             hintLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             hintLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
 
             micButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            micButton.topAnchor.constraint(equalTo: hintLabel.bottomAnchor, constant: 26),
-            micButton.widthAnchor.constraint(equalToConstant: 140),
-            micButton.heightAnchor.constraint(equalToConstant: 140),
+            micButton.topAnchor.constraint(equalTo: hintLabel.bottomAnchor, constant: 22),
+            micButton.widthAnchor.constraint(equalToConstant: 120),
+            micButton.heightAnchor.constraint(equalToConstant: 120),
 
             toneButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             toneButton.topAnchor.constraint(equalTo: micButton.bottomAnchor, constant: 16),
             toneButton.widthAnchor.constraint(equalToConstant: 130),
-            toneButton.heightAnchor.constraint(equalToConstant: 36),
+            toneButton.heightAnchor.constraint(equalToConstant: 34),
 
             heardLabel.topAnchor.constraint(equalTo: toneButton.bottomAnchor, constant: 14),
             heardLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
@@ -110,6 +134,31 @@ final class MainViewController: UIViewController {
             resultView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             resultView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
         ])
+        paintMode()
+    }
+
+    // MARK: - 模式
+
+    @objc private func pickEn() { setMode(.en) }
+    @objc private func pickZh() { setMode(.zh) }
+
+    private func setMode(_ m: Backend.Mode) {
+        mode = m
+        UserDefaults.standard.set(m.rawValue, forKey: "vime.mode")
+        paintMode()
+    }
+
+    private func paintMode() {
+        let en = (mode == .en)
+        modeEnButton.backgroundColor = en ? Theme.accent : Theme.key
+        modeEnButton.setTitleColor(en ? .white : Theme.dim, for: .normal)
+        modeZhButton.backgroundColor = en ? Theme.key : Theme.accent
+        modeZhButton.setTitleColor(en ? Theme.dim : .white, for: .normal)
+        // 语气档位只在翻译模式有意义
+        toneButton.isHidden = !en
+        hintLabel.text = en
+            ? "按一下开始说中文\n说完再按一下，英文自动复制好"
+            : "只转写：滤掉口水话、整理成中文，不翻译\n按一下开始说，再按一下停"
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -140,15 +189,15 @@ final class MainViewController: UIViewController {
         switch p {
         case .idle:
             micButton.setTitle("🎤", for: .normal)
-            micButton.backgroundColor = UIColor(red: 0.15, green: 0.39, blue: 0.92, alpha: 1)
+            micButton.backgroundColor = Theme.accent
             micButton.isEnabled = true
         case .listening:
             micButton.setTitle("■", for: .normal)
-            micButton.backgroundColor = UIColor(red: 0.85, green: 0.25, blue: 0.25, alpha: 1)
+            micButton.backgroundColor = Theme.danger
             micButton.isEnabled = true
         case .thinking:
             micButton.setTitle("…", for: .normal)
-            micButton.backgroundColor = UIColor(white: 0.3, alpha: 1)
+            micButton.backgroundColor = Theme.keyDown
             micButton.isEnabled = false
         }
     }
@@ -198,8 +247,9 @@ final class MainViewController: UIViewController {
     }
 
     private func polish(_ zh: String) {
-        setPhase(.thinking, hint: "整理并译成英文…")
-        Backend.polish(text: zh, tone: tone) { [weak self] result in
+        let isEn = (mode == .en)
+        setPhase(.thinking, hint: isEn ? "整理并译成英文…" : "整理中…")
+        Backend.polish(text: zh, tone: tone, mode: mode) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 switch result {

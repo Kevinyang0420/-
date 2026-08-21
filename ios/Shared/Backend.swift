@@ -26,26 +26,35 @@ enum Backend {
         }
     }
 
-    static func polish(text: String, tone: String,
+    /// 输出模式。跟安卓 `Api.MODE_EN / MODE_ZH` 一一对应（Kevin 规矩：两端一致）。
+    enum Mode: String {
+        case en   // 清洗+结构化+译成英文（默认）
+        case zh   // 只清洗+结构化，输出中文，不翻译
+    }
+
+    static func polish(text: String, tone: String, mode: Mode = .en,
                        done: @escaping (Result<String, Failure>) -> Void) {
-        submit(text: text, tone: tone, attempt: 0, done: done)
+        submit(text: text, tone: tone, mode: mode, attempt: 0, done: done)
     }
 
     /// 🚨 提交那一发也会 504（网关冷启动/抖动，2026-08-21 Kevin 真机撞到）。
     ///    5xx 和传输错误都自动重试，最多 4 发、间隔递增；401/429 是明确答复，不重试。
-    private static func submit(text: String, tone: String, attempt: Int,
+    private static func submit(text: String, tone: String, mode: Mode, attempt: Int,
                                done: @escaping (Result<String, Failure>) -> Void) {
         func retryOrFail(_ f: Failure) {
             if attempt < 3 {
                 DispatchQueue.global().asyncAfter(deadline: .now() + Double(attempt + 1) * 2) {
-                    submit(text: text, tone: tone, attempt: attempt + 1, done: done)
+                    submit(text: text, tone: tone, mode: mode, attempt: attempt + 1, done: done)
                 }
             } else {
                 done(.failure(f))
             }
         }
-        let system = Secrets.prompt
-        let user = "Register: \(Prompts.tone(tone))\n\nRaw transcript:\n\"\"\"\n\(text)\n\"\"\"\n"
+        let zhOnly = (mode == .zh)
+        let system = zhOnly ? Secrets.promptZh : Secrets.prompt
+        let user = zhOnly
+            ? "Raw transcript:\n\"\"\"\n\(text)\n\"\"\"\n"
+            : "Register: \(Prompts.tone(tone))\n\nRaw transcript:\n\"\"\"\n\(text)\n\"\"\"\n"
         let body: [String: Any] = [
             "messages": [
                 ["role": "system", "content": system],
@@ -82,7 +91,9 @@ enum Backend {
             guard code == 200 || code == 202, let job = obj?["job"] as? String else {
                 return done(.failure(.http(code)))
             }
-            poll(job: job, tries: 0, done: done)
+            // 转写模式返回的是中文正文，没有 <<<EN>>>/<<<ZH>>> 分段 —— 走 pollRaw
+            if zhOnly { pollRaw(job: job, tries: 0, done: done) }
+            else { poll(job: job, tries: 0, done: done) }
         }.resume()
     }
 

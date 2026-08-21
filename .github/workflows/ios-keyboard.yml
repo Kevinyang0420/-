@@ -54,9 +54,13 @@ jobs:
               return json.dumps(s, ensure_ascii=False).replace("\\u", "\\u{").replace("}", "}")
           out = root / "Shared" / "Secrets.swift"
           body = "// 构建时生成，勿提交。提示词来自 ios/prompt.txt（源头是 engine.py）。\n"
+          zh = (root / "prompt_zh.txt").read_text(encoding="utf-8")
+          if "Chinese speech-cleanup engine" not in zh:
+              raise SystemExit("prompt_zh.txt 不对劲，缺特征串")
           body += "enum Secrets {\n"
           body += "    static let pass = %s\n" % json.dumps(pw)
           body += "    static let prompt = %s\n" % json.dumps(prompt, ensure_ascii=False)
+          body += "    static let promptZh = %s\n" % json.dumps(zh, ensure_ascii=False)
           body += "}\n"
           out.write_text(body, encoding="utf-8")
           # 闸门就在这儿验，别等编译完去 strings 二进制 ——

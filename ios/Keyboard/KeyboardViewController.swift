@@ -41,23 +41,23 @@ final class KeyboardViewController: UIInputViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(red: 0.06, green: 0.07, blue: 0.09, alpha: 1)
+        view.backgroundColor = Theme.bg
 
         hintLabel.font = .systemFont(ofSize: 13)
-        hintLabel.textColor = UIColor(white: 0.55, alpha: 1)
+        hintLabel.textColor = Theme.dim
         hintLabel.textAlignment = .center
         hintLabel.numberOfLines = 2
         hintLabel.text = "按一下开始说中文　·　说完再按一下，自动出英文"
 
         heardLabel.font = .systemFont(ofSize: 15)
-        heardLabel.textColor = UIColor(white: 0.92, alpha: 1)
+        heardLabel.textColor = Theme.text
         heardLabel.textAlignment = .center
         heardLabel.numberOfLines = 2
 
         // 一个大按钮，占绝对主位
         micButton.setTitle("🎤", for: .normal)
         micButton.titleLabel?.font = .systemFont(ofSize: 40)
-        micButton.backgroundColor = UIColor(red: 0.15, green: 0.39, blue: 0.92, alpha: 1)
+        micButton.backgroundColor = Theme.accent
         micButton.layer.cornerRadius = 44
         micButton.addTarget(self, action: #selector(tapMic), for: .touchUpInside)
         micButton.translatesAutoresizingMaskIntoConstraints = false
@@ -76,15 +76,15 @@ final class KeyboardViewController: UIInputViewController {
 
         toneButton.setTitle(toneTitle(), for: .normal)
         toneButton.titleLabel?.font = .systemFont(ofSize: 13)
-        toneButton.setTitleColor(UIColor(white: 0.6, alpha: 1), for: .normal)
-        toneButton.backgroundColor = UIColor(white: 0.13, alpha: 1)
+        toneButton.setTitleColor(Theme.dim, for: .normal)
+        toneButton.backgroundColor = Theme.key
         toneButton.layer.cornerRadius = 8
         toneButton.addTarget(self, action: #selector(cycleTone), for: .touchUpInside)
 
         fallbackButton.setTitle("译光标前的中文", for: .normal)
         fallbackButton.titleLabel?.font = .systemFont(ofSize: 13)
-        fallbackButton.setTitleColor(UIColor(white: 0.6, alpha: 1), for: .normal)
-        fallbackButton.backgroundColor = UIColor(white: 0.13, alpha: 1)
+        fallbackButton.setTitleColor(Theme.dim, for: .normal)
+        fallbackButton.backgroundColor = Theme.key
         fallbackButton.layer.cornerRadius = 8
         fallbackButton.addTarget(self, action: #selector(translatePending), for: .touchUpInside)
 
@@ -116,7 +116,7 @@ final class KeyboardViewController: UIInputViewController {
         let b = UIButton(type: .system)
         b.setTitle(t, for: .normal)
         b.titleLabel?.font = .systemFont(ofSize: 17)
-        b.backgroundColor = UIColor(white: 0.13, alpha: 1)
+        b.backgroundColor = Theme.key
         b.layer.cornerRadius = 8
         return b
     }
@@ -140,15 +140,15 @@ final class KeyboardViewController: UIInputViewController {
         switch p {
         case .idle:
             micButton.setTitle("🎤", for: .normal)
-            micButton.backgroundColor = UIColor(red: 0.15, green: 0.39, blue: 0.92, alpha: 1)
+            micButton.backgroundColor = Theme.accent
             micButton.isEnabled = true
         case .listening:
             micButton.setTitle("■", for: .normal)
-            micButton.backgroundColor = UIColor(red: 0.85, green: 0.25, blue: 0.25, alpha: 1)
+            micButton.backgroundColor = Theme.danger
             micButton.isEnabled = true
         case .thinking:
             micButton.setTitle("…", for: .normal)
-            micButton.backgroundColor = UIColor(white: 0.3, alpha: 1)
+            micButton.backgroundColor = Theme.keyDown
             micButton.isEnabled = false
         }
     }
