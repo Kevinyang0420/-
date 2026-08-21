@@ -18154,8 +18154,24 @@ async function doLook(q){
     return;
   }
   DICT.busy = true;
-  res.innerHTML = '<div class="note">Alex 正在查「' + esc(normQ(q)) + '」…' +
-    (kind === 'zh' ? '（中文 → 给你几个地道说法）' : '') + '</div>';
+  /* 🚨 查词稳定要 5 秒左右（模型要生成 11 个字段）。原来只有一句静止的
+     「Alex 正在查…」—— 五秒不动的静止文字读起来就是「卡住了/坏了」，
+     Kevin 2026-08-21 说的「查这么久」有一半是这个。
+     所以走秒 + 到点了说人话，让他知道**还在动、大概还要多久**。
+     这一条不砍任何内容，也不多花一分钱。 */
+  const _t0 = Date.now();
+  res.innerHTML = '<div class="note" id="dwait">Alex 正在查「' + esc(normQ(q)) + '」…' +
+    (kind === 'zh' ? '（中文 → 给你几个地道说法）' : '') +
+    '<br><span id="dsec" style="color:var(--muted);font-size:12px"></span></div>';
+  const _tick = setInterval(() => {
+    const el = document.getElementById('dsec');
+    if (!el) return;
+    const s = Math.round((Date.now() - _t0) / 1000);
+    el.textContent = s + ' 秒' + (
+      s < 6  ? '（一般 5 秒左右）'
+    : s < 14 ? '　这次给的东西多，再等等'
+    :          '　还在重查（上一版没达标），最多再试两次');
+  }, 1000);
   try {
     const e = await dictLook(normQ(q), kind);
     dCachePut(id, e);
@@ -18168,7 +18184,7 @@ async function doLook(q){
     if (qId(DICT.q) === id && $('#dres'))
       $('#dres').innerHTML = '<div class="note">' + esc(DICT.err) +
         '<br>换个说法再试一次，或者过一会儿（可能是今天的额度紧了）。</div>';
-  } finally { DICT.busy = false; }
+  } finally { DICT.busy = false; clearInterval(_tick); }   // 🚨 别留孤儿定时器
 }
 
 function playBtn(text, label){
