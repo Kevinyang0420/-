@@ -103,11 +103,10 @@ jobs:
             "$EXT/Info.plist" | grep -q true \
             || { echo "::error::RequestsOpenAccess 不是 true"; exit 1; }
 
-          # 闸门：App 的 Info.plist 必须有两个权限说明，否则一调录音就崩
-          for k in NSMicrophoneUsageDescription NSSpeechRecognitionUsageDescription; do
-            /usr/libexec/PlistBuddy -c "Print :$k" "$APP/Info.plist" >/dev/null \
-              || { echo "::error::App Info.plist 缺 $k"; exit 1; }
-          done
+          # 闸门：App 的 Info.plist 必须有麦克风权限说明，否则一调录音就崩。
+          # （转写改到后端后不再需要 NSSpeechRecognitionUsageDescription）
+          /usr/libexec/PlistBuddy -c "Print :NSMicrophoneUsageDescription" "$APP/Info.plist" >/dev/null \
+            || { echo "::error::App Info.plist 缺 NSMicrophoneUsageDescription"; exit 1; }
 
           # 闸门：提示词必须真的编进键盘二进制。
           # 用它而不是口令 —— 提示词 3588 字节，一定落在 __cstring 里，strings 找得到；

@@ -1,6 +1,5 @@
 import UIKit
 import AVFoundation
-import Speech
 
 // Transless 容器 App —— 现在它自己就是主战场。
 //
@@ -115,10 +114,9 @@ final class MainViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        // 权限没给过就先把设置页推出来要一次
-        let mic = AVAudioSession.sharedInstance().recordPermission == .granted
-        let sp = SFSpeechRecognizer.authorizationStatus() == .authorized
-        if !(mic && sp) {
+        // 权限没给过就先把设置页推出来要一次。
+        // 🚨 转写改到后端后只需要**麦克风**权限（语音识别在服务器做，不用 Speech 授权）。
+        if AVAudioSession.sharedInstance().recordPermission != .granted {
             navigationController?.pushViewController(SetupViewController(), animated: true)
         }
     }
@@ -166,27 +164,34 @@ final class MainViewController: UIViewController {
 
         heardLabel.text = ""
         resultView.text = ""
-        setPhase(.listening, hint: "听着呢，想到哪说到哪（最长 15 分钟）\n说完再按一下红色按钮")
+        setPhase(.listening, hint: "听着呢，想到哪说到哪（最长 60 秒）\n说完再按一下红色按钮")
         elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             guard let self = self, self.phase == .listening else { return }
             let s = Int(self.voice.elapsed)
             self.hintLabel.text = String(format: "听着呢 %d:%02d　·　说完再按一下红色按钮", s / 60, s % 60)
         }
 
-        voice.start(onPartial: { [weak self] partial in
-            DispatchQueue.main.async { self?.heardLabel.text = partial }
-        }, onDone: { [weak self] result in
+        // 录音 → 停止后拿到 WAV → 传后端转写 → 再润色（跟安卓同一条链）
+        voice.start(onPartial: { _ in }, onWav: { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.elapsedTimer?.invalidate(); self.elapsedTimer = nil
                 switch result {
-                case .success(let zh):
-                    let t = zh.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if t.isEmpty { self.setPhase(.idle, hint: "没听清，再说一次"); return }
-                    self.heardLabel.text = t
-                    self.polish(t)
                 case .failure(let f):
                     self.setPhase(.idle, hint: "\(f)")
+                case .success(let wav):
+                    self.setPhase(.thinking, hint: "识别中…")
+                    Backend.transcribe(wav: wav) { [weak self] r in
+                        DispatchQueue.main.async {
+                            guard let self = self else { return }
+                            switch r {
+                            case .failure(let f): self.setPhase(.idle, hint: "\(f)")
+                            case .success(let zh):
+                                self.heardLabel.text = zh
+                                self.polish(zh)
+                            }
+                        }
+                    }
                 }
             }
         })
@@ -215,7 +220,6 @@ final class MainViewController: UIViewController {
 final class SetupViewController: UIViewController {
 
     private let micState = UILabel()
-    private let speechState = UILabel()
     private let testOut = UILabel()
 
     override func viewDidLoad() {
@@ -223,19 +227,17 @@ final class SetupViewController: UIViewController {
         view.backgroundColor = .systemBackground
         title = "权限与自测"
 
-        let s1 = step("第 1 步 · 允许麦克风和语音识别", "只用要一次。")
-        [micState, speechState].forEach {
-            $0.font = .systemFont(ofSize: 14)
-            $0.numberOfLines = 0
-        }
-        let askBtn = button("允许麦克风和语音识别", #selector(askPerms))
+        let s1 = step("第 1 步 · 允许麦克风", "只用要一次。语音识别在后端做，不用额外授权。")
+        micState.font = .systemFont(ofSize: 14)
+        micState.numberOfLines = 0
+        let askBtn = button("允许麦克风", #selector(askPerms))
 
         let s2 = step("自测 · 后端通不通", "")
         let testBtn = button("测一次", #selector(selfTest))
         testOut.font = .systemFont(ofSize: 13)
         testOut.numberOfLines = 0
 
-        let stack = UIStackView(arrangedSubviews: [s1, micState, speechState, askBtn, s2, testBtn, testOut])
+        let stack = UIStackView(arrangedSubviews: [s1, micState, askBtn, s2, testBtn, testOut])
         stack.axis = .vertical
         stack.spacing = 10
 
@@ -290,18 +292,13 @@ final class SetupViewController: UIViewController {
 
     private func refresh() {
         let mic = AVAudioSession.sharedInstance().recordPermission == .granted
-        let sp = SFSpeechRecognizer.authorizationStatus() == .authorized
         micState.text = mic ? "麦克风：已允许 ✓" : "麦克风：还没允许"
         micState.textColor = mic ? .systemTeal : .systemOrange
-        speechState.text = sp ? "语音识别：已允许 ✓" : "语音识别：还没允许"
-        speechState.textColor = sp ? .systemTeal : .systemOrange
     }
 
     @objc private func askPerms() {
         AVAudioSession.sharedInstance().requestRecordPermission { _ in
-            SFSpeechRecognizer.requestAuthorization { _ in
-                DispatchQueue.main.async { self.refresh() }
-            }
+            DispatchQueue.main.async { self.refresh() }
         }
     }
 

@@ -1,31 +1,23 @@
 import Foundation
 import AVFoundation
-import Speech
 
-/// 键盘里的语音输入，**支持长时间连续说**（默认上限 15 分钟）。
+/// 录音 → WAV → 后端转写。**跟安卓同一条链**（Kevin 2026-08-21 规矩：两端一致）。
 ///
-/// 🚨 核心约束：iOS 的 `SFSpeechRecognizer` 单次识别任务**只能撑约 1 分钟**，
-///    到点它自己就 isFinal 结束了。想说 10–15 分钟，只有一条路：
-///    **音频引擎一直开着，识别任务定期滚动重启，把每段定稿的文字累加起来。**
-///    这就是下面 ROTATE_AFTER 的用途 —— 不是优化，是唯一能做到的做法。
+/// 🚨 原来这里用 `SFSpeechRecognizer` 做端上识别。2026-08-21 改成录音传后端
+///    （火山 `/api/audio`，doubao ASR，订阅包免费）——安卓那版就是这么做的，
+///    两端拉齐、行为一致，也不再依赖设备自带识别服务。
 ///
-/// 🚨 2026-08-20 修正：我一度断言「iOS 键盘扩展拿不到麦克风」——错的。
-///    Typeless 就是键盘扩展、麦克风就在键盘里。我引的是 iOS 8 时代的存档文档。
-///
-/// 但键盘进程里激活 AVAudioSession 确实可能失败（Apple 论坛 561015905 / 561145187），
-/// 所以失败时必须**说清卡在哪一步**，好让他截图定位、并改走不依赖录音的兜底。
+/// 交互：按一下开始录、再按一下停；停了自动转写→整理→翻译→上屏。
 final class Voice: NSObject {
 
-    /// 单段识别多久滚动一次。留足余量 —— Apple 的硬上限在 60 秒附近。
-    private static let ROTATE_AFTER: TimeInterval = 45
-    /// 总时长上限。Typeless 大约是 15 分钟，跟它对齐。
-    static let MAX_DURATION: TimeInterval = 15 * 60
+    /// 总时长上限（跟安卓一致，防超大包）。
+    static let MAX_DURATION: TimeInterval = 60
+
+    private static let SAMPLE_RATE: Double = 16000
 
     enum Stage: String {
-        case permissionSpeech = "语音识别权限"
         case permissionMic = "麦克风权限"
-        case audioSession = "音频会话(键盘进程内)"
-        case recognizer = "识别器不可用"
+        case audioSession = "音频会话"
         case engine = "录音引擎"
         case none = ""
     }
@@ -37,38 +29,19 @@ final class Voice: NSObject {
     }
 
     private let engine = AVAudioEngine()
-    private let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))
-    private var request: SFSpeechAudioBufferRecognitionRequest?
-    private var task: SFSpeechRecognitionTask?
-
-    private var rotateTimer: Timer?
+    private var pcm = Data()                    // 累积的 16bit 单声道 PCM
     private var startedAt = Date()
-
-    /// 已经定稿的部分（前面几段滚动出来的）
-    private var settled = ""
-    /// 当前这一段的实时文本
-    private var current = ""
+    private var capTimer: Timer?
 
     private var onPartial: ((String) -> Void)?
-    private var onDone: ((Result<String, Failure>) -> Void)?
+    /// 停止后回调：把录好的 WAV 交出去（由上层去调 Backend.transcribe）。
+    private var onWav: ((Result<Data, Failure>) -> Void)?
     private var finished = false
 
     private(set) var running = false
-
-    /// 说了多久，给界面显示用
     var elapsed: TimeInterval { running ? Date().timeIntervalSince(startedAt) : 0 }
 
-    private var combined: String {
-        let c = current.trimmingCharacters(in: .whitespacesAndNewlines)
-        if settled.isEmpty { return c }
-        if c.isEmpty { return settled }
-        return settled + c
-    }
-
     static func permissionState() -> Failure? {
-        if SFSpeechRecognizer.authorizationStatus() != .authorized {
-            return Failure(stage: .permissionSpeech, detail: "去 Transless App 里授权一次")
-        }
         if AVAudioSession.sharedInstance().recordPermission != .granted {
             return Failure(stage: .permissionMic, detail: "去 Transless App 里授权一次")
         }
@@ -77,16 +50,15 @@ final class Voice: NSObject {
 
     // MARK: - 开始
 
+    /// - onPartial: 目前录音阶段没有实时文字（转写在停止后做），保留签名给上层显示计时。
+    /// - onWav: 停止后把 WAV 交出来；失败则给出卡在哪一步。
     func start(onPartial: @escaping (String) -> Void,
-               onDone: @escaping (Result<String, Failure>) -> Void) {
-        if let p = Voice.permissionState() { return onDone(.failure(p)) }
-        guard let rec = recognizer, rec.isAvailable else {
-            return onDone(.failure(Failure(stage: .recognizer, detail: "中文识别器当前不可用")))
-        }
-
+               onWav: @escaping (Result<Data, Failure>) -> Void) {
+        if let p = Voice.permissionState() { return onWav(.failure(p)) }
         self.onPartial = onPartial
-        self.onDone = onDone
-        settled = ""; current = ""; finished = false
+        self.onWav = onWav
+        pcm = Data()
+        finished = false
         startedAt = Date()
 
         let session = AVAudioSession.sharedInstance()
@@ -95,87 +67,58 @@ final class Voice: NSObject {
             try session.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
             let ns = error as NSError
-            return onDone(.failure(Failure(stage: .audioSession,
-                detail: "code \(ns.code) —— 键盘里开不了录音，改走「译光标前的中文」")))
+            return onWav(.failure(Failure(stage: .audioSession, detail: "code \(ns.code)")))
         }
 
-        // 音频引擎只开这一次，之后一直跑；滚动的只是识别任务。
         let node = engine.inputNode
-        let fmt = node.outputFormat(forBus: 0)
+        let inFormat = node.outputFormat(forBus: 0)
+        // 目标格式：16k 单声道 Int16。用转换器把麦克风原始格式转过来。
+        guard let outFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
+                                            sampleRate: Voice.SAMPLE_RATE,
+                                            channels: 1, interleaved: true),
+              let converter = AVAudioConverter(from: inFormat, to: outFormat) else {
+            return onWav(.failure(Failure(stage: .engine, detail: "建不了音频转换器")))
+        }
+
         node.removeTap(onBus: 0)
-        node.installTap(onBus: 0, bufferSize: 1024, format: fmt) { [weak self] buf, _ in
-            self?.request?.append(buf)
+        node.installTap(onBus: 0, bufferSize: 2048, format: inFormat) { [weak self] buf, _ in
+            guard let self = self else { return }
+            let ratio = Voice.SAMPLE_RATE / inFormat.sampleRate
+            let cap = AVAudioFrameCount(Double(buf.frameLength) * ratio + 16)
+            guard let out = AVAudioPCMBuffer(pcmFormat: outFormat, frameCapacity: cap) else { return }
+            var err: NSError?
+            var supplied = false
+            converter.convert(to: out, error: &err) { _, status in
+                if supplied { status.pointee = .noDataNow; return nil }
+                supplied = true
+                status.pointee = .haveData
+                return buf
+            }
+            if let ch = out.int16ChannelData, out.frameLength > 0 {
+                self.pcm.append(UnsafeBufferPointer(start: ch[0], count: Int(out.frameLength))
+                    .withMemoryRebound(to: UInt8.self) { Data($0) })
+            }
         }
         engine.prepare()
         do { try engine.start() }
         catch {
             cleanup()
-            return onDone(.failure(Failure(stage: .engine, detail: error.localizedDescription)))
+            return onWav(.failure(Failure(stage: .engine, detail: error.localizedDescription)))
         }
 
         running = true
-        startTask()
-        startRotateTimer()
+        // 到总上限自动停
+        capTimer = Timer.scheduledTimer(withTimeInterval: Voice.MAX_DURATION, repeats: false) {
+            [weak self] _ in self?.stop()
+        }
+        // 每秒推一次计时给界面
+        DispatchQueue.main.async { [weak self] in self?.tick() }
     }
 
-    /// 开一段新的识别任务。前一段的文字已经并进 settled 了。
-    private func startTask() {
-        guard let rec = recognizer else { return }
-        current = ""
-        let req = SFSpeechAudioBufferRecognitionRequest()
-        req.shouldReportPartialResults = true
-        request = req
-
-        task = rec.recognitionTask(with: req) { [weak self] result, error in
-            guard let self = self, self.running else { return }
-            if let r = result {
-                self.current = r.bestTranscription.formattedString
-                self.onPartial?(self.combined)
-                if r.isFinal {
-                    // 这一段收了：并进 settled。如果是用户主动停的，就整体结束；
-                    // 否则说明撞到了 Apple 的时长上限，自动接一段继续。
-                    self.settleCurrent()
-                    if self.finished { self.finish(.success(self.settled)) }
-                    else { self.startTask() }
-                }
-            }
-            if error != nil {
-                self.settleCurrent()
-                if self.finished || !self.settled.isEmpty {
-                    // 已经听到东西就按成功算 —— 停止时报错是常态，别把内容丢了
-                    self.finish(self.settled.isEmpty
-                        ? .failure(Failure(stage: .none, detail: "没听清，再说一次"))
-                        : .success(self.settled))
-                } else {
-                    self.finish(.failure(Failure(stage: .none, detail: "没听清，再说一次")))
-                }
-            }
-        }
-    }
-
-    private func settleCurrent() {
-        let c = current.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !c.isEmpty {
-            if !settled.isEmpty && !settled.hasSuffix("，") && !settled.hasSuffix("。") {
-                settled += "，"        // 段与段之间补个停顿，免得两段黏成一个词
-            }
-            settled += c
-        }
-        current = ""
-    }
-
-    /// 到点把当前这段收掉，让 isFinal 触发，然后自动接下一段。
-    private func startRotateTimer() {
-        rotateTimer?.invalidate()
-        rotateTimer = Timer.scheduledTimer(withTimeInterval: Voice.ROTATE_AFTER, repeats: true) {
-            [weak self] _ in
-            guard let self = self, self.running, !self.finished else { return }
-            if Date().timeIntervalSince(self.startedAt) >= Voice.MAX_DURATION {
-                self.stop()                      // 到 15 分钟总上限，收工
-            } else {
-                self.request?.endAudio()         // 只收当前这段，engine 继续跑
-            }
-        }
+    private func tick() {
+        guard running, !finished else { return }
+        onPartial?("")   // 界面自己按 elapsed 显示计时
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.tick() }
     }
 
     // MARK: - 停止
@@ -183,24 +126,44 @@ final class Voice: NSObject {
     func stop() {
         guard running, !finished else { return }
         finished = true
-        request?.endAudio()
-    }
+        capTimer?.invalidate(); capTimer = nil
 
-    private func finish(_ r: Result<String, Failure>) {
-        guard running else { return }
+        let data = pcm
         cleanup()
-        onDone?(r)
-        onDone = nil
-        onPartial = nil
+
+        // 太短 = 没说话（不足约 0.5 秒）
+        if data.count < Int(Voice.SAMPLE_RATE) {
+            onWav?(.failure(Failure(stage: .none, detail: "没听清，再说一次")))
+            onWav = nil; onPartial = nil
+            return
+        }
+        onWav?(.success(Voice.wrapWav(pcm: data, sampleRate: Int(Voice.SAMPLE_RATE))))
+        onWav = nil; onPartial = nil
     }
 
     private func cleanup() {
         running = false
-        rotateTimer?.invalidate(); rotateTimer = nil
+        capTimer?.invalidate(); capTimer = nil
         engine.inputNode.removeTap(onBus: 0)
         if engine.isRunning { engine.stop() }
-        task = nil
-        request = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    // MARK: - WAV 封装（16bit 单声道 + 44 字节头），跟安卓 wav() 一致
+
+    static func wrapWav(pcm: Data, sampleRate: Int) -> Data {
+        let dataLen = pcm.count
+        let byteRate = sampleRate * 2
+        var h = Data()
+        func str(_ s: String) { h.append(contentsOf: s.utf8) }
+        func u32(_ v: Int) { var x = UInt32(v).littleEndian; withUnsafeBytes(of: &x) { h.append(contentsOf: $0) } }
+        func u16(_ v: Int) { var x = UInt16(v).littleEndian; withUnsafeBytes(of: &x) { h.append(contentsOf: $0) } }
+        str("RIFF"); u32(36 + dataLen); str("WAVE")
+        str("fmt "); u32(16); u16(1); u16(1)
+        u32(sampleRate); u32(byteRate); u16(2); u16(16)
+        str("data"); u32(dataLen)
+        var out = h
+        out.append(pcm)
+        return out
     }
 }

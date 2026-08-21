@@ -36,8 +36,6 @@ final class KeyboardViewController: UIInputViewController {
     //    表现就是「选了键盘却弹回上一个」且没有明显报错。录音引擎等第一次按麦克风再建。
     private lazy var voice = Voice()
     private var phase: Phase = .idle
-    private var silenceTimer: Timer?
-    private var lastPartialAt = Date()
 
     // MARK: - 界面
 
@@ -163,55 +161,34 @@ final class KeyboardViewController: UIInputViewController {
 
         heardLabel.text = ""
         setPhase(.listening, hint: "听着呢，想到哪说到哪　·　说完再按一下红色按钮")
-        lastPartialAt = Date()
-        startSilenceWatch()
 
-        voice.start(onPartial: { [weak self] partial in
+        // 录音 → 停止后拿到 WAV → 后端转写 → 整理翻译上屏（跟安卓、跟 App 同一条链）
+        voice.start(onPartial: { _ in }, onWav: { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
-                self.heardLabel.text = partial
-                self.lastPartialAt = Date()          // 还在说话，把静音计时推后
-            }
-        }, onDone: { [weak self] result in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                self.stopSilenceWatch()
                 switch result {
-                case .success(let zh):
-                    let t = zh.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if t.isEmpty {
-                        self.setPhase(.idle, hint: "没听清，再说一次")
-                        return
-                    }
-                    self.heardLabel.text = t
-                    self.send(t, replaceChars: 0)     // 自动往下走，不用他再点
                 case .failure(let f):
-                    // 说清卡在哪一步，并指出兜底怎么走
                     self.setPhase(.idle, hint: "\(f)\n可改用系统键盘的 🎤 说完，再点下面「译光标前的中文」")
+                case .success(let wav):
+                    self.setPhase(.thinking, hint: "识别中…")
+                    Backend.transcribe(wav: wav) { [weak self] r in
+                        DispatchQueue.main.async {
+                            guard let self = self else { return }
+                            switch r {
+                            case .failure(let f):
+                                self.setPhase(.idle, hint: "\(f)")
+                            case .success(let zh):
+                                self.heardLabel.text = zh
+                                self.send(zh, replaceChars: 0)   // 自动往下走
+                            }
+                        }
+                    }
                 }
             }
         })
     }
 
-    /// 只是防呆：万一他忘了关，别一直录下去。**不是交互主路径** ——
-    /// 主路径是他自己再按一下。8 秒足够长，中途思考停顿不会被误截。
-    private func startSilenceWatch() {
-        stopSilenceWatch()
-        silenceTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let self = self, self.phase == .listening else { return }
-            if Date().timeIntervalSince(self.lastPartialAt) > 8.0 {
-                self.stopListening()
-            }
-        }
-    }
-
-    private func stopSilenceWatch() {
-        silenceTimer?.invalidate()
-        silenceTimer = nil
-    }
-
     private func stopListening() {
-        stopSilenceWatch()
         setPhase(.thinking, hint: "识别中…")
         voice.stop()
     }
@@ -255,5 +232,5 @@ final class KeyboardViewController: UIInputViewController {
         }
     }
 
-    deinit { silenceTimer?.invalidate() }
+    deinit { voice.stop() }
 }

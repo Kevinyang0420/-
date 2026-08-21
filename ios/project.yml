@@ -31,12 +31,11 @@ targets:
       properties:
         CFBundleDisplayName: Transless
         CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "4"
+        CFBundleVersion: "5"
         UILaunchScreen: {}
         # 🚨 键盘扩展弹不出系统权限框，必须由容器 App 先要过一次。
-        #    少了这两个 key，App 一调录音就直接崩（不是报错，是崩）。
+        #    转写改到后端后只需要麦克风；语音识别不再走 iOS 的 Speech 框架。
         NSMicrophoneUsageDescription: 用来听你说的中文，转成文字后整理并译成英文。
-        NSSpeechRecognitionUsageDescription: 把你说的中文转成文字，再整理并译成英文。
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
     settings:
@@ -106,7 +105,7 @@ targets:
       properties:
         CFBundleDisplayName: Transless
         CFBundleShortVersionString: "1.0"
-        CFBundleVersion: "4"
+        CFBundleVersion: "5"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
