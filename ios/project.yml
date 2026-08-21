@@ -1,4 +1,4 @@
-# XcodeGen 工程定义。CI 上 `xcodegen generate` 出 .xcodeproj 再编译。
+﻿# XcodeGen 工程定义。CI 上 `xcodegen generate` 出 .xcodeproj 再编译。
 # 用它而不是手写 .pbxproj —— .pbxproj 是一坨机器格式，手写必出错且没法 review。
 name: Transless
 options:
