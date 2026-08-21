@@ -54,6 +54,7 @@ textarea::placeholder{color:var(--dim)}
 .out{white-space:pre-wrap;word-break:break-word;font-size:17px;line-height:1.6}
 .zh{white-space:pre-wrap;word-break:break-word;font-size:14px;color:var(--dim);line-height:1.6}
 .lbl{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+    .aiNote{margin-top:14px;padding:8px 10px;border-radius:8px;background:#2a2a1a;color:#c9c08a;font-size:12.5px;line-height:1.5}
 .meta{font-size:12px;color:var(--dim);margin-top:8px}
 .hide{display:none}
 .err{color:var(--warn);font-size:14px;white-space:pre-wrap}
@@ -93,6 +94,7 @@ textarea::placeholder{color:var(--dim)}
       <div class="lbl">中文核对稿</div>
       <div class="zh" id="zh"></div>
     </div>
+    <div class="aiNote" id="aiNote">⚠️ 译文由 AI 生成，可能有错，发送前请自行核对。</div>
   </div>
 
   <div class="card hide" id="errBox"><div class="err" id="err"></div></div>
@@ -113,10 +115,10 @@ textarea::placeholder{color:var(--dim)}
       页面是公开的，所以绝不能把 key 或 prompt 放进来。
    B) 离线版 说英文.html —— KEY/PROMPT 有值，直连 DeepSeek，不需要任何服务器。
       这一份只存在他自己的设备上，不上传、不公开。                      */
-const TONES = {"work": "a direct work message to a colleague or counterpart (Slack / WhatsApp / Teams). Professional but not stiff. Contractions are fine.", "email": "a business email body. Slightly more formal, complete sentences, no greeting line and no sign-off unless the speaker said one.", "casual": "a casual message to someone you know well. Relaxed, short, contractions.", "formal": "a formal written communication to a client, regulator or auditor. Precise, hedged where the speaker hedged, no slang."};
+const TONES = {"casual": "a casual message to someone you know well. Relaxed, short, contractions.", "work": "a direct work message to a colleague or counterpart (Slack / WhatsApp / Teams). Professional but not stiff. Contractions are fine.", "email": "a business email body, also used for formal written communication to a client, regulator or auditor. Complete sentences, precise, hedged where the speaker hedged, no slang; no greeting line and no sign-off unless the speaker said one."};
 const DEFAULT_TONE = "work";
 const BACKEND = "https://sqg75i2mlmanf4sqde6nh.apigateway-cn-beijing.volceapi.com";
-const PROMPT = "You are a message-composition engine. The input is a raw Chinese speech-to-text transcript: rambling, with fillers, repetitions, self-corrections and ASR errors. Your job is to turn it into a clean English message that is ready to send as-is.\n\nRun three passes internally, then output only the result.\n\nPASS 1 - CLEAN\n- The transcript may have little or no punctuation. Infer sentence boundaries\n  before anything else. Do not fuse two adjacent nouns into one compound just\n  because no punctuation separates them (e.g. \"I'm travelling Wednesday\" +\n  \"the meeting\" is two facts, not one \"business trip meeting\").\n- When the speaker states a reason and then makes a request, keep the causal\n  link explicit (\"I'm travelling Wednesday, so can we move the meeting\").\n- Remove fillers, hesitations, repetitions, false starts and throwaway asides.\n- When the speaker corrects themselves, keep ONLY the corrected version.\n- Repair obvious speech-recognition errors using context.\n- NEVER drop, round, or alter: numbers, amounts, percentages, dates, deadlines,\n  names of people / companies / products / files, conditions (\"if\", \"unless\",\n  \"only when\"), and negations. If a number is garbled, keep it verbatim rather\n  than guessing.\n\nPASS 2 - STRUCTURE  (this is the pass most likely to go wrong - be strict)\n- Count the distinct points the speaker actually made.\n  * 1 point  -> ONE sentence. No bullets, no lead-in, no heading.\n  * 2 points -> two short sentences, or two bullets if they are genuinely parallel.\n  * 3+ points -> one short lead sentence stating the ask or the topic, then\n                 REAL BULLETS, one point per bullet, each line starting with \"- \".\n                 This is mandatory, not a preference. Never render three or more\n                 points as a running paragraph.\n- Never enumerate inside prose (\"first ... second ... third ...\"). If you find\n  yourself writing \"first\" or \"second\" mid-sentence, convert to bullets instead.\n- Put the ASK (what the speaker wants the reader to do) in the first or last\n  position, never buried in the middle.\n- Never invent a point, a reason, a deadline or a next step that was not said.\n- Never pad. The output must be shorter than the input. If you cannot make it\n  shorter, you have added something that was not there.\n- Do not add a closing line (\"Let me know\", \"Thanks\") unless the speaker said one.\n\nPASS 3 - RENDER IN ENGLISH\n- Write it the way a native speaker would write that message, not a literal\n  translation of the Chinese.\n- Match the register described below.\n- Keep proper nouns in their original form when they have no standard English name.\n\nOUTPUT FORMAT - follow exactly, no deviation:\n<<<EN>>>\n(the final English message)\n<<<ZH>>>\n(the same message in concise Chinese, same structure - this is a check copy so the\n user can confirm nothing was misunderstood; plain modern Chinese, no literary style)\n\nRules for the output block:\n- Nothing before <<<EN>>> and nothing after the Chinese. No preamble, no notes,\n  no \"Here is\".\n- No markdown headings. Bullets are \"- \".\n- Do not use em dashes.\n\nWORKED EXAMPLE (3 points -> bullets, note there is NO \"First / Second / Third\"):\n\nInput:\n\"就是那个啊,我想说几个事,一个是那个下个季度的预算啊还没批下来,嗯,\n财务那边说要再等一周。然后还有就是那个新来的实习生,呃,下周一报到,\n需要给他配个电脑。哦对了还有,那个客户的合同我已经发过去了,等他们签回来。\"\n\nOutput:\n<<<EN>>>\nThree updates:\n- Next quarter's budget still isn't approved; Finance says another week.\n- The new intern starts Monday and needs a laptop set up.\n- I've sent the client contract over and we're waiting on their signature.\n<<<ZH>>>\n三件事:\n- 下季度预算还没批,财务说还要一周。\n- 新实习生下周一报到,需要配电脑。\n- 客户合同已发出,等他们签回。\n";
+const PROMPT = "You are a message-composition engine. The input is a raw speech-to-text transcript: rambling, with fillers, repetitions, self-corrections and ASR errors. Your job is to turn it into a clean message, written in the TARGET LANGUAGE given in the user message, ready to send as-is.\n\n🚨 The speaker may talk in Chinese, in English, or mix both in one sentence. Do not assume Chinese. Whatever they spoke, the OUTPUT still goes into the target language named below.\n\n🚨 The target language is NOT always English. The user message starts with \"Target language: X\" - obey it. If it says Japanese, the whole output message is in Japanese; if French, in French. Never default to English.\n\nRun three passes internally, then output only the result.\n\nPASS 1 - CLEAN\n- The transcript may have little or no punctuation. Infer sentence boundaries\n  before anything else. Do not fuse two adjacent nouns into one compound just\n  because no punctuation separates them (e.g. \"I'm travelling Wednesday\" +\n  \"the meeting\" is two facts, not one \"business trip meeting\").\n- When the speaker states a reason and then makes a request, keep the causal\n  link explicit (\"I'm travelling Wednesday, so can we move the meeting\").\n- Remove fillers, hesitations, repetitions, false starts and throwaway asides.\n- When the speaker corrects themselves, keep ONLY the corrected version.\n  🚨 The discarded version must vanish completely. Do NOT preserve it as an\n  aside, a parenthetical, or a contrast. If he says \"Wednesday, no, Monday\",\n  the output is \"Monday\" - never \"Monday (not Wednesday)\" and never\n  \"Monday instead of Wednesday\". The reader must not learn the wrong value\n  ever existed.\n- Repair obvious speech-recognition errors using context.\n- NEVER drop, round, or alter: numbers, amounts, percentages, dates, deadlines,\n  names of people / companies / products / files, conditions (\"if\", \"unless\",\n  \"only when\"), and negations. If a number is garbled, keep it verbatim rather\n  than guessing.\n\nPASS 2 - STRUCTURE  (this is the pass most likely to go wrong - be strict)\n- Count the distinct points the speaker actually made.\n  * 1 point  -> ONE sentence. No bullets, no lead-in, no heading.\n  * 2 points -> two short sentences, or two bullets if they are genuinely parallel.\n  * 3+ points -> one short lead sentence stating the ask or the topic, then\n                 REAL BULLETS, one point per bullet, each line starting with \"- \".\n                 This is mandatory, not a preference. Never render three or more\n                 points as a running paragraph.\n- Never enumerate inside prose (\"first ... second ... third ...\"). If you find\n  yourself writing \"first\" or \"second\" mid-sentence, convert to bullets instead.\n- Put the ASK (what the speaker wants the reader to do) in the first or last\n  position, never buried in the middle.\n- Never invent a point, a reason, a deadline or a next step that was not said.\n- Never pad. The output must be shorter than the input. If you cannot make it\n  shorter, you have added something that was not there.\n- Do not add a closing line (\"Let me know\", \"Thanks\") unless the speaker said one.\n\nPASS 3 - RENDER IN THE TARGET LANGUAGE\n- The target language is given in the user message as \"Target language: X\".\n  Write the whole message in THAT language, nothing else.\n- Write it the way a native speaker of that language would write that message,\n  not a literal translation of the Chinese.\n- Match the register described below. Respect that language's own conventions\n  for politeness and business tone (e.g. Japanese keigo, German Sie/du).\n- Keep proper nouns in their original form when they have no standard\n  equivalent in the target language.\n\nOUTPUT FORMAT - follow exactly, no deviation:\n<<<OUT>>>\n(the final message, written in the TARGET LANGUAGE - the marker is always\n literally <<<OUT>>> regardless of which language you write in)\n<<<ZH>>>\n(the same message in concise Chinese, same structure - this is a check copy so the\n user can confirm nothing was misunderstood; plain modern Chinese, no literary style)\n\nRules for the output block:\n- Nothing before <<<OUT>>> and nothing after the Chinese. No preamble, no notes,\n  no \"Here is\".\n- No markdown headings. Bullets are \"- \".\n- Do not use em dashes.\n\n🚨 BEFORE YOU WRITE THE OUTPUT BLOCK, re-read the \"Target language:\" line in the\nuser message and write in THAT language. The worked examples below happen to use\nEnglish and Japanese - they are about STRUCTURE, not about which language to use.\nCopying their language instead of the requested one is the single most common\nmistake here.\n\nWORKED EXAMPLE A - target language was Japanese (1 point -> one sentence):\n\nInput:\n\"那个报表啊,我明天下午三点之前给你,然后抄送给 Annie。\"\n\nOutput:\n<<<OUT>>>\n明日15時までにレポートをお送りします。Annieにもccします。\n<<<ZH>>>\n明天下午三点前把报表发给你,抄送 Annie。\n\nWORKED EXAMPLE B - target language was English (3 points -> bullets, note there\nis NO \"First / Second / Third\"):\n\nInput:\n\"就是那个啊,我想说几个事,一个是那个下个季度的预算啊还没批下来,嗯,\n财务那边说要再等一周。然后还有就是那个新来的实习生,呃,下周一报到,\n需要给他配个电脑。哦对了还有,那个客户的合同我已经发过去了,等他们签回来。\"\n\nOutput:\n<<<OUT>>>\nThree updates:\n- Next quarter's budget still isn't approved; Finance says another week.\n- The new intern starts Monday and needs a laptop set up.\n- I've sent the client contract over and we're waiting on their signature.\n<<<ZH>>>\n三件事:\n- 下季度预算还没批,财务说还要一周。\n- 新实习生下周一报到,需要配电脑。\n- 客户合同已发出,等他们签回。\n";
 /* ==== 注入结束 ==== */
 
 /* 这个页面挂在公开的 GitHub Pages 上，所以**里面没有任何密钥**。
@@ -135,6 +137,44 @@ function resolvePass(){
   } catch(e){ return ""; }
 }
 let PASS = resolvePass();
+
+/* 设备令牌：首次访问向后端换一个专属令牌，之后一直用它。
+   🚨 为什么要它（原来共用二维码带进来的那把口令，三件事做不到）：
+     1. 统计留存 —— 后端靠 device_id 才能算次日/7日留存
+     2. 按人计免费额度 —— 共享口令下额度是全局计数器，谁都能刷光别人的
+     3. 以后要做订阅/账号，device_id 是挂钩点
+   🚨 拿不到就回落原来的 PASS —— 注册失败不能让人用不了。 */
+const DEV_KEY = "vime.devtoken";
+
+function devToken(){
+  try { return localStorage.getItem(DEV_KEY) || ""; } catch(e){ return ""; }
+}
+
+async function ensureDevice(){
+  if (devToken()) return true;
+  try{
+    const r = await fetch(BACKEND + "/api/device", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ platform: "web" })
+    });
+    if (!r.ok) return false;
+    const j = await r.json();
+    if (!j.token) return false;
+    localStorage.setItem(DEV_KEY, j.token);
+    if (j.device_id) localStorage.setItem("vime.deviceid", j.device_id);
+    // 🚨 不要写 PASS = j.token —— PASS 是「二维码带进来的共享口令」这一层的回落值，
+    //    覆盖它会让回落链断掉（设备令牌一旦失效就没有退路了）。
+    //    currentPass() 已经是「设备令牌优先」，不需要动 PASS。
+    return true;
+  } catch(e){ return false; }
+}
+
+/* 当前该用的口令：设备令牌优先，没有才用二维码带进来的那把。 */
+function currentPass(){ return devToken() || PASS; }
+
+/* 页面一打开就注册（异步，不挡界面）。 */
+ensureDevice();
 
 const $ = id => document.getElementById(id);
 const LS = { tone:"vime.tone", hist:"vime.hist" };
@@ -155,12 +195,18 @@ function renderTones(){
 }
 renderTones();
 
-// --- 离线版要自己做切分和破折号兜底（联网版由 Worker 做）---
-// 🚨 模型偶尔把 ZH 块吐两遍：<<<EN>>>…<<<ZH>>>中文<<<ZH>>>中文
-//    所以中文取「最后一个 ZH 标记之后」。engine.py 的 _split 必须同步。
+// --- 切分 + 破折号兜底。🚨 联网版**也走这里**（旧注释说"联网版由 Worker 做"
+//     已经过时：现在是火山函数，返回的就是带标记的原文）。
+// 🚨 模型偶尔把 ZH 块吐两遍：标记…<<<ZH>>>中文<<<ZH>>>中文
+//    所以中文取「最后一个 ZH 标记之后」。
+// 🚨🚨 标记名**从 engine.py 注入**，别在这里写字面量（2026-08-22 修）。
+//    出过真事故：Python 侧把 <<<EN>>> 改名成 <<<OUT>>>，这份 JS 没跟着改 ——
+//    于是 i<0 走「找不到标记」分支，英文框显示**带着 <<<OUT>>> 的整段原文**、
+//    中文框显示「（模型没按格式输出）」。线上打一发真接口才发现，
+//    页面本身不报任何错。这就是「改一处等于没改」。
 function splitZh(raw){
   const s = (raw||"").trim();
-  const A = "<<<EN>>>", B = "<<<ZH>>>";
+  const A = "<<<OUT>>>", B = "<<<ZH>>>";
   const i = s.indexOf(A), j = s.indexOf(B);
   if (i < 0 || j < 0 || j < i) return { en:s, zh:"" };
   const strip = t => t.split(A).join("").split(B).join("").trim();
@@ -203,7 +249,7 @@ async function run(){
   const t0 = performance.now();
 
   try{
-    const H = { "Content-Type":"application/json; charset=utf-8", "X-Alex-Pass": PASS };
+    const H = { "Content-Type":"application/json; charset=utf-8", "X-Alex-Pass": currentPass() };
 
     // 🚨 必须走「提交 job + 轮询」，不能用 sync=1。
     //    API 网关对同步调用会直接回 504 upstream request timeout（实测过）。
@@ -306,6 +352,6 @@ function renderHist(){
 }
 renderHist();
 </script>
-<!-- BUILD-417fc7344e -->
+<!-- BUILD-55e29199d4 -->
 </body>
 </html>
