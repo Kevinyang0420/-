@@ -39,6 +39,17 @@ enum Backend {
         ("en", "英文", "English"), ("ja", "日语", "Japanese"),
         ("fr", "法语", "French"), ("de", "德语", "German"),
         ("es", "西班牙语", "Spanish"), ("ko", "韩语", "Korean"),
+        // 🚨 粤语的 name 里那一长串要求不能省：只写 "Cantonese" 模型会吐普通话，
+        //    实测过一次半吊子输出「下周一嘅会先取消住」（粤语虚词 + 普通话词汇 + 简体）。
+        //    三条硬要求：繁体字、粤语词汇、粤语语法。跟 engine.py 那份保持一致。
+        ("yue", "粤语",
+         "written Cantonese (粤语书面语). THREE hard requirements: "
+         + "(1) TRADITIONAL characters throughout (會/報/聽/嘅), never simplified; "
+         + "(2) Cantonese VOCABULARY, not Mandarin words in traditional skin — "
+         + "use 聽日/尋日/下星期一/而家/依家/畀/同…講/唔該/點解/邊個/得閒/同埋, "
+         + "NOT 明天/昨天/下周一/现在/给/跟…说/谢谢/为什么/哪个; "
+         + "(3) Cantonese grammar words: 嘅、唔、係、咗、喺、佢、冇、睇、啲、咁、"
+         + "乜嘢、㗎、嘞. Example: 「份報表我聽日下晝三點前畀你，仲要 cc 埋 Annie。」"),
     ]
 
     static func langName(_ code: String) -> String {
