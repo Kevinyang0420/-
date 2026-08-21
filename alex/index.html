@@ -15547,7 +15547,7 @@ function bindPolishResult(p, live, cut){
   });
 
   on('polagain', () => { POL.fuUsed = false; POL.onResult = false; go(showPolishPrep, '开口前'); });
-  on('polnew', () => { polReset(); go(showPolish, '口语打磨'); });
+  on('polnew', () => { polReset(); go(showPolish, '改稿'); });
 
   /* 收句式：每条各一个键，收完整块重画并保留滚动位置 */
   document.querySelectorAll('[data-poltake]').forEach(b =>
@@ -15748,6 +15748,11 @@ const occGet = () => {
   catch(_){ return OCCASIONS[0]; }
 };
 const occSet = k => { try { localStorage.setItem(OCC_LS, k); } catch(_){} };
+
+/* 这一场没标题时拿什么兜底。
+   🚨 原来一律是「闲聊」—— 于是一场管理层访谈在记录列表里显示成「闲聊」，
+   翻回去根本认不出哪场是哪场。改名收口那一轮漏掉的同类。 */
+const occTitle = () => { try { return occGet().nm; } catch(_){ return '对话'; } };
 
 /* 这个场合下的题库卡。SCENARIOS 是**同一个数组**（题库没下下来时只有内置那 30 张），
    这里只做筛选，不复制 —— 复制一份出来就会出现「改了一边另一边还是旧的」。 */
@@ -16086,14 +16091,32 @@ function chatOpenBad(j){
   return bad;
 }
 
+/* 「天要聊死了，这轮必须抛个问题」——**只对 Alex 提问的场合成立**。
+   🚨 `ask:false` 那两档（管理层访谈 / 对外汇报）提问的是他，天聊不死；
+   在那儿算出 mustAsk=true 会让提示词和校验器互相打架：
+   提示词叫 Alex 别问、校验器又要问句 → 三次重试全废 → **Alex 哑火**。
+   抽成一个函数是因为原来这行在两个地方各写了一遍 —— 同一个判断有第二处，
+   就该有单一配置点，否则加第三个调用点时又会漏门控。 */
+function mustAskNow(){
+  return !!(occGet().ask && CHAT && CHAT.noAsk >= CHAT_NOASK_MAX);
+}
+
 function chatReplyBad(j, mustAsk){
   const bad = [];
   const r = String((j && j.reply) || '').trim();
   if (!r) bad.push('reply 空的');
   else {
     if (chatHasZh(r)) bad.push('reply 里有中文');
-    if (chatWords(r).length > 60) bad.push('reply ' + chatWords(r).length + ' 词，闲聊不该这么长');
-    if (mustAsk && r.indexOf('?') < 0)
+    /* 阈值 60 对五个场合都成立（人设一律 1-3 句），但**文案**原来写死「闲聊」——
+       正式场合驳回时喂回给模型的理由是错的（它会以为自己在闲聊）。 */
+    if (chatWords(r).length > 60)
+      bad.push('reply ' + chatWords(r).length + ' 词，太长了 —— 一次只说 1 到 3 句');
+    /* 🚨🚨 这里必须跟提示词那一侧**同一个门控**（`occGet().ask`）。
+       2026-08-21 我只给提示词加了门控、漏了这儿，结果在 mgmt / brief 两个
+       `ask:false` 场合：Alex 按人设不提问 → noAsk 每轮 +1 → 第 4 轮 mustAsk 为真
+       → 提示词叫它别问、这条又要问句 → 三次重试注定全废 → **Alex 哑火**。
+       一条约束有两个出口，只改一个＝两边打架，代价是他那一轮白说。 */
+    if (mustAsk && occGet().ask && r.indexOf('?') < 0)
       bad.push('已经连着 ' + CHAT_NOASK_MAX + ' 轮没问他问题了，这轮必须有问句（判据 E8）');
   }
   /* 🚨 聊天引擎写点评字段 = 它越界了，当场驳回重来。
@@ -16378,7 +16401,7 @@ async function chatOpen(seed){
         那正好把最重要的东西赔进去了。现在：回话挂了就留个 `replyErr`，
         他那句话和点评照样留在屏幕上。 */
 async function chatTurn(said){
-  const mustAsk = CHAT.noAsk >= CHAT_NOASK_MAX;
+  const mustAsk = mustAskNow();
   const [scene, crit] = await Promise.all([
     chatAsk(() => chatPrompt(said, mustAsk), j => chatReplyBad(j, mustAsk))
       .catch(e => ({__err: e.message || String(e)})),
@@ -16404,7 +16427,7 @@ async function chatTurn(said){
 /* ── 落盘 ────────────────────────────────────────────────── */
 function chatNew(topic, src){
   return {id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          on: TODAY(), t0: Date.now(), topic: topic || '闲聊', src: src || '',
+          on: TODAY(), t0: Date.now(), topic: topic || occTitle(), src: src || '',
           /* 🚨 落盘时把这一场的场合和情景一起存下来 —— 不存的话「接着聊」
              会拿**当前**选的场合去续一场早就结束的对话，Alex 当场换个人。 */
           occ: (CHAT && CHAT.occ) || occGet().k, scene: (CHAT && CHAT.scene) || '',
@@ -16413,7 +16436,15 @@ function chatNew(topic, src){
 }
 async function chatSave(){
   if (!CHAT || !CHAT.id || !CHAT.turns.length) return null;
+  /* 🚨🚨 `occ` / `scene` / `cardId` **必须在这里**。
+     2026-08-21 我在 `chatNew()` 里加了这三个字段，但 `chatNew` 的返回值
+     只被抄走 5 个字段、它建的 rec 从不落盘 —— 真正落盘的是这一份白名单。
+     于是那三个字段是死代码，「接着聊」拿当前选的场合去续一场早就结束的对话，
+     Alex 当场换个人，情景也整个丢掉。
+     **这一行就是那份规矩的唯一出口，加字段只加在 chatNew 里等于没加。** */
   const rec = {id: CHAT.id, on: CHAT.on, t0: CHAT.t0, topic: CHAT.topic, src: CHAT.src,
+               occ: CHAT.occ || occGet().k, scene: CHAT.scene || '',
+               cardId: CHAT.cardId || '',
                sec: Math.round((Date.now() - CHAT.t0) / 1000), turns: CHAT.turns};
   try { await _tx('chat', 'readwrite', st => st.put(rec)); return rec.id; }
   catch(e){
@@ -16653,7 +16684,7 @@ async function chatPaintList(){
       const s = chatSummary(r);
       return '<div class="card" data-chatid="' + esc(r.id) + '">' +
         '<div class="hd"><span class="ct" style="font-size:11.5px;color:var(--brand-dark);' +
-        'font-weight:800">' + esc(String(r.topic || '闲聊').slice(0, 40)) + '</span>' +
+        'font-weight:800">' + esc(String(r.topic || occTitle()).slice(0, 40)) + '</span>' +
         '<span class="done">' + esc(r.on) + '</span></div>' +
         '<div class="t" style="margin-top:6px">' + s.n + ' 轮' +
         (s.lv.error ? ' · ' + s.lv.error + ' 处要改' : ' · 没说错') +
@@ -16721,7 +16752,7 @@ async function chatStart(topic){
     const seed = chatPickSeed(t);
     const j = await chatOpen(seed);
     if (t) chatTopicPush(t);
-    const rec = chatNew(String(j.topic || t || '闲聊').trim(), seed.src);
+    const rec = chatNew(String(j.topic || t || occTitle()).trim(), seed.src);
     CHAT.id = rec.id; CHAT.on = rec.on; CHAT.t0 = rec.t0;
     CHAT.topic = rec.topic; CHAT.src = rec.src;
     CHAT.turns = [{said: '', reply: String(j.reply || '').trim()}];   // 第 0 轮：只有 Alex 开口
@@ -16988,7 +17019,7 @@ function chatSpeak(txt){
    就是各画各的造出来的（查词那边踩过）。 */
 function showChatRoom(){
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
-  $('#sub').textContent = CHAT.topic || '闲聊';
+  $('#sub').textContent = CHAT.topic || occTitle();
   chatPaintRoom();
 }
 
@@ -17169,6 +17200,34 @@ function chatCritHTML(t, i){
          'border-left:3px solid var(--brand-dark)">' + bits.join('') + '</div>';
 }
 
+/* 拿**这条记录**的上下文跑一段活，跑完原样还回去。
+
+   🚨 为什么需要它：`chatPrompt` / `chatWho` / `chatCritPrompt` / `mustAskNow`
+   都从全局 `CHAT` 和 `occGet()` 读上下文。记录页（showChatRec）里那两个动作
+   —— 「🔁 再次尝试」和「让他回一句」—— 如果不换上下文，就会拿**当前**会话的
+   前几轮、当前选的场合去生成内容：翻一场三天前的管理层访谈、而当前是日常闲聊时，
+   重新点评会按日常标准给（不给术语升级、不给风险），Alex 也会换个人来接话。
+   两个都是答非所问且不报错。
+
+   🚨 `finally` 里必须还原 —— 半路抛异常也要还，否则全局被这条旧记录污染，
+   他回到聊天屏会发现场合莫名其妙变了。 */
+async function withChatCtx(ctx, fn){
+  const keep = {occ: CHAT.occ, scene: CHAT.scene, topic: CHAT.topic,
+                turns: CHAT.turns, noAsk: CHAT.noAsk};
+  const keepOcc = occGet().k;
+  try {
+    if (ctx.occ){ CHAT.occ = ctx.occ; occSet(ctx.occ); }
+    if (ctx.scene !== undefined) CHAT.scene = ctx.scene;
+    if (ctx.topic !== undefined) CHAT.topic = ctx.topic;
+    if (ctx.turns) CHAT.turns = ctx.turns;
+    return await fn();
+  } finally {
+    CHAT.occ = keep.occ; CHAT.scene = keep.scene; CHAT.topic = keep.topic;
+    CHAT.turns = keep.turns; CHAT.noAsk = keep.noAsk;
+    occSet(keepOcc);
+  }
+}
+
 function chatBindCrit(ctx){
   const turns = ctx.turns, save = ctx.save, repaint = ctx.repaint;
   document.querySelectorAll('[data-chattake]').forEach(b =>
@@ -17197,7 +17256,7 @@ function chatBindCrit(ctx){
       POL.carried = t2.said;
       SESSUI.top = 'pol';
       NAV.length = 0;
-      go(showPolish, '口语打磨');
+      go(showPolish, '改稿');
       setTimeout(() => {
         const ta = document.getElementById('poltopic');
         if (ta){ ta.value = POL.topic; }
@@ -17214,9 +17273,12 @@ function chatBindCrit(ctx){
       if (!t || !t.said || b.disabled) return;
       b.disabled = true; b.textContent = '⏳';
       try {
-        const mustAsk = CHAT.noAsk >= CHAT_NOASK_MAX;
-        const sc = await chatAsk(() => chatPrompt(t.said, mustAsk),
-                                 j => chatReplyBad(j, mustAsk));
+        /* 🚨 用**这条记录**的场合/情景/前几轮，不是当前会话的 */
+        const sc = await withChatCtx(ctx, () => {
+          const mustAsk = mustAskNow();
+          return chatAsk(() => chatPrompt(t.said, mustAsk),
+                         j => chatReplyBad(j, mustAsk));
+        });
         delete t.replyErr;
         t.reply = String(sc.reply || '').trim();     // 🚨 只动 reply，点评不碰
         await save();
@@ -17239,7 +17301,8 @@ function chatBindCrit(ctx){
       markAct('点了再次尝试 · 说了 ' +
         (String(t.said||'').match(/[a-z']+/gi)||[]).length + ' 词');
       try {
-        const crit = await askCritSmart(t.said);
+        /* 🚨 同上：点评的深浅跟着**这条记录**的场合走 */
+        const crit = await withChatCtx(ctx, () => askCritSmart(t.said));
         const merged = scrubChat(mergeChat({said: t.said, reply: t.reply}, crit));
         delete t.critErr;
         Object.assign(t, merged);
@@ -17468,7 +17531,7 @@ async function chatFinish(){
 function chatResume(rec){
   if (!rec || !rec.turns || !rec.turns.length) return;
   chatReset();
-  CHAT.id = rec.id; CHAT.on = rec.on; CHAT.topic = rec.topic || '闲聊';
+  CHAT.id = rec.id; CHAT.on = rec.on; CHAT.topic = rec.topic || occTitle();
   CHAT.src = rec.src || '';
   /* 接着聊 = 连场合和情景一起接回来（老记录没有这两个字段就退回当前选的） */
   CHAT.occ = rec.occ || occGet().k;
@@ -17494,7 +17557,7 @@ function chatResume(rec){
 /* 回看一场（也是「聊完了」之后那一屏） */
 function showChatRec(rec, justDone){
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
-  $('#sub').textContent = String(rec.topic || '闲聊').slice(0, 30);
+  $('#sub').textContent = String(rec.topic || occTitle()).slice(0, 30);
   const s = chatSummary(rec);
   const issTxt = s.top.length
     ? s.top.map(k => k + ' ' + s.iss[k] + ' 次').join(' · ')
@@ -17545,6 +17608,10 @@ function showChatRec(rec, justDone){
   chatBindCrit({
     turns: rec.turns || [],
     topic: rec.topic || '',
+    /* 🚨 这两个必须传 —— 不传的话「再次尝试 / 让他回一句」会用**当前**选的
+       场合和当前会话的情景，翻旧记录时答非所问（见 withChatCtx 那段注释）。 */
+    occ: rec.occ || '',
+    scene: rec.scene || '',
     save: () => _tx('chat', 'readwrite', st => st.put(rec)).catch(() => {}),
     repaint: () => { const y = window.scrollY;
                      showChatRec(rec, justDone); window.scrollTo(0, y); }
@@ -17553,7 +17620,7 @@ function showChatRec(rec, justDone){
   const goon = document.getElementById('chatgoon');
   if (goon) goon.onclick = () => chatResume(rec);
   const more = document.getElementById('chatmore');
-  if (more) more.onclick = () => { chatReset(); go(showChat, '闲聊'); };
+  if (more) more.onclick = () => { chatReset(); go(showChat, '对话'); };
   document.querySelectorAll('[data-chatplay]').forEach(b =>
     b.onclick = async () => {
       const blob = await sessGetAudio(b.dataset.chatplay);
@@ -17566,7 +17633,7 @@ function showChatRec(rec, justDone){
     if (!confirm('删掉这一场？删了就回不来了。')) return;
     await chatDel(rec.id);
     chatReset();
-    go(showChat, '闲聊');
+    go(showChat, '对话');
   };
 }
 
