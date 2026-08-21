@@ -29,8 +29,12 @@ final class MainViewController: UIViewController {
 
     private enum Phase { case idle, listening, thinking }
 
-    private let tones = ["work", "email", "casual", "formal"]
-    private let toneLabels = ["工作", "邮件", "随意", "正式"]
+    // 🚨 三档，跟 engine.py / 安卓 Gen.TONE_CODES 一致（Kevin 2026-08-21：
+    //    「邮件和正式合在一起吧，这两个没什么区别。就是随意、工作和邮件三种」）。
+    //    这里是**第三份**副本，暂时只能手工对齐 —— iOS 没走构建期生成那条路。
+    //    改档位时三处都要动：engine.py / build_apk.py 生成的 Gen / 这里。
+    private let tones = ["casual", "work", "email"]
+    private let toneLabels = ["随意", "工作", "邮件"]
     private var tone = UserDefaults.standard.string(forKey: "vime.tone") ?? "work"
 
     /// 输出模式：译成英文（默认）/ 只转写。跟安卓一致。
@@ -132,7 +136,7 @@ final class MainViewController: UIViewController {
         resultView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
 
         // 🚨 长条，不是圆圈（跟安卓 MIC_BAR_DP 那套一一对应）。
-        micButton.setTitle("  点一下开始说", for: .normal)
+        micButton.setTitle("", for: .normal)
         micButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .medium)
         micButton.setTitleColor(.white, for: .normal)
         micButton.setImage(Theme.micGlyph(Theme.micBarHeight * 0.6), for: .normal)
@@ -183,9 +187,10 @@ final class MainViewController: UIViewController {
             hintLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             hintLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
 
-            micButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Theme.pad),
-            micButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Theme.pad),
+            // 圆形：等宽高 + 居中（跟安卓 MIC_CIRCLE_DP 那套一一对应）
+            micButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             micButton.topAnchor.constraint(equalTo: hintLabel.bottomAnchor, constant: Theme.gap + 4),
+            micButton.widthAnchor.constraint(equalToConstant: Theme.micBarHeight),
             micButton.heightAnchor.constraint(equalToConstant: Theme.micBarHeight),
 
             toneButton.topAnchor.constraint(equalTo: micButton.bottomAnchor, constant: Theme.gap),
@@ -373,19 +378,19 @@ final class MainViewController: UIViewController {
         hintLabel.text = hint
         switch p {
         case .idle:
-            micButton.setTitle("  点一下开始说", for: .normal)
+            micButton.setTitle("", for: .normal)
             micButton.setImage(Theme.micGlyph(Theme.micBarHeight * 0.6), for: .normal)
             micButton.tintColor = .white
             micButton.backgroundColor = Theme.accent
             micButton.isEnabled = true
         case .listening:
-            micButton.setTitle("  正在听", for: .normal)
+            micButton.setTitle("", for: .normal)
             micButton.setImage(Theme.stopGlyph(Theme.micBarHeight * 0.6), for: .normal)
             micButton.backgroundColor = Theme.danger
             micButton.isEnabled = true
         case .thinking:
             micButton.setImage(nil, for: .normal)
-            micButton.setTitle("处理中…", for: .normal)
+            micButton.setTitle("…", for: .normal)
             micButton.setTitleColor(.white, for: .normal)
             micButton.backgroundColor = Theme.keyDown
             micButton.isEnabled = false
