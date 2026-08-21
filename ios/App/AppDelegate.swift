@@ -89,7 +89,7 @@ final class MainViewController: UIViewController {
 
         let modeStack = UIStackView(arrangedSubviews: [tabTranslate, tabTranscribe, logoView])
         modeStack.axis = .horizontal
-        modeStack.spacing = 8
+        modeStack.spacing = Theme.gap * 0.7
         modeStack.distribution = .fill
         tabTranslate.setContentHuggingPriority(.defaultLow, for: .horizontal)
         tabTranscribe.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -105,7 +105,7 @@ final class MainViewController: UIViewController {
         }
         subStack = UIStackView(arrangedSubviews: [modeZhButton, modeRawButton])
         subStack.axis = .horizontal
-        subStack.spacing = 8
+        subStack.spacing = Theme.gap * 0.7
         subStack.distribution = .fillEqually
 
         hintLabel.font = .systemFont(ofSize: 15)
@@ -163,31 +163,31 @@ final class MainViewController: UIViewController {
             view.addSubview($0)
         }
         NSLayoutConstraint.activate([
-            modeStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
-            modeStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            modeStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            modeStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Theme.gap),
+            modeStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Theme.pad * 1.6),
+            modeStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Theme.pad * 1.6),
             modeStack.heightAnchor.constraint(equalToConstant: 34),
 
-            subStack.topAnchor.constraint(equalTo: modeStack.bottomAnchor, constant: 10),
-            subStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
-            subStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            subStack.topAnchor.constraint(equalTo: modeStack.bottomAnchor, constant: Theme.gap),
+            subStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Theme.pad * 1.6),
+            subStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Theme.pad * 1.6),
             subStack.heightAnchor.constraint(equalToConstant: 32),
 
-            hintLabel.topAnchor.constraint(equalTo: subStack.bottomAnchor, constant: 14),
+            hintLabel.topAnchor.constraint(equalTo: subStack.bottomAnchor, constant: Theme.gap),
             hintLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             hintLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
 
-            micButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            micButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            micButton.topAnchor.constraint(equalTo: hintLabel.bottomAnchor, constant: 18),
+            micButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Theme.pad),
+            micButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Theme.pad),
+            micButton.topAnchor.constraint(equalTo: hintLabel.bottomAnchor, constant: Theme.gap + 4),
             micButton.heightAnchor.constraint(equalToConstant: Theme.micBarHeight),
 
-            toneButton.topAnchor.constraint(equalTo: micButton.bottomAnchor, constant: 16),
+            toneButton.topAnchor.constraint(equalTo: micButton.bottomAnchor, constant: Theme.gap),
             toneButton.trailingAnchor.constraint(equalTo: view.centerXAnchor, constant: -6),
             toneButton.widthAnchor.constraint(equalToConstant: 130),
             toneButton.heightAnchor.constraint(equalToConstant: 34),
 
-            langButton.topAnchor.constraint(equalTo: micButton.bottomAnchor, constant: 16),
+            langButton.topAnchor.constraint(equalTo: micButton.bottomAnchor, constant: Theme.gap),
             langButton.leadingAnchor.constraint(equalTo: view.centerXAnchor, constant: 6),
             langButton.widthAnchor.constraint(equalToConstant: 110),
             langButton.heightAnchor.constraint(equalToConstant: 34),
@@ -197,7 +197,7 @@ final class MainViewController: UIViewController {
             speakButton.widthAnchor.constraint(equalToConstant: 140),
             speakButton.heightAnchor.constraint(equalToConstant: 36),
 
-            heardLabel.topAnchor.constraint(equalTo: speakButton.bottomAnchor, constant: 12),
+            heardLabel.topAnchor.constraint(equalTo: speakButton.bottomAnchor, constant: Theme.gap),
             heardLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             heardLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
 
@@ -206,6 +206,16 @@ final class MainViewController: UIViewController {
             resultView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             resultView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
         ])
+        // 🚨 立体感统一在这儿走一遍，别在每个控件后面各写一行 —— 漏一个就少一个阴影，
+        //    而"少了一个"是看不出来的（跟安卓 Theme.elevateAll 同一套做法）。
+        for v in [tabTranslate, tabTranscribe, modeZhButton, modeRawButton,
+                  toneButton, langButton, speakButton] {
+            v.layer.cornerRadius = Theme.rKey
+            Theme.elevate(v, 3)
+        }
+        resultView.layer.cornerRadius = Theme.rCard
+        Theme.elevate(resultView, 3)
+        Theme.elevate(micButton, 6)     // 主操作，投影重一档，浮在最上层
         paintMode()
     }
 
