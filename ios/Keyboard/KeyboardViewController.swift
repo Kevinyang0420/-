@@ -55,8 +55,10 @@ final class KeyboardViewController: UIInputViewController {
         heardLabel.numberOfLines = 2
 
         // 一个大按钮，占绝对主位
-        micButton.setTitle("🎤", for: .normal)
-        micButton.titleLabel?.font = .systemFont(ofSize: 40)
+        micButton.setTitle("", for: .normal)
+        micButton.setImage(Theme.micGlyph(88), for: .normal)
+        micButton.tintColor = .white
+        micButton.titleLabel?.font = .systemFont(ofSize: 34)
         micButton.backgroundColor = Theme.accent
         micButton.layer.cornerRadius = 44
         micButton.addTarget(self, action: #selector(tapMic), for: .touchUpInside)
@@ -139,15 +141,20 @@ final class KeyboardViewController: UIInputViewController {
         hintLabel.text = hint
         switch p {
         case .idle:
-            micButton.setTitle("🎤", for: .normal)
+            micButton.setTitle("", for: .normal)
+            micButton.setImage(Theme.micGlyph(88), for: .normal)
+            micButton.tintColor = .white
             micButton.backgroundColor = Theme.accent
             micButton.isEnabled = true
         case .listening:
-            micButton.setTitle("■", for: .normal)
+            micButton.setTitle("", for: .normal)
+            micButton.setImage(Theme.stopGlyph(88), for: .normal)
             micButton.backgroundColor = Theme.danger
             micButton.isEnabled = true
         case .thinking:
+            micButton.setImage(nil, for: .normal)
             micButton.setTitle("…", for: .normal)
+            micButton.setTitleColor(.white, for: .normal)
             micButton.backgroundColor = Theme.keyDown
             micButton.isEnabled = false
         }
