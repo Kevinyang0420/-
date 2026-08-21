@@ -19,8 +19,10 @@ enum Theme {
     //      ③ 青色整屏只出现一处（说话长条）
     static let bg      = hex(0x18181C)   // 最外层底
     static let panel   = hex(0x202428)   // 卡片/面板
-    static let key     = hex(0x20242C)   // 按键 / chip 未选 / Tab 轨道
-    static let keyDown = hex(0x343840)   // 按下 / **选中态**
+    // 🚨 Kevin 2026-08-21：「灰色药丸再加深一点，现在不是很分得清楚」。
+    //    未选压暗、选中提亮，相对亮度差从 20 拉到 45（安卓侧 build_apk.py 有闸门守着）。
+    static let key     = hex(0x1B1E25)   // 按键 / chip 未选 / Tab 轨道
+    static let keyDown = hex(0x454B57)   // 按下 / **选中态**
 
     static let text    = hex(0xECEFF4)
     static let dim     = hex(0x8A94A3)
