@@ -5950,9 +5950,15 @@ function paintCards(){
 
     }).join('');
 
+  /* 🚨 `go()` 入栈，否则场景屏不在栈里：在场景里按返回会 pop 掉**卡片列表**，
+     NAV 归零直接弹回首页，跳过他刚在看的那一列卡。
+     `back()` 是「pop 当前项、再渲染下一项」，所以这里包一层不会把 start 重跑一遍。 */
+
   document.querySelectorAll('#cards .card').forEach(c =>
 
-    c.onclick = () => start(SCENARIOS[+c.dataset.i]));
+    c.onclick = () => { const scn = SCENARIOS[+c.dataset.i];
+
+                        go(() => start(scn), '这一场'); });
 
   if (total > PAGE){
 
@@ -16661,7 +16667,11 @@ function showChat(){
     });
   bindCards();
   const drill = $('#chatdrill');
-  if (drill) drill.onclick = () => { NAV.length = 0; showList(); paintNav(); };
+  /* 🚨 用 `go()` **入栈**，不是 `NAV.length = 0`。
+     那行是我从 `bindSessTop`（切 tab）抄来的 —— 切 tab 是**换根**，
+     点这里是**往下钻**。清空之后 `paintNav()` 把返回栏整个隐藏，
+     他进去就出不来了（2026-08-21 他报的：「只能从根目录切到听力再切回去」）。 */
+  if (drill) drill.onclick = () => go(showList, '按题卡练');
   const more = $('#chatcardmore');
   if (more) more.onclick = () => {
     const box = $('#chatcards');
