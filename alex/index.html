@@ -965,11 +965,25 @@ button{font-family:inherit}
 
 #selbar .sb-go{background:var(--accent);color:var(--on-accent);border-color:var(--accent);flex:2}
 
-/* 🚨 正文必须可选中。`.sent` 原来只设了 cursor:pointer，
+/* 🚨🚨 正文必须可选中，而且要**全局显式**打开，别靠平台默认值。
 
-   但父层若有 user-select:none 就长按不出手柄 —— 这里显式打开。 */
+   2026-08-21 他说「在手机 APP 里没法长按去选中」。查下来 CSS 里
+   `user-select:none` 只有 `#mic` 一处、正文全是 `auto`，桌面上实测能选 ——
+   问题只出在 iOS 把它装成主屏 App 的 standalone 模式下，那儿 WebKit 的
+   默认值跟 Safari 不一样。
 
-.better .en,.sent{-webkit-user-select:text;user-select:text}
+   下面这条原来只给 `.better .en` 和 `.sent` 两个选择器开了（注释还写着
+   「父层若有 user-select:none 就长按不出手柄」）—— 等于**知道有这个坑，
+   却只在两个出口堵了**。现在从 html/body 一路显式打开，
+   再把按钮单独关掉（按钮上长按冒出选择手柄很烦）。 */
+
+html,body{-webkit-user-select:text;user-select:text}
+
+button,.rchip,.btn,.play,.sbtn,.tabs,.nav,#topnav,#mic{
+
+  -webkit-user-select:none;user-select:none}
+
+.better .en,.sent,.bub,.t,.note,.k{-webkit-user-select:text;user-select:text}
 
 .sent::selection{background:#fff2a8;color:#000}
 
@@ -17147,9 +17161,14 @@ function chatCritHTML(t, i){
     return saved ? '<span style="color:#f5b301;font-size:15px">★</span>'
                  : '<span style="font-size:15px">☆</span>';
   };
+  /* 🚨 「📋 复制」是给**长按选不中**的那条路兜底的（他 2026-08-21 报的）。
+     我在这儿复现不了 iOS 长按，所以不能只改 CSS 就说修好了 ——
+     这颗按钮不依赖长按，是我能保证的那一半。 */
   const key = (k, n, en) =>
     ' <button class="rchip" data-chatspk="' + k + i +
     '" style="padding:2px 8px;font-size:12px" title="听一遍">🔊</button>' +
+    '<button class="rchip" data-chatcopy="' + esc(en || '') +
+    '" style="padding:2px 8px;font-size:12px" title="复制这句">📋</button>' +
     '<button class="rchip" data-chattake="' + n + i +
     '" style="padding:2px 8px;font-size:12px" title="收进本子">' + star(en) + '</button>';
 
@@ -17327,6 +17346,35 @@ function chatBindCrit(ctx){
         b.disabled = false; b.textContent = '🔁 再次尝试';
         toast('还是没成：' + String(e.message || e).slice(0, 40), 3600);
       }
+    });
+
+  /* 📋 复制：不依赖长按选中。写不进剪贴板时退回「选中它」让系统菜单接手。 */
+  document.querySelectorAll('[data-chatcopy]').forEach(b =>
+    b.onclick = async () => {
+      const txt = b.dataset.chatcopy || '';
+      if (!txt) return;
+      const old = b.textContent;
+      try {
+        await navigator.clipboard.writeText(txt);
+        b.textContent = '✓'; toast('复制好了', 1600);
+      } catch(_){
+        /* 🚨 iOS 上 clipboard 要安全上下文 + 用户手势，仍可能被拒。
+           那就退一步：把这句**选中**，系统的「拷贝」菜单就能接手 ——
+           比弹一句「复制失败」有用。 */
+        try {
+          const sp = document.createElement('span');
+          sp.textContent = txt;
+          sp.style.cssText = 'position:fixed;left:8px;right:8px;bottom:70px;'
+            + 'padding:10px;background:var(--card);border:2px solid var(--brand-dark);'
+            + 'border-radius:10px;z-index:99;-webkit-user-select:text;user-select:text';
+          document.body.appendChild(sp);
+          const r = document.createRange(); r.selectNodeContents(sp);
+          const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+          toast('已选中，长按选「拷贝」', 3200);
+          setTimeout(() => { try { sp.remove(); } catch(__){} }, 12000);
+        } catch(__){ toast('复制不了，长按这句试试'); }
+      }
+      setTimeout(() => { b.textContent = old; }, 1400);
     });
 
   /* 🚨 「🔊 听一遍」也要绑 —— 画了不绑就是他点了没反应（死键，还不报错）。
