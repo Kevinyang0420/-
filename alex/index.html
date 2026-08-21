@@ -16503,6 +16503,17 @@ function showChat(){
         '<button class="rchip" data-chattop="' + esc(t2) + '" ' +
         'style="margin:0 6px 6px 0;max-width:100%;white-space:normal;text-align:left">' +
         esc(t2) + '</button>').join('') + '</div>' : '') +
+
+      /* ③ 开聊 —— 必须**整颗**落在第一屏内。
+         🚨 2026-08-21 真机 375x812 实测：它原来排在三张题库卡下面，
+            「管理层访谈」那一档（提示文字多一行）按钮底边到 813，超出 1px 被切掉。
+            所以卡片挪到它后面 —— 卡片是「想不出来时」的辅助，不该挡在主动作前面。 */
+      '<button id="chatgo" class="btn wide" style="width:100%;margin-top:14px">开聊</button>' +
+      '<div class="t" style="margin-top:8px;color:var(--muted)">' +
+        'Alex 先开口，你接着说就行。<b>不打断你</b> —— ' +
+        '两个版本会挂在你自己那句话下面，你挑一个。</div>' +
+      '<div id="chaterr" class="warn" style="margin-top:8px"></div>' +
+      '<div id="chatstage" style="margin-top:8px"></div>' +
       /* 🚨 题库里这个场合的卡 —— 原地复用那 4594 张，不另存一份、不另开一个浏览页
          （他拍板「一张不重出」）。想不出聊什么的时候点一张就有情景。 */
       (cards.length ? '<div id="chatcards" style="margin-top:12px">' +
@@ -16511,14 +16522,6 @@ function showChat(){
           '<button class="rchip" id="chatcardmore" style="padding:1px 8px;font-size:12px">' +
           '🎲 换一批</button></div>' +
         chatCardChips(cards) + '</div>' : '') +
-
-      /* ③ 开聊 —— 跟上面两格同屏，不用滚 */
-      '<button id="chatgo" class="btn wide" style="width:100%;margin-top:14px">开聊</button>' +
-      '<div class="t" style="margin-top:8px;color:var(--muted)">' +
-        'Alex 先开口，你接着说就行。<b>不打断你</b> —— ' +
-        '两个版本会挂在你自己那句话下面，你挑一个。</div>' +
-      '<div id="chaterr" class="warn" style="margin-top:8px"></div>' +
-      '<div id="chatstage" style="margin-top:8px"></div>' +
       /* 🚨 「练习」那套（先给目标句式 + 逐轮打分 + 难度分级）没删，
          只是从顶部 tab 降成这里的一个入口 —— 它是同一件事的另一种练法，
          不该在顶上占一格。 */
