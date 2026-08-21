@@ -37,6 +37,8 @@ final class MainViewController: UIViewController {
     private var mode: Backend.Mode =
         Backend.Mode(rawValue: UserDefaults.standard.string(forKey: "vime.mode") ?? "en") ?? .en
     private let logoView = UIImageView()
+    /// 长按说明的文案表。用 ObjectIdentifier 当键，免得给每个控件都挂 tag。
+    private var tips: [ObjectIdentifier: String] = [:]
     // 第一级 Tab
     private let tabTranslate = UIButton(type: .system)
     private let tabTranscribe = UIButton(type: .system)
@@ -108,10 +110,14 @@ final class MainViewController: UIViewController {
         subStack.spacing = Theme.gap * 0.7
         subStack.distribution = .fillEqually
 
+        // 🚨 Kevin 2026-08-21：那几行功能说明「至于要留这么大的位置吗？…
+        //    用户自己点着点着自然就明白了。或者长按的时候弹一个 box 来介绍」。
+        //    -> 常驻说明清空（下面 paintMode 里也不再写），改成**长按弹**（explain）。
         hintLabel.font = .systemFont(ofSize: 15)
         hintLabel.textColor = Theme.dim
         hintLabel.textAlignment = .center
-        hintLabel.numberOfLines = 3
+        hintLabel.numberOfLines = 1
+        hintLabel.text = ""
 
         heardLabel.font = .systemFont(ofSize: 15)
         heardLabel.textColor = Theme.text
@@ -216,6 +222,20 @@ final class MainViewController: UIViewController {
         resultView.layer.cornerRadius = Theme.rCard
         Theme.elevate(resultView, 3)
         Theme.elevate(micButton, 6)     // 主操作，投影重一档，浮在最上层
+
+        // 长按弹说明（跟安卓 explain() 一一对应，文案保持一致）
+        explain(tabTranslate, "翻译：说中文（或英文），出目标语言的干净短消息。"
+                + "语气和目标语言在下面那排选。")
+        explain(tabTranscribe, "转写：不翻译，保留你说的那个语言。"
+                + "下面可选「结构化转写」（去口水话、该分点就分点）或「逐字转录」（一个字不改）。")
+        explain(modeZhButton, "结构化转写：滤掉「嗯、那个、就是说」这类口水话，"
+                + "说了几件事就分几条，但不翻译，你说什么语言就出什么语言。")
+        explain(modeRawButton, "逐字转录：听到什么写什么，一个字不改、不整理、不翻译。")
+        explain(micButton, "点一下开始说，说完再点一下停。中途停顿思考没关系，不会自动截断。")
+        explain(toneButton, "语气：随意 / 工作 / 邮件三档，点一下轮换。")
+        explain(langButton, "翻译成哪种语言。支持英文、日语、法语、德语、西班牙语、韩语。")
+        explain(speakButton, "朗读：把刚出的那段念出来。中文用中文女声，英文用 Andrew。")
+
         paintMode()
     }
 
@@ -270,6 +290,22 @@ final class MainViewController: UIViewController {
         }
     }
 
+    /// 长按弹一条说明（跟安卓 VoiceImeService.explain 同一套文案）。
+    /// 说明不占版面，只在长按时出现。
+    private func explain(_ v: UIView, _ text: String) {
+        let g = UILongPressGestureRecognizer(target: self, action: #selector(showTip(_:)))
+        v.addGestureRecognizer(g)
+        tips[ObjectIdentifier(v)] = text
+    }
+
+    @objc private func showTip(_ g: UILongPressGestureRecognizer) {
+        guard g.state == .began, let v = g.view,
+              let text = tips[ObjectIdentifier(v)] else { return }
+        let ac = UIAlertController(title: nil, message: text, preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: "知道了", style: .cancel))
+        present(ac, animated: true)
+    }
+
     @objc private func pickEn() { setMode(.en) }
     @objc private func pickZh() { setMode(.zh) }
     @objc private func pickRaw() { setMode(.raw) }
@@ -302,11 +338,11 @@ final class MainViewController: UIViewController {
         langButton.setTitle(Backend.langLabel(lang) + " ▾", for: .normal)
         switch mode {
         case .en:
-            hintLabel.text = "按一下开始说中文\n说完再按一下，英文自动复制好"
+            hintLabel.text = ""
         case .zh:
-            hintLabel.text = "结构化转写：滤掉口水话、整理成中文，不翻译\n按一下开始说，再按一下停"
+            hintLabel.text = ""
         case .raw:
-            hintLabel.text = "逐字转录：听到什么写什么，一个字不改\n按一下开始说，再按一下停"
+            hintLabel.text = ""
         }
     }
 
