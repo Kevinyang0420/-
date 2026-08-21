@@ -18163,7 +18163,7 @@ async function doLook(q){
   res.innerHTML = '<div class="note" id="dwait">Alex 正在查「' + esc(normQ(q)) + '」…' +
     (kind === 'zh' ? '（中文 → 给你几个地道说法）' : '') +
     '<br><span id="dsec" style="color:var(--muted);font-size:12px"></span></div>';
-  const _tick = setInterval(() => {
+  const _paint = () => {
     const el = document.getElementById('dsec');
     if (!el) return;
     const s = Math.round((Date.now() - _t0) / 1000);
@@ -18171,7 +18171,12 @@ async function doLook(q){
       s < 6  ? '（一般 5 秒左右）'
     : s < 14 ? '　这次给的东西多，再等等'
     :          '　还在重查（上一版没达标），最多再试两次');
-  }, 1000);
+  };
+  /* 🚨 先画一次再起定时器 —— `setInterval` 要等满 1 秒才第一次触发，
+     而**头一秒恰恰是他最容易觉得「点了没反应」的那一秒**（真页面量到的：
+     t=900ms 时那一行还是空白）。等一秒才出现的进度条等于没有进度条。 */
+  _paint();
+  const _tick = setInterval(_paint, 1000);
   try {
     const e = await dictLook(normQ(q), kind);
     dCachePut(id, e);
