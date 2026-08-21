@@ -114,11 +114,14 @@ final class MainViewController: UIViewController {
         resultView.isEditable = false
         resultView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
 
-        micButton.setTitle("", for: .normal)
-        micButton.setImage(Theme.micGlyph(120), for: .normal)
+        // 🚨 长条，不是圆圈（跟安卓 MIC_BAR_DP 那套一一对应）。
+        micButton.setTitle("  点一下开始说", for: .normal)
+        micButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .medium)
+        micButton.setTitleColor(.white, for: .normal)
+        micButton.setImage(Theme.micGlyph(Theme.micBarHeight * 0.6), for: .normal)
         micButton.tintColor = .white
         micButton.backgroundColor = Theme.accent
-        micButton.layer.cornerRadius = 60
+        micButton.layer.cornerRadius = Theme.micBarHeight / 2
         micButton.addTarget(self, action: #selector(tapMic), for: .touchUpInside)
 
         toneButton.setTitle("语气：" + toneTitle(), for: .normal)
@@ -163,10 +166,10 @@ final class MainViewController: UIViewController {
             hintLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             hintLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
 
-            micButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            micButton.topAnchor.constraint(equalTo: hintLabel.bottomAnchor, constant: 22),
-            micButton.widthAnchor.constraint(equalToConstant: 120),
-            micButton.heightAnchor.constraint(equalToConstant: 120),
+            micButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            micButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            micButton.topAnchor.constraint(equalTo: hintLabel.bottomAnchor, constant: 18),
+            micButton.heightAnchor.constraint(equalToConstant: Theme.micBarHeight),
 
             toneButton.topAnchor.constraint(equalTo: micButton.bottomAnchor, constant: 16),
             toneButton.trailingAnchor.constraint(equalTo: view.centerXAnchor, constant: -6),
@@ -313,20 +316,19 @@ final class MainViewController: UIViewController {
         hintLabel.text = hint
         switch p {
         case .idle:
-            micButton.setTitle("", for: .normal)
-            micButton.setImage(Theme.micGlyph(120), for: .normal)
+            micButton.setTitle("  点一下开始说", for: .normal)
+            micButton.setImage(Theme.micGlyph(Theme.micBarHeight * 0.6), for: .normal)
             micButton.tintColor = .white
             micButton.backgroundColor = Theme.accent
             micButton.isEnabled = true
         case .listening:
-            micButton.setTitle("", for: .normal)
-            micButton.setImage(Theme.stopGlyph(120), for: .normal)
+            micButton.setTitle("  正在听", for: .normal)
+            micButton.setImage(Theme.stopGlyph(Theme.micBarHeight * 0.6), for: .normal)
             micButton.backgroundColor = Theme.danger
             micButton.isEnabled = true
         case .thinking:
             micButton.setImage(nil, for: .normal)
-            micButton.setTitle("…", for: .normal)
-            micButton.titleLabel?.font = .systemFont(ofSize: 40)
+            micButton.setTitle("处理中…", for: .normal)
             micButton.setTitleColor(.white, for: .normal)
             micButton.backgroundColor = Theme.keyDown
             micButton.isEnabled = false
