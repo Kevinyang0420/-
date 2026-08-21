@@ -131,30 +131,86 @@ def check_two_level():
 
 
 def check_mic_bar():
-    """说话键必须是长条不是圆圈（跟安卓 build_apk.py 里那条对应）。
+    """说话键必须是**正圆**且居中（跟安卓 MIC_CIRCLE_DP 那条对应）。
 
-    判据两件事：约束里不许再有写死的 120×120 正方形，且高度必须引用
-    `Theme.micBarHeight`（单一配置点）。
+    🚨 这条改过两次方向：先是长条，后来 Kevin 把说明行删掉后又要圆的。
+       判据永远跟着**当前的意图**走，别留着上一轮的：
+         ① 宽高都引用同一个 Theme.micBarHeight（正圆）
+         ② 水平居中（不是左右拉满）
     """
     src = io.open(os.path.join(HERE, "App", "AppDelegate.swift"),
                   encoding="utf-8").read()
     code = "\n".join(ln for ln in src.splitlines()
                      if not ln.strip().startswith(("//", "///", "*", "/*")))
-    seg = code[code.find("micButton.leadingAnchor"):] if "micButton.leadingAnchor" in code else ""
-    square = "micButton.widthAnchor.constraint(equalToConstant: 120)" in code
-    uses_h = "Theme.micBarHeight" in code
-    full_w = ("micButton.leadingAnchor" in code
-              and "micButton.trailingAnchor" in code)
-    return (not square) and uses_h and full_w, square, uses_h, full_w, seg
+    square = ("micButton.widthAnchor.constraint(equalToConstant: Theme.micBarHeight)" in code
+              and "micButton.heightAnchor.constraint(equalToConstant: Theme.micBarHeight)" in code)
+    centered = "micButton.centerXAnchor" in code
+    not_full = "micButton.leadingAnchor" not in code
+    return square and centered and not_full, square, centered, not_full, ""
+
+
+def check_tones():
+    """iOS 那份语气表必须跟 engine.py 一模一样（顺序也要一样）。
+
+    🚨 iOS 没走构建期生成，`tones`/`toneLabels` 是**手抄的第三份**。
+       靠"记得改三处"必然走散 —— 2026-08-21 安卓已经并成三档时，
+       iOS 还留着四档、带着已经删掉的「正式」。这条就是替代那份记性。
+    """
+    import importlib.util
+    eng_path = os.path.join(os.path.dirname(HERE), "engine.py")
+    spec = importlib.util.spec_from_file_location("engine_for_gate", eng_path)
+    eng = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(eng)
+    src = io.open(os.path.join(HERE, "App", "AppDelegate.swift"), encoding="utf-8").read()
+    codes = re.search(r'let tones = \[([^\]]*)\]', src)
+    labels = re.search(r'let toneLabels = \[([^\]]*)\]', src)
+    got_c = [x.strip().strip('"') for x in codes.group(1).split(",")] if codes else []
+    got_l = [x.strip().strip('"') for x in labels.group(1).split(",")] if labels else []
+    want_c = list(eng.TONES)
+    want_l = [eng.TONE_LABELS[k] for k in eng.TONES]
+    return got_c == want_c and got_l == want_l, got_c, got_l, want_c, want_l
+
+
+def check_langs():
+    """iOS 的目标语言表必须跟 engine.LANGS 一一对应（顺序也要一样）。
+
+    🚨 跟语气那条同型：iOS 是**手抄的第三份**。2026-08-21 加粤语时，
+       engine 和安卓都加了，iOS 差点漏掉 —— 加语言要改三处，靠记性必然走散。
+    """
+    import importlib.util
+    eng_path = os.path.join(os.path.dirname(HERE), "engine.py")
+    spec = importlib.util.spec_from_file_location("engine_for_lang_gate", eng_path)
+    eng = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(eng)
+    src = io.open(os.path.join(HERE, "Shared", "Backend.swift"), encoding="utf-8").read()
+    seg = src[src.find("static let langs"):]
+    seg = seg[:seg.find("\n    ]") + 6]
+    got = re.findall(r'\("([a-z]{2,3})",\s*"([^"]+)"', seg)
+    got_c = [c for c, _ in got]
+    got_l = [l for _, l in got]
+    want_c = list(eng.LANGS)
+    want_l = [eng.LANGS[k][0] for k in eng.LANGS]
+    return got_c == want_c and got_l == want_l, got_c, want_c
 
 
 def main():
     print("--- 版式闸门（不联网） ---")
-    bar_ok, square, uses_h, full_w, _ = check_mic_bar()
-    print("  %-28s %s" % ("说话键是整条(非圆圈)",
+    tone_ok, gc, gl, wc, wl = check_tones()
+    print("  %-28s %s" % ("语气档位跟 engine.py 一致",
+                          "PASS %s" % "/".join(gl) if tone_ok
+                          else "FAIL iOS=%s 应为 %s" % (gc, wc)))
+    lang_ok, glc, wlc = check_langs()
+    print("  %-28s %s" % ("目标语言跟 engine.py 一致",
+                          "PASS %d 种" % len(glc) if lang_ok
+                          else "FAIL iOS=%s 应为 %s" % (glc, wlc)))
+    if not tone_ok or not lang_ok:
+        print("\n=== 版式闸门未过 ===")
+        return 1
+    bar_ok, square, centered, not_full, _ = check_mic_bar()
+    print("  %-28s %s" % ("说话键是正圆且居中",
                           "PASS" if bar_ok else
-                          "FAIL 写死方形=%s 用统一高度=%s 左右拉满=%s"
-                          % (square, uses_h, full_w)))
+                          "FAIL 等宽高=%s 居中=%s 没左右拉满=%s"
+                          % (square, centered, not_full)))
     if not bar_ok:
         print("\n=== 版式闸门未过 ===")
         return 1
