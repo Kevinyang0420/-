@@ -12,15 +12,21 @@ enum Theme {
                 blue: CGFloat(v & 0xFF) / 255, alpha: 1)
     }
 
-    static let bg      = hex(0x15181D)   // 最外层底
-    static let panel   = hex(0x1E232B)   // 卡片/面板
-    static let key     = hex(0x2A313B)   // 按键
-    static let keyDown = hex(0x3A424E)
+    // 🚨🚨 跟安卓 Theme.java 逐条对齐，色值**取自 Grok 的 G1 设计稿**
+    //    （D:\_build\sample_grok_palette.py）。三条规则照做，别自由发挥：
+    //      ① 选中态不是强调色，只是更浅一档的灰（keyDown vs key）
+    //      ② 同一排 chip 全部同色
+    //      ③ 青色整屏只出现一处（说话长条）
+    static let bg      = hex(0x18181C)   // 最外层底
+    static let panel   = hex(0x202428)   // 卡片/面板
+    static let key     = hex(0x20242C)   // 按键 / chip 未选 / Tab 轨道
+    static let keyDown = hex(0x343840)   // 按下 / **选中态**
 
     static let text    = hex(0xECEFF4)
     static let dim     = hex(0x8A94A3)
-    static let accent  = hex(0x4FA6C7)   // 低饱和青蓝
-    static let danger  = hex(0xC9615C)   // 录音中（不刺眼的砖红）
+    /// 唯一的强调色，只许用在说话长条上。
+    static let accent  = hex(0x486C78)
+    static let danger  = hex(0x8C4A46)   // 录音中（同样压暗，跟 G1 一个调子）
 
     /// 待命态的麦克风图形 —— **就是 App 图标 G3 里那一个**（Assets 里的 `mic`）。
     /// 🚨 Kevin 2026-08-21：「小麦克风有点太卡通了…直接拿 T icon 下面那个麦克风用，
