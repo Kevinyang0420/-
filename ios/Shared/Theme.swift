@@ -33,6 +33,29 @@ enum Theme {
     /// 待命态的麦克风图形 —— **就是 App 图标 G3 里那一个**（Assets 里的 `mic`）。
     /// 🚨 Kevin 2026-08-21：「小麦克风有点太卡通了…直接拿 T icon 下面那个麦克风用，
     ///    保持 App 的 UI 和 Icon 风格一致」。所以不用 emoji 🎤，用抠出来的原件。
+    // 🚨 间距/圆角跟安卓 Theme.java 的 PAD/GAP/R_KEY/R_CARD 一一对应。
+    //    Kevin 2026-08-21：「它这个看起来挺舒服的，不会那么拥挤。你那里太拥挤了」。
+    static let pad: CGFloat = 18
+    static let gap: CGFloat = 12
+    static let rKey: CGFloat = 12
+    static let rCard: CGFloat = 16
+
+    /// 给控件加投影 + 一圈微亮上缘。
+    /// 🚨 Kevin：「它的每一个都有一个小阴影，显得有立体感，更 high class」。
+    ///    只有阴影没有那道边会显得"浮着"，两者一起才是那个质感。
+    ///    iOS 这边不像安卓要操心父容器裁剪，但 `clipsToBounds` 打开会一样把阴影切掉。
+    static func elevate(_ v: UIView, _ elev: CGFloat = 3, rim: Bool = true) {
+        v.clipsToBounds = false
+        v.layer.shadowColor = UIColor.black.cgColor
+        v.layer.shadowOpacity = 0.55
+        v.layer.shadowRadius = elev
+        v.layer.shadowOffset = CGSize(width: 0, height: elev * 0.6)
+        if rim {
+            v.layer.borderWidth = 1
+            v.layer.borderColor = UIColor(white: 1, alpha: 0.08).cgColor
+        }
+    }
+
     /// 说话键的高度。🚨 Kevin 2026-08-21：说话键改成 Typeless 那样的**长条**，
     /// 不是圆圈（「又很长、很占位置」）。圆圈 120pt 见方，长条只要 54。
     static let micBarHeight: CGFloat = 54
