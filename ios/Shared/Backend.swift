@@ -150,6 +150,66 @@ enum Backend {
         }
     }
 
+    // MARK: - 朗读（Andrew 的声音，跟 Alex 陪练同一个）
+
+    /// 把文字合成语音，返回 mp3 数据。
+    /// 🚨 Kevin 2026-08-21：翻译完要能点一下听出来。跟安卓 `Api.speak` 同一个端点。
+    static func speak(text: String, done: @escaping (Result<Data, Failure>) -> Void) {
+        guard let url = URL(string: base + "/api/tts") else {
+            return done(.failure(.message("地址不对")))
+        }
+        // voice 用短名，真正的 voice 名字由后端映射 —— 前端不硬编
+        let body: [String: Any] = ["text": text, "voice": "andrew"]
+        guard let data = try? JSONSerialization.data(withJSONObject: body) else {
+            return done(.failure(.message("请求组装失败")))
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.timeoutInterval = 30
+        req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        req.setValue(Secrets.pass, forHTTPHeaderField: "X-Alex-Pass")
+        req.httpBody = data
+
+        URLSession.shared.dataTask(with: req) { d, resp, err in
+            if let err = err { return done(.failure(.message(err.localizedDescription))) }
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            if code == 401 { return done(.failure(.unauthorized)) }
+            let obj = d.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
+            guard code == 200 || code == 202, let job = obj?["job"] as? String else {
+                return done(.failure(.http(code)))
+            }
+            pollAudio(job: job, tries: 0, done: done)
+        }.resume()
+    }
+
+    private static func pollAudio(job: String, tries: Int,
+                                  done: @escaping (Result<Data, Failure>) -> Void) {
+        if tries > 60 { return done(.failure(.timeout)) }
+        guard let url = URL(string: base + "/api/job?id=" + job) else {
+            return done(.failure(.message("job 地址不对")))
+        }
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 20
+        req.setValue(Secrets.pass, forHTTPHeaderField: "X-Alex-Pass")
+        DispatchQueue.global().asyncAfter(deadline: .now() + 0.8) {
+            URLSession.shared.dataTask(with: req) { d, _, _ in
+                let obj = d.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
+                guard let obj = obj else { return pollAudio(job: job, tries: tries + 1, done: done) }
+                if let e = obj["error"] as? String, obj["done"] as? Bool == true {
+                    return done(.failure(.message(e)))
+                }
+                if obj["done"] as? Bool == true {
+                    guard let b64 = obj["audio"] as? String,
+                          let mp3 = Data(base64Encoded: b64), !mp3.isEmpty else {
+                        return done(.failure(.message("没返回音频")))
+                    }
+                    return done(.success(mp3))
+                }
+                pollAudio(job: job, tries: tries + 1, done: done)
+            }.resume()
+        }
+    }
+
     // MARK: - 语音转写（跟安卓同一条链：录 WAV → /api/audio → 火山 ASR）
 
     /// 把录好的 WAV 传火山 `/api/audio` 转写成中文。

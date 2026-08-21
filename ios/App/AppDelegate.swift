@@ -44,6 +44,10 @@ final class MainViewController: UIViewController {
     private var lang = UserDefaults.standard.string(forKey: "vime.lang") ?? "en"
     private let langButton = UIButton(type: .system)
 
+    /// 🔊 朗读：把刚出的译文用 Andrew 的声音念出来
+    private let speakButton = UIButton(type: .system)
+    private var lastOut = ""
+
     private let hintLabel = UILabel()
     private let heardLabel = UILabel()
     private let resultView = UITextView()
@@ -113,8 +117,16 @@ final class MainViewController: UIViewController {
         langButton.layer.cornerRadius = 16
         langButton.addTarget(self, action: #selector(pickLang), for: .touchUpInside)
 
+        speakButton.setTitle("🔊 朗读", for: .normal)
+        speakButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        speakButton.setTitleColor(Theme.text, for: .normal)
+        speakButton.backgroundColor = Theme.key
+        speakButton.layer.cornerRadius = 16
+        speakButton.isEnabled = false          // 没东西可念时不给点
+        speakButton.addTarget(self, action: #selector(tapSpeak), for: .touchUpInside)
+
         [modeStack, hintLabel, heardLabel, resultView, micButton,
-         toneButton, langButton].forEach {
+         toneButton, langButton, speakButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
         }
@@ -143,7 +155,12 @@ final class MainViewController: UIViewController {
             langButton.widthAnchor.constraint(equalToConstant: 110),
             langButton.heightAnchor.constraint(equalToConstant: 34),
 
-            heardLabel.topAnchor.constraint(equalTo: toneButton.bottomAnchor, constant: 14),
+            speakButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            speakButton.topAnchor.constraint(equalTo: toneButton.bottomAnchor, constant: 10),
+            speakButton.widthAnchor.constraint(equalToConstant: 140),
+            speakButton.heightAnchor.constraint(equalToConstant: 36),
+
+            heardLabel.topAnchor.constraint(equalTo: speakButton.bottomAnchor, constant: 12),
             heardLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             heardLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
 
@@ -172,6 +189,38 @@ final class MainViewController: UIViewController {
         ac.addAction(UIAlertAction(title: "取消", style: .cancel))
         ac.popoverPresentationController?.sourceView = langButton
         present(ac, animated: true)
+    }
+
+    /// 朗读最近一次的译文。再点一下 = 停。
+    @objc private func tapSpeak() {
+        if Speaker.isPlaying {
+            Speaker.stop()
+            speakButton.setTitle("🔊 朗读", for: .normal)
+            return
+        }
+        let text = lastOut.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { hintLabel.text = "还没有可朗读的内容"; return }
+        speakButton.isEnabled = false
+        speakButton.setTitle("…", for: .normal)
+        Backend.speak(text: text) { [weak self] r in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.speakButton.isEnabled = true
+                switch r {
+                case .failure(let e):
+                    self.speakButton.setTitle("🔊 朗读", for: .normal)
+                    self.hintLabel.text = "朗读失败：\(e)"
+                case .success(let mp3):
+                    self.speakButton.setTitle("■ 停", for: .normal)
+                    Speaker.play(mp3) { [weak self] err in
+                        DispatchQueue.main.async {
+                            self?.speakButton.setTitle("🔊 朗读", for: .normal)
+                            if let err = err { self?.hintLabel.text = "朗读失败：\(err)" }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @objc private func pickEn() { setMode(.en) }
@@ -304,6 +353,8 @@ final class MainViewController: UIViewController {
                 case .success(let en):
                     self.resultView.text = en
                     UIPasteboard.general.string = en   // 自动进剪贴板
+                    self.lastOut = en                  // 给「🔊 朗读」用
+                    self.speakButton.isEnabled = true
                     self.setPhase(.idle, hint: "已复制 ✓　去微信长按输入框 → 粘贴\n再按一下麦克风说下一条")
                 case .failure(let err):
                     self.setPhase(.idle, hint: "失败：\(err)")
