@@ -21,4 +21,32 @@ enum Theme {
     static let dim     = hex(0x8A94A3)
     static let accent  = hex(0x4FA6C7)   // 低饱和青蓝
     static let danger  = hex(0xC9615C)   // 录音中（不刺眼的砖红）
+
+    /// 待命态的麦克风图形 —— **就是 App 图标 G3 里那一个**（Assets 里的 `mic`）。
+    /// 🚨 Kevin 2026-08-21：「小麦克风有点太卡通了…直接拿 T icon 下面那个麦克风用，
+    ///    保持 App 的 UI 和 Icon 风格一致」。所以不用 emoji 🎤，用抠出来的原件。
+    /// `size` 传按钮边长，图形占 60%（麦克风是竖长条，52% 时视觉上偏细）。
+    static func micGlyph(_ size: CGFloat) -> UIImage? {
+        guard let src = UIImage(named: "mic") else { return nil }
+        let side = size * 0.60
+        let r = UIGraphicsImageRenderer(size: CGSize(width: side, height: side))
+        let img = r.image { _ in
+            src.draw(in: CGRect(x: 0, y: 0, width: side, height: side))
+        }
+        return img.withRenderingMode(.alwaysTemplate)
+    }
+
+    /// 录音态的停止方块。
+    /// 🚨 原来用 emoji「■」，在 120pt 的按钮里只占 ~20%，Kevin 说「太小了」。
+    ///    改成自己画：边长 = 按钮的 40%，微圆角。
+    static func stopGlyph(_ size: CGFloat) -> UIImage {
+        let side = size * 0.40
+        let r = UIGraphicsImageRenderer(size: CGSize(width: side, height: side))
+        return r.image { ctx in
+            UIColor.white.setFill()
+            UIBezierPath(roundedRect: CGRect(x: 0, y: 0, width: side, height: side),
+                         cornerRadius: side * 0.12).fill()
+            _ = ctx
+        }.withRenderingMode(.alwaysOriginal)
+    }
 }
