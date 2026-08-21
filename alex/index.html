@@ -15837,7 +15837,7 @@ function chatReset(){
      这里原来放的是 `mode:'itv'` —— 一个**从没实现过**的模拟面试档，
      它引用的 ITV_WHO 根本不存在。加档位不如加参数，这就是那次的教训。 */
   CHAT = {id:'', on:'', t0:0, topic:'', src:'', turns:[],
-          occ:'', scene:'',
+          occ:'', scene:'', cardId:'',
           busy:false, rec:null, chunks:[], recing:false, t1:0, tick:0, hintedAt:null,
           err:'', stage:'', noAsk:0, opened:false, done:false};
 }
@@ -15942,6 +15942,11 @@ function chatOpenPrompt(seed){
          + '\n🚨 别考他这个词，也别提本子。开一个日常话题，让这个词自然用得上。',
     daily: '随便开个日常话题：' + seed.hint
   }[seed.src] || ('随便开个日常话题：' + seed.hint);
+  /* 🚨 有情景就一个字都别提「日常话题」—— 上面那张 map 是给日常那档写的，
+     漏到正式场合会把人设压掉（这正是五个场合全退化成闲聊的那一半原因）。 */
+  const how2 = hasScene
+    ? '这一场的情景上面已经写清楚了。**按你自己那个角色**开口，别复述情景。'
+    : how;
 
   /* 🚨 「必须以问题结尾」**只对 ask 的场合成立**。写死的话，
      管理层访谈里 Alex 会开口就问他该问的那句（2026-08-21 真页面实测到的）。 */
@@ -15949,7 +15954,7 @@ function chatOpenPrompt(seed){
   return [
     chatWho(), '',
     '现在是这一场的**第一句话**，由你先开口。',
-    how, '',
+    how2, '',
     '只输出一个 JSON，不要 markdown 围栏、不要别的话:',
     '{',
     ' "topic":"这一场在聊什么（4-12 个中文字，给他看的标题）",',
@@ -16403,6 +16408,7 @@ function chatNew(topic, src){
           /* 🚨 落盘时把这一场的场合和情景一起存下来 —— 不存的话「接着聊」
              会拿**当前**选的场合去续一场早就结束的对话，Alex 当场换个人。 */
           occ: (CHAT && CHAT.occ) || occGet().k, scene: (CHAT && CHAT.scene) || '',
+          cardId: (CHAT && CHAT.cardId) || '',
           turns: []};
 }
 async function chatSave(){
@@ -16688,6 +16694,26 @@ async function chatStart(topic){
   CHAT.scene = t;
   CHAT.busy = true;
   try { if (window.unlockTTS) unlockTTS(); unlockNeural(); } catch(_){}   // 🚨 必须在这颗按钮的手势里
+  /* 🚨🚨 这一段**必须排在 unlockTTS 之后** —— 它里面有 `await fillScn`，
+     而 iOS 上隔了一个 await 就不再算「用户手势里」，开场白会一声不响
+     （判据 E2）。我第一版就把它插到了解锁前面，被 test_chat.js 当场抓住。
+
+     内容：留空 + 正式场合 → 从**这个场合自己那批题库卡**里抽一张当情景。
+     不这么做的话种子会兜底到 `CHAT_DAILY`（写死的日常话题表），
+     于是管理层访谈开口问「跨境通勤累不累」、对外汇报问「咖啡还是茶」、
+     面试问「早饭吃了什么」—— 五个场合全部退化成日常闲聊（真页面实测）。
+     一条只在日常成立的默认值被写成了全局，跟这次重构要治的是同一个病。 */
+  if (!t && occGet().deep){
+    try {
+      const pool = occCards(occGet());
+      if (pool.length){
+        let card = pool[Math.floor(Math.random() * pool.length)];
+        if (typeof fillScn === 'function') card = await fillScn(card);
+        CHAT.scene = scnToScene(card);
+        CHAT.cardId = card.id;                 // 记下来，好知道这一场是哪张卡
+      }
+    } catch(_){ /* 抽不到就退回原来的路，别为了这个把开场卡死 */ }
+  }
   const el = $('#chaterr'); if (el) el.textContent = '';
   const btn = $('#chatgo'); if (btn) btn.disabled = true;
   chatStage('Alex 在想开个什么话头');
