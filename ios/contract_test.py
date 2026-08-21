@@ -120,8 +120,12 @@ def check_two_level():
     """
     src = io.open(os.path.join(HERE, "App", "AppDelegate.swift"),
                   encoding="utf-8").read()
+    # 🚨 只数 **tab** 开头的成员：那一排里除了两个 Tab 还挂着 logoView，
+    #    数「arrangedSubviews 有几项」会把 logo 算成第三个 Tab（2026-08-21 撞过）。
+    #    判据要说清查的是什么对象，不是数一排里有几个东西。
     m = re.search(r"UIStackView\(arrangedSubviews:\s*\[([^\]]*)\]\)", src)
-    n_tabs = len([x for x in m.group(1).split(",") if x.strip()]) if m else 0
+    items = [x.strip() for x in m.group(1).split(",") if x.strip()] if m else []
+    n_tabs = len([x for x in items if x.startswith("tab")])
     labels = [l for l in ["翻译", "转写", "结构化转写", "逐字转录"] if ('"%s"' % l) in src]
     return n_tabs, labels
 
