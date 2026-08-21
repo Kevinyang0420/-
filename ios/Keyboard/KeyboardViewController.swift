@@ -46,8 +46,8 @@ final class KeyboardViewController: UIInputViewController {
         hintLabel.font = .systemFont(ofSize: 13)
         hintLabel.textColor = Theme.dim
         hintLabel.textAlignment = .center
-        hintLabel.numberOfLines = 2
-        hintLabel.text = "按一下开始说中文　·　说完再按一下，自动出英文"
+        hintLabel.numberOfLines = 1
+        hintLabel.text = ""
 
         heardLabel.font = .systemFont(ofSize: 15)
         heardLabel.textColor = Theme.text
@@ -167,7 +167,7 @@ final class KeyboardViewController: UIInputViewController {
         if phase == .thinking { return }
 
         heardLabel.text = ""
-        setPhase(.listening, hint: "听着呢，想到哪说到哪　·　说完再按一下红色按钮")
+        setPhase(.listening, hint: "")
 
         // 录音 → 停止后拿到 WAV → 后端转写 → 整理翻译上屏（跟安卓、跟 App 同一条链）
         voice.start(onPartial: { _ in }, onWav: { [weak self] result in
@@ -177,7 +177,7 @@ final class KeyboardViewController: UIInputViewController {
                 case .failure(let f):
                     self.setPhase(.idle, hint: "\(f)\n可改用系统键盘的 🎤 说完，再点下面「译光标前的中文」")
                 case .success(let wav):
-                    self.setPhase(.thinking, hint: "识别中…")
+                    self.setPhase(.thinking, hint: "")
                     Backend.transcribe(wav: wav) { [weak self] r in
                         DispatchQueue.main.async {
                             guard let self = self else { return }
@@ -196,7 +196,7 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     private func stopListening() {
-        setPhase(.thinking, hint: "识别中…")
+        setPhase(.thinking, hint: "")
         voice.stop()
     }
 
@@ -221,7 +221,7 @@ final class KeyboardViewController: UIInputViewController {
             setPhase(.idle, hint: "这份包没配口令，重新构建一次")
             return
         }
-        setPhase(.thinking, hint: "整理并译成英文…")
+        setPhase(.thinking, hint: "")
         // 模式跟 App 共用同一个 UserDefaults 键，两处切换互通
         let mode = Backend.Mode(
             rawValue: UserDefaults.standard.string(forKey: "vime.mode") ?? "en") ?? .en
@@ -234,7 +234,7 @@ final class KeyboardViewController: UIInputViewController {
                     for _ in 0..<replaceChars { self.textDocumentProxy.deleteBackward() }
                     self.textDocumentProxy.insertText(en)
                     self.heardLabel.text = ""
-                    self.setPhase(.idle, hint: "已上屏 ✓　点麦克风继续说")
+                    self.setPhase(.idle, hint: "")
                 case .failure(let err):
                     // 失败绝不动输入框，他说的话还在
                     self.setPhase(.idle, hint: "失败：\(err)")
