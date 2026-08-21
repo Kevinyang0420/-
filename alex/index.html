@@ -15749,12 +15749,18 @@ function occCards(o){
    对话这边要的是真说一遍，提前把范句喂给他等于把这一场作废了。 */
 function scnToScene(sc){
   if (!sc) return '';
+  /* 🚨 判「值」有没有内容，不是判整行长度。
+     原来写的是 `.filter(x => x.length > 4)` —— 而 `我要做到：` 这个标签本身
+     就 5 个字，于是 task 是空的时候照样画出一行空标签（真机上点出来的）。
+     挂错对象的检查等于没查。 */
   return [
-    '情景：' + String(sc.sit || '').trim(),
-    '你演：' + String(sc.ai || '').trim(),
-    '我是：' + String(sc.you || '').trim(),
-    '我要做到：' + String(sc.task || '').trim(),
-  ].filter(x => x.length > 4).join('\n');
+    ['情景：',    sc.sit],
+    ['你演：',    sc.ai],
+    ['我是：',    sc.you],
+    ['我要做到：', sc.task],
+  ].filter(p => String(p[1] || '').trim())
+   .map(p => p[0] + String(p[1]).trim())
+   .join('\n');
 }
 
 const CHAT_TOPICS_LS = 'alex_chat_topics';   // 他自己给过的话题
@@ -16552,13 +16558,23 @@ function showChat(){
 
   /* 🚨 点一张卡 = 把情景**填进 box**，不是直接开聊 ——
      他还得能改（「我是审计经理」改成「我是项目经理」），也得先看清演的是什么。 */
+  /* 🚨 `SCENARIOS` 是**轻索引**：`ai` / `task` / `tgt` / `traps` 不在里面，
+     要按 `sh` 去取分片补水（`fillScn`，练习那边开场前也是这么做的）。
+     不补的话点出来是「情景：… 我是：… 我要做到：(空)」，`你演：` 整行没有 ——
+     而 Alex 该演谁正是这张卡最要紧的一格。 */
   const bindCards = () => document.querySelectorAll('[data-chatscn]').forEach(b =>
-    b.onclick = () => {
-      const sc = (typeof SCENARIOS !== 'undefined')
-        ? SCENARIOS.find(x => x.id === b.dataset.chatscn) : null;
+    b.onclick = async () => {
+      if (typeof SCENARIOS === 'undefined') return;
+      let sc = SCENARIOS.find(x => x.id === b.dataset.chatscn);
+      if (!sc) return;
+      const old = b.textContent;
+      b.textContent = '⏳ ' + old;
+      try { if (typeof fillScn === 'function') sc = await fillScn(sc); }
+      catch(_){}
+      b.textContent = old;
       const inp = $('#chattopic');
-      if (inp && sc){ inp.value = scnToScene(sc); inp.focus();
-                      try { inp.setSelectionRange(0, 0); } catch(_){} }
+      if (inp){ inp.value = scnToScene(sc); inp.focus();
+                try { inp.setSelectionRange(0, 0); } catch(_){} }
     });
   bindCards();
   const drill = $('#chatdrill');
