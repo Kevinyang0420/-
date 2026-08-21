@@ -36,6 +36,7 @@ final class MainViewController: UIViewController {
     /// 输出模式：译成英文（默认）/ 只转写。跟安卓一致。
     private var mode: Backend.Mode =
         Backend.Mode(rawValue: UserDefaults.standard.string(forKey: "vime.mode") ?? "en") ?? .en
+    private let logoView = UIImageView()
     // 第一级 Tab
     private let tabTranslate = UIButton(type: .system)
     private let tabTranscribe = UIButton(type: .system)
@@ -80,10 +81,20 @@ final class MainViewController: UIViewController {
             b.layer.cornerRadius = 17
             b.addTarget(self, action: sel, for: .touchUpInside)
         }
-        let modeStack = UIStackView(arrangedSubviews: [tabTranslate, tabTranscribe])
+        // Kevin 2026-08-21：Tab 右边那块空地放 logo（G3 图标里的整个 T+麦克风，同源）。
+        // 压到次要文字色，不抢戏 —— 这一屏的强调色只留给说话长条。
+        logoView.image = UIImage(named: "logo")?.withRenderingMode(.alwaysTemplate)
+        logoView.tintColor = Theme.dim
+        logoView.contentMode = .scaleAspectFit
+
+        let modeStack = UIStackView(arrangedSubviews: [tabTranslate, tabTranscribe, logoView])
         modeStack.axis = .horizontal
         modeStack.spacing = 8
-        modeStack.distribution = .fillEqually
+        modeStack.distribution = .fill
+        tabTranslate.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        tabTranscribe.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        logoView.setContentHuggingPriority(.required, for: .horizontal)
+        logoView.widthAnchor.constraint(equalToConstant: 26).isActive = true
 
         for (b, t, sel) in [(modeZhButton, "结构化转写", #selector(pickZh)),
                             (modeRawButton, "逐字转录", #selector(pickRaw))] {
