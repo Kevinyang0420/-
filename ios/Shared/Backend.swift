@@ -26,14 +26,17 @@ enum Backend {
         }
     }
 
-    /// 输出模式。跟安卓 `Api.MODE_EN / MODE_ZH` 一一对应（Kevin 规矩：两端一致）。
+    /// 输出模式。跟安卓 `Api.MODE_*` 一一对应（Kevin 规矩：两端一致）。
     enum Mode: String {
-        case en   // 清洗+结构化+译成英文（默认）
-        case zh   // 只清洗+结构化，输出中文，不翻译
+        case en    // 译成英文：清洗+结构化+译英（默认）
+        case zh    // 结构化转写：清洗+结构化，中文，不翻译
+        case raw   // 逐字转录：说什么写什么，**不过模型**
     }
 
     static func polish(text: String, tone: String, mode: Mode = .en,
                        done: @escaping (Result<String, Failure>) -> Void) {
+        // 🚨 逐字转录直接短路：过一遍模型就有被润色的风险，还白等几秒、白花一次调用
+        if mode == .raw { return done(.success(text)) }
         submit(text: text, tone: tone, mode: mode, attempt: 0, done: done)
     }
 

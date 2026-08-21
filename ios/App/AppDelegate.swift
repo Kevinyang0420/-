@@ -38,7 +38,7 @@ final class MainViewController: UIViewController {
         Backend.Mode(rawValue: UserDefaults.standard.string(forKey: "vime.mode") ?? "en") ?? .en
     private let modeEnButton = UIButton(type: .system)
     private let modeZhButton = UIButton(type: .system)
-    private let toneStack = UIStackView()
+    private let modeRawButton = UIButton(type: .system)
 
     private let hintLabel = UILabel()
     private let heardLabel = UILabel()
@@ -58,15 +58,16 @@ final class MainViewController: UIViewController {
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: "权限", style: .plain, target: self, action: #selector(openSetup))
 
-        // 模式切换：译成英文（默认）/ 只转写
+        // 模式切换三档：译成英文（默认）/ 结构化转写 / 逐字转录
         for (b, t, sel) in [(modeEnButton, "译成英文", #selector(pickEn)),
-                            (modeZhButton, "只转写", #selector(pickZh))] {
+                            (modeZhButton, "结构化", #selector(pickZh)),
+                            (modeRawButton, "逐字", #selector(pickRaw))] {
             b.setTitle(t, for: .normal)
-            b.titleLabel?.font = .systemFont(ofSize: 14, weight: .medium)
+            b.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
             b.layer.cornerRadius = 16
             b.addTarget(self, action: sel, for: .touchUpInside)
         }
-        let modeStack = UIStackView(arrangedSubviews: [modeEnButton, modeZhButton])
+        let modeStack = UIStackView(arrangedSubviews: [modeEnButton, modeZhButton, modeRawButton])
         modeStack.axis = .horizontal
         modeStack.spacing = 8
         modeStack.distribution = .fillEqually
@@ -141,6 +142,7 @@ final class MainViewController: UIViewController {
 
     @objc private func pickEn() { setMode(.en) }
     @objc private func pickZh() { setMode(.zh) }
+    @objc private func pickRaw() { setMode(.raw) }
 
     private func setMode(_ m: Backend.Mode) {
         mode = m
@@ -149,16 +151,23 @@ final class MainViewController: UIViewController {
     }
 
     private func paintMode() {
-        let en = (mode == .en)
-        modeEnButton.backgroundColor = en ? Theme.accent : Theme.key
-        modeEnButton.setTitleColor(en ? .white : Theme.dim, for: .normal)
-        modeZhButton.backgroundColor = en ? Theme.key : Theme.accent
-        modeZhButton.setTitleColor(en ? Theme.dim : .white, for: .normal)
+        for (b, m) in [(modeEnButton, Backend.Mode.en),
+                       (modeZhButton, .zh),
+                       (modeRawButton, .raw)] {
+            let on = (mode == m)
+            b.backgroundColor = on ? Theme.accent : Theme.key
+            b.setTitleColor(on ? .white : Theme.dim, for: .normal)
+        }
         // 语气档位只在翻译模式有意义
-        toneButton.isHidden = !en
-        hintLabel.text = en
-            ? "按一下开始说中文\n说完再按一下，英文自动复制好"
-            : "只转写：滤掉口水话、整理成中文，不翻译\n按一下开始说，再按一下停"
+        toneButton.isHidden = (mode != .en)
+        switch mode {
+        case .en:
+            hintLabel.text = "按一下开始说中文\n说完再按一下，英文自动复制好"
+        case .zh:
+            hintLabel.text = "结构化转写：滤掉口水话、整理成中文，不翻译\n按一下开始说，再按一下停"
+        case .raw:
+            hintLabel.text = "逐字转录：听到什么写什么，一个字不改\n按一下开始说，再按一下停"
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -247,8 +256,11 @@ final class MainViewController: UIViewController {
     }
 
     private func polish(_ zh: String) {
-        let isEn = (mode == .en)
-        setPhase(.thinking, hint: isEn ? "整理并译成英文…" : "整理中…")
+        switch mode {
+        case .en:  setPhase(.thinking, hint: "整理并译成英文…")
+        case .zh:  setPhase(.thinking, hint: "整理中…")
+        case .raw: setPhase(.thinking, hint: "上屏…")   // 不过模型，一瞬间
+        }
         Backend.polish(text: zh, tone: tone, mode: mode) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
