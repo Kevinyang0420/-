@@ -21,14 +21,14 @@ enum Prompts {
         }
     }
 
-    /// 🚨 模型偶尔把 ZH 块吐两遍（实测）：<<<EN>>>…<<<ZH>>>中文<<<ZH>>>中文
+    /// 🚨 模型偶尔把 ZH 块吐两遍（实测）：<<<OUT>>>…<<<ZH>>>中文<<<ZH>>>中文
     ///    键盘只要英文那半截。
     static func splitEn(_ raw: String) -> String {
         let s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let a = s.range(of: "<<<EN>>>"), let b = s.range(of: "<<<ZH>>>"),
+        guard let a = s.range(of: "<<<OUT>>>"), let b = s.range(of: "<<<ZH>>>"),
               a.upperBound <= b.lowerBound else { return s }
         return String(s[a.upperBound..<b.lowerBound])
-            .replacingOccurrences(of: "<<<EN>>>", with: "")
+            .replacingOccurrences(of: "<<<OUT>>>", with: "")
             .replacingOccurrences(of: "<<<ZH>>>", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }

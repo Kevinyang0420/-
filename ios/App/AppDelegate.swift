@@ -40,6 +40,10 @@ final class MainViewController: UIViewController {
     private let modeZhButton = UIButton(type: .system)
     private let modeRawButton = UIButton(type: .system)
 
+    /// 目标语言（翻译模式用）。跟安卓共用同一套 code。
+    private var lang = UserDefaults.standard.string(forKey: "vime.lang") ?? "en"
+    private let langButton = UIButton(type: .system)
+
     private let hintLabel = UILabel()
     private let heardLabel = UILabel()
     private let resultView = UITextView()
@@ -102,7 +106,15 @@ final class MainViewController: UIViewController {
         toneButton.layer.cornerRadius = 16
         toneButton.addTarget(self, action: #selector(cycleTone), for: .touchUpInside)
 
-        [modeStack, hintLabel, heardLabel, resultView, micButton, toneButton].forEach {
+        // 语言选择：跟语气并排，不藏进设置
+        langButton.titleLabel?.font = .systemFont(ofSize: 15)
+        langButton.setTitleColor(Theme.text, for: .normal)
+        langButton.backgroundColor = Theme.key
+        langButton.layer.cornerRadius = 16
+        langButton.addTarget(self, action: #selector(pickLang), for: .touchUpInside)
+
+        [modeStack, hintLabel, heardLabel, resultView, micButton,
+         toneButton, langButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
         }
@@ -121,10 +133,15 @@ final class MainViewController: UIViewController {
             micButton.widthAnchor.constraint(equalToConstant: 120),
             micButton.heightAnchor.constraint(equalToConstant: 120),
 
-            toneButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             toneButton.topAnchor.constraint(equalTo: micButton.bottomAnchor, constant: 16),
+            toneButton.trailingAnchor.constraint(equalTo: view.centerXAnchor, constant: -6),
             toneButton.widthAnchor.constraint(equalToConstant: 130),
             toneButton.heightAnchor.constraint(equalToConstant: 34),
+
+            langButton.topAnchor.constraint(equalTo: micButton.bottomAnchor, constant: 16),
+            langButton.leadingAnchor.constraint(equalTo: view.centerXAnchor, constant: 6),
+            langButton.widthAnchor.constraint(equalToConstant: 110),
+            langButton.heightAnchor.constraint(equalToConstant: 34),
 
             heardLabel.topAnchor.constraint(equalTo: toneButton.bottomAnchor, constant: 14),
             heardLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
@@ -139,6 +156,23 @@ final class MainViewController: UIViewController {
     }
 
     // MARK: - 模式
+
+    /// 语言选择：用系统的 action sheet，不自己造轮子
+    @objc private func pickLang() {
+        let ac = UIAlertController(title: "翻译成", message: nil, preferredStyle: .actionSheet)
+        for l in Backend.langs {
+            let title = (l.code == lang ? "✓ " : "") + l.label
+            ac.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
+                guard let self = self else { return }
+                self.lang = l.code
+                UserDefaults.standard.set(l.code, forKey: "vime.lang")
+                self.paintMode()
+            })
+        }
+        ac.addAction(UIAlertAction(title: "取消", style: .cancel))
+        ac.popoverPresentationController?.sourceView = langButton
+        present(ac, animated: true)
+    }
 
     @objc private func pickEn() { setMode(.en) }
     @objc private func pickZh() { setMode(.zh) }
@@ -158,8 +192,10 @@ final class MainViewController: UIViewController {
             b.backgroundColor = on ? Theme.accent : Theme.key
             b.setTitleColor(on ? .white : Theme.dim, for: .normal)
         }
-        // 语气档位只在翻译模式有意义
+        // 语气和语言都只在翻译模式有意义
         toneButton.isHidden = (mode != .en)
+        langButton.isHidden = (mode != .en)
+        langButton.setTitle(Backend.langLabel(lang) + " ▾", for: .normal)
         switch mode {
         case .en:
             hintLabel.text = "按一下开始说中文\n说完再按一下，英文自动复制好"
@@ -261,7 +297,7 @@ final class MainViewController: UIViewController {
         case .zh:  setPhase(.thinking, hint: "整理中…")
         case .raw: setPhase(.thinking, hint: "上屏…")   // 不过模型，一瞬间
         }
-        Backend.polish(text: zh, tone: tone, mode: mode) { [weak self] result in
+        Backend.polish(text: zh, tone: tone, mode: mode, lang: lang) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 switch result {

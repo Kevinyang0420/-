@@ -218,7 +218,8 @@ final class KeyboardViewController: UIInputViewController {
         // 模式跟 App 共用同一个 UserDefaults 键，两处切换互通
         let mode = Backend.Mode(
             rawValue: UserDefaults.standard.string(forKey: "vime.mode") ?? "en") ?? .en
-        Backend.polish(text: zh, tone: tone, mode: mode) { [weak self] result in
+        let lang = UserDefaults.standard.string(forKey: "vime.lang") ?? "en"
+        Backend.polish(text: zh, tone: tone, mode: mode, lang: lang) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 switch result {

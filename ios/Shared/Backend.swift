@@ -33,21 +33,40 @@ enum Backend {
         case raw   // 逐字转录：说什么写什么，**不过模型**
     }
 
+    /// 目标语言。跟 engine.py 的 LANGS、安卓的 Gen.LANG_CODES 一一对应。
+    /// 🚨 单一配置点在 engine.py；这里加语言要三处一起加，别只改一边。
+    static let langs: [(code: String, label: String, name: String)] = [
+        ("en", "英文", "English"), ("ja", "日语", "Japanese"),
+        ("fr", "法语", "French"), ("de", "德语", "German"),
+        ("es", "西班牙语", "Spanish"), ("ko", "韩语", "Korean"),
+    ]
+
+    static func langName(_ code: String) -> String {
+        langs.first { $0.code == code }?.name ?? "English"
+    }
+
+    static func langLabel(_ code: String) -> String {
+        langs.first { $0.code == code }?.label ?? "英文"
+    }
+
     static func polish(text: String, tone: String, mode: Mode = .en,
+                       lang: String = "en",
                        done: @escaping (Result<String, Failure>) -> Void) {
         // 🚨 逐字转录直接短路：过一遍模型就有被润色的风险，还白等几秒、白花一次调用
         if mode == .raw { return done(.success(text)) }
-        submit(text: text, tone: tone, mode: mode, attempt: 0, done: done)
+        submit(text: text, tone: tone, mode: mode, lang: lang, attempt: 0, done: done)
     }
 
     /// 🚨 提交那一发也会 504（网关冷启动/抖动，2026-08-21 Kevin 真机撞到）。
     ///    5xx 和传输错误都自动重试，最多 4 发、间隔递增；401/429 是明确答复，不重试。
-    private static func submit(text: String, tone: String, mode: Mode, attempt: Int,
+    private static func submit(text: String, tone: String, mode: Mode, lang: String,
+                               attempt: Int,
                                done: @escaping (Result<String, Failure>) -> Void) {
         func retryOrFail(_ f: Failure) {
             if attempt < 3 {
                 DispatchQueue.global().asyncAfter(deadline: .now() + Double(attempt + 1) * 2) {
-                    submit(text: text, tone: tone, mode: mode, attempt: attempt + 1, done: done)
+                    submit(text: text, tone: tone, mode: mode, lang: lang,
+                           attempt: attempt + 1, done: done)
                 }
             } else {
                 done(.failure(f))
@@ -55,9 +74,11 @@ enum Backend {
         }
         let zhOnly = (mode == .zh)
         let system = zhOnly ? Secrets.promptZh : Secrets.prompt
+        // 🚨 "Target language:" 必须在最前面 —— 提示词按这个位置读
         let user = zhOnly
             ? "Raw transcript:\n\"\"\"\n\(text)\n\"\"\"\n"
-            : "Register: \(Prompts.tone(tone))\n\nRaw transcript:\n\"\"\"\n\(text)\n\"\"\"\n"
+            : "Target language: \(langName(lang))\nRegister: \(Prompts.tone(tone))"
+              + "\n\nRaw transcript:\n\"\"\"\n\(text)\n\"\"\"\n"
         let body: [String: Any] = [
             "messages": [
                 ["role": "system", "content": system],
@@ -94,7 +115,7 @@ enum Backend {
             guard code == 200 || code == 202, let job = obj?["job"] as? String else {
                 return done(.failure(.http(code)))
             }
-            // 转写模式返回的是中文正文，没有 <<<EN>>>/<<<ZH>>> 分段 —— 走 pollRaw
+            // 转写模式返回的是中文正文，没有 <<<OUT>>>/<<<ZH>>> 分段 —— 走 pollRaw
             if zhOnly { pollRaw(job: job, tries: 0, done: done) }
             else { poll(job: job, tries: 0, done: done) }
         }.resume()
