@@ -25,7 +25,11 @@ enum Theme {
     /// 待命态的麦克风图形 —— **就是 App 图标 G3 里那一个**（Assets 里的 `mic`）。
     /// 🚨 Kevin 2026-08-21：「小麦克风有点太卡通了…直接拿 T icon 下面那个麦克风用，
     ///    保持 App 的 UI 和 Icon 风格一致」。所以不用 emoji 🎤，用抠出来的原件。
-    /// `size` 传按钮边长，图形占 60%（麦克风是竖长条，52% 时视觉上偏细）。
+    /// 说话键的高度。🚨 Kevin 2026-08-21：说话键改成 Typeless 那样的**长条**，
+    /// 不是圆圈（「又很长、很占位置」）。圆圈 120pt 见方，长条只要 54。
+    static let micBarHeight: CGFloat = 54
+
+    /// `size` 传图形框边长，麦克风占 60%（它是竖长条，52% 时视觉上偏细）。
     static func micGlyph(_ size: CGFloat) -> UIImage? {
         guard let src = UIImage(named: "mic") else { return nil }
         let side = size * 0.60
@@ -37,10 +41,10 @@ enum Theme {
     }
 
     /// 录音态的停止方块。
-    /// 🚨 原来用 emoji「■」，在 120pt 的按钮里只占 ~20%，Kevin 说「太小了」。
-    ///    改成自己画：边长 = 按钮的 40%，微圆角。
+    /// 🚨 原来用 emoji「■」，在按钮里只占 ~20%，Kevin 说「太小了」。
+    ///    改成自己画。size 传图形框边长，方块占它的 2/3（≈长条高的 40%）。
     static func stopGlyph(_ size: CGFloat) -> UIImage {
-        let side = size * 0.40
+        let side = size * 0.67
         let r = UIGraphicsImageRenderer(size: CGSize(width: side, height: side))
         return r.image { ctx in
             UIColor.white.setFill()
