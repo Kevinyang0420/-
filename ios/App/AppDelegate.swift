@@ -36,9 +36,13 @@ final class MainViewController: UIViewController {
     /// 输出模式：译成英文（默认）/ 只转写。跟安卓一致。
     private var mode: Backend.Mode =
         Backend.Mode(rawValue: UserDefaults.standard.string(forKey: "vime.mode") ?? "en") ?? .en
-    private let modeEnButton = UIButton(type: .system)
+    // 第一级 Tab
+    private let tabTranslate = UIButton(type: .system)
+    private let tabTranscribe = UIButton(type: .system)
+    // 第二级：转写下的两个子档
     private let modeZhButton = UIButton(type: .system)
     private let modeRawButton = UIButton(type: .system)
+    private var subStack = UIStackView()
 
     /// 目标语言（翻译模式用）。跟安卓共用同一套 code。
     private var lang = UserDefaults.standard.string(forKey: "vime.lang") ?? "en"
@@ -66,19 +70,32 @@ final class MainViewController: UIViewController {
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: "权限", style: .plain, target: self, action: #selector(openSetup))
 
-        // 模式切换三档：译成英文（默认）/ 结构化转写 / 逐字转录
-        for (b, t, sel) in [(modeEnButton, "译成英文", #selector(pickEn)),
-                            (modeZhButton, "结构化", #selector(pickZh)),
-                            (modeRawButton, "逐字", #selector(pickRaw))] {
+        // 🚨 两级 Tab（Kevin 2026-08-21：「按你最初的那个方案来」）：
+        //    第一级只有 翻译 / 转写；子档位（结构化 / 逐字）放第二级小 chip。
+        //    跟安卓 VoiceImeService 的版式一一对应 —— 两端一起改是硬规矩。
+        for (b, t, sel) in [(tabTranslate, "翻译", #selector(pickEn)),
+                            (tabTranscribe, "转写", #selector(pickTranscribe))] {
+            b.setTitle(t, for: .normal)
+            b.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+            b.layer.cornerRadius = 17
+            b.addTarget(self, action: sel, for: .touchUpInside)
+        }
+        let modeStack = UIStackView(arrangedSubviews: [tabTranslate, tabTranscribe])
+        modeStack.axis = .horizontal
+        modeStack.spacing = 8
+        modeStack.distribution = .fillEqually
+
+        for (b, t, sel) in [(modeZhButton, "结构化转写", #selector(pickZh)),
+                            (modeRawButton, "逐字转录", #selector(pickRaw))] {
             b.setTitle(t, for: .normal)
             b.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
             b.layer.cornerRadius = 16
             b.addTarget(self, action: sel, for: .touchUpInside)
         }
-        let modeStack = UIStackView(arrangedSubviews: [modeEnButton, modeZhButton, modeRawButton])
-        modeStack.axis = .horizontal
-        modeStack.spacing = 8
-        modeStack.distribution = .fillEqually
+        subStack = UIStackView(arrangedSubviews: [modeZhButton, modeRawButton])
+        subStack.axis = .horizontal
+        subStack.spacing = 8
+        subStack.distribution = .fillEqually
 
         hintLabel.font = .systemFont(ofSize: 15)
         hintLabel.textColor = Theme.dim
@@ -97,8 +114,9 @@ final class MainViewController: UIViewController {
         resultView.isEditable = false
         resultView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
 
-        micButton.setTitle("🎤", for: .normal)
-        micButton.titleLabel?.font = .systemFont(ofSize: 56)
+        micButton.setTitle("", for: .normal)
+        micButton.setImage(Theme.micGlyph(120), for: .normal)
+        micButton.tintColor = .white
         micButton.backgroundColor = Theme.accent
         micButton.layer.cornerRadius = 60
         micButton.addTarget(self, action: #selector(tapMic), for: .touchUpInside)
@@ -125,7 +143,7 @@ final class MainViewController: UIViewController {
         speakButton.isEnabled = false          // 没东西可念时不给点
         speakButton.addTarget(self, action: #selector(tapSpeak), for: .touchUpInside)
 
-        [modeStack, hintLabel, heardLabel, resultView, micButton,
+        [modeStack, subStack, hintLabel, heardLabel, resultView, micButton,
          toneButton, langButton, speakButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
@@ -136,7 +154,12 @@ final class MainViewController: UIViewController {
             modeStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
             modeStack.heightAnchor.constraint(equalToConstant: 34),
 
-            hintLabel.topAnchor.constraint(equalTo: modeStack.bottomAnchor, constant: 14),
+            subStack.topAnchor.constraint(equalTo: modeStack.bottomAnchor, constant: 10),
+            subStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
+            subStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40),
+            subStack.heightAnchor.constraint(equalToConstant: 32),
+
+            hintLabel.topAnchor.constraint(equalTo: subStack.bottomAnchor, constant: 14),
             hintLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             hintLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
 
@@ -226,6 +249,8 @@ final class MainViewController: UIViewController {
     @objc private func pickEn() { setMode(.en) }
     @objc private func pickZh() { setMode(.zh) }
     @objc private func pickRaw() { setMode(.raw) }
+    /// 点第一级「转写」：默认落在结构化转写；已经在转写档就保持原子档。
+    @objc private func pickTranscribe() { setMode(mode == .raw ? .raw : .zh) }
 
     private func setMode(_ m: Backend.Mode) {
         mode = m
@@ -234,16 +259,22 @@ final class MainViewController: UIViewController {
     }
 
     private func paintMode() {
-        for (b, m) in [(modeEnButton, Backend.Mode.en),
-                       (modeZhButton, .zh),
-                       (modeRawButton, .raw)] {
+        // 第一级
+        let isTranslate = (mode == .en)
+        tabTranslate.backgroundColor = isTranslate ? Theme.accent : Theme.key
+        tabTranslate.setTitleColor(isTranslate ? .white : Theme.dim, for: .normal)
+        tabTranscribe.backgroundColor = isTranslate ? Theme.key : Theme.accent
+        tabTranscribe.setTitleColor(isTranslate ? Theme.dim : .white, for: .normal)
+
+        // 第二级：翻译下是语气+语言，转写下是 结构化/逐字。永远只出现一排。
+        subStack.isHidden = isTranslate
+        for (b, m) in [(modeZhButton, Backend.Mode.zh), (modeRawButton, .raw)] {
             let on = (mode == m)
             b.backgroundColor = on ? Theme.accent : Theme.key
             b.setTitleColor(on ? .white : Theme.dim, for: .normal)
         }
-        // 语气和语言都只在翻译模式有意义
-        toneButton.isHidden = (mode != .en)
-        langButton.isHidden = (mode != .en)
+        toneButton.isHidden = !isTranslate
+        langButton.isHidden = !isTranslate
         langButton.setTitle(Backend.langLabel(lang) + " ▾", for: .normal)
         switch mode {
         case .en:
@@ -282,15 +313,21 @@ final class MainViewController: UIViewController {
         hintLabel.text = hint
         switch p {
         case .idle:
-            micButton.setTitle("🎤", for: .normal)
+            micButton.setTitle("", for: .normal)
+            micButton.setImage(Theme.micGlyph(120), for: .normal)
+            micButton.tintColor = .white
             micButton.backgroundColor = Theme.accent
             micButton.isEnabled = true
         case .listening:
-            micButton.setTitle("■", for: .normal)
+            micButton.setTitle("", for: .normal)
+            micButton.setImage(Theme.stopGlyph(120), for: .normal)
             micButton.backgroundColor = Theme.danger
             micButton.isEnabled = true
         case .thinking:
+            micButton.setImage(nil, for: .normal)
             micButton.setTitle("…", for: .normal)
+            micButton.titleLabel?.font = .systemFont(ofSize: 40)
+            micButton.setTitleColor(.white, for: .normal)
             micButton.backgroundColor = Theme.keyDown
             micButton.isEnabled = false
         }
