@@ -126,8 +126,35 @@ def check_two_level():
     return n_tabs, labels
 
 
+def check_mic_bar():
+    """说话键必须是长条不是圆圈（跟安卓 build_apk.py 里那条对应）。
+
+    判据两件事：约束里不许再有写死的 120×120 正方形，且高度必须引用
+    `Theme.micBarHeight`（单一配置点）。
+    """
+    src = io.open(os.path.join(HERE, "App", "AppDelegate.swift"),
+                  encoding="utf-8").read()
+    code = "\n".join(ln for ln in src.splitlines()
+                     if not ln.strip().startswith(("//", "///", "*", "/*")))
+    seg = code[code.find("micButton.leadingAnchor"):] if "micButton.leadingAnchor" in code else ""
+    square = "micButton.widthAnchor.constraint(equalToConstant: 120)" in code
+    uses_h = "Theme.micBarHeight" in code
+    full_w = ("micButton.leadingAnchor" in code
+              and "micButton.trailingAnchor" in code)
+    return (not square) and uses_h and full_w, square, uses_h, full_w, seg
+
+
 def main():
     print("--- 版式闸门（不联网） ---")
+    bar_ok, square, uses_h, full_w, _ = check_mic_bar()
+    print("  %-28s %s" % ("说话键是整条(非圆圈)",
+                          "PASS" if bar_ok else
+                          "FAIL 写死方形=%s 用统一高度=%s 左右拉满=%s"
+                          % (square, uses_h, full_w)))
+    if not bar_ok:
+        print("\n=== 版式闸门未过 ===")
+        return 1
+
     n_tabs, labels = check_two_level()
     two = n_tabs == 2
     print("  %-28s %s" % ("第一级 Tab 恰好 2 个(现 %d)" % n_tabs,
