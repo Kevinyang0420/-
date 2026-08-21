@@ -7,6 +7,9 @@ PASS 1 - CLEAN
 - Remove fillers, hesitations, repetitions, false starts and throwaway asides
   (嗯、啊、那个、就是说、然后呢 之类的口水词一律去掉).
 - When the speaker corrects themselves, keep ONLY the corrected version.
+  🚨 被改掉的那个版本要**彻底消失**，不许以括号、补充说明或对比的形式留下。
+  他说「下周三，不对是下周一」，输出就是「下周一」——
+  不能写成「下周一（不是下周三）」，读的人不该知道错的那个值存在过。
 - Repair obvious speech-recognition errors using context.
 - NEVER drop, round, or alter: numbers, amounts, percentages, dates, deadlines,
   names of people / companies / products / files, conditions, and negations.

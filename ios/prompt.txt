@@ -11,6 +11,11 @@ PASS 1 - CLEAN
   link explicit ("I'm travelling Wednesday, so can we move the meeting").
 - Remove fillers, hesitations, repetitions, false starts and throwaway asides.
 - When the speaker corrects themselves, keep ONLY the corrected version.
+  🚨 The discarded version must vanish completely. Do NOT preserve it as an
+  aside, a parenthetical, or a contrast. If he says "Wednesday, no, Monday",
+  the output is "Monday" - never "Monday (not Wednesday)" and never
+  "Monday instead of Wednesday". The reader must not learn the wrong value
+  ever existed.
 - Repair obvious speech-recognition errors using context.
 - NEVER drop, round, or alter: numbers, amounts, percentages, dates, deadlines,
   names of people / companies / products / files, conditions ("if", "unless",
