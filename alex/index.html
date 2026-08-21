@@ -18345,6 +18345,14 @@ function playBtn(text, label){
        少的那个状态现在**看得见**了。 */
     if (AUDIO.key === key){ audioStop(); reset(); return; }
     b.textContent = '⏹'; b.classList.add('on');
+    /* 🚨 **点下去的那一刻就认领通道**，不能等 nsay 里 await 完合成才认领。
+       实测：`nsay` 要先 `await ttsFetch(...)`（1~2 秒网络合成）之后才
+       `audioClaim`，那段窗口里 `AUDIO.key` 还是 null —— 于是他在这一两秒内
+       再点一下，「是不是我在响」判据落空，走的是「重新开始播」而不是「停」。
+       （真页面点出来的：第一下之后 AUDIO.key=null，第二下之后才变成我的 key。） */
+    audioClaim(key, () => { try { _ttsEl && _ttsEl.pause(); } catch(_){}
+                            try { if (window.speechSynthesis) speechSynthesis.cancel(); }
+                            catch(_){} });
     try {
       /* 🚨 ① 走 nsay 而不是 say —— 他选的是 Andrew，
          全站只有聊天那一处在用 nsay，换个页面就变回难听的设备嗓子。
@@ -18357,7 +18365,16 @@ function playBtn(text, label){
     if (AUDIO.key !== key) reset();
     else {
       const iv = setInterval(() => {
-        if (AUDIO.key !== key){ clearInterval(iv); reset(); }
+        /* 通道换人了 = 别人在响，收回状态 */
+        if (AUDIO.key !== key){ clearInterval(iv); reset(); return; }
+        /* 🚨 自然播完**没有人**会去 audioStop()，AUDIO.key 就一直留着，
+           按钮永远停在 ⏹ —— 他再点一下只是「停一个已经停了的」，
+           得点两下才重播。所以这里自己收尾：音频已经 paused/ended
+           且通道还挂在我名下，就当它放完了，把通道让出去。 */
+        const el = _ttsEl;
+        if (el && el.src && (el.ended || (el.paused && el.currentTime > 0))){
+          clearInterval(iv); audioStop(); reset();
+        }
       }, 400);
       setTimeout(() => { clearInterval(iv); reset(); }, 60000);
     }
