@@ -58,14 +58,108 @@ def backend_submit_code():
     return resp.status, json.loads(resp.read().decode("utf-8"))
 
 
+def check_assets():
+    """凡是调用 `UIImage(named:)`/`Theme.micGlyph` 的 target，
+    project.yml 里必须把 Assets.xcassets 列进它的 sources。
+
+    🚨 这条是 2026-08-21 补的：键盘扩展是独立 bundle，`UIImage(named:)` 只找
+       自己 bundle 里的资源。漏配时**编译照样通过**、按钮静默变空白，
+       只有装到手机上才看得出来 —— 编译器查不出的事，得由这里查。
+    """
+    proj = io.open(os.path.join(HERE, "project.yml"), encoding="utf-8").read()
+    # 按 target 切块：顶格两空格的 `  <名字>:` 是一个 target 的起点
+    blocks = {}
+    cur = None
+    in_targets = False
+    for line in proj.splitlines():
+        if line.startswith("targets:"):
+            in_targets = True
+            continue
+        if not in_targets:
+            continue
+        m = re.match(r"^  ([A-Za-z][\w]*):\s*$", line)
+        if m:
+            cur = m.group(1)
+            blocks[cur] = []
+        elif cur:
+            blocks[cur].append(line)
+
+    # 哪些 target 的源码里真的用到了图片资源
+    需要 = set()
+    for name, lines in blocks.items():
+        paths = re.findall(r"-\s+path:\s*(\S+)", "\n".join(lines))
+        for p in paths:
+            d = os.path.join(HERE, p)
+            if not os.path.isdir(d):
+                continue
+            for root, _, files in os.walk(d):
+                for f in files:
+                    if not f.endswith(".swift"):
+                        continue
+                    s = io.open(os.path.join(root, f), encoding="utf-8").read()
+                    if "UIImage(named:" in s or "Theme.micGlyph" in s:
+                        需要.add(name)
+
+    results = []
+    for name in sorted(需要):
+        paths = re.findall(r"-\s+path:\s*(\S+)", "\n".join(blocks[name]))
+        has = any(p.endswith("Assets.xcassets") for p in paths)
+        results.append((name, has))
+
+    # 素材本身在不在
+    mic_ok = os.path.exists(os.path.join(HERE, "Assets.xcassets", "mic.imageset",
+                                         "Contents.json"))
+    return results, mic_ok, len(需要)
+
+
+def check_two_level():
+    """两级 Tab 必须跟安卓对齐（Kevin：两端一起改）。
+
+    判据两层：第一级 Tab **恰好两个**，且四个文案都在。
+    只查文案不够 —— 顶上平铺三个的旧版式也能含这些字。
+    """
+    src = io.open(os.path.join(HERE, "App", "AppDelegate.swift"),
+                  encoding="utf-8").read()
+    m = re.search(r"UIStackView\(arrangedSubviews:\s*\[([^\]]*)\]\)", src)
+    n_tabs = len([x for x in m.group(1).split(",") if x.strip()]) if m else 0
+    labels = [l for l in ["翻译", "转写", "结构化转写", "逐字转录"] if ('"%s"' % l) in src]
+    return n_tabs, labels
+
+
 def main():
+    print("--- 版式闸门（不联网） ---")
+    n_tabs, labels = check_two_level()
+    two = n_tabs == 2
+    print("  %-28s %s" % ("第一级 Tab 恰好 2 个(现 %d)" % n_tabs,
+                          "PASS" if two else "FAIL"))
+    all_lab = len(labels) == 4
+    print("  %-28s %s" % ("四个 Tab 文案齐全",
+                          "PASS" if all_lab else "FAIL 只有 %s" % labels))
+    if not (two and all_lab):
+        print("\n=== 版式闸门未过 ===")
+        return 1
+
+    print("\n--- 资源闸门（不联网） ---")
+    targets, mic_ok, n = check_assets()
+    ok = True
+    if n == 0:
+        print("  FAIL 一个用图的 target 都没扫到 —— 闸门自己失效了")
+        ok = False
+    for name, has in targets:
+        print("  %-28s %s" % ("target %s 带 Assets" % name, "PASS" if has else "FAIL"))
+        ok = ok and has
+    print("  %-28s %s" % ("mic.imageset 存在", "PASS" if mic_ok else "FAIL"))
+    ok = ok and mic_ok
+    if not ok:
+        print("\n=== 资源闸门未过，真机上图标会是空白 ===")
+        return 1
+
+    print("\n--- 契约测试（要联网） ---")
     accepted = swift_accepted_codes()
     print("Swift 接受的状态码 : %s" % accepted)
 
     code, body = backend_submit_code()
     print("后端实际返回       : %s  keys=%s" % (code, list(body)))
-
-    ok = True
 
     hit = code in accepted
     print("  %-28s %s" % ("客户端接受后端的返回码", "PASS" if hit else "FAIL"))
