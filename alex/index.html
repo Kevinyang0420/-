@@ -5532,8 +5532,10 @@ function showList(){
   /* 🚨 高亮由**当前渲染的这一屏**认领，不靠 SESSUI.top 自己漂。
      2026-08-18 实测：从「打磨」点底部的口语 tab 回来，落在练习屏上、
      高亮的却还是「打磨」—— TABS.speak 只调 showList()，没人把 top 拨回来。
-     三个屏各自在开头认领一次，这个漂移就不可能出现。 */
-  SESSUI.top = 'do';
+     三个屏各自在开头认领一次，这个漂移就不可能出现。
+     🚨 2026-08-21：练习不再是顶层 tab，它现在是**对话**下面的一种练法，
+        所以高亮认领的是 'chat' —— 认 'do' 的话进来三个 tab 一个都不亮。 */
+  SESSUI.top = 'chat';
 
   $('#list').hidden = false;
 
@@ -5985,15 +5987,16 @@ const SESSUI = {top: 'do'};        // do = 练习 / rec = 我的记录
 function sessTopTabs(){
   const b = (k, nm) => '<button class="rchip' + (SESSUI.top === k ? ' on' : '') +
     '" data-stop="' + k + '">' + nm + '</button>';
-  /* 打磨（Kevin 2026-08-18）夹在中间 —— 它跟「练习」是并列的两种练法，
-     「我的记录」是回看，放最后。
-     闲聊（Kevin 2026-08-20）排在练习后面：它是门槛最低、天天能开的那一个，
-     打磨是要正襟危坐说一整段的重活，放后面。
-     🚨 四个 chip 量过：68+68+68+96 + 3×6 间距 = 318px < 375px 的手机屏，
-        不需要横滑就全看得见（`.tabs` 本身是 overflow-x:auto，多了也不会挤爆）。 */
+  /* 🚨 2026-08-21：四个收成两个 + 记录。
+     原来是「练习 / 闲聊 / 打磨 / 我的记录」—— 前三个其实是**同一件事**
+     （纠正他的英语）被按场合切成了三套互不相通的标准，
+     于是他在任何一格里都拿不到完整的东西。Kevin：「头疼医头、脚疼医脚。」
+
+     现在模块只回答一个问题：**边说边改，还是改一整段。**
+     场合（日常/工作/管理层访谈/面试/对外汇报）降成对话里的一个参数。
+     「练习」那套题卡打分没删，降级成对话入口里的一种练法。 */
   return '<div class="tabs" style="margin-bottom:12px">' +
-    b('do', '练习') + b('chat', '闲聊') + b('pol', '打磨') +
-    b('rec', '我的记录') + '</div>';
+    b('chat', '对话') + b('pol', '改稿') + b('rec', '我的记录') + '</div>';
 }
 
 function bindSessTop(){
@@ -6007,10 +6010,12 @@ function bindSessTop(){
          所以这里必须清成 0 而不是留 1 —— 留 1 的话 back() 会把人弹出这个 tab。
          不清的话「练习↔打磨↔记录」互切会越推越深，返回键要点好几下才出得去。 */
       NAV.length = 0;
-      if (to === 'rec') go(showMyRecs, '我的记录');
-      else if (to === 'pol') go(showPolish, '口语打磨');
-      else if (to === 'chat') go(showChat, '闲聊');
-      else { showList(); paintNav(); }
+      /* 🚨 三条都写成显式分支，不留 `else` 兜底 —— 兜底会把「某个 chip 忘了配路由」
+         藏起来，chip 照点、悄悄落到别的屏。test_polish 的 chip↔路由对账闸
+         就是靠数这几条分支，写成兜底它会当场判「路由少了一条」。 */
+      if (to === 'chat') go(showChat, '对话');
+      else if (to === 'pol') go(showPolish, '改稿');
+      else if (to === 'rec') go(showMyRecs, '我的记录');
     });
 }
 
@@ -6180,7 +6185,7 @@ async function resumeSess(s){
     if (t.said) S.hist.push('LEARNER: ' + t.said);
     if (t.reply) S.hist.push('CHARACTER: ' + t.reply);
   });
-  SESSUI.top = 'do';
+  SESSUI.top = 'chat';          // 见 showList 那段：练习归在对话 tab 下
   await start(s.scn, true);
   toast('接上了，从第 ' + (s.turns.length + 1) + ' 轮继续');
 }
@@ -9768,7 +9773,9 @@ const TABS = {
 
   home:  {nm:'首页', go:() => { NAV.length = 0; showHome(); }},
 
-  speak: {nm:'口语', go:() => { NAV.length = 0; showList(); }},
+  /* 🚨 底部「口语」进来落在**对话**上（原来落在练习列表）。
+     练习那一屏还在，从对话入口点进去 —— 见 showChat 里那颗「按题卡练」。 */
+  speak: {nm:'口语', go:() => { NAV.length = 0; showChat(); }},
 
   listen:{nm:'听力', go:() => { NAV.length = 0; showLevel('listen'); }},
 
@@ -14130,7 +14137,28 @@ function polPromptV2(o){
     '            "when":"keep=cut 时**必填**：这条该留到什么时候讲（例：等对方问到具体项目再展开）",',
     '            "span":"🚨 这个要点在下面 draft 里对应的那**一小段原文**，一字不差地摘出来；'
       + 'keep=cut 的要点没进稿，span 留空字符串"}],',
+    /* 🚨🚨 2026-08-21 他拿 Gemini 的产出来对比，说我这个「还不如免费的 Gemini」。
+       他要的三样我一样都没给：
+         ① 一句话说清**主要问题是啥**（口语停顿？句式重复？术语不精准？）
+         ② **两个版本让他挑**（精炼版 / 叙事版），并问他喜欢哪个
+         ③ **术语升级对照表**：原话 → 专业说法 → **为什么这么改**
+       他原话：「我其实就是要这些东西，你为什么就是听不懂我要什么呢」。
+       🚨 `draft` 仍是主版本（所有既有判据都挂在它上面，别改名），
+          第二版另起 `draft2`，风险最小。 */
+    ' "summary":"2-3 句中文，说清**这段话的主要问题是什么**（例：口语停顿多、',
+    '             句式重复 I have/I build up、专业术语不够精准）。先说问题，再说亮点。",',
+    ' "draftName":"这一版叫什么（例：精炼干练版）",',
+    ' "draftWhen":"这一版用在什么场合（例：2-3 分钟面试自我介绍）",',
     ' "draft":"英文成稿，可直接照念。只放 must 和 ok 的要点，cut 的不许出现",',
+    ' "draft2Name":"第二版叫什么（例：高级叙事版）",',
+    ' "draft2When":"第二版用在什么场合（例：深度沟通、展示领导力）",',
+    ' "draft2":"🚨 **同一份内容的另一种讲法**，不是把第一版换几个词。',
+    '           两版要**明显不同**：一版更紧凑好背，一版结构感更强、更突出影响力。',
+    '           他会二选一，给两个差不多的等于没给。",',
+    ' "terms":[{"raw":"他原话里的口语/不精准说法（一字不差摘出来）",',
+    '           "pro":"对应的专业/地道说法",',
+    '           "why":"一句中文：**为什么这么改更好**（不是「更地道」这种空话，',
+    '                  要说清是术语标准、还是语气分量、还是对方听得懂）"}],',
     ' "lenChange":"shorter 或 longer 或 same —— 他这次要求是让稿子变短、变长、还是没提长度",',
     ' "lenTarget":这一版成稿**你打算写多少词**（纯数字）。他要求改长度时按他说的算出来，'
       + '没要求就填你实际写的词数。🚨 代码会核对两件事：'
@@ -14226,6 +14254,11 @@ function polPromptV2(o){
     '- 🚨 `lenTarget` **必须落在 `advice.target` 说的那个区间里**。',
     '     你自己说了合理长度是多少，就照那个写，别一边说 110-140 一边只写 79。',
     '- takeaways 3 到 5 条',
+    '- 🚨 `summary`、`draft2`、`terms` **都必须给** —— 这三样是他点名要的：',
+    '     summary＝主要问题是啥；draft2＝另一个版本让他挑；terms＝为什么这么改',
+    '- 🚨 `terms` 至少 3 条，`raw` 必须**一字不差**来自他原话；',
+    '     `why` 不许写「更地道」「更自然」这种空话 —— 要说清是术语标准、语气分量、还是对方听得懂',
+    '- 🚨 两个版本要**明显不同**（讲法和结构不同，不是换几个同义词），长度可以不一样',
     '- 全部中文用标准白话，不要文言腔',
   ];
 
@@ -14262,6 +14295,35 @@ function polBadV2(p, o){
        他要的是**打磨之后的最终效果**，不是一张待办清单。
        所以这是**硬判据**：`gone` 还留在成稿里就整份驳回重来。
        什么输入会让它失败：模型列了风险却没动稿子 —— 正是当时那个形态。 */
+    /* 🚨 他点名要的三样：主要问题 / 两个版本 / 术语对照。缺了就驳回重来 ——
+       这不是锦上添花，是他明说「我其实就是要这些东西」。 */
+    if (!String(p.summary || '').trim()) bad.push('没给 summary（这段话的主要问题是什么）');
+    const d2 = String(p.draft2 || '').trim();
+    if (!d2) bad.push('没给第二个版本（draft2）—— 他要二选一');
+    else {
+      const w1 = (draft.match(/[A-Za-z']+/g) || []).length;
+      const w2 = (d2.match(/[A-Za-z']+/g) || []).length;
+      /* 两版差不多等于没给。用「词级重合度」判：完全同一套词序 = 换汤不换药。
+         什么输入会让它响：把第一版复制过来改两个同义词。 */
+      const setOf = s => new Set((s.toLowerCase().match(/[a-z']+/g) || []));
+      const a = setOf(draft), b = setOf(d2);
+      const inter = [...b].filter(x => a.has(x)).length;
+      if (w2 < 40) bad.push('draft2 只有 ' + w2 + ' 词，不像一个完整版本');
+      else if (b.size && inter / b.size > 0.9)
+        bad.push('两个版本几乎是同一份（词重合 ' + Math.round(inter / b.size * 100)
+               + '%）—— 他要的是**另一种讲法**，不是换几个同义词');
+    }
+    if (!Array.isArray(p.terms) || p.terms.length < 3){
+      bad.push('terms 少于 3 条（他要的是「原话 → 专业说法 → 为什么」那张表）');
+    } else {
+      p.terms = p.terms.filter(x => x && String(x.raw||'').trim() &&
+                                    String(x.pro||'').trim() && String(x.why||'').trim());
+      /* why 写空话等于没写 —— 他原话点名要「提升逻辑」 */
+      const empty = p.terms.filter(x => /^(更地道|更自然|更好|更专业)[。.]?$/.test(String(x.why).trim()));
+      if (empty.length) bad.push('terms 里有 ' + empty.length + ' 条 why 是空话（「更地道」这种），要说清为什么');
+      if (p.terms.length < 3) bad.push('terms 过滤后少于 3 条');
+    }
+
     const dlow = draft.toLowerCase();
     const norm = s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
     p.risks.forEach(r => {
@@ -15632,6 +15694,69 @@ function markAct(what){
         new Date().toISOString().slice(11, 19) + ' ' + what); } catch(_){}
 }
 
+/* ═══ 场合：唯一的配置点 ═══════════════════════════════════
+   Kevin 2026-08-21：「我不是只是想做模拟面试，这只是一个场景……
+   我是想让你帮我提升我的英语啊，这才是我最终想做的。」
+
+   🚨 我之前把「场合」做成了模块（练习/闲聊/打磨），于是同一件事被切成三套
+      互不相通的标准，每一格都缺一半。现在**场合降成参数**，点评标准只有一套。
+
+   🚨 **单一配置点**：加场合、改档位、改两版的轴，只动这张表。
+      别再往 prompt 里散写「这是日常闲聊」这种话 —— 那正是当初写死的根源。 */
+const OCCASIONS = [
+  /* 🚨 `pre` = 这个场合在题库里对应哪些 id 前缀。4594 张卡**原地复用**，
+     不另存一份（他拍板「一张不重出」）。加一个场合 = 在这里加一行数据，
+     不是加一个模块 —— 这就是这次重构的全部意思。
+     实际分布：aud 842 · dd 840 · wk 723 · life 626 · soc 546 · talk 535 ·
+     hob 474 · itv 8。brief 题库里还没有专门的卡，先借正式那批。 */
+  {k:'daily', nm:'日常闲聊', who:'一个聊得来的朋友',
+   deep:false, ax:['地道版','更好上口版'], pre:['life','soc','talk','hob'],
+   tone:'轻松、短句、可以开玩笑；别往正式书面语上带'},
+  {k:'work',  nm:'工作沟通', who:'同事或合作方',
+   deep:true,  ax:['直接清楚版','更稳妥版'], pre:['wk'],
+   tone:'专业但不端着；把事说清楚比说漂亮重要'},
+  {k:'mgmt',  nm:'管理层访谈', who:'被访谈的管理层（CFO / 业务负责人）',
+   deep:true,  ax:['直接清楚版','更稳妥版'], pre:['aud','dd'],
+   tone:'你是提问的一方；问题要准、追问要跟得住，别让对方糊弄过去'},
+  {k:'itv',   nm:'面试',     who:'面试官',
+   deep:true,  ax:['精炼版','有分量版'], pre:['itv'],
+   tone:'开场不是汇报；每句都要经得起追问'},
+  {k:'brief', nm:'对外汇报', who:'客户或委员会',
+   deep:true,  ax:['精炼版','有分量版'], pre:['aud','dd','wk'],
+   tone:'结论先行；归因和把握程度要说清（我们理解 / 我们注意到 / 无法评估）'},
+];
+const OCC_LS = 'alex_occasion';
+const occGet = () => {
+  try { const k = localStorage.getItem(OCC_LS);
+        return OCCASIONS.find(o => o.k === k) || OCCASIONS[0]; }
+  catch(_){ return OCCASIONS[0]; }
+};
+const occSet = k => { try { localStorage.setItem(OCC_LS, k); } catch(_){} };
+
+/* 这个场合下的题库卡。SCENARIOS 是**同一个数组**（题库没下下来时只有内置那 30 张），
+   这里只做筛选，不复制 —— 复制一份出来就会出现「改了一边另一边还是旧的」。 */
+function occCards(o){
+  try {
+    if (typeof SCENARIOS === 'undefined' || !SCENARIOS.length) return [];
+    const pre = (o || occGet()).pre || [];
+    if (!pre.length) return [];
+    return SCENARIOS.filter(s => pre.some(p => String(s.id || '').indexOf(p + '_') === 0));
+  } catch(_){ return []; }
+}
+
+/* 把一张卡摊成他能读懂、模型也能照演的一段情景。
+   🚨 不带 `tgt`（目标句式）和 `traps`（常见坑）—— 那是**练习**那边先给答案的玩法。
+   对话这边要的是真说一遍，提前把范句喂给他等于把这一场作废了。 */
+function scnToScene(sc){
+  if (!sc) return '';
+  return [
+    '情景：' + String(sc.sit || '').trim(),
+    '你演：' + String(sc.ai || '').trim(),
+    '我是：' + String(sc.you || '').trim(),
+    '我要做到：' + String(sc.task || '').trim(),
+  ].filter(x => x.length > 4).join('\n');
+}
+
 const CHAT_TOPICS_LS = 'alex_chat_topics';   // 他自己给过的话题
 const CHAT_SPK_LS    = 'alex_chat_speak';    // 自动朗读开关（记住）
 const CHAT_HIST      = 6;                    // 喂回去的上下文轮数
@@ -15671,6 +15796,8 @@ const CHAT_DAILY = [
      easy    整句、简单 —— 同一个意思，他现在水平张口就来的那版
      native  那一小段  —— 只用来说明「改的是哪儿」，不是给他念的 */
 const CHAT_CRIT_FIELDS = ['level','quote','issue','better','native','easy','alex_zh','phrase',
+                          /* 2026-08-21：两版的标签 + 正式场合才有的两块 */
+                          'v1name','v2name','terms','risks',
                           '__partOf'];
 
 let CHAT = null;
@@ -15681,7 +15808,14 @@ function chatReset(){
         本轮已经栽过一次同型的（那个 document 监听器），不重复第三遍。 */
   try { if (typeof clearInterval === 'function' && CHAT && CHAT.tick) clearInterval(CHAT.tick); }
   catch(_){}
+  /* 🚨 `occ` / `scene` 是这一场的**全部**可变口径（2026-08-21 重构）：
+     occ   = 场合 key，决定 Alex 演谁、点评给多深、两版的轴是什么；
+     scene = 他自己敲的情景，想到什么就聊什么（他 2026-08-21 点名要的
+             「类似『今天我想聊聊啥』这种 box，支持我想到什么就能聊什么」）。
+     这里原来放的是 `mode:'itv'` —— 一个**从没实现过**的模拟面试档，
+     它引用的 ITV_WHO 根本不存在。加档位不如加参数，这就是那次的教训。 */
   CHAT = {id:'', on:'', t0:0, topic:'', src:'', turns:[],
+          occ:'', scene:'',
           busy:false, rec:null, chunks:[], recing:false, t1:0, tick:0, hintedAt:null,
           err:'', stage:'', noAsk:0, opened:false, done:false};
 }
@@ -15725,21 +15859,38 @@ function chatPickSeed(topic){
   return {src:'daily', hint: CHAT_DAILY[Math.floor(Math.random() * CHAT_DAILY.length)]};
 }
 
-/* ── Alex 在闲聊里是谁 ──────────────────────────────────────
-   不演角色（那是练习那边的活），就是个能一直陪他用英语说话的人。 */
-const CHAT_WHO = [
-  '你是 Alex —— 他的英语教练，但现在你们只是在**用英语闲聊**。',
-  '你不演任何角色（不是客户、不是房东、不是面试官）。你就是 Alex 本人。',
-  '',
-  '他是谁：中国人，母语中文，住深圳、跨境到香港做审计/财务尽调。',
-  '英语能沟通，但不够地道，需要一个能天天说英语的环境。',
-  '',
-  '你说话的方式：',
-  '  - **短**。一次 1 到 3 句，别长篇大论 —— 说话的应该是他，不是你。',
-  '  - **简单日常的英语**。这是聊天不是听力考试，别用书面词。',
-  '  - 大多数轮次要**把话头递回去**（问他一个具体的问题，别问 How are you 这种空问题）。',
-  '  - 他说的内容你要真的接住 —— 顺着他讲的往下问，不要换个话题重开。'
-].join('\n');
+/* ── Alex 这一场演谁 ────────────────────────────────────────
+   🚨 2026-08-21 从一个写死的常量改成**按场合现算**（重构：场合是参数不是模块）。
+   原来这里写死「你不演任何角色（不是客户、不是房东、不是面试官）」，
+   于是拿它练管理层访谈、练面试全都不对味 —— 而我当时的「解法」是再加一个
+   `CHAT.mode === 'itv'` 分支去引用 `ITV_WHO`，**那个常量根本不存在**，
+   真跑到那一行就是 ReferenceError。加模块加到自己都没跑过，这就是头疼医头。
+
+   现在只有一条路：`occGet().who` 说对面是谁，`.tone` 说这个场合该有的调子，
+   再加一条 `CHAT.scene` —— 他自己敲的情景，想到什么就能聊什么。 */
+function chatWho(){
+  const o = occGet();
+  const sc = String((CHAT && CHAT.scene) || '').trim();
+  return [
+    '你是 Alex —— 他的英语陪练。这一场的场合是「' + o.nm + '」，',
+    '你要扮演的是：' + o.who + '。用英语跟他真的聊起来。',
+    sc ? '\n🚨 这一场聊什么、怎么演，**由他说了算**（下面是他自己写的）：\n' + sc +
+         '\n（写的是一个话题就顺着这个话题聊；写的是一个情景/角色安排，就严格照它演。）' : '',
+    '',
+    '他是谁：中国人，母语中文，住深圳、跨境到香港做审计/财务尽调。',
+    '英语能沟通，但不够地道，需要一个能天天说英语的环境。',
+    '',
+    '这个场合该有的调子：' + o.tone,
+    '',
+    '你说话的方式：',
+    '  - **短**。一次 1 到 3 句，别长篇大论 —— 说话的应该是他，不是你。',
+    '  - 大多数轮次要**把话头递回去**（问他一个具体的问题，别问 How are you 这种空问题）。',
+    '  - 他说的内容你要真的接住 —— 顺着他讲的往下问，不要换个话题重开。',
+    o.deep
+      ? '  - 这是正式场合：该追问就追问，他答得含糊别放过 —— 现实里对方也不会放过。'
+      : '  - 这是日常场合：简单口语就行，别用书面词，这是聊天不是听力考试。'
+  ].filter(x => x !== '').join('\n');
+}
 
 /* ── 开场：AI 主动开口（他的第一条需求）───────────────────────
    🚨 练习那条路是**他先说**（start() 里写着「点下面的按钮开始说英语」），
@@ -15756,7 +15907,7 @@ function chatOpenPrompt(seed){
   }[seed.src] || ('随便开个日常话题：' + seed.hint);
 
   return [
-    CHAT_WHO, '',
+    chatWho(), '',
     '现在是这一场的**第一句话**，由你先开口。',
     how, '',
     '只输出一个 JSON，不要 markdown 围栏、不要别的话:',
@@ -15774,7 +15925,7 @@ function chatPrompt(said, mustAsk){
   const tail = CHAT.turns.slice(-CHAT_HIST).map(t =>
     'HIM: ' + (t.said || '') + '\nYOU: ' + (t.reply || '')).join('\n');
   return [
-    CHAT_WHO, '',
+    chatWho(), '',
     '这一场在聊：' + (CHAT.topic || ''),
     '',
     '之前几轮：\n' + (tail || '(刚开场)'),
@@ -15799,46 +15950,67 @@ function chatPrompt(said, mustAsk){
       在他的工作场景里，母语者的说法常常更正式更长（We are unable to assess… pending…），
       而闲聊要的正好是反方向，所以 easy 单独一条，还配了代码层硬判据。 */
 function chatCritPrompt(said){
+  const occ = occGet();
   const drill = (typeof drilling === 'function' ? drilling() : []).slice(0, 6);
+  const deep = !!occ.deep;
+  const A = occ.ax[0], B = occ.ax[1];
   return [
-    '你是 Alex —— 英语教练。你只做一件事：点评**他刚才说的这一句英语**。',
+    '你是 Alex —— 他的英语教练。你只做一件事：点评**他刚才说的这一句/这一段英语**。',
     '',
-    '🚨 你不是聊天里的任何一方，不替任何人回话。这一轮对方怎么接，你看不到，也跟你无关。',
-    '🚨 你写的每一句英文（native / easy）都是**他**要说出口的话，保持同一个言语行为：',
+    '🚨 你不是对话里的任何一方，不替任何人回话。这一轮对方怎么接，你看不到，也跟你无关。',
+    '🚨 你写的每一句英文都是**他**要说出口的话，保持同一个言语行为：',
     '   他在问就还是问、在讲自己的事就还是讲自己的事，只是换成更好的说法。',
-    '   写完自查一句：这句是他对着别人说的，还是别人对着他说的？后者一律重写。',
+    '   写完自查：这句是他对着别人说的，还是别人对着他说的？后者一律重写。',
     '',
-    '场合是**日常闲聊**，不是工作汇报 —— 别把他往正式书面语上带。',
+    '他是谁：中国人，母语中文，住深圳、跨境到香港做审计/财务尽调。',
+    '**这一场的场合：' + occ.nm + '**（对方是' + occ.who + '）。',
+    '这个场合的调子：' + occ.tone,
     '',
     (drill.length ? '他的错题本（重犯的要算重）:\n'
       + drill.map(e => '  - ' + e.pat + '  (错过 ' + (e.n || 0) + ' 次)').join('\n') + '\n' : ''),
-    'HE JUST SAID —— 要点评的就是这一句:\n' + said,
+    'HE JUST SAID —— 要点评的就是这一段:\n' + said,
     '',
     '只输出一个 JSON，不要 markdown 围栏、不要别的话:',
     '{',
     ' "level":"error|polish|fine",',
-    ' "quote":"从上面那一句里**原样摘出**的一小段（2-10 词），必须能逐字找到；没有就 null",',
+    ' "quote":"从上面那段里**原样摘出**的一小段（2-10 词），必须能逐字找到；没有就 null",',
     ' "issue":"只能是这五个之一：语法 | 中式直译 | 搭配不地道 | 语域偏了 | 语气强度；level=fine 时给 null",',
-    ' "better":"🚨 **他那句话整句改好的版本**，英文完整一句，他能直接照着重说一遍。',
-    '            不是方向、不是建议、不是模板 —— 就是可以照念的那一整句。',
-    '            level=fine 时给 null，其余情况**必须给**。",',
-    ' "native":"只是**改动的那一小段**该怎么说（用来说明改的是哪儿）；没有就 null",',
-    ' "easy":"同一个意思的**完整一句**，**用他现在的水平张口就能说的那一版** —— 短、常用词、口语。',
-    '          🚨 不许比他原话还长，不许用书面词（furthermore / subsequently 这类）。',
-    '          实在没有更简单的说法就给 null，别硬凑。",',
-    ' "alex_zh":"中文，≤2 句，只讲这句英语本身怎么了；不许讲后果（「这会让对方…」一律不要）",',
+    /* 🚨 两版让他挑（他 2026-08-21 拍板：对话里也每轮给两版）。
+       字段名沿用 better/easy —— 既有的判据、白名单、渲染全挂在这两个名字上，
+       改名等于把那一整套推倒重来。**变的是标签和轴，不是字段名。** */
+    ' "v1name":"' + A + '",',
+    ' "better":"【' + A + '】他那段话的完整改写，可直接照念。level=fine 时 null，其余必须给",',
+    ' "v2name":"' + B + '",',
+    ' "easy":"【' + B + '】**同一个意思的另一种讲法**，跟上面那版要明显不同 ——'
+      + (deep ? '这一版更稳、更有分量，可以更长；不是把上一版换几个同义词。'
+              : '这一版更短、更好上口，用他现在的水平张口就能说；不许比他原话还长。')
+      + ' 实在给不出第二版就 null，别硬凑",',
+    ' "native":"只是**改动的那一小段**该怎么说（说明改的是哪儿）；没有就 null",',
+    ' "alex_zh":"中文，≤2 句，说清这段话**主要问题是什么**'
+      + (deep ? '' : '；不许讲后果（「这会让对方…」一律不要）') + '",',
     ' "phrase":"2-5 词、人们真的会说出口的搭配，值得他收进本子的；没有就 null"',
+    (deep ? ',' : ''),
+    /* 🚨 只有正式场合才给这两块。日常闲聊给这些会很烦，
+       而且他 08-01 定过「日常别给专业判断」——那条在日常这一档仍然有效。 */
+    (deep ?
+     ' "terms":[{"raw":"他原话里的口语/不精准说法（一字不差摘出来）",\n' +
+     '           "pro":"这个场合该用的专业/标准说法",\n' +
+     '           "why":"一句中文：**为什么这么改更好** —— 说清是术语标准、语气分量、\n' +
+     '                  还是对方听得懂。不许写「更地道」「更自然」这种空话"}],\n' +
+     ' "risks":[{"quote":"从他原话里一字不差摘出来的一小段",\n' +
+     '           "why":"一句中文：这句**在这个场合会怎么害他**（对方会怎么理解、\n' +
+     '                  会引出什么他不想要的追问、会不会自曝短处）",\n' +
+     '           "fix":"改成什么 / 还是干脆删掉"}]' : ''),
     '}',
     '',
     '分级要诚实：',
     '  level="error"  他真说错了（语法错 / 中式直译到听不懂）。quote 必须有。',
-    '  level="polish" 他说得对，只是有更自然的说法。**不要说成他错了。**',
-    '  level="fine"   就是好的。better / native / easy / issue 全给 null，',
-    '                 alex_zh 一句话点出他做对了什么。',
-    '🚨 error 和 polish 这两档，`better` **必须给** —— 他要的就是「改成什么样重说一遍」。',
-    '   只说哪里不对而不给整句，等于没帮到他（他为这件事点过两次名了）。',
+    '  level="polish" 他说得对，只是有更好的说法。**不要说成他错了。**',
+    '  level="fine"   就是好的。两版和 issue 全给 null，alex_zh 一句话点出他做对了什么。',
     '🚨 实测抓到过的失败形态：先夸「你说得很自然」，然后照样判 error、硬编一个毛病出来。',
-    '   说得好就给 fine —— 硬纠比不纠更糟，之后他连真的纠错也不信了。'
+    '   说得好就给 fine —— 硬纠比不纠更糟，之后他连真的纠错也不信了。',
+    (deep ? '🚨 terms 至少 2 条（他点名要这张表，说「提升逻辑是什么」才是他最想要的）；'
+          + 'risks 真的没有就给空数组，但不许因为懒而空。' : ''),
   ].filter(Boolean).join('\n');
 }
 
@@ -15879,7 +16051,26 @@ function chatReplyBad(j, mustAsk){
 /* easy 的硬判据（分叉③他选的「加代码层判据」）。
    返回空串 = 合格；返回一句话 = 不合格，那一条丢掉。
    什么输入会让它失败：easy 比他原话还长 / 里面有书面词 / 混了中文。 */
+/* 🚨🚨 第二版的判据**必须跟着场合走**。
+   轴是「更好上口版」时它该更短；轴是「更稳妥版 / 有分量版」时它**可能更长** ——
+   拿「不许比原话长」去卡后者，正确答案会被驳掉。
+   这跟打磨那边「长度判据不许按比例卡」是同一条教训，别在这儿再犯一次。 */
 function easyBad(easy, said){
+  if (occGet().deep) return easyBadDeep(easy, said);
+  return easyBadShort(easy, said);
+}
+
+/* 正式场合：只防两件事 —— 混中文、跟第一版换汤不换药（重合度在 chatCritBad 里判）。
+   不卡长度。 */
+function easyBadDeep(easy, said){
+  if (chatHasZh(easy)) return '第二版里混了中文';
+  const e = chatWords(easy);
+  if (!e.length) return '';
+  if (e.length < 4) return '第二版只有 ' + e.length + ' 词，不像一个完整版本';
+  return '';
+}
+
+function easyBadShort(easy, said){
   /* 🚨 中文这一条必须排在「没给就不算错」**前面**。
      纯中文的 easy 一个拉丁词都没有 → chatWords 返回空数组 → 被当成「没给」放行，
      然后原样显示在「🙂 更简单」那一栏里。测试是这么抓到的（2026-08-20）。 */
@@ -15978,6 +16169,42 @@ function chatCritBad(c, said, lastTry){
   if (!lastTry && eb) bad.push(eb);
   const bb = betterBad(c && c.better, said, lv);
   if (bb) bad.push(bb + '（判据 E14）');
+
+  /* 🚨 两版不许换汤不换药（他 2026-08-21 拍板要「两个版本让我挑」）。
+     🚨 **不能照抄改稿那条**（那条只看 `inter / b.size`）—— 改稿管的是 ≥40 词的整段，
+     而这里是**单句**：更短那版天然是长那版的子集，containment 恒为 1.0，
+     于是把**正确答案**驳掉（实测："I like this weather, but I went hiking yesterday."
+     对 "I really like this weather, but yesterday I went hiking and I felt very tired."
+     判出重合 100%，连驳三次）。
+     真正的偷懒形态是「长度差不多 + 词也差不多」，所以两个条件要**同时**成立。
+     什么输入会让它响：第一版复制过来改两个同义词（长度比 1.0、共享词 85%）。
+     什么输入**不**该响：同一句话的浓缩版（长度比 0.6）。 */
+  if (lv !== 'fine' && c && c.better && c.easy){
+    const setOf = s => new Set((String(s).toLowerCase().match(/[a-z']+/g) || []));
+    const a = setOf(c.better), b = setOf(c.easy);
+    if (a.size >= 5 && b.size >= 5){
+      const inter = [...b].filter(x => a.has(x)).length;
+      const cont  = inter / b.size;                                     // 第二版有多少是第一版里的
+      const ratio = Math.min(a.size, b.size) / Math.max(a.size, b.size); // 两版长度有多接近
+      if (cont > 0.8 && ratio > 0.85)
+        bad.push('两版几乎是同一份（长度相仿且词重合 ' + Math.round(cont * 100)
+               + '%）—— 他要的是**另一种讲法**，不是换几个同义词');
+    }
+  }
+
+  /* 正式场合才要 terms；他点名说「提升逻辑是什么」才是他最想要的 */
+  if (occGet().deep && lv !== 'fine'){
+    if (!Array.isArray(c && c.terms) || c.terms.length < 2){
+      bad.push('这个场合要给「术语升级」表（原话 → 专业说法 → 为什么），至少 2 条');
+    } else {
+      c.terms = c.terms.filter(x => x && String(x.raw||'').trim() &&
+                                    String(x.pro||'').trim() && String(x.why||'').trim());
+      const hollow = c.terms.filter(x =>
+        /^(更地道|更自然|更好|更专业|更准确)[。.]?$/.test(String(x.why).trim()));
+      if (hollow.length) bad.push('terms 里有 ' + hollow.length + ' 条 why 是空话，要说清为什么');
+      if (c.terms.length < 2) bad.push('terms 过滤后少于 2 条');
+    }
+  }
   return bad;
 }
 
@@ -16007,6 +16234,16 @@ function scrubChat(d){
   if (bled(d.better, d.reply)) d.better = '';     // 同上，better 更要防（他会照念）
   if (betterBad(d.better, d.said, d.level)) d.better = '';
   if (easyBad(d.easy, d.said)) d.easy = '';       // 硬判据（E6）
+  /* 🚨 terms / risks 的引用也要**锚回他原话**，跟 quote 同一套。
+     锚不住就丢那一条 —— 编出来的「你说过 X」比没有更糟：
+     他会照着改一句自己根本没说过的话。整份不驳（丢一条不影响别的）。 */
+  const anch = s => {
+    const q = (String(s || '').toLowerCase().match(/[a-z']+/g) || []).join(' ');
+    if (!q) return false;
+    return (String(d.said || '').toLowerCase().match(/[a-z']+/g) || []).join(' ').indexOf(q) >= 0;
+  };
+  if (Array.isArray(d.terms)) d.terms = d.terms.filter(x => x && anch(x.raw));
+  if (Array.isArray(d.risks)) d.risks = d.risks.filter(x => x && anch(x.quote));
   if (d.alex_zh) d.alex_zh = cleanZh(d.alex_zh);  // 专业判断按句丢掉（E9）
   return d;
 }
@@ -16110,7 +16347,11 @@ async function chatTurn(said){
 /* ── 落盘 ────────────────────────────────────────────────── */
 function chatNew(topic, src){
   return {id: 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-          on: TODAY(), t0: Date.now(), topic: topic || '闲聊', src: src || '', turns: []};
+          on: TODAY(), t0: Date.now(), topic: topic || '闲聊', src: src || '',
+          /* 🚨 落盘时把这一场的场合和情景一起存下来 —— 不存的话「接着聊」
+             会拿**当前**选的场合去续一场早就结束的对话，Alex 当场换个人。 */
+          occ: (CHAT && CHAT.occ) || occGet().k, scene: (CHAT && CHAT.scene) || '',
+          turns: []};
 }
 async function chatSave(){
   if (!CHAT || !CHAT.id || !CHAT.turns.length) return null;
@@ -16207,41 +16448,126 @@ function chatStage(msg){
 }
 
 /* 根屏 */
+/* 从这个场合的卡里随机抽 3 张画成 chip。抽而不是取前 3 张 ——
+   取前 3 张的话他每次进来看到的永远是同样那三个，等于只有 3 张卡。 */
+function chatCardChips(cards){
+  const pick = [], used = new Set();
+  const n = Math.min(3, cards.length);
+  let guard = 0;
+  while (pick.length < n && guard++ < 200){
+    const j = Math.floor(Math.random() * cards.length);
+    if (used.has(j)) continue;
+    used.add(j); pick.push(cards[j]);
+  }
+  return '<div>' + pick.map(sc =>
+    '<button class="rchip" data-chatscn="' + esc(sc.id) + '" ' +
+    'style="margin:0 6px 6px 0;max-width:100%;white-space:normal;text-align:left">' +
+    esc(sc.t || sc.id) + '</button>').join('') + '</div>';
+}
+
 function showChat(){
   SESSUI.top = 'chat';               // 🚨 见 showList 里那段：高亮由本屏认领
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
-  $('#sub').textContent = '闲聊 · 用英语随便聊，说错的地方顺手给你拨回来';
+  $('#sub').textContent = '对话 · 用英语随便聊，说错的地方顺手给你拨回来';
   const his = chatTopics();
+  const cur = occGet();
+  const cards = occCards(cur);
+  /* 🚨 一屏一张卡，顺序 = 他的动作顺序：选场合 → 敲想聊的 → 开聊。
+     原来 box 排在「开聊」按钮**下面**，等于要他先滚下去打字再滚回来点。
+     他的规矩：主动作必须在第一屏（feedback_ui_below_fold_is_missing）。 */
   $('#feed').innerHTML = sessTopTabs() + '<div class="pol">' +
     '<div class="card" style="padding:14px">' +
-      '<button id="chatgo" class="btn wide" style="width:100%">开聊</button>' +
-      '<div class="t" style="margin-top:8px;color:var(--muted)">' +
-        'Alex 先开口，你接着说就行。<b>不打断你</b> —— ' +
-        '更自然、更简单的说法会挂在你自己那句话下面。</div>' +
-      '<div id="chaterr" class="warn" style="margin-top:8px"></div>' +
-      '<div id="chatstage" style="margin-top:8px"></div>' +
-    '</div>' +
-    '<div class="card" style="padding:14px">' +
-      '<div class="k" style="font-weight:800;margin-bottom:8px">想聊点特定的？（可留空）</div>' +
-      '<input id="chattopic" placeholder="例：我上周末去爬山了" ' +
+      /* ① 场合 —— 参数，不是模块。点评的深浅、两版的轴、Alex 演谁都跟着它走。 */
+      '<div class="k" style="font-weight:800;margin-bottom:8px">这次是什么场合？</div>' +
+      '<div>' + OCCASIONS.map(o2 =>
+        '<button class="rchip" data-occ="' + o2.k + '" style="margin:0 6px 6px 0">' +
+        (o2.k === cur.k ? '✓ ' : '') + esc(o2.nm) + '</button>').join('') + '</div>' +
+      '<div class="t" style="margin-top:6px;color:var(--muted)">' +
+        esc('对面是' + cur.who + '。' + (cur.deep
+          ? '除了改说法，还会给你「换个说法更专业（含为什么）」和「这句会不会害你」。'
+          : '只帮你把英语说对、说自然，不啰嗦。')) + '</div>' +
+
+      /* ② 自定义情景 —— 他想到什么就能聊什么 */
+      '<div class="k" style="font-weight:800;margin:14px 0 6px">今天想聊点啥？（可留空）</div>' +
+      '<textarea id="chattopic" rows="2" placeholder="' +
+        esc(cur.deep
+          ? '例：我要跟客户解释为什么审计报告要延期两周'
+          : '例：我上周末去爬山了') + '" ' +
         'style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;' +
         'border:1px solid var(--line-strong);background:var(--surface);' +
-        'color:inherit;font-size:15px">' +
-      (his.length ? '<div style="margin-top:10px">' + his.map(t =>
-        '<button class="rchip" data-chattop="' + esc(t) + '" ' +
+        'color:inherit;font-size:15px;font-family:inherit;resize:vertical"></textarea>' +
+      '<div class="t" style="margin-top:6px;color:var(--muted)">' +
+        '写话题（「爬山」）或者整个情景（「我是审计经理，你是 CFO，我要问你存货为什么涨了 40%」）' +
+        '都行 —— 写情景的话 Alex 就按你写的演。留空他自己挑，优先用你错题本和单词本里的说法。</div>' +
+      (his.length ? '<div style="margin-top:10px">' + his.map(t2 =>
+        '<button class="rchip" data-chattop="' + esc(t2) + '" ' +
         'style="margin:0 6px 6px 0;max-width:100%;white-space:normal;text-align:left">' +
-        esc(t) + '</button>').join('') + '</div>' : '') +
+        esc(t2) + '</button>').join('') + '</div>' : '') +
+      /* 🚨 题库里这个场合的卡 —— 原地复用那 4594 张，不另存一份、不另开一个浏览页
+         （他拍板「一张不重出」）。想不出聊什么的时候点一张就有情景。 */
+      (cards.length ? '<div id="chatcards" style="margin-top:12px">' +
+        '<div class="t" style="color:var(--muted);margin-bottom:6px">' +
+          '想不出来？题库里这个场合有 ' + cards.length + ' 个情景：' +
+          '<button class="rchip" id="chatcardmore" style="padding:1px 8px;font-size:12px">' +
+          '🎲 换一批</button></div>' +
+        chatCardChips(cards) + '</div>' : '') +
+
+      /* ③ 开聊 —— 跟上面两格同屏，不用滚 */
+      '<button id="chatgo" class="btn wide" style="width:100%;margin-top:14px">开聊</button>' +
       '<div class="t" style="margin-top:8px;color:var(--muted)">' +
-        '留空的话 Alex 会自己挑 —— 优先从你的错题本和单词本里挑，' +
-        '让你自然用上那些说法。</div>' +
+        'Alex 先开口，你接着说就行。<b>不打断你</b> —— ' +
+        '两个版本会挂在你自己那句话下面，你挑一个。</div>' +
+      '<div id="chaterr" class="warn" style="margin-top:8px"></div>' +
+      '<div id="chatstage" style="margin-top:8px"></div>' +
+      /* 🚨 「练习」那套（先给目标句式 + 逐轮打分 + 难度分级）没删，
+         只是从顶部 tab 降成这里的一个入口 —— 它是同一件事的另一种练法，
+         不该在顶上占一格。 */
+      '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">' +
+        '<button class="rchip" id="chatdrill">📋 按题卡练（先给目标句式，练完打分）→</button>' +
+        '<div class="t" style="margin-top:6px;color:var(--muted)">' +
+          '上面是自由说、说完再改；这个是照着卡练指定的说法，练完给评分。</div>' +
+      '</div>' +
     '</div>' +
     '<div id="chatlist"></div></div>';
   bindSessTop();
 
+  /* 换场合要**留住他已经敲的字**，重画一次就清空的话，正式场合那种长情景
+     他得重敲一遍 —— 那比不能换还烦。 */
+  document.querySelectorAll('[data-occ]').forEach(b =>
+    b.onclick = () => {
+      const keep = (($('#chattopic') || {}).value) || '';
+      const y = window.scrollY;
+      occSet(b.dataset.occ);
+      showChat();
+      const inp = $('#chattopic'); if (inp) inp.value = keep;
+      window.scrollTo(0, y);
+    });
   const go1 = () => chatStart((($('#chattopic') || {}).value) || '');
   $('#chatgo').onclick = go1;
   document.querySelectorAll('[data-chattop]').forEach(b =>
-    b.onclick = () => { const i = $('#chattopic'); if (i) i.value = b.dataset.chattop; go1(); });
+    b.onclick = () => { const inp = $('#chattopic'); if (inp) inp.value = b.dataset.chattop; go1(); });
+
+  /* 🚨 点一张卡 = 把情景**填进 box**，不是直接开聊 ——
+     他还得能改（「我是审计经理」改成「我是项目经理」），也得先看清演的是什么。 */
+  const bindCards = () => document.querySelectorAll('[data-chatscn]').forEach(b =>
+    b.onclick = () => {
+      const sc = (typeof SCENARIOS !== 'undefined')
+        ? SCENARIOS.find(x => x.id === b.dataset.chatscn) : null;
+      const inp = $('#chattopic');
+      if (inp && sc){ inp.value = scnToScene(sc); inp.focus();
+                      try { inp.setSelectionRange(0, 0); } catch(_){} }
+    });
+  bindCards();
+  const drill = $('#chatdrill');
+  if (drill) drill.onclick = () => { NAV.length = 0; showList(); paintNav(); };
+  const more = $('#chatcardmore');
+  if (more) more.onclick = () => {
+    const box = $('#chatcards');
+    if (!box) return;
+    const row = box.querySelector('div:last-child');
+    if (row) row.outerHTML = chatCardChips(cards);
+    bindCards();                 // 🚨 重画了就要重绑，不然换一批之后全是死键
+  };
 
   chatPaintList();
 }
@@ -16288,6 +16614,13 @@ async function chatStart(topic){
   if (CHAT.busy) return;
   const t = String(topic || '').trim();
   chatReset();
+  /* 🚨 必须在 chatReset() **之后** —— reset 会把这两个字段清空。
+     他敲进 box 的那段字同时是「聊什么」和「怎么演」：
+     短的（「我上周末去爬山了」）当话题，长的（「我是审计经理，你是 CFO，
+     我要问你存货为什么涨了 40%」）当情景。不用分类 —— 交给模型读，
+     分类器分错的代价比让它自己读大得多。 */
+  CHAT.occ = occGet().k;
+  CHAT.scene = t;
   CHAT.busy = true;
   try { if (window.unlockTTS) unlockTTS(); unlockNeural(); } catch(_){}   // 🚨 必须在这颗按钮的手势里
   const el = $('#chaterr'); if (el) el.textContent = '';
@@ -16303,7 +16636,7 @@ async function chatStart(topic){
     CHAT.turns = [{said: '', reply: String(j.reply || '').trim()}];   // 第 0 轮：只有 Alex 开口
     CHAT.noAsk = 0; CHAT.opened = true; CHAT.busy = false;
     chatStage('');
-    go(showChatRoom, '闲聊');
+    go(showChatRoom, '对话');
     chatSpeak(String(j.reply || ''));
   } catch(e){
     CHAT.busy = false;
@@ -16647,16 +16980,7 @@ function chatFormalHintHTML(i){
 
 /* 贴边的那一小条（分叉①：不打断对话流，挂在他自己那句下面） */
 function chatCritHTML(t, i){
-  /* 🚨 说人话。原来把**校验器的内部原话**直接甩到界面上
-     （「quote 在他那句话里逐字找不到（判据 E5）」）—— Kevin 2026-08-20：
-     「我也不知道什么意思」。技术细节留给控制台，界面上只说他关心的事。 */
   if (t.critErr){
-    /* 🚨 别让他「再说一遍」—— 他那句话就在屏幕上，重点评一次就够了。
-       Kevin 2026-08-20 第二次撞到这个提示。我这边满载压测（8 发模型 + 7 发预热）
-       复现不出来，所以**不编根因**；但不管根因是什么，
-       让这次失败变便宜（一个按钮）都是对的。
-       顺手把原因记进 localStorage，下次他再遇到就有据可查，
-       不用靠他去翻手机的控制台。 */
     try { console.warn('[alex] 这轮点评没成：', t.critErr); } catch(_){}
     try {
       const log = JSON.parse(localStorage.getItem('alex_crit_err') || '[]');
@@ -16664,10 +16988,6 @@ function chatCritHTML(t, i){
       if (log[log.length - 1] !== line){ log.push(line);
         localStorage.setItem('alex_crit_err', JSON.stringify(log.slice(-12))); }
     } catch(_){}
-    /* 🚨 按钮**单独一行、放在提示下面**，文案用他自己说的「再次尝试」
-       （Kevin 2026-08-20：「在『没点评上，聊天不受影响』这段话的下面，
-        再加一个『再次尝试』」）。他那段话已经在手里了，重跑一次就是一个动作，
-        **不能就这么完了就没了**。 */
     return '<div class="card" style="margin:-4px 0 10px 12px;padding:10px;' +
            'border-left:3px solid var(--line-strong)">' +
            '<div style="color:var(--muted);font-size:12.5px">' +
@@ -16677,38 +16997,74 @@ function chatCritHTML(t, i){
            '" style="margin-top:8px">🔁 再次尝试</button></div>';
   }
 
-  /* 🚨 顺序就是他的阅读顺序：**先给能照念的整句**，再说为什么。
-     Kevin 2026-08-20：「他只是提了意见、指出哪里不对，没有把改好后的完整说法发给我。」
-     所以 better 排第一、字号最大、自带「🔊 听一遍」——
-     解释（alex_zh）沉到最后，它是补充，不是主角。 */
-  /* 🚨 收藏键要**看得出收没收**。Kevin 2026-08-20：「点收藏的时候那个星星图标
-     不会发生变化，容易让人以为没有点成功」。
-     空心 ☆ = 没收，实心 ★（黄）= 已收 —— 状态由 `nbFind` **现算**，
-     不靠点击时翻一下：翻标志位的话重画一次就打回原形，而且同一句话在页面上
-     可能出现两处（推荐那句也在候选里），各翻各的必然一个 ✓ 一个 ☆。 */
+  if (t.level === 'fine')
+    return '<div class="card" style="margin:-4px 0 10px 12px;padding:10px;font-size:13.5px;' +
+           'border-left:3px solid var(--ok,#2e9e5b)">' +
+           '<div style="color:var(--ok,#2e9e5b);font-weight:700">✅ ' +
+           esc(t.alex_zh || '这句没问题') + '</div></div>';
+
+  /* 🚨 顺序 = 他的阅读顺序，也是他两次点名要的顺序：
+     ① 主要问题是啥 → ② 两个版本让他挑 → ③ 术语升级+为什么 → ④ 会不会害你
+     （Kevin 2026-08-21 拿 Gemini 的产出对标时点名的就是 ①②③。） */
+  /* 🚨 星星状态**现算**，不存标志位 —— 存标志位的话重画一次就打回原形，
+     那正是他说的「点收藏那个星星图标不会发生变化，容易让人以为没点成功」。
+     独立成一个具名函数，是因为下面「能带走」那颗星也要用它：
+     2026-08-21 我重写这一段时把那颗写死成 ☆，等于同一个 bug 又活了一次。 */
   const star = en => {
     const saved = en && (typeof nbFind === 'function') && nbFind(qId(en));
-    return saved
-      ? '<span style="color:#f5b301;font-size:15px" title="已收进' +
-        esc(BOOKS[saved.book] || '本子') + '">★</span>'
-      : '<span style="font-size:15px">☆</span>';
+    return saved ? '<span style="color:#f5b301;font-size:15px">★</span>'
+                 : '<span style="font-size:15px">☆</span>';
   };
-  const key = (k, n, en) => ' <button class="rchip" data-chatspk="' + k + i +
+  const key = (k, n, en) =>
+    ' <button class="rchip" data-chatspk="' + k + i +
     '" style="padding:2px 8px;font-size:12px" title="听一遍">🔊</button>' +
     '<button class="rchip" data-chattake="' + n + i +
     '" style="padding:2px 8px;font-size:12px" title="收进本子">' + star(en) + '</button>';
 
   const bits = [];
-  /* 🚨 只点评了一段就**明说**，别让他以为整段都改过了 */
+  /* 🚨 降级了要**明说**只覆盖了哪一段 —— 绝不静默截断。
+     他说了 17 分钟只点评最后一段，不讲清楚的话他会以为前面那些都合格。 */
   if (t.__partOf) bits.push(
-    '<div style="color:var(--muted);font-size:12px;margin-bottom:6px">' +
-    '你这段说得很长，下面这条只针对**最后一小段**（「…' +
-    esc(String(t.__partOf).slice(-42)) + '」）</div>');
-  if (t.better) bits.push(
-    '<div style="font-size:15px;font-weight:700;line-height:1.5">' +
-    '✅ 这样重说一遍：<br>' + esc(t.better) + key('b', 'n', t.better) + '</div>');
-  if (t.easy && t.easy !== t.better) bits.push(
-    '<div style="margin-top:8px">🙂 <b>更简单</b>：' + esc(t.easy) + key('e', 'e', t.easy) + '</div>');
+    '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;' +
+    'padding:6px 8px;background:var(--surface);border-radius:6px">' +
+    '你这段说得比较长，下面只针对**最后一段**（约 ' +
+    ((String(t.__partOf).match(/[A-Za-z一-龥]+/g) || []).length) +
+    ' 词）点评。想让前面也过一遍，用「打磨」把全文交给我。</div>');
+  // ① 主要问题
+  if (t.alex_zh) bits.push(
+    '<div style="font-size:13px;color:var(--muted);margin-bottom:8px">' +
+    esc(t.alex_zh) + '</div>');
+
+  // ② 两个版本 —— 并排给，让他挑
+  const ver = (nm, txt, k, n) => txt
+    ? '<div style="margin-top:8px;padding-left:8px;border-left:3px solid var(--brand-dark)">' +
+      '<div style="font-size:12px;color:var(--brand-dark);font-weight:800">' +
+      esc(nm) + '</div>' +
+      '<div style="font-size:15px;font-weight:600;line-height:1.5">' + esc(txt) +
+      key(k, n, txt) + '</div></div>'
+    : '';
+  if (t.better) bits.push(ver(t.v1name || '更自然的说法', t.better, 'b', 'n'));
+  if (t.easy && t.easy !== t.better) bits.push(ver(t.v2name || '另一种讲法', t.easy, 'e', 'e'));
+
+  // ③ 术语升级 —— 他最想要的一块：原话 → 专业说法 → **为什么**
+  if ((t.terms || []).length) bits.push(
+    '<div style="margin-top:10px"><div style="font-size:12px;font-weight:800">📘 换个说法更专业</div>' +
+    t.terms.map(x =>
+      '<div class="t" style="margin-top:6px">' +
+      '<span style="color:var(--muted)">' + esc(x.raw) + '</span> → <b>' + esc(x.pro) + '</b>' +
+      '<div style="font-size:12px;color:var(--muted)">' + esc(x.why) + '</div></div>').join('') +
+    '</div>');
+
+  // ④ 会不会害你
+  if ((t.risks || []).length) bits.push(
+    '<div style="margin-top:10px;padding:8px;border-left:3px solid #e8563f;' +
+    'background:var(--surface)"><div style="font-size:12px;font-weight:800">⚠️ 这句在这个场合会害你</div>' +
+    t.risks.map(x =>
+      '<div class="t" style="margin-top:6px">「' + esc(x.quote) + '」<br>' +
+      esc(x.why) + '<br><span style="color:var(--brand-dark)">→ ' + esc(x.fix) + '</span></div>').join('') +
+    '</div>');
+
+  // ⑤ 改的是哪儿 / 能带走
   if (t.native && t.quote) bits.push(
     '<div style="margin-top:8px;color:var(--muted);font-size:12.5px">' +
     '改的是这儿：「' + esc(t.quote) + '」→ ' + esc(t.native) + '</div>');
@@ -16716,31 +17072,12 @@ function chatCritHTML(t, i){
     '<div style="margin-top:8px">📌 <b>能带走</b>：' + esc(t.phrase) +
     ' <button class="rchip" data-chattake="p' + i +
     '" style="padding:2px 8px;font-size:12px">' + star(t.phrase) + '</button></div>');
-  if (t.alex_zh && t.level !== 'fine') bits.push(
-    '<div style="margin-top:8px;color:var(--muted);font-size:12.5px">' + esc(t.alex_zh) + '</div>');
 
-  if (t.level === 'fine')
-    return '<div class="card" style="margin:-4px 0 10px 12px;padding:10px;font-size:13.5px;' +
-           'border-left:3px solid var(--ok,#2e9e5b)">' +
-           '<div style="color:var(--ok,#2e9e5b);font-weight:700">✅ ' +
-           esc(t.alex_zh || '这句没问题') + '</div></div>';
   if (!bits.length) return '';
   return '<div class="card" style="margin:-4px 0 10px 12px;padding:10px;' +
          'border-left:3px solid var(--brand-dark)">' + bits.join('') + '</div>';
 }
 
-/* 🚨🚨 **画了按钮就必须绑，两个屏都绑**。
-   Kevin 2026-08-20：「我点这个再次尝试，点完之后一直没反应」——
-   根因是 `showChatRec`（记录页）照样渲染了 `chatCritHTML`，
-   却**一个事件都没绑**：再次尝试 / ☆ 收藏 / 🔊 听一遍 在记录页里**全是死键**，
-   而且不报错，点了就是毫无反应。
-   （同型的错这个项目里犯过不止一次：「画了 chip 没绑路由」「收藏键在屏幕外」。）
-
-   所以抽成一份，靠 `ctx` 说清楚「这一屏的数据在哪、存哪、怎么重画」：
-     ctx.turns   这一屏在显示哪一组轮次（聊天屏是 CHAT.turns，记录页是 rec.turns）
-     ctx.save()  改完存回哪儿
-     ctx.repaint() 怎么重画这一屏
-   聊天屏和记录页各传各的，行为完全一致。 */
 function chatBindCrit(ctx){
   const turns = ctx.turns, save = ctx.save, repaint = ctx.repaint;
   document.querySelectorAll('[data-chattake]').forEach(b =>
@@ -17042,6 +17379,10 @@ function chatResume(rec){
   chatReset();
   CHAT.id = rec.id; CHAT.on = rec.on; CHAT.topic = rec.topic || '闲聊';
   CHAT.src = rec.src || '';
+  /* 接着聊 = 连场合和情景一起接回来（老记录没有这两个字段就退回当前选的） */
+  CHAT.occ = rec.occ || occGet().k;
+  CHAT.scene = rec.scene || '';
+  if (rec.occ) occSet(rec.occ);
   CHAT.t0 = Date.now() - (rec.sec || 0) * 1000;
   CHAT.turns = rec.turns.slice();
   CHAT.opened = true;
@@ -17055,7 +17396,7 @@ function chatResume(rec){
     n++;
   }
   CHAT.noAsk = n;
-  go(showChatRoom, '闲聊');
+  go(showChatRoom, '对话');
   toast('接上了，从第 ' + CHAT.turns.filter(t => t.said).length + ' 轮继续', 2600);
 }
 
