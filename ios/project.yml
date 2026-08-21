@@ -1,4 +1,4 @@
-﻿# XcodeGen 工程定义。CI 上 `xcodegen generate` 出 .xcodeproj 再编译。
+# XcodeGen 工程定义。CI 上 `xcodegen generate` 出 .xcodeproj 再编译。
 # 用它而不是手写 .pbxproj —— .pbxproj 是一坨机器格式，手写必出错且没法 review。
 name: Transless
 options:
@@ -100,6 +100,10 @@ targets:
     sources:
       - path: Keyboard
       - path: Shared
+      # 🚨 键盘扩展是**独立 bundle**，`UIImage(named:)` 只找自己 bundle 里的资源。
+      #    不把 Assets 编进这个 target，麦克风图会静默变 nil、按钮一片空白 ——
+      #    编译照样通过，只有装到手机上才看得出来。contract_test.py 有闸门守这条。
+      - path: Assets.xcassets
     info:
       path: Keyboard/Info.plist
       properties:
