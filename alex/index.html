@@ -5090,13 +5090,14 @@ function audioRelease(key){
 
 
 
-function say(text, lang, rate){
+/* `key`：见 nsay 那段 —— 「再点一次 = 停」要靠它认出在响的是不是这一条。 */
+function say(text, lang, rate, key){
 
   if (!text) return Promise.resolve();
 
   // 🚨 认领通道：原来只 cancel 了 TTS 自己，跟 <audio> 那边照样能叠。
 
-  audioClaim('tts', () => { try { speechSynthesis.cancel(); } catch(_){} });
+  audioClaim(key || 'tts', () => { try { speechSynthesis.cancel(); } catch(_){} });
 
   speechSynthesis.cancel();          // 上一句没念完就换 —— 直接顶掉，别排队
 
@@ -16986,10 +16987,17 @@ async function ttsFetch(text, voice){
 }
 
 /* 念一句。neural 走后端好嗓子，失败或他选了 device 就退回自带嗓子。 */
-async function nsay(text){
+/* `key` 是给「再点一次 = 停」用的：谁在响、是不是我这条，靠它认。
+   不传就沿用原来的 'tts'（聊天那边不需要区分是哪一句）。 */
+async function nsay(text, akey){
   const t = String(text || '').trim();
   if (!t) return;
-  if (ttsMode() === 'device' || !apiOn()) { try { say(t, 'en'); } catch(_){} return; }
+  /* 🚨 退回设备嗓子时也要把 key 带上，否则「再点一次 = 停」在兜底路径上按不住 ——
+     而兜底恰恰是最常发生的那条（后端慢、离线、他自己选了 device）。 */
+  if (ttsMode() === 'device' || !apiOn()){
+    try { say(t, 'en', undefined, akey); } catch(_){}
+    return;
+  }
   const key = ttsVoice() + '|' + t;
   /* 🚨 合成和播放**分开 catch**：这两件事的后果完全不同，
      混在一个 catch 里我就只知道「兜底了」，分不清是没合成出来、
@@ -17007,7 +17015,7 @@ async function nsay(text){
     return;
   }
   try {
-    audioClaim('tts', () => { try { _ttsEl && _ttsEl.pause(); } catch(_){} });
+    audioClaim(akey || 'tts', () => { try { _ttsEl && _ttsEl.pause(); } catch(_){} });
     _ttsEl = _ttsEl || new Audio();
     _ttsEl.playsInline = true;
     _ttsEl.src = url;
@@ -18320,8 +18328,40 @@ async function doLook(q){
 function playBtn(text, label){
   const b = document.createElement('button');
   b.className = 'play';
-  b.textContent = label || '🔊';
-  b.onclick = ev => { ev.stopPropagation(); say(text, 'en'); };
+  const idle = label || '🔊';
+  b.textContent = idle;
+  /* 每颗按钮一个自己的 key —— 这样才分得清「在响的是不是我这条」。 */
+  const key = 'play:' + String(text || '').slice(0, 60);
+
+  const reset = () => { b.textContent = idle; b.classList.remove('on'); };
+
+  b.onclick = async ev => {
+    ev.stopPropagation();
+    /* 🚨 ② 再点一次 = 停。
+       这个行为是我 2026-08-14 **特意去掉的**（理由在 audioClaim 的注释里：
+       「第一下没听到 → 再点一下」会变成静音）。他 2026-08-21 明确要它，
+       所以加回来，但**把当时那个坑一起堵上**：播放时按钮变成 ⏹，
+       「再点一下」于是是明摆着的停止，不会跟「想重播」搞混。
+       少的那个状态现在**看得见**了。 */
+    if (AUDIO.key === key){ audioStop(); reset(); return; }
+    b.textContent = '⏹'; b.classList.add('on');
+    try {
+      /* 🚨 ① 走 nsay 而不是 say —— 他选的是 Andrew，
+         全站只有聊天那一处在用 nsay，换个页面就变回难听的设备嗓子。
+         nsay 自带兜底（mode=device / 后端不可用时退回 say），不会因此不出声。 */
+      await nsay(text, key);
+    } catch(_){}
+    /* 播完（或兜底路径 fire-and-forget 返回）就把状态收回来。
+       🚨 不能只在 await 之后收 —— 设备嗓子那条是不阻塞的，
+       所以再挂一个「通道换人了就收」的兜底。 */
+    if (AUDIO.key !== key) reset();
+    else {
+      const iv = setInterval(() => {
+        if (AUDIO.key !== key){ clearInterval(iv); reset(); }
+      }, 400);
+      setTimeout(() => { clearInterval(iv); reset(); }, 60000);
+    }
+  };
   return b;
 }
 
