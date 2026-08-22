@@ -33,6 +33,10 @@ targets:
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "5"
         UILaunchScreen: {}
+        # 🚨 声明支持的语言。不声明的话
+        #    `Bundle.main.preferredLocalizations` 永远只返回
+        #    开发语言，英文界面**一辈子出不来**而且不报错。
+        CFBundleLocalizations: [zh-Hans, en]
         # 🚨 键盘扩展弹不出系统权限框，必须由容器 App 先要过一次。
         #    转写改到后端后只需要麦克风；语音识别不再走 iOS 的 Speech 框架。
         NSMicrophoneUsageDescription: 用来听你说的中文，转成文字后整理并译成英文。
@@ -61,6 +65,10 @@ targets:
         CFBundleShortVersionString: "1.0"
         CFBundleVersion: "1"
         UILaunchScreen: {}
+        # 🚨 声明支持的语言。不声明的话
+        #    `Bundle.main.preferredLocalizations` 永远只返回
+        #    开发语言，英文界面**一辈子出不来**而且不报错。
+        CFBundleLocalizations: [zh-Hans, en]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kevin.tprobe
