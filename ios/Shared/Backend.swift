@@ -106,7 +106,7 @@ enum Backend {
         req.httpMethod = "POST"
         req.timeoutInterval = 30
         req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
-        req.setValue(Secrets.pass, forHTTPHeaderField: "X-Alex-Pass")
+        req.setValue(DeviceId.pass, forHTTPHeaderField: "X-Alex-Pass")
         req.httpBody = data
 
         URLSession.shared.dataTask(with: req) { d, resp, err in
@@ -140,7 +140,7 @@ enum Backend {
         }
         var req = URLRequest(url: url)
         req.timeoutInterval = 20
-        req.setValue(Secrets.pass, forHTTPHeaderField: "X-Alex-Pass")
+        req.setValue(DeviceId.pass, forHTTPHeaderField: "X-Alex-Pass")
 
         DispatchQueue.global().asyncAfter(deadline: .now() + 0.7) {
             URLSession.shared.dataTask(with: req) { d, _, _ in
@@ -178,7 +178,7 @@ enum Backend {
         req.httpMethod = "POST"
         req.timeoutInterval = 30
         req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
-        req.setValue(Secrets.pass, forHTTPHeaderField: "X-Alex-Pass")
+        req.setValue(DeviceId.pass, forHTTPHeaderField: "X-Alex-Pass")
         req.httpBody = data
 
         URLSession.shared.dataTask(with: req) { d, resp, err in
@@ -201,7 +201,7 @@ enum Backend {
         }
         var req = URLRequest(url: url)
         req.timeoutInterval = 20
-        req.setValue(Secrets.pass, forHTTPHeaderField: "X-Alex-Pass")
+        req.setValue(DeviceId.pass, forHTTPHeaderField: "X-Alex-Pass")
         DispatchQueue.global().asyncAfter(deadline: .now() + 0.8) {
             URLSession.shared.dataTask(with: req) { d, _, _ in
                 let obj = d.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
@@ -242,7 +242,7 @@ enum Backend {
         req.httpMethod = "POST"
         req.timeoutInterval = 30
         req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
-        req.setValue(Secrets.pass, forHTTPHeaderField: "X-Alex-Pass")
+        req.setValue(DeviceId.pass, forHTTPHeaderField: "X-Alex-Pass")
         req.httpBody = data
 
         URLSession.shared.dataTask(with: req) { d, resp, err in
@@ -269,7 +269,7 @@ enum Backend {
         }
         var req = URLRequest(url: url)
         req.timeoutInterval = 20
-        req.setValue(Secrets.pass, forHTTPHeaderField: "X-Alex-Pass")
+        req.setValue(DeviceId.pass, forHTTPHeaderField: "X-Alex-Pass")
 
         DispatchQueue.global().asyncAfter(deadline: .now() + 0.7) {
             URLSession.shared.dataTask(with: req) { d, _, _ in
