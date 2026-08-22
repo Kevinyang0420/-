@@ -15,13 +15,18 @@ import UIKit
 //    下面那个 8 秒只是防呆（忘了关就别一直录着），不是交互主路径。
 
 final class KeyboardViewController: UIInputViewController {
+    /// 渐变底。🚨 必须在 viewDidLayoutSubviews 里更新 frame ——
+    ///    不更新的话转屏或键盘高度变化时渐变不跟着走，
+    ///    表现成「下半截是黑的」，而且只在真机转屏才看得见。
+    private var bgLayer: CALayer?
+
 
     private enum Phase {
         case idle, listening, thinking
     }
 
     private let tones = ["work", "email", "casual", "formal"]
-    private let toneLabels = ["工作", "邮件", "随意", "正式"]
+    private let toneLabels = [L.tone_work, L.tone_email, L.tone_casual, L.kb_formal]
     private var tone = UserDefaults.standard.string(forKey: "vime.tone") ?? "work"
 
     private let hintLabel = UILabel()
@@ -41,7 +46,13 @@ final class KeyboardViewController: UIInputViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = Theme.bg
+        // 🚨 用户可能只用键盘、从没打开过 App —— 这里也保一次。
+        DeviceId.ensure()
+        // 🚨 底改成渐变（跟安卓一致）。平涂 Theme.bg 时，
+        //    半透明按键透上来的是一片均匀的紫 —— Kevin 说的"太紫了"就是这么来的。
+        view.backgroundColor = .clear
+        bgLayer = Theme.keyboardBackground(view.bounds)
+        view.layer.insertSublayer(bgLayer!, at: 0)
 
         hintLabel.font = .systemFont(ofSize: 13)
         hintLabel.textColor = Theme.dim
@@ -83,7 +94,7 @@ final class KeyboardViewController: UIInputViewController {
         toneButton.layer.cornerRadius = 8
         toneButton.addTarget(self, action: #selector(cycleTone), for: .touchUpInside)
 
-        fallbackButton.setTitle("译光标前的中文", for: .normal)
+        fallbackButton.setTitle(L.kb_tr_before, for: .normal)
         fallbackButton.titleLabel?.font = .systemFont(ofSize: 13)
         fallbackButton.setTitleColor(Theme.dim, for: .normal)
         fallbackButton.backgroundColor = Theme.key
@@ -207,7 +218,7 @@ final class KeyboardViewController: UIInputViewController {
         let t = (textDocumentProxy.documentContextBeforeInput ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !t.isEmpty else {
-            hintLabel.text = "光标前没有内容"
+            hintLabel.text = L.kb_nothing_before
             return
         }
         heardLabel.text = t
@@ -218,7 +229,7 @@ final class KeyboardViewController: UIInputViewController {
 
     private func send(_ zh: String, replaceChars: Int) {
         guard !Secrets.pass.isEmpty else {
-            setPhase(.idle, hint: "这份包没配口令，重新构建一次")
+            setPhase(.idle, hint: L.kb_no_pass)
             return
         }
         setPhase(.thinking, hint: "")
@@ -244,4 +255,13 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     deinit { voice.stop() }
+
+    /// 🚨 渐变底的 frame 必须跟着 bounds 走。
+    ///    不更新的话，转屏或键盘高度变化（切数字层/候选条出现）时
+    ///    渐变停在旧尺寸，下半截露出透明底 —— 只在真机上才看得见。
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        bgLayer?.frame = view.bounds
+        bgLayer?.sublayers?.forEach { $0.frame = view.bounds }
+    }
 }
