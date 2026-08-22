@@ -241,6 +241,20 @@ def main():
         print("\n=== 资源闸门未过，真机上图标会是空白 ===")
         return 1
 
+    print("")
+    print("--- 设备令牌闸门（不联网） ---")
+    _bk = open(os.path.join(HERE, "Shared", "Backend.swift"), encoding="utf-8").read()
+    _ad = open(os.path.join(HERE, "App", "AppDelegate.swift"), encoding="utf-8").read()
+    _ok1 = "Secrets.pass" not in _bk
+    _ok2 = "DeviceId.pass" in _bk
+    _ok3 = os.path.exists(os.path.join(HERE, "Shared", "DeviceId.swift"))
+    _ok4 = "DeviceId.ensure" in _ad
+    print("  Backend 不再用共享口令        %s" % ("PASS" if _ok1 else "FAIL"))
+    print("  Backend 改用设备令牌          %s" % ("PASS" if _ok2 else "FAIL"))
+    print("  DeviceId.swift 存在          %s" % ("PASS" if _ok3 else "FAIL"))
+    print("  App 启动时触发注册            %s" % ("PASS" if _ok4 else "FAIL"))
+    ok = ok and _ok1 and _ok2 and _ok3 and _ok4
+
     print("\n--- 契约测试（要联网） ---")
     accepted = swift_accepted_codes()
     print("Swift 接受的状态码 : %s" % accepted)
