@@ -160,12 +160,20 @@ jobs:
           cp /tmp/probe/TransProbe.ipa .
           ls -lh TransProbe.ipa
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Transless-ipa
-          path: ios/Transless.ipa
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: TransProbe-ipa
-          path: ios/TransProbe.ipa
+      # 🚨🚨 2026-08-22 **停止上传 IPA**。
+      #    这个仓库是公开的（因为 GitHub Pages 上还挂着 Kevin 天天在用的
+      #    alex / candy / spell / roundtable / kb，改私有会把它们一起打掉）。
+      #    而公开仓库的 Actions artifact **任何人都能下载**，
+      #    IPA 里编着后端口令（ALEX_PASS）—— 等于口令公开。
+      #    跟他当天让我删掉安卓 release 是同一个洞。
+      #
+      #    构建照跑（这条流水线的作用是**验证能不能编译**，那才是我要的结果）；
+      #    要装到手机上的包，由我构建后传他飞书云空间、只授权他本人。
+      #
+      #    🚨 别顺手把 upload-artifact 加回来。真要拿 IPA，
+      #    改成上传到有访问控制的地方，不能是公开 artifact。
+      - name: 产物检查（不上传 —— 公开仓库的 artifact 谁都能下）
+        run: |
+          ls -lh ios/Transless.ipa ios/TransProbe.ipa
+          echo "IPA 构建成功但**不上传**：公开仓库的 artifact 任何人都能下载，"
+          echo "而包里编着后端口令。要装机的包走飞书私发。"
