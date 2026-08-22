@@ -15,6 +15,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ app: UIApplication,
                      didFinishLaunchingWithOptions o: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // 🚨 首启就去后端换设备令牌：留存统计 / 按人计额度 / 推送触达都靠它。
+        //    异步、失败自动回落共享口令，不阻塞启动。
+        DeviceId.ensure()
         let w = UIWindow(frame: UIScreen.main.bounds)
         w.rootViewController = UINavigationController(rootViewController: MainViewController())
         w.makeKeyAndVisible()
@@ -34,7 +37,7 @@ final class MainViewController: UIViewController {
     //    这里是**第三份**副本，暂时只能手工对齐 —— iOS 没走构建期生成那条路。
     //    改档位时三处都要动：engine.py / build_apk.py 生成的 Gen / 这里。
     private let tones = ["casual", "work", "email"]
-    private let toneLabels = ["随意", "工作", "邮件"]
+    private let toneLabels = [L.tone_casual, L.tone_work, L.tone_email]
     private var tone = UserDefaults.standard.string(forKey: "vime.tone") ?? "work"
 
     /// 输出模式：译成英文（默认）/ 只转写。跟安卓一致。
@@ -62,6 +65,7 @@ final class MainViewController: UIViewController {
     private let hintLabel = UILabel()
     private let heardLabel = UILabel()
     private let resultView = UITextView()
+    private let aiNoticeLabel = UILabel()   // DeepSeek 条款 8.1/3.7 要求的 AI 生成披露
     private let micButton = UIButton(type: .system)
     private let toneButton = UIButton(type: .system)
 
@@ -75,13 +79,13 @@ final class MainViewController: UIViewController {
         title = "Transless"
         navigationController?.navigationBar.tintColor = Theme.accent
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "权限", style: .plain, target: self, action: #selector(openSetup))
+            title: L.perm_title, style: .plain, target: self, action: #selector(openSetup))
 
         // 🚨 两级 Tab（Kevin 2026-08-21：「按你最初的那个方案来」）：
         //    第一级只有 翻译 / 转写；子档位（结构化 / 逐字）放第二级小 chip。
         //    跟安卓 VoiceImeService 的版式一一对应 —— 两端一起改是硬规矩。
-        for (b, t, sel) in [(tabTranslate, "翻译", #selector(pickEn)),
-                            (tabTranscribe, "转写", #selector(pickTranscribe))] {
+        for (b, t, sel) in [(tabTranslate, L.kb_translate, #selector(pickEn)),
+                            (tabTranscribe, L.kb_transcribe, #selector(pickTranscribe))] {
             b.setTitle(t, for: .normal)
             b.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
             b.layer.cornerRadius = 17
@@ -102,8 +106,11 @@ final class MainViewController: UIViewController {
         logoView.setContentHuggingPriority(.required, for: .horizontal)
         logoView.widthAnchor.constraint(equalToConstant: 26).isActive = true
 
-        for (b, t, sel) in [(modeZhButton, "结构化转写", #selector(pickZh)),
-                            (modeRawButton, "逐字转录", #selector(pickRaw))] {
+        // 🚨 「整理 / 逐字」，不是「结构化转写 / 逐字转录」——
+        //    Kevin 2026-08-21：「这几个表达让人听不懂」。安卓当天改了并加了闸门，
+        //    iOS 一直留着旧名字（2026-08-22 才发现）。
+        for (b, t, sel) in [(modeZhButton, L.kb_polish, #selector(pickZh)),
+                            (modeRawButton, L.kb_verbatim, #selector(pickRaw))] {
             b.setTitle(t, for: .normal)
             b.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
             b.layer.cornerRadius = 16
@@ -135,7 +142,22 @@ final class MainViewController: UIViewController {
         resultView.isEditable = false
         resultView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
 
-        // 🚨 长条，不是圆圈（跟安卓 MIC_BAR_DP 那套一一对应）。
+        // 🚨 AI 生成声明：DeepSeek 开放平台服务协议 8.1「应当向终端用户明确披露
+        //    相关输出内容系由人工智能生成」+ 3.7「对生成、合成的文本进行标识」。
+        aiNoticeLabel.text = L.ai_notice
+        aiNoticeLabel.font = .systemFont(ofSize: 12.5)
+        // 🚨 走 Theme，别硬编码 —— 硬编码的话换主题时它不跟着变，
+        //    紫色改版之后会剩一块土黄。
+        aiNoticeLabel.textColor = Theme.dim
+        aiNoticeLabel.numberOfLines = 0
+        aiNoticeLabel.textAlignment = .center
+
+        // 🚨🚨 说话键是**圆的**，别再改回长条。
+        //    Kevin 2026-08-21 先说「不要搞成圆圈…搞成一个长点的方框」，
+        //    当天**又改口**：「不需要留长…还是用回原来那个圆圈的形状，
+        //    这样整个输入法都显得干净一点」——以后说的为准。
+        //    安卓按后一次改了（build 闸门钉着 circle=3/bar=0），
+        //    iOS 停在前一次，2026-08-22 才发现。
         micButton.setTitle("", for: .normal)
         micButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .medium)
         micButton.setTitleColor(.white, for: .normal)
@@ -159,7 +181,12 @@ final class MainViewController: UIViewController {
         langButton.layer.cornerRadius = 16
         langButton.addTarget(self, action: #selector(pickLang), for: .touchUpInside)
 
-        speakButton.setTitle("🔊 朗读", for: .normal)
+        speakButton.setTitle(L.kb_speak, for: .normal)
+        // 🚨 单色喇叭贴在文字左边（原来是彩色 emoji，跟主题冲）
+        speakButton.setImage(Theme.speakGlyph(17), for: .normal)
+        speakButton.tintColor = Theme.text
+        speakButton.imageEdgeInsets =
+            UIEdgeInsets(top: 0, left: -4, bottom: 0, right: 4)
         speakButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
         speakButton.setTitleColor(Theme.text, for: .normal)
         speakButton.backgroundColor = Theme.key
@@ -167,7 +194,7 @@ final class MainViewController: UIViewController {
         speakButton.isEnabled = false          // 没东西可念时不给点
         speakButton.addTarget(self, action: #selector(tapSpeak), for: .touchUpInside)
 
-        [modeStack, subStack, hintLabel, heardLabel, resultView, micButton,
+        [modeStack, subStack, hintLabel, heardLabel, resultView, aiNoticeLabel, micButton,
          toneButton, langButton, speakButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
@@ -215,7 +242,10 @@ final class MainViewController: UIViewController {
             resultView.topAnchor.constraint(equalTo: heardLabel.bottomAnchor, constant: 14),
             resultView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             resultView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            resultView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            resultView.bottomAnchor.constraint(equalTo: aiNoticeLabel.topAnchor, constant: -8),
+            aiNoticeLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            aiNoticeLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            aiNoticeLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
         ])
         // 🚨 立体感统一在这儿走一遍，别在每个控件后面各写一行 —— 漏一个就少一个阴影，
         //    而"少了一个"是看不出来的（跟安卓 Theme.elevateAll 同一套做法）。
@@ -229,17 +259,14 @@ final class MainViewController: UIViewController {
         Theme.elevate(micButton, 6)     // 主操作，投影重一档，浮在最上层
 
         // 长按弹说明（跟安卓 explain() 一一对应，文案保持一致）
-        explain(tabTranslate, "翻译：说中文（或英文），出目标语言的干净短消息。"
-                + "语气和目标语言在下面那排选。")
-        explain(tabTranscribe, "转写：不翻译，保留你说的那个语言。"
-                + "下面可选「结构化转写」（去口水话、该分点就分点）或「逐字转录」（一个字不改）。")
-        explain(modeZhButton, "结构化转写：滤掉「嗯、那个、就是说」这类口水话，"
-                + "说了几件事就分几条，但不翻译，你说什么语言就出什么语言。")
-        explain(modeRawButton, "逐字转录：听到什么写什么，一个字不改、不整理、不翻译。")
-        explain(micButton, "点一下开始说，说完再点一下停。中途停顿思考没关系，不会自动截断。")
-        explain(toneButton, "语气：随意 / 工作 / 邮件三档，点一下轮换。")
-        explain(langButton, "翻译成哪种语言。支持英文、日语、法语、德语、西班牙语、韩语。")
-        explain(speakButton, "朗读：把刚出的那段念出来。中文用中文女声，英文用 Andrew。")
+        explain(tabTranslate, L.ex_translate)
+        explain(tabTranscribe, L.ex_transcribe)
+        explain(modeZhButton, L.ex_polish)
+        explain(modeRawButton, L.ex_verbatim)
+        explain(micButton, L.ex_mic_ios)
+        explain(toneButton, L.ex_tone_cycle)
+        explain(langButton, L.ex_lang_pick)
+        explain(speakButton, L.ex_speak_ios)
 
         paintMode()
     }
@@ -248,7 +275,7 @@ final class MainViewController: UIViewController {
 
     /// 语言选择：用系统的 action sheet，不自己造轮子
     @objc private func pickLang() {
-        let ac = UIAlertController(title: "翻译成", message: nil, preferredStyle: .actionSheet)
+        let ac = UIAlertController(title: L.lbl_translate_to, message: nil, preferredStyle: .actionSheet)
         for l in Backend.langs {
             let title = (l.code == lang ? "✓ " : "") + l.label
             ac.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
@@ -258,7 +285,7 @@ final class MainViewController: UIViewController {
                 self.paintMode()
             })
         }
-        ac.addAction(UIAlertAction(title: "取消", style: .cancel))
+        ac.addAction(UIAlertAction(title: L.cancel, style: .cancel))
         ac.popoverPresentationController?.sourceView = langButton
         present(ac, animated: true)
     }
@@ -267,11 +294,11 @@ final class MainViewController: UIViewController {
     @objc private func tapSpeak() {
         if Speaker.isPlaying {
             Speaker.stop()
-            speakButton.setTitle("🔊 朗读", for: .normal)
+            speakButton.setTitle(L.kb_speak, for: .normal)
             return
         }
         let text = lastOut.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { hintLabel.text = "还没有可朗读的内容"; return }
+        guard !text.isEmpty else { hintLabel.text = L.nothing_to_speak; return }
         speakButton.isEnabled = false
         speakButton.setTitle("…", for: .normal)
         Backend.speak(text: text) { [weak self] r in
@@ -280,13 +307,13 @@ final class MainViewController: UIViewController {
                 self.speakButton.isEnabled = true
                 switch r {
                 case .failure(let e):
-                    self.speakButton.setTitle("🔊 朗读", for: .normal)
+                    self.speakButton.setTitle(L.kb_speak, for: .normal)
                     self.hintLabel.text = "朗读失败：\(e)"
                 case .success(let mp3):
-                    self.speakButton.setTitle("■ 停", for: .normal)
+                    self.speakButton.setTitle(L.kb_stop, for: .normal)
                     Speaker.play(mp3) { [weak self] err in
                         DispatchQueue.main.async {
-                            self?.speakButton.setTitle("🔊 朗读", for: .normal)
+                            self?.speakButton.setTitle(L.kb_speak, for: .normal)
                             if let err = err { self?.hintLabel.text = "朗读失败：\(err)" }
                         }
                     }
@@ -307,7 +334,7 @@ final class MainViewController: UIViewController {
         guard g.state == .began, let v = g.view,
               let text = tips[ObjectIdentifier(v)] else { return }
         let ac = UIAlertController(title: nil, message: text, preferredStyle: .alert)
-        ac.addAction(UIAlertAction(title: "知道了", style: .cancel))
+        ac.addAction(UIAlertAction(title: L.btn_got_it, style: .cancel))
         present(ac, animated: true)
     }
 
@@ -400,7 +427,7 @@ final class MainViewController: UIViewController {
     @objc private func tapMic() {
         if phase == .listening {
             elapsedTimer?.invalidate(); elapsedTimer = nil
-            setPhase(.thinking, hint: "识别中…")
+            setPhase(.thinking, hint: L.st_recognizing)
             voice.stop()
             return
         }
@@ -412,7 +439,7 @@ final class MainViewController: UIViewController {
         elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             guard let self = self, self.phase == .listening else { return }
             let s = Int(self.voice.elapsed)
-            self.hintLabel.text = String(format: "听着呢 %d:%02d　·　说完再按一下红色按钮", s / 60, s % 60)
+            self.hintLabel.text = String(format: L.st_listening_ios, s / 60, s % 60)
         }
 
         // 录音 → 停止后拿到 WAV → 传后端转写 → 再润色（跟安卓同一条链）
@@ -424,7 +451,7 @@ final class MainViewController: UIViewController {
                 case .failure(let f):
                     self.setPhase(.idle, hint: "\(f)")
                 case .success(let wav):
-                    self.setPhase(.thinking, hint: "识别中…")
+                    self.setPhase(.thinking, hint: L.st_recognizing)
                     Backend.transcribe(wav: wav) { [weak self] r in
                         DispatchQueue.main.async {
                             guard let self = self else { return }
@@ -443,9 +470,9 @@ final class MainViewController: UIViewController {
 
     private func polish(_ zh: String) {
         switch mode {
-        case .en:  setPhase(.thinking, hint: "整理并译成英文…")
-        case .zh:  setPhase(.thinking, hint: "整理中…")
-        case .raw: setPhase(.thinking, hint: "上屏…")   // 不过模型，一瞬间
+        case .en:  setPhase(.thinking, hint: L.st_translating)
+        case .zh:  setPhase(.thinking, hint: L.st_polishing)
+        case .raw: setPhase(.thinking, hint: L.st_inserting)   // 不过模型，一瞬间
         }
         Backend.polish(text: zh, tone: tone, mode: mode, lang: lang) { [weak self] result in
             DispatchQueue.main.async {
@@ -474,17 +501,21 @@ final class SetupViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemBackground
-        title = "权限与自测"
+        // 🚨 原来是 `.systemBackground`（浅色）—— 从深紫主界面点进来会闪一下白。
+        //    这种不一致只有真机点进去才看得见，代码里看着毫无问题。
+        view.backgroundColor = Theme.bg
+        title = L.ios_setup_title
 
-        let s1 = step("第 1 步 · 允许麦克风", "只用要一次。语音识别在后端做，不用额外授权。")
+        let s1 = step(L.ios_step1, L.ios_step1_why)
         micState.font = .systemFont(ofSize: 14)
+        micState.textColor = Theme.text
         micState.numberOfLines = 0
-        let askBtn = button("允许麦克风", #selector(askPerms))
+        let askBtn = button(L.ios_allow_mic, #selector(askPerms))
 
-        let s2 = step("自测 · 后端通不通", "")
-        let testBtn = button("测一次", #selector(selfTest))
+        let s2 = step(L.ios_step2, "")
+        let testBtn = button(L.ios_test_once, #selector(selfTest))
         testOut.font = .systemFont(ofSize: 13)
+        testOut.textColor = Theme.dim
         testOut.numberOfLines = 0
 
         let stack = UIStackView(arrangedSubviews: [s1, micState, askBtn, s2, testBtn, testOut])
@@ -518,10 +549,11 @@ final class SetupViewController: UIViewController {
         let a = UILabel()
         a.text = t
         a.font = .systemFont(ofSize: 17, weight: .semibold)
+        a.textColor = Theme.text
         let b = UILabel()
         b.text = why
         b.font = .systemFont(ofSize: 13)
-        b.textColor = .secondaryLabel
+        b.textColor = Theme.dim
         b.numberOfLines = 0
         let s = UIStackView(arrangedSubviews: why.isEmpty ? [a] : [a, b])
         s.axis = .vertical
@@ -542,7 +574,7 @@ final class SetupViewController: UIViewController {
 
     private func refresh() {
         let mic = AVAudioSession.sharedInstance().recordPermission == .granted
-        micState.text = mic ? "麦克风：已允许 ✓" : "麦克风：还没允许"
+        micState.text = mic ? L.mic_allowed : L.mic_not_allowed
         micState.textColor = mic ? .systemTeal : .systemOrange
     }
 
@@ -556,7 +588,7 @@ final class SetupViewController: UIViewController {
     @objc private func selfTest() {
         let sample = "哎那个我跟你说一下啊,就是那个报表啊,嗯,我明天早上,"
                    + "不对,是明天下午三点之前给你,然后要抄送给 Annie。"
-        testOut.text = "测试中…"
+        testOut.text = L.st_testing
         testOut.textColor = .secondaryLabel
         Backend.polish(text: sample, tone: "work") { result in
             DispatchQueue.main.async {
