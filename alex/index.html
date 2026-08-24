@@ -5364,8 +5364,15 @@ function bubble(cls, who, txt, extra, speak){
 
     /* 🚨 `speak[1]` 是语种，**可能是中文** —— 只有英文才走 Andrew，
        中文仍旧交给设备嗓子（后端那把是英文音色，念中文会很怪）。 */
+    /* 🚨 中文那半也要**认领音频通道** —— 2026-08-24 自查时新写的 AST 闸门
+       第一次跑就抓到：英文那半走 nsay（内部会认领），而中文这半直接 say()
+       不认领，连点几下会叠成好几个人在读。跟他撞到的「N 个人在读」同一族，
+       只是躲在语种分支的另一边。 */
+    const bkey = 'bubble:' + String(speak[0] || '').slice(0, 40);
     b.onclick = () => { b.classList.add('on');
-      (speak[1] === 'en' ? nsay(speak[0]) : say(speak[0], speak[1]))
+      (speak[1] === 'en'
+        ? nsay(speak[0], bkey)
+        : say(speak[0], speak[1], undefined, bkey))
 
       .then(()=>b.classList.remove('on')); };
 
@@ -17942,6 +17949,38 @@ function entryBad(e, q, kind){
         (withEg.length && withEg.every(d => stemsMissing(q, d.en).length)))
       bad.push('所有例句都没出现这个词 —— 它答的好像不是「' + q + '」');
   }
+  /* 🚨🚨 **它答的到底是不是这个词** —— 2026-08-24 自查（oppose-me）抓到的口子。
+     那天把判据从「一票否决」放宽成「洗掉那一条」之后，出现了一个新洞：
+     模型返回一张**跟查询词完全无关**的卡时，只要
+       ① 它不给例句（`defs[0].en` 为空），或
+       ② 例句里随手夹带一次原词
+     就一路放行 —— 他会看到标题写着 `accrual`、内容全讲 `depreciation` 的卡。
+     而 `entryBad` 里**从头到尾没有一条**在比「模型给的词条 `w`」和「他查的 `q`」。
+
+     🚨 第一次自查时我以为拦住了，那是**假的** —— 响的是「ipa 音标缺失」，
+     不是我以为的那条。补上 ipa 之后两条全部放行。
+     （「响在对的那一条上吗」这个坑，我当天已经踩过两次。）
+
+     🚨 容差放一格：`walk me through` → `walk someone through` 是**正确**的归一化，
+     不能拦。这条只需要认出「完全不是一个词」，不需要一字不差。 */
+  {
+    const w = String((e && e.w) || '').trim();
+    if (w){
+      const miss = stemsMissing(q, w);
+      const pool = (normQ(q).toLowerCase().match(/[a-z][a-z'-]*/g) || [])
+        .filter(x => !DSTOP.has(x));
+      const need = pool.length ? pool.length : 1;
+      /* 🚨 容差只对**多词**词条成立。查 `accrual`（1 个实词）时，
+         完全答错的 miss 正好是 1 —— 我第一版写的是
+         `> Math.max(1, floor(need*0.5))`，下限那个 1 让阈值恒为 1，
+         于是 `1 > 1` 永远为假，**这条判据写了等于没写**。
+         （自查时是拿正负样本跑出来才发现的：新判据加完，两个坏样本照样放行。）
+         现在：≤2 个实词一个都不许缺；再长才容一半。 */
+      const tol = need <= 2 ? 0 : Math.floor(need * 0.5);
+      if (miss.length > tol)
+        bad.push('它给的词条是「' + w + '」，跟你查的「' + q + '」不是一回事');
+    }
+  }
   /* 🚨 口语这一段的校验跟 coll **故意不一样**：
      coll 查的是「必须含这个词」，spoken 查的是「例句必须含这个说法」——
      口语版换个说法是对的，拿 coll 那条去查它，会把正确答案判成废卡。 */
@@ -18089,8 +18128,19 @@ function askBad(j, q){
   if (!ans) bad.push('没有正文答案');
   else if (!/[一-鿿]/.test(ans)) bad.push('答案不是中文（他要中文解释、英文表达）');
   /* 🚨 「视情况而定」这类废话要驳 —— 他明说过不接受这种回答。 */
-  else if (/^(视情况而定|看情况|因人而异|都可以)[。.]?$/.test(ans))
-    bad.push('答案是废话，要说清在什么前提下推荐哪个');
+  /* 🚨 原来写的是 `/^(视情况而定|看情况|因人而异|都可以)[。.]?$/` ——
+     **整句完全等于**这四个词之一才驳。而模型真会答
+     「这个视情况而定，一般来说都可以」，整句不相等 → 一路放行。
+     判据只防住了一个几乎不会出现的极端形态，实际的和稀泥全漏过去。
+     （2026-08-24 对抗式交叉审查点出来的，我复现了。）
+     现在：**答案里出现这类和稀泥措辞、又没给出选择依据**，就驳。
+     🚨 但不是见到这几个词就驳 —— 「视情况」后面接了具体前提
+     （「如果…就用 A」）是**好答案**，不许误杀。 */
+  else if (/(视情况而定|看情况|因人而异|都可以|见仁见智|不好说)/.test(ans)
+           && !/(如果|若|当|在.{0,8}场合|对.{0,6}人|正式|口语|书面|邮件)/.test(ans))
+    bad.push('答案是和稀泥（出现「' +
+      (ans.match(/(视情况而定|看情况|因人而异|都可以|见仁见智|不好说)/) || [''])[0] +
+      '」却没说清什么前提下选哪个）');
   const op = (Array.isArray(j.options) ? j.options : []).filter(x => x && x.en);
   if (op.length < 2) bad.push('options 只有 ' + op.length + ' 条，至少 2 条（只给一个等于没得挑）');
   op.forEach((x, i) => {
@@ -18540,9 +18590,16 @@ async function doLook(q){
     const e = await dictLook(normQ(q), kind);
     dCachePut(id, e);
     dHistPush(q);
+    /* 🚨 回来时他可能已经改查别的了 —— 拿旧结果覆盖新查询是最恼人的那种 bug。
+       🚨 2026-08-24 自查：这句注释**说对了，代码只守住了渲染那一半** ——
+          `DICT.cur = e` 原来在守卫**外面**无条件赋值。
+          后果不在这一屏（渲染确实拦住了），而在下一次：
+          `showDict()` 不带 q 时渲染的就是 `DICT.cur`，
+          于是他离开再回来，看到的是那条早就被他放弃的查询的结果。
+          缓存和历史照写没关系 —— 那两样跟他现在在看什么无关。 */
+    if (qId(DICT.q) !== id) return;
     DICT.cur = e;
-    /* 🚨 回来时他可能已经改查别的了 —— 拿旧结果覆盖新查询是最恼人的那种 bug */
-    if (qId(DICT.q) === id && $('#dres')){ dictRender(e, false); paintHist(); }
+    if ($('#dres')){ dictRender(e, false); paintHist(); }
   } catch(err){
     /* 🚨 兜底：词典那条走不通时**转自由问答**，别死在「没查出来」。
        他 2026-08-24 撞到的就是这个 —— 打了一句英文提问，
@@ -18551,12 +18608,22 @@ async function doLook(q){
        只靠分类器的方案，分类器一错就退回原样。 */
     if (kind !== 'ask'){
       try {
+        /* 🚨 陈旧检查要罩住**每一次写界面/写状态**，不只是最后那次渲染。
+           2026-08-24 自查（oppose-me）抓到我自己写的两处竞态：
+             ① 这行「换成直接回答你的问题…」原来**没有守卫** ——
+                他已经改查别的了，这句会把新查询的界面覆盖掉；
+             ② `DICT.cur = j` 原来**无条件赋值** —— 他已经走开了，
+                旧答案照样被设成「当前」，下次进查词页会被渲染出来
+                （`showDict` 没带 q 时就是渲染 `DICT.cur`）。
+           缓存和历史照写没问题：那两样跟他现在在看什么无关。 */
+        if (qId(DICT.q) !== id) return;
         res.innerHTML = '<div class="note">当词条查不到，换成直接回答你的问题…</div>';
         const j = await askLook(normQ(q));
         dCachePut(id, j);
         dHistPush(q);
+        if (qId(DICT.q) !== id) return;      // 等答案这几秒里他可能已经改查别的
         DICT.cur = j;
-        if (qId(DICT.q) === id && $('#dres')){ dictRender(j, false); paintHist(); }
+        if ($('#dres')){ dictRender(j, false); paintHist(); }
         return;
       } catch(_){ /* 问答也不行才如实报错 */ }
     }
