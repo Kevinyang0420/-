@@ -17845,59 +17845,103 @@ const DREGS = ['正式', '中性', '口语'];
 /* 返回 [] 表示通过。每条都想过「什么输入会让它失败」：
    例句不含目标词 / 搭配是编的 / 语域瞎写 / 中文查英文只给一个候选没得比 /
    pick 写了个候选里根本没有的说法。                                          */
+/* 🚨 把**不合格的那一条**洗掉，而不是整张卡废掉。
+
+   Kevin 2026-08-24：「什么 defs[0] 的例句没出现，coll[0] 里面
+   start from scratch 也没有这个词……它就不能像一个 general 的 AI 一样
+   听我的要求做事吗？」—— 他是对的。
+
+   原来 `entryBad` 是**一票否决**：任何一条搭配不合格 → 整张作废 → 重试三次
+   → 「没查出来」。于是 99% 有用的内容因为 1 条不合格被整个扔掉。
+   判据本来要防的是「模型胡编一张跟这个词无关的卡」，
+   那个目的**洗掉不合格的项**就能达到 —— `scrubChat` 那边早就是这么做的。
+   同一个项目里两套相反的做法，而这边这套天天在毙正确答案。 */
+function scrubEntry(e, q, kind){
+  if (!e || typeof e !== 'object') return e;
+  if (kind === 'zh'){
+    if (Array.isArray(e.cands)){
+      e.cands = e.cands.filter(c => c && c.en && c.cn && !/[一-鿿]/.test(c.en));
+      /* 例句锚不住就把例句删掉，**别把整条候选删掉** —— 说法本身是好的 */
+      e.cands.forEach(c => {
+        if (c.eg && stemsMissing(c.en, c.eg).length) c.eg = '';
+      });
+    }
+    /* 🚨 `spokenPick` 跟 `pick` 撞成同一句 = 界面上「口头就说这个」和
+       「写进报告用这个」显示成一模一样，他会觉得白做。
+       但这不值得把整张卡废掉 —— **洗掉它**，那一块不显示就是了。
+       （2026-08-24 我一度把这条一起放宽了，那是放过头：
+        它跟「某条搭配不含原词」不是一类 —— 后者只是少一条内容，
+        前者会让他看到两块重复的东西。） */
+    if (e.spokenPick && e.pick &&
+        ENORM(e.spokenPick).toLowerCase() === ENORM(e.pick).toLowerCase())
+      e.spokenPick = '';
+    return e;
+  }
+  if (Array.isArray(e.defs)){
+    e.defs = e.defs.filter(d => d && d.cn);
+    /* 🚨 **把删掉了什么记下来**。不记的话，下面那条唯一保留的硬判据
+       （「所有例句都锚不住 = 它答的根本不是这个词」）**永远不会触发** ——
+       因为洗完之后 `d.en` 已经是空串，判据看到的是「没有例句」而不是
+       「例句全错」。这就是「永远不会失败的检查」，比没有检查更糟。
+       （2026-08-24 我就是这么写坏的，靠 test_dict 的重试用例才发现。） */
+    const had = e.defs.filter(d => d.en).length;
+    let killed = 0;
+    e.defs.forEach(d => {
+      if (d.en && stemsMissing(q, d.en).length){ d.en = ''; d.zh = ''; killed++; }
+    });
+    e.__egAllBad = had > 0 && killed === had;
+  }
+  /* 搭配/近义/口语：不合格的**单条**丢掉，剩下的照用；全丢完就不显示这一块 */
+  if (Array.isArray(e.coll))
+    e.coll = e.coll.filter(c => c && c.en && !stemsMissing(q, c.en).length);
+  if (Array.isArray(e.near))
+    e.near = e.near.filter(x => x && x.en);
+  if (Array.isArray(e.spoken)){
+    e.spoken = e.spoken.filter(x => x && x.en && !/[一-鿿]/.test(x.en)
+      && (x.en.match(/[A-Za-z']+/g) || []).length <= 7);
+    e.spoken.forEach(x => { if (x.eg && stemsMissing(x.en, x.eg).length) x.eg = ''; });
+  }
+  if (e.reg && DREGS.indexOf(e.reg) < 0) e.reg = '';
+  if (e.trap && (!e.trap.bad || !e.trap.why)) e.trap = null;
+  return e;
+}
+
 function entryBad(e, q, kind){
   const bad = [];
   if (!e || typeof e !== 'object') return ['没解析出 JSON'];
 
   if (kind === 'zh'){
-    const cs = Array.isArray(e.cands) ? e.cands.filter(x => x && x.en && x.cn) : [];
+    /* 同上：软伤交给 scrubEntry，这里只留「压根没给候选」这条硬伤。 */
+    const cs = Array.isArray(e.cands)
+      ? e.cands.filter(x => x && x.en && x.cn && !/[一-鿿]/.test(x.en)) : [];
     if (cs.length < 2) bad.push('cands 只有 ' + cs.length + ' 条，至少要 2 个候选（一个没得比）');
-    cs.forEach((c, i) => {
-      if (/[一-鿿]/.test(c.en)) bad.push('cands[' + i + '].en 里混了中文');
-      if (!c.eg) bad.push('cands[' + i + '] 没例句');
-      else if (stemsMissing(c.en, c.eg).length)
-        bad.push('cands[' + i + '] 的例句里没出现「' + c.en + '」');
-      if (c.reg && DREGS.indexOf(c.reg) < 0)
-        bad.push('cands[' + i + '].reg 不是 正式/中性/口语');
-    });
     if (!e.pick) bad.push('pick 缺失（没说该用哪个）');
-    else if (!cs.some(c => ENORM(c.en).toLowerCase() === ENORM(e.pick).toLowerCase()))
-      bad.push('pick「' + e.pick + '」不在候选里');
     if (!e.why) bad.push('why 缺失');
     /* 🚨 口头那一版 —— 没有它整个新栏就是空的，所以必须能判失败。
        两条都要：①得有 ②不能跟 pick 撞（撞了等于没给口语版）。 */
-    if (!e.spokenPick) bad.push('spokenPick 缺失（没说口头该怎么讲）');
-    else {
-      if (!cs.some(c => ENORM(c.en).toLowerCase() === ENORM(e.spokenPick).toLowerCase()))
-        bad.push('spokenPick 「' + e.spokenPick + '」不在候选里');
-      if (e.pick && ENORM(e.spokenPick).toLowerCase() === ENORM(e.pick).toLowerCase())
-        bad.push('spokenPick 跟 pick 是同一句 —— 等于没给口语版');
-    }
-    if (!cs.some(c => c.reg === '口语'))
-      bad.push('cands 里一条口语的都没有');
+    /* spokenPick / 口语候选：没给就没给，别为这个把整张卡废掉 ——
+       界面上那一块不显示就是了（软伤，2026-08-24 降级）。 */
     return bad;
   }
 
+  /* 🚨 这一段 2026-08-24 从**一票否决**改成**只留硬伤**。
+     软伤（某条搭配没含原词、某条例句没给中文、reg 写歪了、trap 没给）
+     一律交给 `scrubEntry()` 洗掉那一条，**不再整张废掉**。
+     原来那样写，99% 有用的内容会因为 1 条不合格被整个扔掉，
+     他看到的就是「没查出来 + 一堆 defs[0]/coll[0] 的黑话」。 */
   const ds = Array.isArray(e.defs) ? e.defs.filter(x => x && x.cn) : [];
   if (!ds.length) bad.push('defs 一条都没有');
-  ds.forEach((d, i) => {
-    if (!d.pos) bad.push('defs[' + i + '] 没标词性');
-    if (!d.en) bad.push('defs[' + i + '] 没例句');
-    else {
-      const m = stemsMissing(q, d.en);
-      if (m.length) bad.push('defs[' + i + '] 的例句里没出现「' + m.slice(0, 2).join('/') + '」');
-      if (!d.zh) bad.push('defs[' + i + '] 的例句没给中文');
-    }
-  });
-  const cl = Array.isArray(e.coll) ? e.coll.filter(x => x && x.en) : [];
-  if (cl.length < 2) bad.push('coll 只有 ' + cl.length + ' 条搭配，至少 2 条');
-  cl.forEach((c, i) => {
-    if (stemsMissing(q, c.en).length) bad.push('coll[' + i + ']「' + c.en + '」里没有这个词');
-  });
-  if (!e.reg) bad.push('reg 缺失');
-  else if (DREGS.indexOf(e.reg) < 0)
-    bad.push('reg 要 正式/中性/口语 三选一，给的是「' + e.reg + '」');
-  if (!e.trap || !e.trap.bad || !e.trap.why) bad.push('trap 不全（最容易写错的那版没给）');
+  else {
+    /* 🚨 唯一保留的硬判据：**全部**例句都锚不住原词 = 它答的根本不是这个词。
+       区别在「有几条不合格」和「全都不合格」，不是「有没有不合格」。 */
+    /* 🚨 判**洗卡记下来的那个标记**，不是判洗完之后的内容 ——
+       洗完 `d.en` 已经空了，再去 `stemsMissing` 恒为「没例句」，这条就废了。
+       未经洗卡直接调 entryBad 时（测试里有）退回现场判一次。 */
+    const withEg = ds.filter(d => d.en);
+    if (e.__egAllBad ||
+        (withEg.length && withEg.every(d => stemsMissing(q, d.en).length)))
+      bad.push('所有例句都没出现这个词 —— 它答的好像不是「' + q + '」');
+  }
   /* 🚨 口语这一段的校验跟 coll **故意不一样**：
      coll 查的是「必须含这个词」，spoken 查的是「例句必须含这个说法」——
      口语版换个说法是对的，拿 coll 那条去查它，会把正确答案判成废卡。 */
@@ -18084,6 +18128,9 @@ async function dictLook(q, kind){
     }
     try { e = firstJson(await textCall(p, 0.3)); }
     catch(err){ last = err.message || String(err); continue; }
+    /* 🚨 **先洗再判**：洗掉不合格的单条，剩下的正常内容照用。
+       顺序反了的话，判据看到的还是脏卡，等于没改。 */
+    e = scrubEntry(e, q, kind);
     const bad = entryBad(e, q, kind);
     if (!bad.length){ e.kind = kind; e.q = normQ(q); return e; }
     last = bad.join('；');
@@ -18311,6 +18358,66 @@ function refreshDictTop(){
 }
 
 /* 查词页。q 传进来就直接查（首页搜索框、划选浮条都走这条）。 */
+/* 🚨 **单词本不该锁在「查词成功」后面**（Kevin 2026-08-24）。
+   他的原话：「有时候我自己了解到一个词，只是想把它录入到我自己的常用单词本里，
+   那我要从哪个入口进呢？我难道不是得从查词入口进去然后收藏起来吗？」
+   —— 查不出来就连存都存不了，这是设计上的死结，不是某个 bug。
+
+   所以给一条**不经过模型**的路：知道一个词，打上去就能存。
+   想要释义可以之后再点「查一下补全」，但**存这个动作本身永不依赖网络**。 */
+function addWordDirect(q, cn){
+  const w = normQ(q);
+  if (!w) return toast('先输入要收的词');
+  const id = qId(w);
+  if (nbFind(id)) return toast('本子里已经有它了');
+  /* 用跟查词那边同一套记录格式（subEntry），这样它在本子里长得一样、
+     也能进复习 —— 不另起一种「手动条目」，否则本子里就有两类东西了。 */
+  const e = subEntry(w, cn || '', {pos: '', from: '手动收的'});
+  e.manual = true;
+  const okd = doSave(e, bookFor(e));
+  return okd;
+}
+
+/* 「我知道一个词，直接存」的小面板 —— 挂在查词页顶上，不用先查得出来。 */
+function addWordBox(){
+  const box = document.createElement('div');
+  box.className = 'card';
+  box.style.cssText = 'padding:12px;margin-bottom:10px';
+  box.innerHTML =
+    '<div class="k" style="font-weight:800;margin-bottom:6px">'
+    + '📒 知道一个词，直接收进本子</div>'
+    + '<div class="t" style="color:var(--muted);margin-bottom:8px">'
+    + '不用先查出来 —— 打上去就存，释义可以之后再补。</div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<input id="awq" placeholder="英文词 / 表达" autocapitalize="off" '
+    + 'autocorrect="off" spellcheck="false" '
+    + 'style="flex:1;min-width:0;padding:10px;border-radius:10px;'
+    + 'border:1px solid var(--line-strong);background:var(--surface);'
+    + 'color:inherit;font-size:15px">'
+    + '<button class="rchip" id="awgo" style="white-space:nowrap">收进本子</button>'
+    + '</div>'
+    + '<input id="awcn" placeholder="中文意思（可留空）" '
+    + 'style="width:100%;box-sizing:border-box;margin-top:8px;padding:10px;'
+    + 'border-radius:10px;border:1px solid var(--line-strong);'
+    + 'background:var(--surface);color:inherit;font-size:15px">';
+  const go2 = () => {
+    const w = ($('#awq') || {}).value || '';
+    const cn = ($('#awcn') || {}).value || '';
+    if (!normQ(w)) return toast('先输入要收的词');
+    addWordDirect(w, cn);
+    const a = $('#awq'), b = $('#awcn');
+    if (a) a.value = ''; if (b) b.value = '';
+  };
+  setTimeout(() => {
+    const g = $('#awgo'); if (g) g.onclick = go2;
+    const a = $('#awq');
+    if (a) a.onkeydown = ev => {
+      if (ev.key === 'Enter'){ ev.preventDefault(); a.blur(); go2(); }
+    };
+  }, 0);
+  return box;
+}
+
 function showDict(q){
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
   if (window.selBarHide) selBarHide();
@@ -18337,7 +18444,8 @@ function showDict(q){
       '单词给音标、义项、搭配；词组和句式给「什么场合用、能不能写进报告」；' +
       '直接输中文就给几个地道说法让你挑。' +
     '</div>' +
-    '<div id="dres"></div><div id="dhist" style="margin-top:14px"></div>';
+    '<div id="dres"></div><div id="dawrap"></div>' +
+    '<div id="dhist" style="margin-top:14px"></div>';
   bindDictTop();
   const inp = $('#dq'), btn = $('#dgo');
   inp.value = (q != null && q !== '') ? normQ(q) : (DICT.q || '');
@@ -18353,6 +18461,10 @@ function showDict(q){
     if (ev.key === 'Enter'){ ev.preventDefault(); inp.blur(); fire(); }
   };
   paintHist();
+  /* 🚨 「知道一个词直接收进本子」的入口 —— 写了函数不挂上去等于白写
+     （这个项目栽过：画了不绑 / 建了字段不落盘）。
+     放在结果**下面**：有结果时不抢主线，查不出来时它就是那条退路。 */
+  { const w = $('#dawrap'); if (w) w.appendChild(addWordBox()); }
   if (q != null && q !== '') doLook(normQ(q));
   else if (DICT.cur) dictRender(DICT.cur, !!dCacheGet(qId(DICT.cur.q || DICT.cur.w)));
   else if (DICT.err) $('#dres').innerHTML = '<div class="note">' + esc(DICT.err) + '</div>';
@@ -18444,7 +18556,18 @@ async function doLook(q){
     DICT.err = '没查出来：' + String(err && err.message ? err.message : err).slice(0, 80);
     if (qId(DICT.q) === id && $('#dres'))
       $('#dres').innerHTML = '<div class="note">' + esc(DICT.err) +
-        '<br>换个说法再试一次，或者过一会儿（可能是今天的额度紧了）。</div>';
+        /* 🚨 **不许瞎猜原因**。这句原来写的是「可能是今天的额度紧了」，
+           而 2026-08-24 他撞到时后端是 `guest 113/400、fail: 0` —— 根本没超额度，
+           真正的原因是判据把卡毙了。编出来的原因比没有原因更贵：
+           他会照着它去排查，白花时间。要么说真原因，要么只说现象。 */
+        '<br>先给你留了直接收进本子的入口（下面那颗），不用等它查出来。</div>'
+        + '<div style="margin-top:8px"><button class="rchip" id="dsaveraw">'
+        + '📒 直接收进本子</button>'
+        + '<button class="rchip" id="dretry" style="margin-left:8px">↻ 再查一次</button></div>';
+      const sr = $('#dsaveraw');
+      if (sr) sr.onclick = () => addWordDirect(normQ(q));
+      const rt = $('#dretry');
+      if (rt) rt.onclick = () => { dCacheDrop(id); DICT.cur = null; doLook(q); };
   } finally { DICT.busy = false; clearInterval(_tick); }   // 🚨 别留孤儿定时器
 }
 
