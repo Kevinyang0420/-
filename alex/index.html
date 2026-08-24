@@ -17738,8 +17738,37 @@ const normQ = s => String(s == null ? '' : s).trim().replace(/\s+/g, ' ');
 const qId   = s => normQ(s).toLowerCase();
 
 /* 输入是什么就按什么查。中文里只要出现一个汉字就走中→英那条。 */
+/* 🚨 这几条**宁可漏判，不可误判**：误判会把正常查词（`take a view on`）
+   带进自由问答，丢掉搭配/语域/收进本子 —— 比原来的 bug 更糟。
+   所以只认**明确的**提问形态，拿不准一律当查词。
+   漏判也不要紧：词典那条失败时会兜底转自由问答（见 doLook）。 */
+const ASK_HEAD = /^(how|what|why|when|where|which|who|whose|whom|can|could|should|would|is|are|do|does|did|am|will|shall|may|might|if|whether)\b/i;
+const ASK_ZH = /(怎么说|怎么讲|怎么表达|怎么写|如何说|如何表达|该用哪个|有没有更|是不是应该|区别是什么|有什么区别|能不能说|地道吗|对不对|合适吗)/;
+const ASK_EN = /\b(how do i|how to|what'?s the difference|difference between|is it (ok|correct|right)|can i say|should i say|better way to|more (polite|formal|natural) way|any better)\b/i;
+
+function looksAsk(q){
+  const t = normQ(q);
+  if (!t) return false;
+  const words = t.split(' ').filter(Boolean).length;
+  const zh = /[一-鿿]/.test(t);
+  /* 带问号 = 他在问问题。最硬的一条信号。
+     🚨 但**单个词后面跟问号**（`accrual?`）仍然是查词 —— 别把它带走。 */
+  if (/[?？]$/.test(t) && words >= 2) return true;
+  /* 🚨 英文提问句式**不分语种都要查** —— 他常写中英混排的
+     「how to say 存货跌价准备」。只在纯中文分支里查 ASK_ZH 的话，
+     这句会被判成 zh、走成「中译英候选」而不是回答他的问题。 */
+  if (ASK_EN.test(t)) return true;
+  if (zh) return ASK_ZH.test(t);
+  /* 英文：疑问词开头 + 够长。
+     🚨 光靠疑问词开头会误伤 `will call`、`do the numbers` 这类真词组，
+     所以叠一个词数门槛（≥5 词才算，正常词条极少这么长）。
+     （明确的提问句式在上面已经判过，这里不重复 —— 两处判定迟早漂开。） */
+  return ASK_HEAD.test(t) && words >= 5;
+}
+
 function kindOf(q){
   const t = normQ(q);
+  if (looksAsk(t)) return 'ask';          // 🚨 先判提问，再判语种
   if (/[一-鿿]/.test(t)) return 'zh';
   return t.split(' ').filter(Boolean).length > 1 ? 'phrase' : 'word';
 }
@@ -17964,7 +17993,82 @@ const DICT_RULES_ZH =
    🚨 重试必须带上上一次错在哪 —— 盲重试等于把同一个 prompt 再送一遍（makeGuide 那条教训）。
    🚨 用函数式替换：查询词里可能有 `$`（financial text 满地都是），
       `String.replace` 的替换串里 `$&`/`$'` 会被特殊解释，静默把 prompt 搅坏。 */
+/* ═══ 自由问答（Kevin 2026-08-24）═══════════════════════════
+   他在查词框里打一句问题（中英都有），要的是**答案**，不是词典卡。
+
+   🚨 为什么不能沿用 `DICT_RULES_EN`：那套 schema 的前提是
+   「你输入的就是词条本身」，所以 `entryBad` 要求每条例句、每条搭配都
+   **含你输入的词**。查词时成立，**提问时根本不成立** ——
+   实测输入「how do I politely say I disagree with the client」，
+   模型答得很好（给了 respectfully disagree），却被判：
+     defs[0] 的例句里没出现「how/politely」
+     coll[0]「respectfully disagree with someone」里没有这个词
+   三次全废 → 他看到「没查出来」。**是判据毙了正确答案，不是模型不行。** */
+function askPrompt(q){
+  return [
+    '你是 Alex —— 一个中国职业人士的英语顾问。他做财务尽职调查和审计，',
+    '英文读写没问题，缺的是「这个话到底该怎么说」。',
+    '',
+    '他问：',
+    ' + q + ',
+    '',
+    '🚨 直接回答他的问题，别绕。中文解释，英文给表达。',
+    '🚨 给 2 到 4 个**能直接拿去用**的英文说法，每条都要说清什么场合用、',
+    '   比别的版本强在哪。只给一个说法等于没得挑。',
+    '🚨 如果他问的是「A 和 B 有什么区别」，就把区别说清楚，各给例句。',
+    '🚨 不许答「视情况而定」这种废话；拿不准就说清在什么前提下你推荐哪个。',
+    '',
+    '只输出一个 JSON，不要 markdown 围栏、不要别的话:',
+    '{',
+    ' "title":"给他看的标题，4-14 个中文字，概括他问的是什么",',
+    ' "answer":"中文，2-4 句，直接回答他的问题",',
+    ' "options":[{"en":"能直接用的英文说法",',
+    '             "cn":"中文一句：什么场合用、强在哪",',
+    '             "eg":"完整的英文例句（可选，没有就给空串）"}],',
+    ' "note":"中文，可选：用的时候要注意什么、最容易写错的那版；没有就空串"',
+    '}'
+  ].join('\n');
+}
+
+function askBad(j, q){
+  const bad = [];
+  if (!j || typeof j !== 'object') return ['没解析出 JSON'];
+  if (!String(j.title || '').trim()) bad.push('没给标题');
+  const ans = String(j.answer || '').trim();
+  if (!ans) bad.push('没有正文答案');
+  else if (!/[一-鿿]/.test(ans)) bad.push('答案不是中文（他要中文解释、英文表达）');
+  /* 🚨 「视情况而定」这类废话要驳 —— 他明说过不接受这种回答。 */
+  else if (/^(视情况而定|看情况|因人而异|都可以)[。.]?$/.test(ans))
+    bad.push('答案是废话，要说清在什么前提下推荐哪个');
+  const op = (Array.isArray(j.options) ? j.options : []).filter(x => x && x.en);
+  if (op.length < 2) bad.push('options 只有 ' + op.length + ' 条，至少 2 条（只给一个等于没得挑）');
+  op.forEach((x, i) => {
+    if (/[一-鿿]/.test(x.en)) bad.push('options[' + i + '].en 里混了中文');
+    if (!String(x.cn || '').trim()) bad.push('options[' + i + '] 没说什么场合用');
+    /* eg 给了就得真的含那个说法；没给不算错（有些说法本身就是整句） */
+    if (String(x.eg || '').trim() && stemsMissing(x.en, x.eg).length)
+      bad.push('options[' + i + '] 的例句里没出现「' + x.en + '」');
+  });
+  return bad;
+}
+
+async function askLook(q){
+  let last = null;
+  for (let i = 0; i < 3; i++){
+    let j = null;
+    try {
+      j = firstJson(await textCall(askPrompt(q)
+        + (last ? '\n' + '\n' + '🚨 上一次被判废了：' + last + '，这次避开。' : ''), 0.4));
+    } catch(err){ last = err.message || String(err); continue; }
+    const bad = askBad(j, q);
+    if (!bad.length){ j.kind = 'ask'; j.q = normQ(q); return j; }
+    last = bad.join('；');
+  }
+  throw new Error(last || '答不出来');
+}
+
 async function dictLook(q, kind){
+  if (kind === 'ask') return await askLook(q);      // 提问：不套词典 schema
   let last = null;
   for (let i = 0; i < 3; i++){
     let e = null;
@@ -18321,6 +18425,22 @@ async function doLook(q){
     /* 🚨 回来时他可能已经改查别的了 —— 拿旧结果覆盖新查询是最恼人的那种 bug */
     if (qId(DICT.q) === id && $('#dres')){ dictRender(e, false); paintHist(); }
   } catch(err){
+    /* 🚨 兜底：词典那条走不通时**转自由问答**，别死在「没查出来」。
+       他 2026-08-24 撞到的就是这个 —— 打了一句英文提问，
+       词典判据（每条搭配都得含这个词）对提问结构性不成立，三次全废。
+       这条**不依赖分类器判得准**：`looksAsk` 漏判了照样兜得住。
+       只靠分类器的方案，分类器一错就退回原样。 */
+    if (kind !== 'ask'){
+      try {
+        res.innerHTML = '<div class="note">当词条查不到，换成直接回答你的问题…</div>';
+        const j = await askLook(normQ(q));
+        dCachePut(id, j);
+        dHistPush(q);
+        DICT.cur = j;
+        if (qId(DICT.q) === id && $('#dres')){ dictRender(j, false); paintHist(); }
+        return;
+      } catch(_){ /* 问答也不行才如实报错 */ }
+    }
     DICT.err = '没查出来：' + String(err && err.message ? err.message : err).slice(0, 80);
     if (qId(DICT.q) === id && $('#dres'))
       $('#dres').innerHTML = '<div class="note">' + esc(DICT.err) +
@@ -18886,6 +19006,49 @@ function redrawDict(){
   window.scrollTo(0, y);
 }
 
+/* 自由问答的答案卡。每条表达都要能**带走** ——
+   📋 复制 / ✏️ 进一步修改 / ☆ 收进本子，全部复用既有函数，不另写一套。 */
+function askCard(e){
+  const box = document.createElement('div');
+  box.className = 'card';
+  box.style.padding = '14px';
+
+  const head = document.createElement('div');
+  head.innerHTML =
+    '<div class="hd"><span class="role">💬 ' + esc(e.title || '回答') + '</span></div>' +
+    '<div class="t" style="margin-top:8px;line-height:1.75;font-size:14.5px">' +
+    esc(e.answer || '') + '</div>';
+  box.appendChild(head);
+
+  (Array.isArray(e.options) ? e.options : []).filter(x => x && x.en)
+    .forEach((x, i) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'margin-top:' + (i ? 14 : 12) + 'px;padding-left:8px;'
+        + 'border-left:3px solid var(--brand-dark)';
+      row.innerHTML =
+        '<div class="en" style="font-size:15px;line-height:1.5" data-say="'
+        + esc(x.en) + '">' + esc(x.en) + '</div>'
+        + (x.cn ? '<div class="sit" style="margin-top:3px">' + esc(x.cn) + '</div>' : '')
+        + (x.eg ? '<div style="margin-top:4px;font-size:13.5px;color:var(--muted)" '
+                + 'data-say="' + esc(x.eg) + '">' + esc(x.eg) + '</div>' : '');
+      /* ☆ 收进本子：走 subEntry，跟查词那边同一套记录格式，
+         这样它在「我的本子」里跟别的条目长得一样、也能复习。 */
+      row.appendChild(saveMini(subEntry(x.en, x.cn || '',
+        {pos: '表达', from: e.q || '', eg: x.eg || ''})));
+      row.appendChild(miniBtns(x.en, e.q || '', row));   // 📋 复制 / ✏️ 进一步修改
+      box.appendChild(row);
+    });
+
+  if (e.note){
+    const n = document.createElement('div');
+    n.className = 'sit';
+    n.style.cssText = 'margin-top:12px;padding-top:10px;border-top:1px solid var(--line)';
+    n.textContent = '⚠️ ' + e.note;
+    box.appendChild(n);
+  }
+  return box;
+}
+
 function dictRender(e, cached){
   const res = $('#dres');
   if (!res || !e) return;
@@ -18894,7 +19057,9 @@ function dictRender(e, cached){
   const hint = $('#dhint');
   if (hint) hint.hidden = true;
   res.innerHTML = '';
-  if (e.kind === 'zh'){
+  if (e.kind === 'ask'){
+    res.appendChild(askCard(e));
+  } else if (e.kind === 'zh'){
     res.appendChild(zhCard(e));
     res.appendChild(candsBlock(e));
   } else {
