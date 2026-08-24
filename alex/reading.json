@@ -7996,38 +7996,6 @@
    "srcen": "Alex"
   },
   {
-   "id": "ph_furthering_our_progress_387",
-   "kind": "phrase",
-   "dim": "link",
-   "en": "furthering our progress towards our goal to become the number one complex healthcare logistics provider in the world",
-   "why": "用现在分词作结果状语，极为地道地表达了‘业务动作与战略目标的推进关系’。中国人写财报常写成独立的句子并列 (and it furthered our progress)，显得碎且没有高级感。",
-   "when": "在财报或尽调报告中，描述某项具体交易或业绩如何助力长期战略时套用",
-   "slot": "furthering our progress towards our goal to […]",
-   "swap": [
-    "advancing our strategic objective to [...] (用 advancing 替换 furthering，语气更正式但少了一点持续推进的动态感)",
-    "which furthered our progress to [...] (还原为定语从句，显得冗长不够紧凑)"
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1090727/000162828026008432/ups-20251231.htm"
-  },
-  {
-   "id": "ph_prior_to_its_divestiture_284",
-   "kind": "phrase",
-   "dim": "scope",
-   "en": "contributed $1.6 billion of revenue in 2024 prior to its divestiture",
-   "why": "用 prior to its divestiture 精准限定了财务贡献的时间范围，避免了复杂的复合句。中国写作者常习惯用 before it was divested 这种偏口语或动作化的被动语态，不如名词化短语干练。",
-   "when": "在审计和财务分析中，需剥离或界定某资产在出售/剥离前产生的财务数据时套用",
-   "slot": "contributed [$...] of revenue in [Year] prior to its divestiture",
-   "swap": [
-    "before it was divested (从句结构，略显啰嗦且缺乏财报的专业克制感)",
-    "prior to the completion of its divestiture (加上了 completion，略微冗余)"
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1090727/000162828026008432/ups-20251231.htm"
-  },
-  {
    "id": "ph_completed_the_divestiture",
    "kind": "phrase",
    "dim": "reg",
@@ -8054,38 +8022,6 @@
    "swap": [
     "mainly caused by the impact of [...]（动词短语显得拖沓，不及分词干练）",
     "largely due to [...]（偏口语化，不够正式严谨）"
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1090727/000162828026008432/ups-20251231.htm"
-  },
-  {
-   "id": "ph_partially_offset_by_888",
-   "kind": "phrase",
-   "dim": "link",
-   "en": "These decreases were partially offset by growth in our International Package segment",
-   "why": "财务报告的标准句式，用 'offset' 准确表达财务上的对冲和抵消效果，比笼统的 'balanced by' 更专业。",
-   "when": "当某项负面影响被另一项正面因素部分或全部抵消时套用",
-   "slot": "These [...] were partially offset by growth in our [...] segment",
-   "swap": [
-    "These [...] were slightly balanced by [...]（balanced 侧重平衡，不如 offset 贴切）",
-    "These [...] were made up by [...]（made up 过于口语化）"
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1090727/000162828026008432/ups-20251231.htm"
-  },
-  {
-   "id": "ph_driven_by_higher_average",
-   "kind": "phrase",
-   "dim": "attr",
-   "en": "driven by higher average daily volume and ongoing revenue‑quality initiatives",
-   "why": "采用复合修饰语，将数量增长与战略举措并列，用 'ongoing' 凸显业务持续性，比单纯罗列更有说服力。",
-   "when": "解释细分业务板块增长动力时套用",
-   "slot": "driven by higher average daily volume and ongoing [...] initiatives",
-   "swap": [
-    "caused by more volume and new [...] initiatives（用词扁平，缺乏专业财报质感）",
-    "supported by higher volume and [...] actions（actions 语义过宽，不如 initiatives 精准）"
    ],
    "src": "SEC 10-K",
    "srcen": "SEC 10-K filing",
@@ -12838,22 +12774,6 @@
    "url": "https://www.sec.gov/Archives/edgar/data/1090727/000162828026008432/ups-20251231.htm"
   },
   {
-   "id": "ph_contributing_to_713",
-   "kind": "phrase",
-   "dim": "link",
-   "en": "contributing to consolidated total revenue of $7.5 billion and consolidated operating income of $216.1 million",
-   "why": "用现在分词短语作结果状语，比用and连接的并列句更紧凑，避免了句子过于琐碎。中国人在写财报时常写成 'which contributed to'，显得拖沓",
-   "when": "在财报中描述某项业务运营对整体财务业绩的贡献时",
-   "slot": "contributing to consolidated total revenue of […] and consolidated operating income of […]",
-   "swap": [
-    "which contributed to revenue of [...] (加入了which显得冗余且中断了连贯性)",
-    "resulting in revenue of [...] (强调直接导致，语气比contributing to更强)"
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1492691/000149269126000016/knx-20251231.htm"
-  },
-  {
    "id": "ph_when_combined_lead_the_industry",
    "kind": "phrase",
    "en": "that, when combined, lead the industry in margin and growth",
@@ -15714,22 +15634,6 @@
    "swap": [
     "is reflected in (较为书面化且常规，缺乏动感)",
     "manifests itself in (过于学术和沉重，不适合日常消费品财报)"
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1530979/000162828026011634/hnst-20251231.htm"
-  },
-  {
-   "id": "ph_are_regularly_looking_to",
-   "kind": "phrase",
-   "dim": "reg",
-   "en": "we are regularly looking to increase the amount of post-consumer resin in our components",
-   "why": "用 are regularly looking to 表达持续改进的动态过程，比单纯用 plan to 或 want to 显得更有行动力和前瞻性，中国人在写计划时习惯用词较为主观或呆板。",
-   "when": "管理层在讨论对环保、技术迭代或供应链优化的持续性追求时。",
-   "slot": "we are regularly looking to [...]",
-   "swap": [
-    "continually plan to (动词 plan 显得较为静态)",
-    "intend to (意图表达偏弱，缺乏积极进取的动态感)"
    ],
    "src": "SEC 10-K",
    "srcen": "SEC 10-K filing",
@@ -19530,22 +19434,6 @@
    "url": "https://www.sec.gov/Archives/edgar/data/712534/000071253426000022/frme-20251231.htm"
   },
   {
-   "id": "ph_is_not_all_inclusive_568",
-   "kind": "phrase",
-   "dim": "hedge",
-   "en": "This list of factors is not all inclusive.",
-   "why": "中文常直接写“不包括全部”，此处用“is not all inclusive”更正式严谨，符合合规报告的表述习惯，避免绝对化表述的风险。",
-   "when": "正式报告中列举内容时，说明该列举非全部涵盖。",
-   "slot": "This list of […] is not all inclusive.",
-   "swap": [
-    "is not exhaustive（更简洁，语气稍弱，适合篇幅有限的场景）",
-    "is not comprehensive（同义，更侧重内容的全面性，强调覆盖范围）"
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1490906/000149090625000033/cffn-20250930.htm"
-  },
-  {
    "id": "ph_see_for_a_discussion_of",
    "kind": "phrase",
    "dim": "link",
@@ -19991,22 +19879,6 @@
    "swap": [
     "Investors are advised not to place excessive reliance on such forward-looking statements. （差在“Investors”更精准指向报告受众，“advised”语气比“cautioned”稍弱，“excessive”比“undue”更口语化）",
     "Users of this report are warned not to place unwarranted reliance on these forward-looking statements. （差在“Users of this report”涵盖所有报告使用者，“warned”语气更强，“unwarranted”比“undue”更强调不合理性）"
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/107833/000010783326000003/wps-20251231.htm"
-  },
-  {
-   "id": "ph_fls_identification",
-   "kind": "phrase",
-   "dim": "nom",
-   "en": "Forward-looking statements may be identified by reference to a future period or periods or by the use of terms such as \"anticipates,\" \"believes,\" \"could,\" \"estimates,\" \"expects,\" \"forecasts,\" \"goals,\" \"guidance,\" \"intends,\" \"may,\" \"objectives,\" \"plans,\" \"possible,\" \"potential,\" \"projects,\" \"seeks,\" \"should,\" \"targets,\" \"will,\" or variations of these terms.",
-   "why": "该写法用被动语态“may be identified by”清晰说明术语识别方式，比主动表述更正式，中国人常主动说“you can identify by”，不够正式合规。",
-   "when": "适用于正式报告中说明术语识别标准的场合。",
-   "slot": "[…] may be identified by reference to a future period or periods or by the use of terms such as \"[…]\" , \"[…]\" , or variations of these terms.",
-   "swap": [
-    "Forward-looking statements can be recognized via reference to a future period or periods or through the use of terms such as \"anticipates,\" \"believes,\" or variations of these terms. （差在“can be recognized”比“may be identified”更口语化，“via”比“by”稍随意）",
-    "Such statements shall be identified by reference to a future period or periods or by using terms like \"anticipates,\" \"believes,\" or variations of these terms. （差在“shall”比“may”更具强制性，“like”比“such as”更口语化，“using”比“the use of”更简洁）"
    ],
    "src": "SEC 10-K",
    "srcen": "SEC 10-K filing",
@@ -23484,22 +23356,6 @@
    "url": "https://www.sec.gov/Archives/edgar/data/3570/000000357026000005/lng-20251231.htm"
   },
   {
-   "id": "ph_management_discussion_and_analysis",
-   "kind": "phrase",
-   "dim": "nom",
-   "en": "Management’s Discussion and Analysis of Financial Condition and Results of Operations",
-   "why": "SEC 10-K报告中标准法定章节名称的大写与名词化固定搭配，体现极高的专业合规性。中国人翻译时常漏掉定冠词或擅自缩写核心专有名词。",
-   "when": "在正式财报、审计底稿或尽调报告中引用MD&A章节时严格套用。",
-   "slot": "Management’s Discussion and Analysis of […]",
-   "swap": [
-    "Management review of financial results (非官方称谓，缺乏法定效力)",
-    "Financial review and analysis (泛化表达，非SEC标准用语)"
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1687221/000119312525313470/revg-20251031.htm"
-  },
-  {
    "id": "ph_remain_resilient",
    "kind": "phrase",
    "dim": "hedge",
@@ -23820,22 +23676,6 @@
    "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
   },
   {
-   "id": "ph_make_it_difficult_to",
-   "kind": "phrase",
-   "dim": "link",
-   "en": "make it difficult to convince national brands to return or invest in Detroit for the first time.",
-   "why": "使用形式宾语 it，将真正的长不定式短语后置，符合英文“尾重原则”。中国审计人员常写成“To convince national brands... is difficult”，显得头重脚轻。",
-   "when": "在财务报告中评估某项商业决策或战略推进的难度时",
-   "slot": "make it difficult to […]",
-   "swap": [
-    "render it challenging to (学术感更强，略显冗长)",
-    "pose significant hurdles to (名词化表达，结构变化较大)"
-   ],
-   "src": "The Conversation",
-   "srcen": "The Conversation (CC BY-ND)",
-   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
-  },
-  {
    "id": "ph_extent_to_which_204",
    "kind": "phrase",
    "dim": "nom",
@@ -23946,22 +23786,6 @@
    "src": "美联储讲话",
    "srcen": "Federal Reserve",
    "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
-  },
-  {
-   "id": "ph_represented_percent_respectively",
-   "kind": "phrase",
-   "en": "represented 80%, 79% and 80% of our total revenues for 2025, 2024, and 2023, respectively",
-   "why": "三项数据配三项年份，句尾完美收尾 respectively，逻辑对位滴水不漏。中国人常写成三个并列句或结构混乱的复合句。",
-   "when": "在财报中同时罗列多年多项百分比数据进行横向对比时",
-   "slot": "represented […%], […%] and […%] of our total revenues for […], […], and […], respectively",
-   "swap": [
-    "accounted for [80%] in [2025], [79%] in [2024], and [80%] in [2023] (虽然清晰，但不如 respective 紧凑)",
-    "stood at [80%], [79%], and [80%] for the respective three years (用词稍显单薄，缺乏代表性)"
-   ],
-   "dim": "attr",
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1833756/000183375626000013/drs-20251231.htm"
   },
   {
    "id": "ph_map_closely_to",
@@ -24344,22 +24168,6 @@
    "url": "https://www.federalreserve.gov/econres/notes/feds-notes/the-ai-buildout-and-the-economy-publicly-available-data-to-assess-ais-impact-20260717.html"
   },
   {
-   "id": "ph_adversely_affect_792",
-   "kind": "phrase",
-   "dim": "reg",
-   "en": "all of which may adversely affect our business, financial condition, operational results and long-term prospects.",
-   "why": "用 which 引导非限制性定语从句串联多重不利影响，主谓之间插入 adversely 作为副词，比单纯用 bad influence 或 hurt 准确、专业得多。结尾的四项排比是标准的财报精炼表达。",
-   "when": "在尽调报告的风险提示部分，总结负面事件对公司财务和业务的多重冲击时。",
-   "slot": "all of which may adversely affect our […], financial condition, operational results and long-term prospects.",
-   "swap": [
-    "which will badly influence […] (badly influence 搭配不够地道且感情色彩过强)",
-    "that may negatively impact […] (that 不能引导非限制性定语从句，语法上不如原句严谨)"
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1829864/000182986426000012/task-20251231.htm"
-  },
-  {
    "id": "ph_subject_to_771",
    "kind": "phrase",
    "dim": "reg",
@@ -24696,22 +24504,6 @@
    "src": "美联储研究札记",
    "srcen": "Federal Reserve",
    "url": "https://www.federalreserve.gov/econres/notes/feds-notes/monetary-policy-stance-and-commodity-cycles-in-emerging-economies-20260731.html"
-  },
-  {
-   "id": "ph_chartered_with_increasing_the_value",
-   "kind": "phrase",
-   "dim": "attr",
-   "en": "staffing teams chartered with increasing the value to the customer over time",
-   "why": "chartered with 比负责(responsible for)显得更有官方授权和战略高度，over time 则精准表达了时间维度的持续增值，避免了逐字直译带来的中式英语感。",
-   "when": "在审计底稿或尽调报告中描述企业设立专项团队、推行某项长期战略时。",
-   "slot": "staffing teams chartered with […] over time",
-   "swap": [
-    "deploying teams responsible for increasing customer value (responsible for 略显平庸，缺乏企业级报告的正式感)",
-    "assigning groups tasked to raise value (tasked to 语法略显生硬，不如 chartered with 地道)"
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1855747/000185574726000016/blnd-20251231.htm"
   },
   {
    "id": "ph_building_toward_a_unified_consumer_exper",
@@ -25558,28 +25350,6 @@
    "url": "https://www.sec.gov/Archives/edgar/data/1552797/000162828026012666/dkl-20251231.htm"
   },
   {
-   "id": "ph_cross_reference_see",
-   "kind": "phrase",
-   "dim": "link",
-   "en": "See \"Commercial Agreements—Other Agreements with Third Parties—West Texas.\"",
-   "why": "用See引导明确的交叉引用，格式规范，符合SEC报告要求；中国人常直译“详见XX”，未统一使用专业报告的交叉引用格式，不够正式。",
-   "when": "正式财务报告中需要引用其他章节内容时套用",
-   "slot": "See \"[…]—[…]—[…]\"",
-   "swap": [
-    [
-     "Refer to \"Commercial Agreements—Other Agreements with Third Parties—West Texas.\"",
-     "Refer to更侧重查阅动作，语气比See更正式，适合需强调查阅的场景"
-    ],
-    [
-     "Check \"Commercial Agreements—Other Agreements with Third Parties—West Texas.\"",
-     "Check语气更随意，不如See正式，适合内部文档而非公开报告"
-    ]
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1552797/000162828026012666/dkl-20251231.htm"
-  },
-  {
    "id": "ph_structured_as_corporation",
    "kind": "phrase",
    "dim": "attr",
@@ -26289,22 +26059,6 @@
    "url": "https://www.sec.gov/Archives/edgar/data/216877/000106299325017396/form10k.htm"
   },
   {
-   "id": "ph_as_a_result_of_experiencing",
-   "kind": "phrase",
-   "dim": "link",
-   "en": "As a result of experiencing increasing operational expenses and conducting a local comparative rate study",
-   "why": "用“As a result of + 动名词短语”清晰衔接因果逻辑，正式且具体；中文常直接用“由于”加简单名词，缺乏动作细节的支撑，显得笼统。",
-   "when": "用于正式报告中说明决策或行动的直接原因。",
-   "slot": "As a result of experiencing […] and conducting […], […].",
-   "swap": [
-    "Given that the Company has experienced […] and conducted […]（语气更侧重已知事实）",
-    "On account of rising […] and a local comparative rate study（更简洁，适合篇幅紧张的报告）"
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/216877/000106299325017396/form10k.htm"
-  },
-  {
    "id": "ph_quant_growth_comparison",
    "kind": "phrase",
    "dim": "quant",
@@ -26811,22 +26565,6 @@
    "swap": [
     "As of December 31, 2025, our owned and controlled lot position stood at 60,916（调整语序，更正式）",
     "At December 31, 2025, our owned and under control lot position was 60,916（用At替代as of，更简洁）"
-   ],
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1576940/000157694026000005/ccs-20251231x10k.htm"
-  },
-  {
-   "id": "ph_must_comply_with_applicable",
-   "kind": "phrase",
-   "dim": "reg",
-   "en": "must comply with applicable real estate, lending and insurance laws and regulations.",
-   "why": "用“applicable”精准限定适用范围的法规，比中国人常用的“related”更专业精准，避免歧义",
-   "when": "撰写企业合规相关的报告、声明时套用",
-   "slot": "[...] must comply with applicable [领域] laws and regulations.",
-   "swap": [
-    "are required to adhere to relevant real estate, lending and insurance statutes and rules：用“required to adhere to”替换“must comply with”，更正式，“statutes and rules”替换“laws and regulations”，更侧重具体法条",
-    "shall conform to applicable real estate, lending and insurance statutory and regulatory provisions：用“shall conform to”替换“must comply with”，更具强制性，“statutory and regulatory provisions”替换“laws and regulations”，更书面化"
    ],
    "src": "SEC 10-K",
    "srcen": "SEC 10-K filing",
@@ -33404,24 +33142,6 @@
    "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
   },
   {
-   "id": "ph_established_the_national_medicaid_fraud_",
-   "kind": "phrase",
-   "dim": "nom",
-   "en": "which established the national Medicaid Fraud Control Units program.",
-   "why": "中国人常习惯用“this law set up a program called Medicaid Fraud Control Units”，这里用established直接搭配项目名称，句式紧凑正式，用national前置修饰项目范围，比拆分句式更符合英文财经报告的简洁书面表达习惯。",
-   "when": "在报告中描述某项政策法案设立具体监管执行机构或专项项目的场合。",
-   "slot": "which established the national […] program.",
-   "swap": [
-    "1. which launched the national […] program（用launched替换established，更侧重项目的启动落地）",
-    "2. which created the national framework for the […] program（补充framework，更突出体系搭建而非单纯设立）"
-   ],
-   "para": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement. That led to the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977, which established the national Medicaid Fraud Control Units program.",
-   "srctitle": "Trump administration is withholding more than $1B in Medicaid funds from California and Minnesota, in latest example of weaponizing real and imagined fraud",
-   "src": "The Conversation",
-   "srcen": "The Conversation (CC BY-ND)",
-   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
-  },
-  {
    "id": "ph_request_comment_on_proposal",
    "kind": "phrase",
    "dim": "reg",
@@ -33510,24 +33230,6 @@
    "src": "SEC 10-K",
    "srcen": "SEC 10-K filing",
    "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
-  },
-  {
-   "id": "ph_spurred_demand_247",
-   "kind": "phrase",
-   "dim": "link",
-   "en": "spurred demand for stronger Medicaid oversight and enforcement.",
-   "why": "中国人写审计报告常用 'led to the need for'。这里用 'spurred demand for'（刺激了对...的需求），用动词 'spur'（像马刺般鞭策）比 'cause' 更有力，生动体现了外部事件对加强内部控制或监管的倒逼作用。",
-   "when": "在审计报告中描述由于发现舞弊漏洞、系统故障或监管处罚，从而倒逼企业管理层必须加强某项内控或监督时。",
-   "slot": "spurred demand for stronger [...] oversight and enforcement.",
-   "swap": [
-    "triggered an urgent need for more rigorous [...] monitoring and compliance. (语气更紧迫，强调合规和监控的严苛性)",
-    "driven the necessity of robust [...] supervision. (语气较客观中性，强调由于客观事实驱动了强监管的必要性)"
-   ],
-   "para": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement. That led to the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977, which established the national Medicaid Fraud Control Units program.",
-   "srctitle": "Trump administration is withholding more than $1B in Medicaid funds from California and Minnesota, in latest example of weaponizing real and imagined fraud",
-   "src": "The Conversation",
-   "srcen": "The Conversation (CC BY-ND)",
-   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
   },
   {
    "id": "ph_attracted_considerable_attention",
@@ -33750,24 +33452,6 @@
    "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
   },
   {
-   "id": "ph_congressional_investigations_spurred_dem",
-   "kind": "phrase",
-   "dim": "link",
-   "en": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement",
-   "why": "中国人常直白写“Many congressional investigations made people want better Medicaid supervision”，用“spurred demand for”比“made people want”更专业正式，精准体现“调研活动推动了明确的行业监管需求”，“high-profile”也精准修饰了调查的受关注度，符合财经文本的严谨表述",
-   "when": "在尽职调查、审计报告或政策分析中，描述某类事件推动特定监管或合规需求的场合",
-   "slot": "A series of high-profile […] spurred demand for […]",
-   "swap": [
-    "A number of high-profile […] drove demand for […]：语气更直接，侧重驱动力的强度",
-    "A series of well-publicized […] stimulated demand for […]：“well-publicized”比“high-profile”更侧重传播度，适合强调事件的公众关注度"
-   ],
-   "para": "A series of high-profile congressional investigations spurred demand for stronger Medicaid oversight and enforcement. That led to the Medicare-Medicaid Anti-Fraud and Abuse Amendments of 1977, which established the national Medicaid Fraud Control Units program.",
-   "srctitle": "Trump administration is withholding more than $1B in Medicaid funds from California and Minnesota, in latest example of weaponizing real and imagined fraud",
-   "src": "The Conversation",
-   "srcen": "The Conversation (CC BY-ND)",
-   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
-  },
-  {
    "id": "ph_rely_on_limited_number_of_suppliers",
    "kind": "phrase",
    "dim": "scope",
@@ -33778,24 +33462,6 @@
    "swap": [
     "\"We may witness growing consolidation within our supplier base\" + 用“witness”比“see”更正式，“within our supplier base”比“among our component suppliers”更宽泛，适用范围更广",
     "\"There may be increased consolidation among our component suppliers\" + 把主语换成there be句式，更侧重客观现象而非主体的观察视角"
-   ],
-   "para": "Our products rely on key components, including merchant silicon, integrated circuit components and power supplies, which are purchased from a limited number of suppliers, including certain sole source providers. We may also see increased consolidation among our component suppliers. In particular, we are primarily reliant upon our predominant merchant silicon vendor, Broadcom, for our switching chips. Generally, neither we nor our contract manufacturers have a written agreement with these component providers to guarantee the supply of the key components used in our products, nor do we have exclusive rights to such key components. Furthermore, our arrangements with contract manufacturers and suppliers typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts.",
-   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
-  },
-  {
-   "id": "ph_primarily_reliant_upon_predominant_vendo",
-   "kind": "phrase",
-   "dim": "attr",
-   "en": "we are primarily reliant upon our predominant merchant silicon vendor, Broadcom, for our switching chips.",
-   "why": "中国人常直接写“we mainly use Broadcom’s chips”，这里用“primarily reliant upon”精准表达对单一供应商的依赖程度，“predominant”突出其市场主导地位，“for our switching chips”明确了依赖的具体产品场景，措辞更专业严谨。",
-   "when": "在财报或审计报告中说明对单一核心供应商的依赖情况时套用。",
-   "slot": "[…] are primarily reliant upon our predominant […] vendor, […] for […]",
-   "swap": [
-    "\"we mainly depend on our leading supplier, […]\" + 用“depend on”比“rely upon”更口语化，“leading”比“predominant”语气稍弱，更侧重市场领先而非绝对主导",
-    "\"we rely heavily on our principal vendor, […] for our […]\" + 用“heavily”侧重依赖的强度，“principal”比“predominant”更强调核心地位而非市场份额优势"
    ],
    "para": "Our products rely on key components, including merchant silicon, integrated circuit components and power supplies, which are purchased from a limited number of suppliers, including certain sole source providers. We may also see increased consolidation among our component suppliers. In particular, we are primarily reliant upon our predominant merchant silicon vendor, Broadcom, for our switching chips. Generally, neither we nor our contract manufacturers have a written agreement with these component providers to guarantee the supply of the key components used in our products, nor do we have exclusive rights to such key components. Furthermore, our arrangements with contract manufacturers and suppliers typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts.",
    "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
@@ -33912,24 +33578,6 @@
    "url": "https://www.bbc.co.uk/news/articles/cy4kp8jd0ppo?at_medium=RSS&at_campaign=rss"
   },
   {
-   "id": "ph_generally_do_not_stock_inventory",
-   "kind": "phrase",
-   "dim": "hedge",
-   "en": "Our partners generally do not stock inventory received from us",
-   "why": "中国人描述渠道库存时常写 'Our partners usually don't keep our products in their warehouse'。原句将 'stock' 用作动词，搭配 'inventory received from us'，不仅行文极简，而且在财务上精确界定了‘未保留库存所有权风险’，对判断是 Sell-in 还是 Sell-through 确认收入至关重要。",
-   "when": "在进行财务尽调、分析分销商库存积压风险（Channel Stuffing）或评估退货政策时。",
-   "slot": "Our [...] generally do not stock inventory received from [...]",
-   "swap": [
-    "Our [...] typically carry no inventory supplied by [...] (carry inventory是财务常用表达，语气较为中性客观)",
-    "Our [...] do not routinely hold stock delivered by [...] (routinely hold强调常规性操作，常用于描述寄售或即时配送模式)"
-   ],
-   "para": "We market and sell our products through our direct sales force and in partnership with our channel partners, including distributors, value-added resellers, systems integrators and original equipment manufacturer (\"OEM\") partners. We also partner with various technology companies to sell our products. To facilitate channel coordination and increase productivity, we have established the Arista Partner Program, designed to engage partners who provide value-added services and extend our reach into the marketplace. Authorized training partners deliver technical training to our channel partners and end customers. Our partners typically receive an order from an end customer before placing an order with us, and we verify the end customer's identification before accepting such orders. Our partners generally do not stock inventory received from us.",
-   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
-   "src": "SEC 10-K",
-   "srcen": "SEC 10-K filing",
-   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
-  },
-  {
    "id": "ph_potentially_influence",
    "kind": "phrase",
    "dim": "hedge",
@@ -33946,24 +33594,6 @@
    "src": "美联储",
    "srcen": "Federal Reserve",
    "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731b.htm"
-  },
-  {
-   "id": "ph_declined_sharply_while_tripled_688",
-   "kind": "phrase",
-   "dim": "quant",
-   "en": "declined sharply after the 2018-19 tariffs, while imports from Vietnam tripled by 2025",
-   "why": "国人对比数据时常写 'A decreased, but B increased'。原文用 'declined sharply' 搭配 'tripled by'，并用 'while' 形成强烈的画面对比，且 'tripled' 直接作动词，比 'increased by three times' 简练得多。",
-   "when": "在审计报告中对比两个子公司、两个业务板块或两个市场在同一时期的业绩消长时。",
-   "slot": "[...] declined sharply after [...], while [...] tripled by [...]",
-   "swap": [
-    "dropped precipitously following [...], whereas [...] surged threefold by [...] (precipitously 和 surge 语气极强，适合描述剧烈的市场波动)",
-    "contracted significantly post-[...], while [...] experienced a threefold increase by [...] (contracted 语气更专业、更书面化，适合极其正式的审计报告)"
-   ],
-   "para": "In recent years, Vietnam has attracted considerable attention as a potential major beneficiary of the 2018-19 U.S.-China tariff increases, reflecting substantial trade diversion as exports shifted away from China (Alfaro and Chor, 2023; Freund et al., 2024). As shown in the left panel of Figure 1, U.S. imports from China declined sharply after the 2018-19 tariffs, while imports from Vietnam tripled by 2025.",
-   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
-   "src": "美联储研究札记",
-   "srcen": "Federal Reserve",
-   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
   },
   {
    "id": "ph_neither_nor_agreement_121",
@@ -34000,6 +33630,172 @@
    "src": "SEC 10-K",
    "srcen": "SEC 10-K filing",
    "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_proposal_to_modernize_rule_governing",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "a proposal to modernize its rule governing the extension of credit",
+   "why": "两点值得学。一是 governing 这个现在分词直接挂在 rule 后面当后置定语，一个 which/that 都不用就把「管什么的规则」说清楚了；中国人多半写成 the rule which is used to manage...，多三个词还更松。二是 the extension of credit 这种名词化：中文思维会写 how banks lend money to insiders，动词句一出来就必须交代主语、时态、对象，句子立刻长两倍。名词化让「授信」变成一个可以被 modernize、被 govern 的对象，正是监管和报告文体的骨架。",
+   "when": "写制度、政策、准则的适用范围，或在报告里说明某项内部规定管的是哪一类业务活动时。",
+   "slot": "a proposal to […] its […] governing the […] of […]",
+   "swap": [
+    "a proposal to revise the policy covering intercompany lending（covering 比 governing 中性，只说「涵盖」，不带「约束力」的意味）",
+    "the Group's policy on related-party transactions（最简，用 on 代替分词，适合正文里顺带一提，不用于正式定义）",
+    "the internal control framework that regulates the granting of credit（补回关系从句 + regulates，语气最重、最正式，用于强调这是硬约束）"
+   ],
+   "para": "The Federal Reserve Board on Friday requested comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions. The proposal updates outdated thresholds while maintaining safeguards against preferential treatment.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731b.htm"
+  },
+  {
+   "id": "ph_could_potentially_influence",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "bank executives, board members and major shareholders who could potentially influence a bank's lending decisions",
+   "why": "关键在 could potentially influence 这个双重降调：不说他们「已经」影响，只说「有可能有能力影响」——把话锁在「能力/风险」层面，不碰「事实/指控」。中国人写尽调和审计时常直接写 who influence 或 who control，等于替对方下了结论，一旦拿不出证据就是硬伤。另外前面那串三项并列本身就是在给 insiders 下定义，不另起一句 Insiders refer to...，省一整句还更紧。",
+   "when": "定义关联方、识别可能影响决策的人员、或描述一项尚未证实的风险敞口时。",
+   "slot": "[…], […] and […] who could potentially influence […]",
+   "swap": [
+    "who are in a position to influence …（换成「处在能影响的位置上」，讲身份不讲动机，最中性，函证和关联方清单里常用）",
+    "who may be able to exert significant influence over …（贴 HKFRS 的 significant influence 措辞，正式度最高，但暗示已接近准则口径，慎用）",
+    "who could reasonably be expected to influence …（加 reasonably expected，把判断标准写成「合理预期」，适合要说明自己为什么这么划范围）"
+   ],
+   "para": "The Federal Reserve Board on Friday requested comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions. The proposal updates outdated thresholds while maintaining safeguards against preferential treatment.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731b.htm"
+  },
+  {
+   "id": "ph_while_maintaining_safeguards",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "The proposal updates outdated thresholds while maintaining safeguards against preferential treatment.",
+   "why": "一句话交代了「改了什么」和「什么没松」，靠的是 while + 动名词这个平衡结构，不用 but 也不用 at the same time。中国人爱写成两句：The proposal updates the thresholds. However, the safeguards remain unchanged. 拆开之后「改动是有边界的」这层意思就散了。还有 outdated 一个形容词就把「为什么要改」交代了，省掉一整句 because the thresholds were set many years ago。",
+   "when": "汇报一项调整、一次口径变更或一条建议时，需要同时安抚对方「原有控制没有被削弱」。",
+   "slot": "The […] updates outdated […] while maintaining […] against […].",
+   "swap": [
+    "… while preserving the existing controls over …（preserve 比 maintain 更强调「原样保留」，对方最在意别动控制时用）",
+    "… without weakening the controls over …（改成 without + 动名词，正面承诺变成否定式保证，语气更防守，回应质疑时用）",
+    "… while continuing to safeguard against …（把名词 safeguards 还原成动词，读起来更口语，适合邮件和口头汇报，不适合正式附注）"
+   ],
+   "para": "The Federal Reserve Board on Friday requested comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions. The proposal updates outdated thresholds while maintaining safeguards against preferential treatment.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731b.htm"
+  },
+  {
+   "id": "ph_how_analyze_respond_real_time",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "how policymakers analyze and respond to economic shocks in real time",
+   "why": "这里用 how + 主语 + 动词的从句去当 discuss 的宾语，句子里的人和动作都还在（policymakers 在 analyze、在 respond），不是名词堆。中国人写报告爱换成 the analysis and response of policymakers to economic shocks，动作被压成名词、施动者退到 of 后面，句子发虚。另外 analyze and respond to 两个动词共用一个宾语，respond 自带的 to 保留、analyze 后面不加，这个细节很多人会写成 analyze and respond to 的镜像错误 analyze to。in real time 是三个词的定语，放句尾说明「时点」，不用写成 on a timely basis 那种套话。",
+   "when": "写目的段、范围段、议程时说明「本节讨论什么」，也用于向客户说明团队做了什么工作。",
+   "slot": "how […] analyze and respond to […] in real time",
+   "swap": [
+    "the way in which […] assess and respond to […] —— 更书面，语气重、节奏慢，适合正式报告不适合开场白",
+    "how […] identify and address […] —— 落点在「解决」，比 respond 更承诺结果",
+    "what […] do when […] arise —— 最口语，讲给非专业听众听时用，写进底稿偏随便"
+   ],
+   "para": "Thank you for the kind introduction. I am delighted to be here at Stanford University today to discuss a topic that is central to the Federal Reserve's work: how policymakers analyze and respond to economic shocks in real time. 1",
+   "srctitle": "Jefferson, Navigating Economic Shocks: A Monetary Policymaker’s Perspective",
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
+  },
+  {
+   "id": "ph_neither_nor_nor_do_we",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "neither we nor our contract manufacturers have a written agreement with these component providers to guarantee the supply of the key components used in our products, nor do we have exclusive rights to such key components.",
+   "why": "使用 “neither... nor..., nor do we...” 的双重否定倒装句式，极其严密地排除了“有书面协议保证供应”和“拥有独家权利”两种降低风险的可能性。中国人写审计报告时，往往会拆成两个平铺直叙的否定句（We don't have... and we also don't have...），缺乏这种一气呵成、逻辑严密的法律文本质感。",
+   "when": "在审计或尽调中披露目标公司与核心供应商之间缺乏合同约束力、存在供应中断风险时。",
+   "slot": "neither [...] nor [...] have a written agreement with [...] to guarantee the supply of [...], nor do we have exclusive rights to [...].",
+   "swap": [
+    "there are no binding commitments or exclusivity arrangements in place with [...] (语气更客观中立，常用作审计附注的陈述)",
+    "the Company lacks both contractual supply guarantees and exclusivity rights with respect to [...] (句式更紧凑，适合在PPT汇报或高管摘要中提炼要点)"
+   ],
+   "para": "Our products rely on key components, including merchant silicon, integrated circuit components and power supplies, which are purchased from a limited number of suppliers, including certain sole source providers. We may also see increased consolidation among our component suppliers. In particular, we are primarily reliant upon our predominant merchant silicon vendor, Broadcom, for our switching chips. Generally, neither we nor our contract manufacturers have a written agreement with these component providers to guarantee the supply of the key components used in our products, nor do we have exclusive rights to such key components. Furthermore, our arrangements with contract manufacturers and suppliers typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_impose_purchase_obligations_204",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "our arrangements with contract manufacturers and suppliers typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts.",
+   "why": "“impose purchase obligations”（强加购买义务）和 “amounts established in”（在...中确定的金额/数量）是极具专业度的合同术语。中国人通常会写成 “we do not have to buy more than what we ordered in POs”，显得非常业余。原文的写法精准界定了财务责任的边界。",
+   "when": "在财务尽调中分析目标公司的表外承诺（off-balance sheet commitments）或未来采购义务时。",
+   "slot": "our arrangements with [...] typically do not impose purchase obligations for [...] beyond the amounts established in [...].",
+   "swap": [
+    "the Company has no minimum purchase commitments exceeding the quantities specified in outstanding purchase orders (更偏向财务审计术语，强调‘最低采购承诺’)",
+    "contractual terms do not mandate any purchase volume in excess of the forecasted amounts (语气更正式，强调合同条款的强制性约束力)"
+   ],
+   "para": "Our products rely on key components, including merchant silicon, integrated circuit components and power supplies, which are purchased from a limited number of suppliers, including certain sole source providers. We may also see increased consolidation among our component suppliers. In particular, we are primarily reliant upon our predominant merchant silicon vendor, Broadcom, for our switching chips. Generally, neither we nor our contract manufacturers have a written agreement with these component providers to guarantee the supply of the key components used in our products, nor do we have exclusive rights to such key components. Furthermore, our arrangements with contract manufacturers and suppliers typically do not impose purchase obligations for specific quantities beyond the amounts established in our submitted purchase orders or forecasts.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_concerns_became_politicized",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "Concerns about Medicaid’s “integrity ” became highly politicized in the debates surrounding the ACA.",
+   "why": "中国人写审计报告时，常写成 \"Management was concerned about...\" 或 \"There are worries that...\"。原句用 \"Concerns about [Subject]\" 作为主语，并用 \"surrounding\" 代替普通的 \"about/related to\"，显得极其客观、高级，避免了主观和口语化，非常适合描述审计中发现的争议性问题。",
+   "when": "用于描述各方对某一财务科目、合规问题或历史交易存在争议或高度关注的背景。",
+   "slot": "Concerns about […] became highly […] in the debates surrounding […].",
+   "swap": [
+    "Apprehensions regarding […] were intensely debated during […] (语气更偏向于“忧虑和激烈辩论”，适合描述审计委员会内部的争执)",
+    "Discussions over the validity of […] became highly contentious amid […] (语气更中性，强调“合规性讨论变得具有争议性”)"
+   ],
+   "para": "Concerns about Medicaid’s “integrity ” became highly politicized in the debates surrounding the ACA. Critics of Medicaid expansion argued that increasing the number of people who could get health insurance through the program would increase fraud and improper enrollment. Supporters of expanding Medicaid to help more Americans gain health insurance maintained that anti-fraud rhetoric often disguised ideological opposition to the program’s expansion.",
+   "srctitle": "Trump administration is withholding more than $1B in Medicaid funds from California and Minnesota, in latest example of weaponizing real and imagined fraud",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_maintained_that_disguised",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "maintained that anti-fraud rhetoric often disguised ideological opposition to the program’s expansion",
+   "why": "中国人描述管理层的辩解时，常套用 \"said that\" 或 \"argued that\"，并用 \"hide\" 表示掩盖。原句用 \"maintained that\" 极其传神地表达了“坚持认为/始终主张”（常用于访谈或底稿记录），并用 \"disguised\"（伪装/掩盖）优雅地指出其真实意图被表面理由所遮蔽，比 \"hide\" 更有深度。",
+   "when": "用于在尽调报告中客观转述管理层、大股东或监管机构的某种一贯立场，或指出某种表面合规解释背后隐藏的真实财务动机。",
+   "slot": "[…] maintained that […] disguised […]",
+   "swap": [
+    "[…] asserted that […] masked the underlying […] (语气同样客观，用 masked 代替 disguised，同样高级且适合财务语境)",
+    "[…] contended that […] was merely a pretext for […] (语气更具批判性，直接指出对方的理由只是“借口”)"
+   ],
+   "para": "Concerns about Medicaid’s “integrity ” became highly politicized in the debates surrounding the ACA. Critics of Medicaid expansion argued that increasing the number of people who could get health insurance through the program would increase fraud and improper enrollment. Supporters of expanding Medicaid to help more Americans gain health insurance maintained that anti-fraud rhetoric often disguised ideological opposition to the program’s expansion.",
+   "srctitle": "Trump administration is withholding more than $1B in Medicaid funds from California and Minnesota, in latest example of weaponizing real and imagined fraud",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/trump-administration-is-withholding-more-than-1b-in-medicaid-funds-from-california-and-minnesota-in-latest-example-of-weaponizing-real-and-imagined-fraud-288664"
+  },
+  {
+   "id": "ph_provide_perspective_expertise",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "provide valuable perspective and expertise to bank governance",
+   "why": "中国人常写 give good advice and help to manage the bank，口语化严重。用 provide valuable perspective and expertise（提供宝贵的视角与专业知识）显得极其高级，to bank governance（对银行治理）也比 manage 更有公司治理的高度。",
+   "when": "用于尽调报告中评估被调查公司董事会成员、高管背景及其对公司治理的实际贡献时。",
+   "slot": "[...] provide valuable perspective and expertise to [...].",
+   "swap": [
+    "[...] bring critical insights and technical know-how to [...] (语气更强调技术和洞察的深度)",
+    "[...] contribute essential oversight and industry experience to [...] (语气更偏向合规与监督，适合描述独立董事)"
+   ],
+   "para": "Regulation O has not been comprehensively updated since 1979. The rule addresses a unique challenge for community banks, where board members and executives are often local business owners and civic leaders who provide valuable perspective and expertise to bank governance and information on the local economy.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731b.htm"
   }
  ]
 }

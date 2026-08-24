@@ -4304,6 +4304,256 @@
     "直译「我们算了一下发现要调整120万」为 \"We calculated and found we need to adjust 1.2M\"。应写为 \"Our preliminary assessment indicates that a potential adjustment of approximately RMB 1.2m may be required to reflect the discount...\"。",
     "把「其他应付款」直接写成大写的 \"Other Payables\"。由于这是会计科目，在英文中非句首或专有名词定义时不应盲目大写，应写为 \"other payables\" 或 \"amounts due to related parties\"。"
    ]
+  },
+  {
+   "id": "aud_fa_disposal_scrap",
+   "t": "未入账固定资产报废损失",
+   "lvl": "★★☆",
+   "brief": "针对FY25年度生产线升级中废弃资产的会计处理。写给客户管理层，放在致管理层函（Management Letter）的'固定资产'一节。",
+   "facts": [
+    "我们在FY25年12月中旬进行现场走访时，发现旧芯片贴片机（账面原值450万港币，折余价值120万港币）已被移出车间并置于废料区。",
+    "固定资产明细账显示，截至FY25年12月31日，该设备仍按正常在用资产进行折旧，未作任何报废或减值处理。",
+    "管理层口头解释称该设备计划在FY26F出售，但目前仍处于评估阶段。",
+    "截至发稿日，尽管我们多次催收，管理层仍未提供该设备的报废处置申请单或任何第三方收购意向书（LOI）。"
+   ],
+   "tgt": [
+    "indicates potential impairment or premature retirement",
+    "no formal disposal documentation or scrap authorization was available",
+    "pending the formal valuation or expression of interest from third parties"
+   ],
+   "traps": [
+    "错误使用 'They kept drawing depreciation'：口语化且不专业。应使用 'Depreciation continued to be charged on an idle asset that may have met the criteria for retirement'，用符合准则的语言描述。",
+    "错误使用 'We asked many times but got nothing'：带有情绪色彩。应使用 'Despite our repeated requests, no documentary evidence supporting the scrap value or disposal plan has been furnished'，客观陈述过程。",
+    "错误使用 'The machine is useless now'：主观性太强。应使用 'The physical condition of the asset suggests it is no longer in active use'，基于观察做出客观推论。"
+   ]
+  },
+  {
+   "id": "aud_rd_outsourcing_accrual",
+   "t": "委外研发费用跨期估算说明",
+   "lvl": "★★☆",
+   "brief": "FY25年发生的委外研发服务费切分及暂估审计。写给项目合伙人，放在审计工作底稿的'截止性测试与暂估'一节。",
+   "facts": [
+    "账面显示FY25年12月暂估了对C研发机构的委外服务费350万港币。",
+    "研发合同规定，款项需根据研发milestone（里程碑）交付物及验收报告分期确认和支付。",
+    "我们抽查了该笔暂估凭证，发现管理层仅根据对方发送的非正式电子邮件进行暂估，缺乏正式的进度确认单（Progress Certificate）。",
+    "截至2026年3月审计现场结束日，管理层仍未向我们提供由双方签字确认的阶段性技术验收报告，导致无法证实该研发进度的真实性。"
+   ],
+   "tgt": [
+    "the milestone achievement remains unverified",
+    "the accrual was processed based solely on informal correspondence",
+    "pending receipt of the bilateral sign-off on the progress report"
+   ],
+   "traps": [
+    "错误使用 'The email is useless for auditing'：过于武断。应使用 'Informal email correspondence does not constitute sufficient appropriate audit evidence for expense recognition'，引用审计准则概念说明理由。",
+    "错误使用 'They should not accrue'：未给出充分论据。应使用 'The cutoff of the R&D expenditure cannot be conclusively verified'，指明对财务报表认定的具体影响（截止性）。",
+    "错误使用 'We wait for the report to finish this'：口语化。应使用 'We have requested the technical acceptance report to substantiate the progress achieved'，表达后续跟进步骤。"
+   ]
+  },
+  {
+   "id": "aud_contract_retention_receivable",
+   "t": "工程质保金可收回性评估",
+   "lvl": "★★☆",
+   "brief": "针对FY25年末已逾期但未收回的合同质保金的可收回性评估。写给审计项目合伙人，放在'合同资产与应收账款'一节。",
+   "facts": [
+    "客户明细账显示，针对D客户的某建筑工程项目质保金450万港币，已于FY25年6月达到2年质保到期日，但截至FY25年末仍未收回。",
+    "往来信函显示，D客户在FY25年9月曾投诉项目存在屋顶漏水问题，并要求赔偿。",
+    "管理层口头表示目前双方正在进行非正式协商，有信心收回80%的款项，因此仅计提了20%（90万港币）的坏账准备。",
+    "截至发稿日，由于管理层无法提供对方对整改方案的验收单或任何书面承诺还款函，我们无法对该笔质保金的最终可收回性得出审计结论。"
+   ],
+   "tgt": [
+    "the recoverability of the retention receivable remains highly uncertain",
+    "in the absence of any formal written acknowledgment or settlement plan from the counterparty",
+    "the adequacy of the impairment allowance is subject to..."
+   ],
+   "traps": [
+    "错误使用 'The client doesn't want to pay'：带有主观臆断。应使用 'The counterparty has withheld payment pending the resolution of outstanding quality disputes'，客观描述对方不付款的原因。",
+    "错误使用 'We can't finish the audit for this'：显得不专业和无能。应使用 'We were unable to satisfy ourselves as to the adequacy of the provision based on the limited evidence available'，使用审计师标准语言来表达审计受限。",
+    "错误使用 'Management thinks they will get money'：太口语化。应使用 'Management's assessment of an 80% recovery rate lacks objective corroborative evidence'，用专业术语指出管理层的判断缺乏客观佐证。"
+   ]
+  },
+  {
+   "id": "aud_inventory_shortage",
+   "t": "存货盘点短缺未处理",
+   "lvl": "★☆☆",
+   "brief": "针对FY25年末存货监盘中发现的原材料短缺，管理层未在账面作调整。写给客户财务总监，放在致管理层函的内部控制与资产安全部分。",
+   "facts": [
+    "审计人员于2025年12月31日现场监盘发现，A仓库某型号原材料实存数量比账面少150件，涉及金额50万港元。",
+    "管理层口头解释称，该批物资在FY25年11月因仓库漏水受损已报废扔掉。",
+    "我们抽查了FY25年11月至12月的仓储报损记录及审批单，未发现相关书面审批流转记录。",
+    "截至发稿日，我们仍未收到管理层正式签字的报废审批表及第三方保险定损报告。"
+   ],
+   "tgt": [
+    "physical inventory shortage was noted",
+    "has not been written off",
+    "subject to management's formal approval",
+    "adjusting journal entry is required"
+   ],
+   "traps": [
+    "误将‘短缺’写成‘the inventory lacks 150 units’。Lack通常作动词，此处应使用名词表示实物短缺，规范写法为：‘a physical shortage of 150 units was noted’。",
+    "将‘报废/核销’错写为‘did not make write-off’。Write-off作为动词时中间有空格，且应使用被动语态表示账务处理，规范写法为：‘the damaged inventory had not been written off as of the year-end’。",
+    "将‘口头解释’写成‘According to management's talk’，措辞不够专业。商务报告中表示管理层的正式陈述应使用representation，规范写法为：‘According to management's verbal representation’。"
+   ]
+  },
+  {
+   "id": "aud_fxtranslation_error",
+   "t": "外币折算汇率选用偏差",
+   "lvl": "★☆☆",
+   "brief": "境外子公司FY25利润表折算时未采用近似平均汇率，导致折算差异。写给客户集团财务总监，放在审计备忘录或审计调整建议中。",
+   "facts": [
+    "管理层表示，新加坡子公司FY25利润表项目折算统一采用了2025年12月31日的期末即期汇率（1 SGD = 5.80 HKD）。",
+    "我们复核了新加坡子公司财务数据，根据HKAS 21的要求，利润表项目应采用交易发生日的即期汇率或近似的平均汇率（FY25平均汇率1 SGD = 5.62 HKD）。",
+    "汇率偏离导致折算后的FY25营业收入多计300万港元，净利润多计45万港元。",
+    "截至发稿日，管理层尚未提供重新测算的利润表折算明细表。"
+   ],
+   "tgt": [
+    "foreign currency translation",
+    "in accordance with HKAS 21",
+    "deviation from the average exchange rate",
+    "resulted in an overstatement of"
+   ],
+   "traps": [
+    "将‘报表折算’写成‘translation of financial tables’。在国际会计准则中，财务报表的标准表述是financial statements，规范写法为：‘translation of foreign currency financial statements’。",
+    "将‘导致收入多计’写成‘makes revenue more than actual’，缺乏专业度。在审计报告中‘多计/高估’应用overstate表达，规范写法为：‘resulting in an overstatement of revenue by HKD 3M’。",
+    "表示‘尚未提供’时写成‘management did not give us’，语气过于私人和幼稚。规范的书面表达应为：‘the revised translation computation has not yet been provided by management’或‘remains outstanding as of the date of this report’。"
+   ]
+  },
+  {
+   "id": "aud_rebate_underprovision",
+   "t": "销售返利预提不足",
+   "lvl": "★☆☆",
+   "brief": "客户针对FY25大客户的销售返利计提不足，存在少计负债风险。写给合伙人和客户财务总监，放在审计差异汇总段落。",
+   "facts": [
+    "管理层口头说明，由于FY25第四季度大客户的最终采购额在年底未核对一致，因此暂未计提这部分返利，预计金额很小。",
+    "我们抽查了与前三大经销商签订的FY25销售返利协议，并比对了9M26已发生的实际结算单，发现实际应计提返利总额为120万港元。",
+    "账面实际仅预提了50万港元，少计提销售返利负债70万港元。",
+    "截至发稿日，我们仍未收到管理层与这三大经销商的FY25年终返利对账单。"
+   ],
+   "tgt": [
+    "under-provision of volume rebates",
+    "accrued liability",
+    "pursuant to the contractual terms",
+    "outstanding reconciliation with distributors"
+   ],
+   "traps": [
+    "将‘少计提’错写为‘under-estimated 700k’。会计估值和拨备的少计应用under-provision或under-accrual，规范写法为：‘an under-provision of sales rebates amounting to HKD 700k was identified’。",
+    "把‘根据合同条款’写成‘according to the contract’。在专业报告中，通常用pursuant to或in accordance with来引述合同约定，规范写法为：‘pursuant to the rebate terms specified in the distributor agreements’。",
+    "将‘对账单’写成‘reconciliation paper’，不符合行业习惯。财务对账单的规范表达是reconciliation statement或reconciliation sheet，规范写法为：‘the final rebate reconciliation statements remain outstanding’。"
+   ]
+  },
+  {
+   "id": "aud_franchise_impairment",
+   "t": "特许权减值迹象未评估",
+   "lvl": "★☆☆",
+   "brief": "客户某项特许经营权在FY25因外部环境变化出现明显减值迹象，但未进行减值测试。写给合伙人及客户管理层，放在审计备忘录资产减值部分。",
+   "facts": [
+    "管理层口头表示，该特许权合同将于FY28年到期，目前经营正常，故无须在FY25末计提减值。",
+    "我们检索了行业监管政策，发现FY25年10月起限制了该特许权对应产品的销售渠道，导致该特许权FY25后两个月产生的现金流同比下降60%。",
+    "该无形资产在FY25年末的账面净值为800万港元。",
+    "截至发稿日，我们尚未收到管理层针对该无形资产编制的未来现金流量预测表（VIU模型）。"
+   ],
+   "tgt": [
+    "indicator of impairment",
+    "carrying value of intangible asset",
+    "value-in-use (VIU) calculation",
+    "pending management's formal assessment"
+   ],
+   "traps": [
+    "将‘减值迹象’写成‘signs of value loss’。审计中的标准术语是indicator of impairment，规范写法为：‘The change in regulatory policy represents an indicator of impairment under HKAS 36’。",
+    "把‘账面净值’写成‘book clean value’。这是典型的中式翻译，规范写法为：‘carrying amount’或‘carrying value’，例如：‘the carrying value of the intangible asset as of 31 December 2025’。",
+    "表示‘尚未收到预测表’写成‘we are waiting for their forecast table’。此写法不符合书面体规范，应使用pending结构，规范写法为：‘We are pending management's impairment assessment and the underlying value-in-use calculations’。"
+   ]
+  },
+  {
+   "id": "aud_land_amortization",
+   "t": "土地使用权摊销起点错误",
+   "lvl": "★☆☆",
+   "brief": "客户将某块工业土地使用权在取得施工许可证后才开始摊销，而非按取得土地使用权证之日开始摊销。写给客户财务经理，放在致管理层函中。",
+   "facts": [
+    "管理层解释称，该土地虽然自FY24年8月获得权证，但因FY25年3月才拿到施工许可证并实际动工，因此在FY25年3月才开始摊销。",
+    "我们抽查了该土地的使用权证书，其发证日期和登簿日期均为2024年8月15日。",
+    "按照HKAS 38规定，无形资产应自可供使用时开始摊销。延迟摊销起点导致FY24年少计摊销费用40万港元，FY25年少计摊销费用15万港元。",
+    "截至发稿日，管理层尚未提供对该摊销差异的拟调整分录。"
+   ],
+   "tgt": [
+    "commencement of amortization",
+    "available for use",
+    "overstated carrying amount",
+    "pending the corrected amortization schedule"
+   ],
+   "traps": [
+    "将‘开始摊销’写成‘start to amortize’。在学术和实务报告中，通常使用名词形式表示起点，规范写法为：‘the commencement of amortization should align with the date when the asset is available for use’。",
+    "把‘土地使用权’写成‘land right’。在香港审计和香港报告口径下，规范表达是‘land use rights’或‘leasehold land’。",
+    "将‘少计费用’写成‘less expenses was booked’。会计调整中‘少计费用’应使用understatement或under-accrued，规范写法为：‘resulting in an understatement of amortization expenses by HKD 400k in FY24’。"
+   ]
+  },
+  {
+   "id": "aud_discontinued_inventory",
+   "t": "停产型号存货跌价准备",
+   "lvl": "★☆☆",
+   "brief": "客户某型号电子元器件在FY25已正式停产，但管理层未对其计提跌价准备。写给客户管理层，放在致管理层函的存货跌价准备（NRV）分析段落。",
+   "facts": [
+    "管理层口头说明，该停产型号存货（型号EX-90）虽已停产，但未来仍可作为售后配件逐步销售，因此无需计提跌价。",
+    "我们抽查了销售系统，发现FY25下半年该型号产品仅销售了10件，截至FY25年末，账面仍有库存12,000件，账面价值达240万港元。",
+    "我们对比了同类停产配件在9M26的实际售价，发现其可变现净值（NRV）远低于账面成本，估算少计提跌价准备150万港元。",
+    "截至发稿日，我们仍未收到管理层关于该型号存货的未来销售去化预测表。"
+   ],
+   "tgt": [
+    "slow-moving and obsolete inventory",
+    "net realizable value (NRV)",
+    "discontinued model",
+    "pending receipt of the sales realization forecast"
+   ],
+   "traps": [
+    "将‘停产型号’写成‘stopped production model’。停产的规范表达为discontinued，规范写法为：‘inventory items relating to the discontinued model EX-90’。",
+    "把‘去化预测’写成‘selling forecast report’。对积压存货的去化计划，在审计中常表述为run-off plan或realization forecast，规范写法为：‘we are pending management’s sales realization and run-off forecast’。",
+    "把‘计提跌价准备’写成‘did not make discount reserve’。存货跌价准备的规范词汇是provision for inventory write-down或allowance for stock obsolescence，规范写法为：‘no provision for inventory write-down had been recognized for the obsolete stock’。"
+   ]
+  },
+  {
+   "id": "aud_unpaid_leave_accrual",
+   "t": "未休年假福利负债未预提",
+   "lvl": "★☆☆",
+   "brief": "客户未按照HKAS 19的要求对员工未休年假累计带薪缺勤计提负债。写给客户HR及财务总监，放在致管理层函的薪酬福利部分。",
+   "facts": [
+    "管理层口头表示，根据公司员工手册，员工未休的年假在次年年底前会自动清零，且公司很少支付未休年假补偿金，故无须计提负债。",
+    "我们抽查了HR系统中的员工年假台账，发现截至2025年12月31日，未休年假天数累计达3,500天，对应估算员工薪酬负债约为180万港元。",
+    "按照HKAS 19的规定，累积带薪缺勤属于提供服务时即产生的义务，应在期末予以预提。",
+    "截至发稿日，管理层仍未提供经财务及HR部门确认的未休年假负债测算明细表。"
+   ],
+   "tgt": [
+    "accumulating compensated absences",
+    "accrued employee benefits",
+    "present obligation under HKAS 19",
+    "pending receipt of the validated calculation"
+   ],
+   "traps": [
+    "将‘未休年假’写成‘no-use annual holidays’。国际会计准则（HKAS 19）中对该类项目的官方定义是accumulating compensated absences或untaken annual leave，规范写法为：‘the obligation arising from accumulating compensated absences’。",
+    "把‘自动清零’写成‘automatically become zero’。在专业语境中，年假清零常用forfeited或expired，规范写法为：‘unused annual leave will be forfeited if untaken by the end of the subsequent year’。",
+    "将‘应在期末予以预提’写成‘must book expense at year end’。应使用accrued或recognized作为专业表达，规范写法为：‘the liability for untaken annual leave should be accrued at the reporting date’。"
+   ]
+  },
+  {
+   "id": "aud_advertising_cutoff",
+   "t": "广告宣传费截止性异常",
+   "lvl": "★☆☆",
+   "brief": "客户在FY25年末将本应属于FY26的线上推广广告费用提前确认为FY25的费用。写给财务总监，放在审计工作底稿及差异汇总表的截止性测试说明中。",
+   "facts": [
+    "管理层表示，该笔大额线上广告合同是在2025年12月签订并支付的，且发票日期也是2025年12月20日，因此计入FY25费用符合权责发生制。",
+    "我们抽查了广告服务商提供的实际广告排期表和9M26后台展示量报告，发现该广告实际投放展示期间为2026年1月1日至2026年2月28日。",
+    "对应广告费金额为120万港元，该部分跨期费用导致FY25年利润低估120万港元。",
+    "截至发稿日，管理层尚未向我们提供与该广告商的最终结算确认函。"
+   ],
+   "tgt": [
+    "cutoff error",
+    "prepaid advertising expenses",
+    "subsequent service period",
+    "pending final settlement confirmation"
+   ],
+   "traps": [
+    "将‘提前确认费用’写成‘recognized expense too early’。专业的表述应指向‘截止性错误’或‘跨期’，规范写法为：‘A cutoff error was identified where advertising expenses were prematurely recognized’。",
+    "把‘排期表’写成‘advertising schedule table’。媒体或广告投放计划表的标准英文表达是media placement schedule或campaign schedule，规范写法为：‘according to the third-party media placement schedule’。",
+    "将‘跨期’直译为‘cross-period’。这是典型的中式英语，在审计中通常描述为‘allocated to/recorded in the incorrect accounting period’或‘cutoff mismatch’。"
+   ]
   }
  ]
 }

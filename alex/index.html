@@ -1446,7 +1446,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
 
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
 
-const BANKV = 'c35d10d1';
+const BANKV = '78ac5ba2';
 
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
@@ -5362,7 +5362,10 @@ function bubble(cls, who, txt, extra, speak){
 
     b.textContent = '🔊 听一遍';
 
-    b.onclick = () => { b.classList.add('on'); say(speak[0], speak[1])
+    /* 🚨 `speak[1]` 是语种，**可能是中文** —— 只有英文才走 Andrew，
+       中文仍旧交给设备嗓子（后端那把是英文音色，念中文会很怪）。 */
+    b.onclick = () => { b.classList.add('on');
+      (speak[1] === 'en' ? nsay(speak[0]) : say(speak[0], speak[1]))
 
       .then(()=>b.classList.remove('on')); };
 
@@ -7049,7 +7052,7 @@ async function render(d, mine){
 
       b.onclick = () => { unlockTTS(); b.classList.add('on');
 
-        say(d.better,'en').then(()=>b.classList.remove('on')); };
+        nsay(d.better).then(()=>b.classList.remove('on')); };
 
       box.appendChild(b);
 
@@ -7091,7 +7094,7 @@ async function render(d, mine){
 
       b.onclick = () => { b.classList.add('on');
 
-        say(d.better,'en').then(()=>b.classList.remove('on')); };
+        nsay(d.better).then(()=>b.classList.remove('on')); };
 
       box.appendChild(b);
 
@@ -7755,7 +7758,7 @@ function showSession(se){
 
         p.onclick = () => { unlockTTS(); p.classList.add('on');
 
-          say(_old.better,'en').then(()=>p.classList.remove('on')); };
+          nsay(_old.better).then(()=>p.classList.remove('on')); };
 
         box.appendChild(p);
 
@@ -8557,7 +8560,7 @@ function showBook(){
 
       b.onclick = () => { unlockTTS(); b.classList.add('on');
 
-        say(x.better,'en').then(()=>b.classList.remove('on')); };
+        nsay(x.better).then(()=>b.classList.remove('on')); };
 
       box.appendChild(b);
 
@@ -10647,7 +10650,7 @@ function openRead(c){
 
   sp.onclick = () => { unlockTTS(); sp.classList.add('on');
 
-    say(c.en, 'en').then(() => sp.classList.remove('on')); };
+    nsay(c.en).then(() => sp.classList.remove('on')); };
 
   box.appendChild(sp);
 
@@ -12313,7 +12316,7 @@ function openEssay(c){
 
   sp.onclick = () => { unlockTTS(); sp.classList.add('on');
 
-    say((c.en || '').replace(/\n+/g, ' '), 'en')
+    nsay((c.en || '').replace(/\n+/g, ' '))
 
       .then(() => sp.classList.remove('on')); };
 
@@ -15513,7 +15516,7 @@ function bindPolishResult(p, live, cut){
 
   /* 🚨 原来这里不传 lang，等于用浏览器默认嗓子念，他在设置里选的 Samantha 白选了。
      pickVoice 现在会把不传当成 'en'，这里也显式写上（两道都补，别只补一道）。 */
-  on('polspeak', () => { try { say(p.draft, 'en'); } catch(_){ toast('这台设备念不了'); } });
+  on('polspeak', () => { try { nsay(p.draft); } catch(_){ toast('这台设备念不了'); } });
   on('polcopy', async () => {
     try { await navigator.clipboard.writeText(p.draft || ''); toast('复制好了'); }
     catch(_){ toast('复制不了，长按选中吧'); }
@@ -18535,6 +18538,8 @@ function wordCard(e){
       esc(e.ipa) + '</div>' : '');
   box.appendChild(head);
   box.appendChild(playBtn(e.w || e.q, '🔊 读一遍'));
+  /* 主词条不走 rowsBlock，所以这两颗键要单独挂一次（Kevin 2026-08-24） */
+  box.appendChild(miniBtns(e.w || e.q, '', box));
   const yg = youglish(e.w || e.q);
   if (yg) box.appendChild(yg);
   box.appendChild(bookRow(e));
@@ -18553,6 +18558,184 @@ function defsBlock(e){
 }
 
 /* 搭配和近义都是「一行一条、每条能单独收」，长得一样，所以共用一个渲染。 */
+/* ═══ 查词：复制 / 进一步修改（Kevin 2026-08-24）═══════════
+   🚨 做成**一个** miniBtns()，不在搭配/口语/近义/主词条各写一套 ——
+      今天已经为「同一条规矩漏在不同出口」返工四轮了（Andrew 那件事）。 */
+
+/* 📋 复制。iOS 上 `writeText` 要安全上下文 + 焦点 + 用户手势，**真会被拒**
+   （08-21 实测 NotAllowedError）。被拒时退回「把这句选中」，
+   让系统自己的「拷贝」菜单接手 —— 比弹一句「复制失败」有用。 */
+async function copyText(txt, btn){
+  const s = String(txt || '').trim();
+  if (!s) return;
+  const old = btn ? btn.textContent : '';
+  try {
+    await navigator.clipboard.writeText(s);
+    if (btn){ btn.textContent = '✓ 已复制'; setTimeout(() => { btn.textContent = old; }, 1400); }
+    toast('复制好了', 1500);
+    return;
+  } catch(_){}
+  try {
+    const sp = document.createElement('span');
+    sp.textContent = s;
+    sp.style.cssText = 'position:fixed;left:8px;right:8px;bottom:70px;padding:10px;'
+      + 'background:var(--card);border:2px solid var(--brand-dark);border-radius:10px;'
+      + 'z-index:99;-webkit-user-select:text;user-select:text;font-size:15px';
+    document.body.appendChild(sp);
+    const r = document.createRange(); r.selectNodeContents(sp);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    toast('已选中，长按选「拷贝」', 3200);
+    setTimeout(() => { try { sp.remove(); } catch(__){} }, 12000);
+  } catch(__){ toast('复制不了，长按这句试试'); }
+}
+
+/* ✏️ 进一步修改：他说需求 → Alex 按需求把这条再改一轮。
+   🚨 结果**就地展开、原句留着** —— 他要的是对照，不是替换掉。
+      改完还能接着改（把上一轮的结果当新的起点）。 */
+function tweakPrompt(en, want, ctx){
+  return [
+    '你是 Alex —— 他的英语陪练。他查到了一个表达，现在要按自己的需求改一版。',
+    '',
+    '原表达：' + en,
+    (ctx ? '这是查「' + ctx + '」时给他的。' : ''),
+    '',
+    '他的要求（原话）：' + want,
+    '',
+    '🚨 严格按他的要求改，别自作主张往别的方向带。',
+    '🚨 给**两个**版本让他挑，两版要真的不一样（不是换两个同义词）。',
+    '🚨 `why` 用中文一句话说清**为什么这么改更贴他的要求** —— 不是「更地道」这种空话。',
+    '',
+    '只输出一个 JSON，不要 markdown 围栏、不要别的话:',
+    '{',
+    ' "v1":{"en":"第一版，英文","name":"给它起个 2-6 字的中文名"},',
+    ' "v2":{"en":"第二版，英文","name":"同上"},',
+    ' "why":"中文一句话：为什么这么改贴他的要求",',
+    ' "note":"中文，可选：用的时候要注意什么；没有就给空串"',
+    '}'
+  ].filter(Boolean).join('\n');
+}
+
+function tweakBad(j){
+  const bad = [];
+  const w = s => (String(s || '').match(/[A-Za-z']+/g) || []).length;
+  if (!j || typeof j !== 'object') return ['没解析出 JSON'];
+  ['v1', 'v2'].forEach(k => {
+    const v = j[k] || {};
+    if (!String(v.en || '').trim()) bad.push(k + ' 没给英文');
+    else if (w(v.en) < 2) bad.push(k + ' 只有 ' + w(v.en) + ' 词，不像一个版本');
+    else if (/[\u4e00-\u9fa5]/.test(v.en)) bad.push(k + ' 的英文里混了中文');
+    if (!String(v.name || '').trim()) bad.push(k + ' 没给版本名');
+  });
+  /* 🚨 两版不许换汤不换药 —— 判据照 chatCritBad 那条（**长度相仿且词重合高**
+     两个条件同时成立才算），别只看 containment：短句里「更短那版」天然是子集。 */
+  const a = new Set((String((j.v1 || {}).en || '').toLowerCase().match(/[a-z']+/g) || []));
+  const b = new Set((String((j.v2 || {}).en || '').toLowerCase().match(/[a-z']+/g) || []));
+  if (a.size >= 4 && b.size >= 4){
+    const inter = [...b].filter(x => a.has(x)).length;
+    const cont = inter / b.size;
+    const ratio = Math.min(a.size, b.size) / Math.max(a.size, b.size);
+    if (cont > 0.85 && ratio > 0.85) bad.push('两版几乎是同一句');
+  }
+  if (!String(j.why || '').trim()) bad.push('没说为什么这么改');
+  else if (/^(更地道|更自然|更好|更专业|更准确)[。.]?$/.test(String(j.why).trim()))
+    bad.push('why 是空话，要说清为什么贴他的要求');
+  return bad;
+}
+
+async function tweakAsk(en, want, ctx){
+  let last = '';
+  for (let i = 0; i < 3; i++){
+    let j = null;
+    try { j = firstJson(await textCall(tweakPrompt(en, want, ctx)
+      + (last ? '\n' + '\n' + '🚨 上一次被判废了：' + last + '，这次避开。' : ''), 0.5)); }
+    catch(e){ last = e.message || String(e); continue; }
+    const bad = tweakBad(j);
+    if (!bad.length) return j;
+    last = bad.join('；');
+  }
+  throw new Error(last || '改不出来');
+}
+
+/* 一行的两颗小键：📋 复制 / ✏️ 进一步修改。
+   `host` 是这一行的容器，改完的结果就展开在它底下。 */
+function miniBtns(en, ctx, host){
+  const wrap = document.createElement('span');
+  const mk = (txt, title) => {
+    const b = document.createElement('button');
+    b.className = 'rchip';
+    b.style.cssText = 'font-size:12px;padding:4px 10px;margin:6px 6px 0 0';
+    b.textContent = txt; b.title = title || '';
+    return b;
+  };
+  const cp = mk('📋 复制', '复制这一条');
+  cp.onclick = ev => { ev.stopPropagation(); copyText(en, cp); };
+  wrap.appendChild(cp);
+
+  const tw = mk('✏️ 进一步修改', '跟 Alex 说你的要求，让他再改一轮');
+  tw.onclick = ev => {
+    ev.stopPropagation();
+    if (host.querySelector('.tweakbox')) {         // 再点一次收起来
+      host.querySelector('.tweakbox').remove();
+      return;
+    }
+    const box = document.createElement('div');
+    box.className = 'tweakbox';
+    box.style.cssText = 'margin-top:8px;padding:10px;border-radius:10px;'
+      + 'background:var(--surface);border:1px solid var(--line-strong)';
+    box.innerHTML =
+      '<div class="t" style="color:var(--muted);margin-bottom:6px">'
+      + '想怎么改？用大白话说，比如「更客气一点」「用在邮件里」「短一点」'
+      + '「不要这么书面」</div>'
+      + '<textarea rows="2" style="width:100%;box-sizing:border-box;padding:9px;'
+      + 'border-radius:9px;border:1px solid var(--line-strong);background:var(--card);'
+      + 'color:inherit;font-size:15px;font-family:inherit;resize:vertical"></textarea>'
+      + '<button class="btn" style="width:100%;margin-top:8px">让 Alex 改一版</button>'
+      + '<div class="tw-out" style="margin-top:8px"></div>';
+    host.appendChild(box);
+    const ta = box.querySelector('textarea');
+    const go2 = box.querySelector('button');
+    const out = box.querySelector('.tw-out');
+    ta.focus();
+    const run = async () => {
+      const want = String(ta.value || '').trim();
+      if (!want) return toast('先说说你想怎么改');
+      go2.disabled = true; go2.textContent = 'Alex 在改…';
+      out.innerHTML = '';
+      try {
+        const j = await tweakAsk(en, want, ctx);
+        /* 🚨 原句**留着**不动 —— 他要的是对照。结果展开在下面。 */
+        const ver = v =>
+          '<div style="margin-top:8px;padding-left:8px;'
+          + 'border-left:3px solid var(--brand-dark)">'
+          + '<div style="font-size:12px;color:var(--brand-dark);font-weight:800">'
+          + esc(v.name || '版本') + '</div>'
+          + '<div class="en" style="font-size:15px;line-height:1.5" data-say="'
+          + esc(v.en) + '">' + esc(v.en) + '</div></div>';
+        out.innerHTML = ver(j.v1) + ver(j.v2)
+          + '<div class="t" style="margin-top:8px;color:var(--muted)">'
+          + esc(j.why || '') + '</div>'
+          + (j.note ? '<div class="sit" style="margin-top:4px">' + esc(j.note) + '</div>' : '');
+        /* 每一版都能再复制、再改一轮（拿它当新的起点）—— 走同一个 miniBtns。 */
+        [j.v1, j.v2].forEach((v, i) => {
+          const row = out.children[i];
+          if (row) row.appendChild(miniBtns(v.en, ctx, row));
+        });
+        bindSay(out);                              // 🚨 画了就要绑，否则点了不出声
+      } catch(e){
+        out.innerHTML = '<div class="warn">没改出来：'
+          + esc(String(e.message || e).slice(0, 60))
+          + '<br>换个说法再试一次。</div>';
+      } finally { go2.disabled = false; go2.textContent = '让 Alex 改一版'; }
+    };
+    go2.onclick = run;
+    ta.onkeydown = ev2 => {
+      if (ev2.key === 'Enter' && (ev2.metaKey || ev2.ctrlKey)){ ev2.preventDefault(); run(); }
+    };
+  };
+  wrap.appendChild(tw);
+  return wrap;
+}
+
 function rowsBlock(title, items, mkRec, render){
   if (!items.length) return null;
   const card = dSec(title, '');
@@ -18561,6 +18744,9 @@ function rowsBlock(title, items, mkRec, render){
     row.style.marginTop = (i ? 12 : 4) + 'px';
     row.innerHTML = render(it);
     row.appendChild(saveMini(mkRec(it)));
+    /* 📋 复制 / ✏️ 进一步修改 —— 挂在这里，搭配/口语/近义/例句一次全有
+       （他 2026-08-24 要的两个功能）。 */
+    { const rec = mkRec(it); row.appendChild(miniBtns(rec.w || rec.q, rec.from || '', row)); }
     card.appendChild(row);
   });
   return card;
@@ -18613,6 +18799,7 @@ function zhCard(e){
     (e.why ? '<div class="sit" style="margin-top:4px">' + esc(e.why) + '</div>' : '');
   if (e.pick){
     box.appendChild(playBtn(e.pick, '🔊 读一遍'));
+    box.appendChild(miniBtns(e.pick, e.q || '', box));   // 复制 / 进一步修改
     /* 推荐那句在下面的候选里还会再出现一次 —— 两个键指的是同一条记录，
        靠 redrawDict() 保持一致（各自 paint 必然一个✓一个☆）。 */
     const cs = Array.isArray(e.cands) ? e.cands : [];
@@ -18632,6 +18819,7 @@ function zhCard(e){
         esc(e.spokenWhy) + '</div>' : '');
     box.appendChild(sp);
     box.appendChild(playBtn(e.spokenPick, '🔊 读一遍'));
+    box.appendChild(miniBtns(e.spokenPick, e.q || '', box));
     const cs2 = Array.isArray(e.cands) ? e.cands : [];
     const hit2 = cs2.find(c => c && c.en && ENORM(c.en) === ENORM(e.spokenPick)) ||
                  {en: e.spokenPick, cn: e.spokenWhy, reg: '口语'};
@@ -18655,10 +18843,37 @@ function candsBlock(e){
 }
 
 /* 点任意英文片段就念一遍 —— 查词的人多半也想听发音，别让他去找按钮。 */
+/* 🚨 查词页大部分可点文字走这里 —— 他 2026-08-21 说的「从查单词进去还是
+   机器声音」就是它：原来直接 `say(...,'en')`，绕开了 Andrew。
+   同一条规矩这是第四次漏在出口上（前三次：playBtn / data-chatsay / nsay 兜底）。
+
+   顺手把「再点一次 = 停」也带上：这些是文字不是按钮、没法换图标，
+   所以用 `.on` 这个 class 给可见状态。 */
 function bindSay(root){
   root.querySelectorAll('[data-say]').forEach(el => {
     el.style.cursor = 'pointer';
-    el.onclick = () => say(el.dataset.say, 'en');
+    const txt = el.dataset.say;
+    const key = 'say:' + String(txt || '').slice(0, 60);
+    el.onclick = async () => {
+      if (AUDIO.key === key){ audioStop(); el.classList.remove('on'); return; }
+      /* 点下去那一刻就认领通道 —— nsay 要 await 合成，不先认领的话
+         这一两秒内再点会变成又播一遍（录音键那次实测过）。 */
+      audioClaim(key, () => { try { _ttsEl && _ttsEl.pause(); } catch(_){}
+                              try { if (window.speechSynthesis) speechSynthesis.cancel(); }
+                              catch(_){} });
+      el.classList.add('on');
+      try { await nsay(txt, key); } catch(_){}
+      const iv = setInterval(() => {
+        const a = _ttsEl;
+        if (AUDIO.key !== key ||
+            (a && a.src && (a.ended || (a.paused && a.currentTime > 0)))){
+          clearInterval(iv);
+          if (AUDIO.key === key) audioStop();
+          el.classList.remove('on');
+        }
+      }, 400);
+      setTimeout(() => { clearInterval(iv); el.classList.remove('on'); }, 60000);
+    };
   });
 }
 
