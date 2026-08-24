@@ -17288,7 +17288,7 @@ function chatBindCrit(ctx){
       const e = subEntry(en, t.alex_zh || '', {from: '闲聊 · ' + (ctx.topic || '')});
       const r = nbAdd(e, bookFor(e));
       if (r === 'full') return toast('本子满了或存不下');
-      toast(r === 'same' ? '移到另一本了' : r === 'moved' ? '移到另一本了' : '收好了 ★');
+      toast(r === 'same' ? '已经在本子里' : '收好了 ★');
       /* 🚨 整块重画、保留滚动位置 —— 查词那边踩过：各自 paint 的话
          同一个表达出现两处时必然一个显 ★ 一个显 ☆。 */
       repaint();
@@ -17739,7 +17739,18 @@ const NB_LS  = 'alex_nb';          // 本子
 const DCACHE = 'alex_dict_cache';  // 查过的词条（省额度，也让离线能翻）
 const DHIST  = 'alex_dict_hist';   // 最近查过什么
 const NB_MAX = 500, DC_MAX = 120, DH_MAX = 24;
-const BOOKS  = {word:'单词本', pro:'专业表达本'};
+/* 🚨 2026-08-24 合并成一个本子。Kevin：「单词本和专业表达本这么分开没有任何意义，
+   合在一起吧。反正到时候支持用语义搜索，我想搜什么表达，它就会在我的历史记录里
+   找到当时我收藏的表达。」
+
+   他说得对，而且**那个分类是我强加的**：每收一条都得先回答「这算词还是算表达」，
+   而这个答案从来没被用来做过任何事 —— 复习、搜索、回看都不看它。
+
+   🚨 `BOOKS` 留成一张表而不是删掉，是因为老记录里 `book` 还是 'word' / 'pro'，
+      `BOOKS[rec.book]` 这类读法得有个兜底。**不做数据迁移** ——
+      迁移要全量写回，中途失败就是半套数据，而这件事不值得冒那个险。 */
+const NB_ONE = 'all';
+const BOOKS  = {all:'我的本子', word:'我的本子', pro:'我的本子'};
 
 const normQ = s => String(s == null ? '' : s).trim().replace(/\s+/g, ' ');
 const qId   = s => normQ(s).toLowerCase();
@@ -18264,7 +18275,7 @@ function pastePaint(){
     '<button id="pastekeep" class="btn" style="width:100%;margin-top:14px">' +
       '收下勾选的 ' + n + ' 条</button>' +
     '<div class="t" style="margin-top:6px;color:var(--muted)">' +
-      '单个词进单词本、多词进专业表达本 —— 跟查词收藏同一套规则。</div>' +
+      '直接进你的本子，跟查词收藏同一个地方。</div>' +
   '</div>';
 
   const repaint = () => { const y = window.scrollY; pastePaint(); window.scrollTo(0, y); };
@@ -18693,7 +18704,8 @@ function nbSave(list){
   catch(_){ return false; }
 }
 const nbFind  = id => nbAll().find(x => x.id === id) || null;
-const nbCount = bk => nbAll().filter(x => x.book === bk).length;
+/* 一个本子了，参数留着不用（调用点没改） */
+const nbCount = () => nbAll().length;
 
 /* 收进本子。返回 'added' | 'moved' | 'same' | 'full'。
    🚨 同一个词再点一次不是「取消收藏」，是「换个本子」—— 词典跟阅读收藏夹不一样，
@@ -18706,9 +18718,10 @@ function nbAdd(e, book, today){
   const i = list.findIndex(x => x.id === id);
   const day = today || TODAY();
   if (i >= 0){
-    if (list[i].book === book) return 'same';
-    list[i].book = book;
-    return nbSave(list) ? 'moved' : 'full';
+    /* 🚨 只有一个本子了，「移到另一本」这个动作不存在 —— 再点一次就是「已经在里面」。
+       顺手把老记录的 book 归一到 NB_ONE（读的时候不依赖它，但归一了更干净）。 */
+    if (list[i].book !== NB_ONE){ list[i].book = NB_ONE; nbSave(list); }
+    return 'same';
   }
   list.unshift({id: id, q: normQ(e.q || e.w), kind: e.kind || kindOf(e.q || e.w),
                 book: book, e: e, on: day,
@@ -18765,8 +18778,10 @@ function mergeNb(cur, inc){
 
 /* 收进哪一本按**英文那一面**判：中文查询看推荐的那句，其余看词条本身。
    （中文条目本身没有「是不是一个词」这回事，拿它判会全都掉进专业表达本。） */
-const bookFor = e => defaultBook(kindOf(
-  (e && e.kind === 'zh') ? (e.pick || e.q || e.w || '') : ((e && (e.q || e.w)) || '')));
+/* 🚨 恒返回同一本。保留这个函数是为了**不动它的十几个调用点** ——
+   合并的语义变化只发生在这一处，其余地方读到的都是「收进本子」。
+   （原来它按「单个词 / 多词」分流，那条规则连同 defaultBook 一起作废。） */
+const bookFor = () => NB_ONE;
 
 /* 一条搭配 / 一个近义词 → 本子里的完整一条。
    🚨 存的是自带释义和例句的一份，不是指向原词条的引用 ——
@@ -19208,9 +19223,7 @@ function doSave(e, bk){
   if (!e) return;
   const r = nbAdd(e, bk);
   if (r === 'full') return toast('存不下了（浏览器存储满），先去本子里删几条', 3200);
-  toast(r === 'moved' ? '移到' + BOOKS[bk] + '了'
-      : r === 'same'  ? '已经在' + BOOKS[bk] + '里'
-      : '收进' + BOOKS[bk] + '了');
+  toast(r === 'same' ? '已经在本子里' : '收进本子了');
   redrawDict(); refreshDictTop();
 }
 
@@ -19224,7 +19237,7 @@ function saveMini(e){
   const b = document.createElement('button');
   b.className = 'rchip' + (rec ? ' on' : '');
   b.style.cssText = 'font-size:12px;padding:4px 10px;margin-top:6px';
-  b.textContent = rec ? '✓ 已在' + BOOKS[rec.book] : '☆ 收进本子';
+  b.textContent = rec ? '✓ 已在本子里' : '☆ 收进本子';
   b.onclick = ev => {
     ev.stopPropagation();
     if (rec){
@@ -19252,19 +19265,18 @@ function bookRow(e){
   const rec = nbFind(id);
   const lab = document.createElement('span');
   lab.style.cssText = 'font-size:12px;color:var(--muted);font-weight:700';
-  lab.textContent = rec ? '已在' + BOOKS[rec.book] : '收进';
+  /* 🚨 一个本子了：原来这儿是一排「收进单词本 / 收进专业表达本」，
+     逼他每次选一次。现在一颗。 */
+  lab.textContent = rec ? '已在' : '收进';
   row.appendChild(lab);
-  const order = [bookFor(e)];
-  Object.keys(BOOKS).forEach(k => { if (order.indexOf(k) < 0) order.push(k); });
-  order.forEach(bk => {
+  {
     const b = document.createElement('button');
-    const on = !!(rec && rec.book === bk);
-    b.className = 'rchip' + (on ? ' on' : '');
+    b.className = 'rchip' + (rec ? ' on' : '');
     b.style.cssText = 'font-size:12.5px;padding:5px 12px;margin:0';
-    b.textContent = (on ? '✓ ' : '') + BOOKS[bk];
-    b.onclick = ev => { ev.stopPropagation(); doSave(e, bk); };
+    b.textContent = (rec ? '✓ ' : '') + '我的本子';
+    b.onclick = ev => { ev.stopPropagation(); doSave(e, NB_ONE); };
     row.appendChild(b);
-  });
+  }
   if (rec){
     const d = document.createElement('button');
     d.className = 'rchip';
@@ -19414,7 +19426,16 @@ async function tweakAsk(en, want, ctx){
 
 /* 一行的两颗小键：📋 复制 / ✏️ 进一步修改。
    `host` 是这一行的容器，改完的结果就展开在它底下。 */
-function miniBtns(en, ctx, host){
+/* 三件套：📋 复制 / ✏️ 进一步修改 / ☆ 收进本子。
+   🚨 `rec` 是要存进本子的那条记录（`subEntry(...)`）。**不传也会自己造一条** ——
+      Kevin 2026-08-24 撞到的就是这个：「进一步修改」改出来的版本挂的是
+      miniBtns，而当时 miniBtns 里没有 ☆，于是他按自己的要求改完一版
+      **存不下来，等于白改**。☆ 当时只加在 rowsBlock 里，覆盖不到这条路。
+
+   所以现在把 ☆ 并进来，让三件套不可分：以后凡是给他一条表达的地方，
+   调 miniBtns 就三样齐全，漏不掉。这是同一个病的第五次
+   （同一条规矩漏在某个出口上），今天已经为它返工过四轮。 */
+function miniBtns(en, ctx, host, rec){
   const wrap = document.createElement('span');
   const mk = (txt, title) => {
     const b = document.createElement('button');
@@ -19489,6 +19510,15 @@ function miniBtns(en, ctx, host){
     };
   };
   wrap.appendChild(tw);
+
+  /* ☆ 收进本子。没给 rec 就地造一条 —— tweak 改出来的版本没有现成记录，
+     但它跟查词条目一样该能进本子、能复习。
+     `from` 记住它是从哪条改出来的，本子里看得到来路。 */
+  const r = rec || (typeof subEntry === 'function'
+    ? subEntry(en, '', {pos: '', from: ctx || '', reg: ''})
+    : null);
+  if (r && typeof saveMini === 'function') wrap.appendChild(saveMini(r));
+
   return wrap;
 }
 
@@ -19499,10 +19529,10 @@ function rowsBlock(title, items, mkRec, render){
     const row = document.createElement('div');
     row.style.marginTop = (i ? 12 : 4) + 'px';
     row.innerHTML = render(it);
-    row.appendChild(saveMini(mkRec(it)));
-    /* 📋 复制 / ✏️ 进一步修改 —— 挂在这里，搭配/口语/近义/例句一次全有
-       （他 2026-08-24 要的两个功能）。 */
-    { const rec = mkRec(it); row.appendChild(miniBtns(rec.w || rec.q, rec.from || '', row)); }
+    /* 🚨 ☆ 由 miniBtns 一起给（三件套），别在这儿再挂一颗 —— 挂了就是一行两颗星。
+       记录还是 `mkRec(it)`，跟以前一模一样，只是换了个地方挂。 */
+    { const rec = mkRec(it);
+      row.appendChild(miniBtns(rec.w || rec.q, rec.from || '', row, rec)); }
     card.appendChild(row);
   });
   return card;
@@ -19667,11 +19697,11 @@ function askCard(e){
         + (x.cn ? '<div class="sit" style="margin-top:3px">' + esc(x.cn) + '</div>' : '')
         + (x.eg ? '<div style="margin-top:4px;font-size:13.5px;color:var(--muted)" '
                 + 'data-say="' + esc(x.eg) + '">' + esc(x.eg) + '</div>' : '');
-      /* ☆ 收进本子：走 subEntry，跟查词那边同一套记录格式，
-         这样它在「我的本子」里跟别的条目长得一样、也能复习。 */
-      row.appendChild(saveMini(subEntry(x.en, x.cn || '',
-        {pos: '表达', from: e.q || '', eg: x.eg || ''})));
-      row.appendChild(miniBtns(x.en, e.q || '', row));   // 📋 复制 / ✏️ 进一步修改
+      /* 📋 复制 / ✏️ 进一步修改 / ☆ 收进本子 —— 三件套一次给全。
+         🚨 ☆ 交给 miniBtns，别在这儿再挂一颗（挂了就是一行两颗星）；
+            记录仍是 subEntry，跟查词那边同一套格式，本子里长得一样、能复习。 */
+      row.appendChild(miniBtns(x.en, e.q || '', row,
+        subEntry(x.en, x.cn || '', {pos: '表达', from: e.q || '', eg: x.eg || ''})));
       box.appendChild(row);
     });
 
@@ -19758,8 +19788,11 @@ function showAllFav(){
   const q = String((FAVQ.q || '')).trim().toLowerCase();
   const hit = s => !q || String(s || '').toLowerCase().indexOf(q) >= 0;
 
-  const word = nb.filter(x => x.book === 'word' && (hit(x.q) || hit(x.w)));
-  const pro  = nb.filter(x => x.book === 'pro'  && (hit(x.q) || hit(x.w)));
+  /* 🚨 一个本子了 —— 不再按 book 分栏。
+     **也不能按 book 过滤**：老记录里还是 'word' / 'pro'，过滤掉就等于
+     他以前收的东西凭空消失。 */
+  const word = nb.filter(x => hit(x.q) || hit(x.w));
+  const pro  = [];
   const rd   = kp.filter(c => hit(c.en) || hit(c.zh));
 
   const sec = (title, n, items, render, jump, jumpTxt) =>
@@ -19785,10 +19818,8 @@ function showAllFav(){
       'style="width:100%;box-sizing:border-box;padding:10px;border-radius:10px;' +
       'border:1px solid var(--line-strong);background:var(--surface);' +
       'color:inherit;font-size:15px;margin-bottom:12px">' +
-    sec('📗 单词本', word.length, word.slice(0, 12),
-        x => line(x.q || x.w, (x.e && x.e.from) || ''), 'word', '打开单词本 →') +
-    sec('📘 专业表达本', pro.length, pro.slice(0, 12),
-        x => line(x.q || x.w, (x.e && x.e.from) || ''), 'pro', '打开专业表达本 →') +
+    sec('📗 我的本子', word.length, word.slice(0, 12),
+        x => line(x.q || x.w, (x.e && x.e.from) || ''), NB_ONE, '打开本子 →') +
     sec('📄 阅读收藏', rd.length, rd.slice(0, 12),
         c => line(c.en, c.zh || ''), 'read', '打开阅读收藏 →') +
     ((word.length > 12 || pro.length > 12 || rd.length > 12)
@@ -19817,15 +19848,16 @@ function showNotebook(){
   const f = $('#feed');
   $('#sub').textContent = '你自己攒的词和表达';
   const all = nbAll();
-  const mine = all.filter(x => x.book === DICT.book);
+  const mine = all;
   const due = revDue(mine);
   const q = (DICT.fq || '').trim().toLowerCase();
   const pool = mine.filter(x => !q ||
     x.q.toLowerCase().indexOf(q) >= 0 ||
     JSON.stringify(x.e || {}).toLowerCase().indexOf(q) >= 0);
 
-  const bkChip = k => '<button class="rchip' + (DICT.book === k ? ' on' : '') +
-    '" data-nbk="' + k + '">' + BOOKS[k] + ' ' + nbCount(k) + '</button>';
+  /* 一个本子了：这里不再是「选哪一本」，只是显示总数。 */
+  const bkChip = () => '<button class="rchip on" data-nbk="' + NB_ONE + '">'
+    + '📗 我的本子 ' + nbCount() + '</button>';
 
   f.innerHTML = dictTop() +
     '<div class="tabs" style="margin-bottom:10px">' + bkChip('word') + bkChip('pro') +
@@ -19835,7 +19867,7 @@ function showNotebook(){
       '</div>' +
     (all.length ? '' :
       '<div class="note">本子还是空的。<br><br>去「查词」查一个词或表达，' +
-      '结果下面就有「收进单词本 / 收进专业表达本」。<br><br>' +
+      '结果下面就有「☆ 收进本子」。<br><br>' +
       '在阅读的范文里长按选中一段文字，浮条上也有「🔍 查这个」。<br><br>' +
       '也可以把 Gemini / 豆包给你的整段回答贴进来 —— 上面那颗「📋 粘贴导入」。</div>') +
     (mine.length ? (
@@ -19910,7 +19942,7 @@ function openNb(id){
   const f = $('#feed');
   f.innerHTML = '';
   if (!rec){ f.innerHTML = '<div class="note">这一条已经不在本子里了。</div>'; return; }
-  $('#sub').textContent = BOOKS[rec.book] + ' · 收于 ' + (rec.on || '');
+  $('#sub').textContent = '我的本子 · 收于 ' + (rec.on || '');
   const res = document.createElement('div');
   res.id = 'dres';
   f.appendChild(res);
@@ -19930,7 +19962,7 @@ function openNb(id){
 const REV = {q: [], i: 0, flip: false, ok: 0, no: 0};
 
 function startReview(due){
-  const list = (due && due.length ? due : revDue(nbAll().filter(x => x.book === DICT.book)));
+  const list = (due && due.length ? due : revDue(nbAll()));
   if (!list.length) return toast('今天没有要复习的');
   /* 一次最多 20 条 —— 一屏一屏点得完才有人真的做完 */
   REV.q = list.slice(0, 20).map(x => x.id);
@@ -19943,7 +19975,7 @@ function showReview(){
   f.innerHTML = '';
   if (REV.i >= REV.q.length){
     $('#sub').textContent = '复习完了';
-    const left = revDue(nbAll().filter(x => x.book === DICT.book)).length;
+    const left = revDue(nbAll()).length;
     f.innerHTML = '<div class="better"><div class="lb">今天这一轮</div>' +
       '<div style="font-size:15px;line-height:1.8;margin-top:4px">记住 ' + REV.ok +
       ' 条 · 再练 ' + REV.no + ' 条</div>' +
@@ -20046,7 +20078,7 @@ function showReview(){
 
 /* 「再来一轮」：不进栈，就地换一批。 */
 function startReviewInPlace(){
-  const list = revDue(nbAll().filter(x => x.book === DICT.book));
+  const list = revDue(nbAll());
   REV.q = list.slice(0, 20).map(x => x.id);
   REV.i = 0; REV.flip = false; REV.ok = 0; REV.no = 0;
   showReview();
