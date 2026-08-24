@@ -6058,36 +6058,67 @@ async function showMyRecs(){
   f.innerHTML = sessTopTabs() + '<div class="note">正在读…</div>';
   bindSessTop();
   await sessSweep();                    // 顺手清过期音频（只清音频，文字留着）
-  const list = await sessList();
-  $('#sub').textContent = list.length ? '练过的每一场都在这儿，可以接着说'
+  /* 🚨 两种记录**合并成一条时间线**（Kevin 2026-08-24：「为什么要搞这么多聊天记录？
+     能找个地方统一收纳在一起吗？不要搞得到处都是」）。
+     在这之前：按题卡练的记录在这一屏，闲聊的记录在对话页底下 ——
+     **分两个地方存、分两个地方显示**，那就是「到处都是」的来源。
+     现在这一屏是唯一的入口；每行标出是哪一种，点进去各回各的详情。 */
+  const drills = (await sessList()).map(s => ({
+    kind: 'drill', id: s.id, on: s.on || '', raw: s,
+    title: (s.scn && s.scn.t) || '一场练习',
+    sub: ((s.scn && s.scn.sit) || '').slice(0, 60),
+    meta: s.turns.length + ' 轮 · ' + Math.max(1, Math.round((s.sec || 0) / 60)) + ' 分钟'
+        + ((s.breaks || 0) ? ' · ' + s.breaks + ' 处要改' : ' · 没破戏')
+        + (s.turns.some(t2 => t2.audio) ? ' · 🎙 有原声' : ''),
+  }));
+  const chats = (await chatList()).map(r => {
+    const sm = chatSummary(r);
+    /* 🚨 没标题时用**那一场的场合名**兜底，不写死「闲聊」——
+       场合是参数（2026-08-21 重构），标题写死就等于退回「闲聊是个模块」那套。 */
+    const occNm = ((OCCASIONS.find(o => o.k === r.occ) || {}).nm) || '对话';
+    return {kind: 'chat', id: r.id, on: r.on || '', raw: r,
+            title: String(r.topic || occNm).slice(0, 40),
+            sub: '',
+            meta: sm.n + ' 轮'
+                + (sm.lv.error ? ' · ' + sm.lv.error + ' 处要改' : ' · 没说错')
+                + (sm.lv.polish ? ' · ' + sm.lv.polish + ' 处能更自然' : '')};
+  });
+  /* 按日期倒序合并。`on` 是 YYYY-MM-DD，字符串比较就是时间序。 */
+  const list = drills.concat(chats).sort((a, b) => String(b.on).localeCompare(String(a.on)));
+  $('#sub').textContent = list.length ? '练过、聊过的都在这儿，可以接着说'
                                       : '还没有记录';
   if (!list.length){
     f.innerHTML = sessTopTabs() +
-      '<div class="note">还没有练习记录。<br><br>' +
-      '去「练习」说上一轮，这里就会留下：<b>你当时说的原声</b>、' +
+      '<div class="note">还没有记录。<br><br>' +
+      '去「对话」聊一场或者按题卡练一轮，这里就会留下：<b>你当时说的原声</b>、' +
       '转写、对方怎么接的、以及 Alex 指出的问题和更精的说法。<br>' +
       '而且随时可以从这儿<b>接着那一场继续说</b>。</div>';
     bindSessTop();
     return;
   }
-  f.innerHTML = sessTopTabs() + list.map(s => {
-    const brk = s.breaks || 0;
-    const mins = Math.max(1, Math.round((s.sec || 0) / 60));
-    return '<div class="card" data-sid="' + esc(s.id) + '"><div class="hd">' +
-      '<span class="ct" style="font-size:11.5px;color:var(--brand-dark);' +
-      'font-weight:800">' + esc((s.scn && s.scn.t) || '一场练习') + '</span>' +
-      '<span class="done">' + esc(s.on) + '</span></div>' +
-      '<div class="sit" style="margin-top:4px">' +
-      esc(((s.scn && s.scn.sit) || '').slice(0, 60)) + '</div>' +
-      '<div class="t" style="margin-top:6px">' + s.turns.length + ' 轮 · ' +
-      mins + ' 分钟' + (brk ? ' · ' + brk + ' 处要改' : ' · 没破戏') +
-      (s.turns.some(t => t.audio) ? ' · 🎙 有原声' : '') + '</div></div>';
-  }).join('');
+  /* 每行标出是哪一类 —— 合并之后不标就分不清这一场是练的还是聊的。 */
+  const badge = k => k === 'chat'
+    ? '<span class="rchip" style="padding:1px 7px;font-size:11px;margin-right:6px">💬 闲聊</span>'
+    : '<span class="rchip" style="padding:1px 7px;font-size:11px;margin-right:6px">📋 题卡</span>';
+  f.innerHTML = sessTopTabs() + list.map(s =>
+    '<div class="card" data-rid="' + esc(s.id) + '" data-rkind="' + s.kind + '">' +
+      '<div class="hd">' + badge(s.kind) +
+        '<span class="ct" style="font-size:11.5px;color:var(--brand-dark);' +
+        'font-weight:800">' + esc(s.title) + '</span>' +
+        '<span class="done">' + esc(s.on) + '</span></div>' +
+      (s.sub ? '<div class="sit" style="margin-top:4px">' + esc(s.sub) + '</div>' : '') +
+      '<div class="t" style="margin-top:6px">' + esc(s.meta) + '</div></div>').join('');
   bindSessTop();
-  document.querySelectorAll('#feed .card[data-sid]').forEach(el =>
+  document.querySelectorAll('#feed .card[data-rid]').forEach(el =>
     el.onclick = async () => {
-      const s = await sessGet(el.dataset.sid);
-      if (s) go(() => showOneRec(s), '这一场');
+      const id = el.dataset.rid;
+      if (el.dataset.rkind === 'chat'){
+        const r = await chatGet(id);
+        if (r) go(() => showChatRec(r), '这一场');
+      } else {
+        const s = await sessGet(id);
+        if (s) go(() => showOneRec(s), '这一场');
+      }
     });
 }
 
@@ -16589,14 +16620,24 @@ function showChat(){
   SESSUI.top = 'chat';               // 🚨 见 showList 里那段：高亮由本屏认领
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
   $('#sub').textContent = '对话 · 用英语随便聊，说错的地方顺手给你拨回来';
-  const his = chatTopics();
   const cur = occGet();
   const cards = occCards(cur);
+  /* 🚨 `chatTopics()` 那排历史话题 chip 去掉了（Kevin 2026-08-24：
+     「『今天想聊点啥』下面写了一大堆很长的历史记录」）——
+     它跟输入框长得像同一组东西，越攒越长，而且跟底下的「聊过的」重复。
+     聊过什么统一去「我的记录」看。 */
   /* 🚨 一屏一张卡，顺序 = 他的动作顺序：选场合 → 敲想聊的 → 开聊。
      原来 box 排在「开聊」按钮**下面**，等于要他先滚下去打字再滚回来点。
      他的规矩：主动作必须在第一屏（feedback_ui_below_fold_is_missing）。 */
+  /* 🚨 对话就两大类，**卡面上要看得出来**（他 2026-08-24 说「分不清楚结构是什么」）：
+       💬 闲聊     —— 自由说，说完再改；下面才细分场合 / 聊点啥
+       📋 按题卡练 —— 照着卡练指定说法，练完打分
+     原来这两样连同题库卡、历史话题**全塞在同一张卡里**，没有任何分层。 */
   $('#feed').innerHTML = sessTopTabs() + '<div class="pol">' +
     '<div class="card" style="padding:14px">' +
+      '<div class="hd" style="margin-bottom:10px">' +
+        '<span class="role">💬 闲聊</span>' +
+        '<span class="done">自由说，说完再改</span></div>' +
       /* ① 场合 —— 参数，不是模块。点评的深浅、两版的轴、Alex 演谁都跟着它走。 */
       '<div class="k" style="font-weight:800;margin-bottom:8px">这次是什么场合？</div>' +
       '<div>' + OCCASIONS.map(o2 =>
@@ -16619,10 +16660,6 @@ function showChat(){
       '<div class="t" style="margin-top:6px;color:var(--muted)">' +
         '写话题（「爬山」）或者整个情景（「我是审计经理，你是 CFO，我要问你存货为什么涨了 40%」）' +
         '都行 —— 写情景的话 Alex 就按你写的演。留空他自己挑，优先用你错题本和单词本里的说法。</div>' +
-      (his.length ? '<div style="margin-top:10px">' + his.map(t2 =>
-        '<button class="rchip" data-chattop="' + esc(t2) + '" ' +
-        'style="margin:0 6px 6px 0;max-width:100%;white-space:normal;text-align:left">' +
-        esc(t2) + '</button>').join('') + '</div>' : '') +
 
       /* ③ 开聊 —— 必须**整颗**落在第一屏内。
          🚨 2026-08-21 真机 375x812 实测：它原来排在三张题库卡下面，
@@ -16642,16 +16679,23 @@ function showChat(){
           '<button class="rchip" id="chatcardmore" style="padding:1px 8px;font-size:12px">' +
           '🎲 换一批</button></div>' +
         chatCardChips(cards) + '</div>' : '') +
-      /* 🚨 「练习」那套（先给目标句式 + 逐轮打分 + 难度分级）没删，
-         只是从顶部 tab 降成这里的一个入口 —— 它是同一件事的另一种练法，
-         不该在顶上占一格。 */
-      '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">' +
-        '<button class="rchip" id="chatdrill">📋 按题卡练（先给目标句式，练完打分）→</button>' +
-        '<div class="t" style="margin-top:6px;color:var(--muted)">' +
-          '上面是自由说、说完再改；这个是照着卡练指定的说法，练完给评分。</div>' +
-      '</div>' +
     '</div>' +
-    '<div id="chatlist"></div></div>';
+    /* 🚨 「按题卡练」是**另一大类**，不是闲聊里的一个小口子 ——
+       他明说了对话分两大类。所以独立成卡，标题跟上面一个层级。 */
+    '<div class="card" style="padding:14px">' +
+      '<div class="hd" style="margin-bottom:8px">' +
+        '<span class="role">📋 按题卡练</span>' +
+        '<span class="done">照着卡练，练完打分</span></div>' +
+      '<div class="t" style="color:var(--muted);margin-bottom:10px">' +
+        '题库里 4594 张情景卡，**先给你目标句式和常见坑**，你照着说，' +
+        '练完逐轮打分。跟上面的区别：闲聊是自由说、说完再改；这个是有标准答案的练。</div>' +
+      '<button class="btn wide" id="chatdrill" style="width:100%">挑一张卡 →</button>' +
+    '</div>' +
+    /* 🚨 聊过的**不在这儿铺**（Kevin 2026-08-24：「不要搞得到处都是」）。
+       两种记录（按题卡练 / 闲聊）统一收在「我的记录」那一屏。 */
+    '<div class="note" id="chatrecmore" style="cursor:pointer">' +
+      '聊过的都在「我的记录」里 →</div>' +
+    '</div>';
   bindSessTop();
 
   /* 换场合要**留住他已经敲的字**，重画一次就清空的话，正式场合那种长情景
@@ -16667,8 +16711,6 @@ function showChat(){
     });
   const go1 = () => chatStart((($('#chattopic') || {}).value) || '');
   $('#chatgo').onclick = go1;
-  document.querySelectorAll('[data-chattop]').forEach(b =>
-    b.onclick = () => { const inp = $('#chattopic'); if (inp) inp.value = b.dataset.chattop; go1(); });
 
   /* 🚨 点一张卡 = 把情景**填进 box**，不是直接开聊 ——
      他还得能改（「我是审计经理」改成「我是项目经理」），也得先看清演的是什么。 */
@@ -16706,7 +16748,9 @@ function showChat(){
     bindCards();                 // 🚨 重画了就要重绑，不然换一批之后全是死键
   };
 
-  chatPaintList();
+  const rm = $('#chatrecmore');
+  /* 换根到「我的记录」—— 跟点顶部那个 tab 是同一个动作，所以清 NAV。 */
+  if (rm) rm.onclick = () => { NAV.length = 0; go(showMyRecs, '我的记录'); };
 }
 
 async function chatPaintList(){
@@ -19891,7 +19935,10 @@ function showNotebook(){
     + '📗 我的本子 ' + nbCount() + '</button>';
 
   f.innerHTML = dictTop() +
-    '<div class="tabs" style="margin-bottom:10px">' + bkChip('word') + bkChip('pro') +
+    /* 🚨 合并成一个本子之后这里原来还写着 `bkChip('word') + bkChip('pro')` ——
+       而 bkChip 已经不看参数了，于是**画出两个一模一样的「我的本子」chip**。
+       合并时漏改的调用点，2026-08-24 自查发现。 */
+    '<div class="tabs" style="margin-bottom:10px">' + bkChip() +
       /* 🚨 分叉 A：入口就放在本子里 —— 产物是本子，入口跟产物放一起。
          查词页保持干净（他 2026-08-24 拍板）。 */
       '<button class="rchip" id="nbpaste" style="margin-left:auto">📋 粘贴导入</button>' +
