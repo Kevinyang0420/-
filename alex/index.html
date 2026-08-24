@@ -18076,6 +18076,445 @@ const DICT_RULES_ZH =
    🚨 重试必须带上上一次错在哪 —— 盲重试等于把同一个 prompt 再送一遍（makeGuide 那条教训）。
    🚨 用函数式替换：查询词里可能有 `$`（financial text 满地都是），
       `String.replace` 的替换串里 `$&`/`$'` 会被特殊解释，静默把 prompt 搅坏。 */
+/* ═══ 粘贴导入 · 界面（PRD_粘贴导入.md §三）═══════════════════
+   🚨 分叉 B（先勾选再存）不是"多一步点击"，是**他的控制权**：
+      自动存 8 条他没看过的东西 = 往复习队列里灌垃圾。 */
+
+const PASTE = {raw: '', src: null, res: null, busy: false, err: '', pick: {}, edit: {}};
+
+function pasteReset(){
+  PASTE.raw = ''; PASTE.src = null; PASTE.res = null;
+  PASTE.busy = false; PASTE.err = ''; PASTE.pick = {}; PASTE.edit = {};
+}
+
+function showPaste(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  DICT.top = 'nb';
+  $('#sub').textContent = '把别处 AI 的回答贴进来，我帮你收进本子';
+  const f = $('#feed');
+  const hist = srcAll().slice(0, 8);
+
+  f.innerHTML = dictTop() +
+    '<div class="pol">' +
+      '<div class="card" style="padding:14px">' +
+        '<div class="k" style="font-weight:800;margin-bottom:6px">' +
+          '贴上 Gemini / 豆包给你的整段回答</div>' +
+        '<div class="t" style="color:var(--muted);margin-bottom:8px">' +
+          '整段贴进来就行，不用自己删。我从里面把能收的表达挑出来，' +
+          '每条标上「什么场合用」，你勾哪些就存哪些。</div>' +
+        '<textarea id="pasteta" rows="7" placeholder="Ctrl+V 贴在这里…" ' +
+          'style="width:100%;box-sizing:border-box;padding:11px;border-radius:10px;' +
+          'border:1px solid var(--line-strong);background:var(--surface);' +
+          'color:inherit;font-size:15px;font-family:inherit;resize:vertical"></textarea>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">' +
+          '<button class="rchip" data-pfrom="Gemini">Gemini</button>' +
+          '<button class="rchip" data-pfrom="豆包">豆包</button>' +
+          '<button class="rchip" data-pfrom="">其他</button>' +
+        '</div>' +
+        '<button id="pastego" class="btn" style="width:100%;margin-top:10px">' +
+          '收下这段，帮我挑出来</button>' +
+        /* 🚨 D6 看得见的那一半：告诉他原文先存住了，提炼失败也不丢。 */
+        '<div class="t" style="margin-top:7px;color:var(--muted)">' +
+          '原文会先存下来 —— 就算我这边挑失败了，你贴的东西也不会丢。</div>' +
+        '<div id="pasteerr" class="warn" style="margin-top:8px"></div>' +
+        '<div id="pastestage" style="margin-top:8px"></div>' +
+      '</div>' +
+      (hist.length ? '<div class="card" style="padding:14px">' +
+        '<div class="k" style="font-weight:800;margin-bottom:8px">贴过的</div>' +
+        hist.map(r =>
+          '<div class="t" style="margin-top:8px;padding-left:8px;' +
+          'border-left:2px solid var(--line)">' +
+          '<button class="rchip" data-popen="' + esc(r.id) + '" ' +
+          'style="max-width:100%;white-space:normal;text-align:left">' +
+          esc(r.title || '(无题)') + '</button>' +
+          '<span style="color:var(--muted);font-size:12px;margin-left:6px">' +
+          esc(r.on) + (r.from ? ' · ' + esc(r.from) : '') +
+          ((r.items && r.items.length) ? ' · 收了 ' + r.items.length + ' 条' : '') +
+          '</span></div>').join('') +
+        '</div>' : '') +
+      '<div id="pasteout"></div>' +
+    '</div>';
+
+  bindDictTop();
+  const ta = $('#pasteta');
+  if (ta && PASTE.raw) ta.value = PASTE.raw;
+  let from = '';
+  document.querySelectorAll('[data-pfrom]').forEach(b =>
+    b.onclick = () => {
+      from = b.dataset.pfrom;
+      document.querySelectorAll('[data-pfrom]').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+    });
+  $('#pastego').onclick = () => pasteRun((ta || {}).value || '', from);
+  document.querySelectorAll('[data-popen]').forEach(b =>
+    b.onclick = () => {
+      const r = srcGet(b.dataset.popen);
+      if (!r) return toast('这条已经清掉了');
+      PASTE.raw = r.raw; PASTE.src = r; PASTE.res = null;
+      PASTE.pick = {}; PASTE.edit = {};
+      if (r.items && r.items.length){ PASTE.res = {title: r.title, items: r.items}; pastePaint(); }
+      else showPaste();
+    });
+  if (PASTE.res) pastePaint();
+}
+
+async function pasteRun(raw, from){
+  if (PASTE.busy) return;
+  const s = String(raw || '').trim();
+  if (!s) return toast('先贴一段进来');
+  const el = $('#pasteerr'); if (el) el.textContent = '';
+
+  /* 🚨🚨 **第一步：先存原文，不调模型**（PRD D6）。
+     08-24 他撞到过「单词本被锁在查词成功后面」—— 同一个死结不许再来一次。 */
+  const saved = pasteSave(s, from);
+  if (!saved) return toast('贴的内容是空的');
+  PASTE.raw = s;
+  PASTE.src = saved.rec;
+  if (saved.unsaved) toast('原文没存住（浏览器存储满了），先去本子里删几条', 3600);
+  else if (saved.dup) toast('这段你' + saved.rec.on + '贴过一次，用的是那条', 2800);
+
+  /* 已经炼过就直接显示，不再花一次调用 */
+  if (saved.rec.items && saved.rec.items.length){
+    PASTE.res = {title: saved.rec.title, items: saved.rec.items};
+    return pastePaint();
+  }
+
+  PASTE.busy = true;
+  const btn = $('#pastego'); if (btn){ btn.disabled = true; btn.textContent = '我在挑…'; }
+  const stage = $('#pastestage');
+  if (stage) stage.innerHTML = '<div class="note">正在从这段里挑能收的表达…</div>';
+  try {
+    const j = await pasteLook(s);
+    PASTE.res = j;
+    PASTE.pick = {}; PASTE.edit = {};
+    pastePutItems(saved.rec.id, j.items);
+    if (stage) stage.innerHTML = '';
+    pastePaint();
+  } catch(e){
+    /* 🚨 提炼挂了**不影响原文**：明说它还在，给一颗重试。
+       绝不写「可能是额度紧了」那种猜的原因（08-24 那句把他引去查了
+       一个根本不存在的额度问题）。 */
+    if (stage) stage.innerHTML = '';
+    if (el) el.innerHTML = esc('没挑出来：' + String(e.message || e).slice(0, 90)) +
+      '<br>你贴的原文<b>已经存住了</b>（在上面「贴过的」里），' +
+      '点一下就能重新挑。' +
+      '<button class="rchip" id="pasteretry" style="margin-top:8px">🔁 再挑一次</button>';
+    const rb = $('#pasteretry');
+    if (rb) rb.onclick = () => { PASTE.busy = false; pasteRun(s, from); };
+  } finally {
+    PASTE.busy = false;
+    if (btn){ btn.disabled = false; btn.textContent = '收下这段，帮我挑出来'; }
+  }
+}
+
+/* ── 勾选确认屏（分叉 B）─────────────────────────────────────
+   默认全勾；**已经在本子里的标「已有」且默认不勾**；每条可就地改 en / cn。 */
+function pastePaint(){
+  const box = $('#pasteout');
+  const j = PASTE.res;
+  if (!box || !j) return;
+  const items = Array.isArray(j.items) ? j.items : [];
+
+  if (!items.length){
+    box.innerHTML = '<div class="card" style="padding:14px">' +
+      '<div class="k" style="font-weight:800">这段里没找到可收的表达</div>' +
+      '<div class="t" style="margin-top:6px;color:var(--muted)">' +
+      esc(j.none || '（没说原因）') + '</div>' +
+      '<div class="t" style="margin-top:6px;color:var(--muted)">' +
+      '原文已经存住了，在上面「贴过的」里。</div></div>';
+    return;
+  }
+
+  /* 每条的默认勾选状态：本子里已经有的不勾 */
+  items.forEach((x, i) => {
+    if (PASTE.pick[i] === undefined) PASTE.pick[i] = !nbFind(qId(x.en));
+  });
+
+  const row = (x, i) => {
+    const has = !!nbFind(qId(x.en));
+    const en = PASTE.edit['en' + i] !== undefined ? PASTE.edit['en' + i] : x.en;
+    const cn = PASTE.edit['cn' + i] !== undefined ? PASTE.edit['cn' + i] : x.cn;
+    return '<div style="margin-top:12px;padding-left:10px;border-left:3px solid ' +
+      (PASTE.pick[i] ? 'var(--brand-dark)' : 'var(--line)') + '">' +
+      '<button class="rchip' + (PASTE.pick[i] ? ' on' : '') + '" data-ppick="' + i + '" ' +
+        'style="padding:3px 10px;font-size:12px">' +
+        (PASTE.pick[i] ? '☑ 收' : '☐ 不收') + '</button>' +
+      (has ? '<span class="rchip" style="padding:3px 8px;font-size:11.5px;' +
+             'margin-left:6px">📗 本子里已有</span>' : '') +
+      '<div class="en" style="font-size:15.5px;font-weight:600;line-height:1.5;' +
+        'margin-top:6px" data-say="' + esc(en) + '">' + esc(en) + '</div>' +
+      '<div class="t" style="margin-top:3px">' + esc(cn) + '</div>' +
+      (x.scene ? '<div class="sit" style="margin-top:3px">📍 ' + esc(x.scene) + '</div>' : '') +
+      (x.eg ? '<div style="margin-top:4px;font-size:13.5px;color:var(--muted)" ' +
+        'data-say="' + esc(x.eg) + '">' + esc(x.eg) + '</div>' : '') +
+      (x.vs ? '<div class="sit" style="margin-top:3px">↔ ' + esc(x.vs) + '</div>' : '') +
+      '<button class="rchip" data-pedit="' + i + '" ' +
+        'style="padding:2px 8px;font-size:12px;margin-top:6px">✏️ 改一下</button>' +
+      '</div>';
+  };
+
+  const n = items.filter((x, i) => PASTE.pick[i]).length;
+  box.innerHTML = '<div class="card" style="padding:14px">' +
+    '<div class="hd"><span class="role">挑出来 ' + items.length + ' 条</span>' +
+      '<span class="done">' + esc(j.title || '') + '</span></div>' +
+    (j.cut ? '<div class="note" style="margin-top:8px">🚨 这段太长，' +
+      '我只挑了<b>前面 ' + PASTE_CAP + ' 字</b>。后面那部分想收的话，' +
+      '单独再贴一次。</div>' : '') +
+    items.map(row).join('') +
+    '<button id="pastekeep" class="btn" style="width:100%;margin-top:14px">' +
+      '收下勾选的 ' + n + ' 条</button>' +
+    '<div class="t" style="margin-top:6px;color:var(--muted)">' +
+      '单个词进单词本、多词进专业表达本 —— 跟查词收藏同一套规则。</div>' +
+  '</div>';
+
+  const repaint = () => { const y = window.scrollY; pastePaint(); window.scrollTo(0, y); };
+  document.querySelectorAll('[data-ppick]').forEach(b =>
+    b.onclick = () => { const i = +b.dataset.ppick; PASTE.pick[i] = !PASTE.pick[i]; repaint(); });
+  document.querySelectorAll('[data-pedit]').forEach(b =>
+    b.onclick = () => {
+      const i = +b.dataset.pedit;
+      const cur = PASTE.edit['en' + i] !== undefined ? PASTE.edit['en' + i] : items[i].en;
+      const v = prompt('改成什么？（英文表达）', cur);
+      if (v === null) return;
+      const v2 = String(v).trim();
+      if (!v2) return toast('不能改成空的');
+      PASTE.edit['en' + i] = v2;
+      repaint();
+    });
+  bindSay(box);
+
+  $('#pastekeep').onclick = () => {
+    const chosen = items.map((x, i) => ({x: x, i: i})).filter(p => PASTE.pick[p.i]);
+    if (!chosen.length) return toast('一条都没勾');
+    let ok = 0, full = 0, same = 0;
+    chosen.forEach(p => {
+      const en = PASTE.edit['en' + p.i] !== undefined ? PASTE.edit['en' + p.i] : p.x.en;
+      const cn = PASTE.edit['cn' + p.i] !== undefined ? PASTE.edit['cn' + p.i] : p.x.cn;
+      /* 🚨 分叉 D：走 subEntry + bookFor —— **跟查词收藏同一套记录格式和规则**。
+         不另起一种"外部条目"，否则本子里出现两种口径、复习系统也要分叉。
+         `srcId` 让他以后能翻回原文（分叉 C）。 */
+      const e = subEntry(en, cn, {
+        pos: '表达',
+        from: (PASTE.src && PASTE.src.from) || '外部 AI',
+        eg: p.x.eg || '',
+        reg: p.x.reg || '',
+        biz: p.x.scene || '',
+      });
+      e.srcId = (PASTE.src && PASTE.src.id) || '';
+      const r = nbAdd(e, bookFor(e));
+      if (r === 'full') full++;
+      else if (r === 'same') same++;
+      else ok++;
+    });
+    if (full) toast('存不下了（浏览器存储满），先去本子里删几条', 3600);
+    else toast('收下 ' + ok + ' 条' + (same ? '（' + same + ' 条本来就有）' : ''), 2600);
+    refreshDictTop();
+    if (ok || same){ DICT.top = 'nb'; go(showNotebook, '我的本子'); }
+  };
+}
+
+/* ── 回看原文（分叉 C）───────────────────────────────────────
+   本子里任意一条，只要带 srcId，就能翻回它当初那段粘贴。 */
+function srcPeek(id){
+  const r = srcGet(id);
+  if (!r) return toast('那段原文已经清掉了（只留最近 60 段）');
+  const box = document.createElement('div');
+  box.className = 'card';
+  box.style.cssText = 'padding:14px;margin-top:10px';
+  box.innerHTML = '<div class="hd"><span class="role">当时贴进来的原文</span>' +
+    '<span class="done">' + esc(r.on) + (r.from ? ' · ' + esc(r.from) : '') + '</span></div>' +
+    '<div class="t" style="margin-top:8px;white-space:pre-wrap;line-height:1.7;' +
+    '-webkit-user-select:text;user-select:text">' + esc(r.raw) + '</div>';
+  return box;
+}
+
+/* ═══ 粘贴导入（Kevin 2026-08-24 · PRD_粘贴导入.md）═══════════
+   他的原话：「我不只用 Alex 查表达，也会用 Gemini 或豆包。我给它们完整上下文，
+   它们也回我完整上下文……然后我把整段回复复制下来粘贴进 Alex ——
+   你要帮我重新组织、提取关键信息，收集到我的本子里供我复习。」
+
+   🚨 **Alex 在这里不负责回答** —— 答案他已经有了。
+      它的活是把别人的散文变成**可复习的原子**。
+
+   四个已拍板的分叉（PRD §七）：
+     A 入口 = 我的本子里　B 存之前要勾选　C 原文留着　D 按现有规则自动分本
+
+   🚨🚨 D6（这一份最要紧的一条）：**存原文这个动作永远不许依赖模型**。
+      提炼挂了、网络断了、额度没了 —— 他贴进来的东西必须还在。
+      这跟 08-24 那个「单词本被锁在查词成功后面」是同一个死结，那次他撞到了。 */
+
+const SRC_LS = 'alex_src';          // 粘贴进来的原文
+const SRC_MAX = 60;                 // 最多留 60 条，超了淘汰最旧的
+const PASTE_CAP = 6000;             // 一次提炼最多喂这么多字
+
+function srcAll(){
+  try { return JSON.parse(localStorage.getItem(SRC_LS) || '[]') || []; }
+  catch(_){ return []; }
+}
+function srcSave(list){
+  try { localStorage.setItem(SRC_LS, JSON.stringify(list.slice(0, SRC_MAX)));
+        return true; }
+  catch(_){ return false; }
+}
+const srcGet = id => srcAll().find(x => x.id === id) || null;
+function srcDel(id){
+  const l = srcAll().filter(x => x.id !== id);
+  return srcSave(l);
+}
+
+/* 同一段贴两次不再存一份（PRD §五）。不用 hash 库，够用就行。 */
+function srcHash(s){
+  let h = 0;
+  const t2 = String(s || '');
+  for (let i = 0; i < t2.length; i++){ h = ((h << 5) - h + t2.charCodeAt(i)) | 0; }
+  return 'p' + (h >>> 0).toString(36) + '_' + t2.length;
+}
+
+/* 🚨 落盘。**不调模型**，所以这一步永不失败（D6）。
+   返回 {rec, dup} —— dup 为 true 时 rec 是上次那条。 */
+function pasteSave(raw, from){
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  const h = srcHash(s);
+  const list = srcAll();
+  const old = list.find(x => x.h === h);
+  if (old) return {rec: old, dup: true};
+  const rec = {
+    id: 'src' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+    h: h,
+    raw: s,
+    from: from || '',
+    title: s.replace(/[#*>`\-]/g, ' ').replace(/\n+/g, ' ').trim().slice(0, 22),
+    on: TODAY(),
+    t0: Date.now(),
+    items: null,            // 提炼结果；null = 还没炼过
+  };
+  list.unshift(rec);
+  if (!srcSave(list)) return {rec: rec, dup: false, unsaved: true};
+  return {rec: rec, dup: false};
+}
+
+function pastePutItems(id, items){
+  const list = srcAll();
+  const i = list.findIndex(x => x.id === id);
+  if (i < 0) return false;
+  list[i].items = items;
+  return srcSave(list);
+}
+
+/* ── 提炼 ─────────────────────────────────────────────────── */
+function pastePrompt(raw){
+  const body = String(raw || '');
+  const cut = body.length > PASTE_CAP;
+  return [
+    '你在帮一个中国职业人士整理他的英语笔记。他做财务尽职调查和审计。',
+    '他刚从另一个 AI（Gemini / 豆包之类）那里问了一个英语表达问题，',
+    '下面是那个 AI 的**完整回答**。请把它整理成他能复习的条目。',
+    '',
+    '🚨 你不负责回答问题 —— 答案已经在下面了。你的活是**提取和归类**。',
+    '🚨 **只许抽下面这段里有的东西，一个字都不许自己加**。',
+    '   加了他会以为是那个 AI 说的，那比漏掉更糟。',
+    '🚨 一条都抽不出来时，`items` 给空数组、`none` 写清为什么 ——',
+    '   **不许硬凑**。',
+    '',
+    (cut ? '（这段很长，下面只是前面一部分。）' : ''),
+    '原文：',
+    '"""',
+    cut ? body.slice(0, PASTE_CAP) : body,
+    '"""',
+    '',
+    '只输出一个 JSON，不要 markdown 围栏、不要别的话:',
+    '{',
+    ' "title":"给这一段起个标题，4-14 个中文字，概括他在问什么",',
+    ' "none":"如果一条都抽不出来，这里写清为什么；抽到了就给空串",',
+    ' "items":[{',
+    '   "en":"英文表达本身。2-8 词的短表达优先；整句放 eg 里",',
+    '   "cn":"中文一句话：它是什么意思",',
+    '   "scene":"中文一句话：**什么场合用**、比别的说法强在哪",',
+    '   "eg":"英文例句。原文里有就用原文的，没有就给空串，不要自己编",',
+    '   "vs":"中文：跟什么容易混、差在哪。原文没讲就给空串",',
+    '   "reg":"正式 或 中性 或 口语"',
+    ' }]',
+    '}'
+  ].filter(Boolean).join('\n');
+}
+
+/* 归一化后比对：例句必须**真的**出现在原文里。
+   统一小写 + 非字母数字压成单空格 —— 标点、引号、换行的差异不影响，
+   但多一个词就对不上。 */
+function egFromRaw(eg, raw){
+  const norm = s => String(s || '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ').trim();
+  const a = norm(eg), b = norm(raw);
+  if (!a) return true;
+  return b.indexOf(a) >= 0;
+}
+
+function pasteBad(j, raw){
+  const bad = [];
+  if (!j || typeof j !== 'object') return ['没解析出 JSON'];
+  if (!String(j.title || '').trim()) bad.push('没给标题');
+  const items = Array.isArray(j.items) ? j.items : null;
+  if (items === null) return ['items 不是数组'];
+
+  /* 🚨 一条都没有是**合法结果**（有些粘贴里真的没有可收的表达），
+     但必须说清为什么 —— 不许静默给个空数组让他以为坏了。 */
+  if (!items.length){
+    if (!String(j.none || '').trim())
+      bad.push('一条都没抽到，却没说为什么（不许静默给空）');
+    return bad;
+  }
+
+  const low = String(raw || '').toLowerCase();
+  items.forEach((x, i) => {
+    const en = String((x && x.en) || '').trim();
+    if (!en){ bad.push('items[' + i + '] 没给英文'); return; }
+    if (/[一-鿿]/.test(en)) bad.push('items[' + i + '].en 里混了中文');
+    /* 🚨🚨 **只许抽原文里有的**。这是这份判据的核心：
+       模型很爱"顺手补两个更好的说法"，那些话他会当成 Gemini 说过的。
+       判法：这个表达的实词必须在原文里出现（允许词形变化）。 */
+    if (stemsMissing(en, low).length)
+      bad.push('items[' + i + ']「' + en + '」原文里没有 —— 不许自己加');
+    if (!String((x && x.cn) || '').trim()) bad.push('items[' + i + '] 没给中文意思');
+    if (!String((x && x.scene) || '').trim())
+      bad.push('items[' + i + '] 没说什么场合用（他点名要这个）');
+    const eg = String((x && x.eg) || '').trim();
+    if (eg && stemsMissing(en, eg).length)
+      bad.push('items[' + i + '] 的例句里没出现「' + en + '」');
+    /* 🚨 「例句是不是原文里的」**不能用 stemsMissing** —— 它有 30% 容差，
+       于是「只换一两个词的编造句」照样过（实测：把原文那句加上
+       "with the fieldwork" 就溜过去了）。
+       这里要的是**真的出自原文**，所以归一化后做子串比对：
+       统一小写、把所有非字母数字压成单空格 —— 这样标点/引号/换行的差异不影响，
+       但多加一个词就对不上了。 */
+    if (eg && !egFromRaw(eg, raw))
+      bad.push('items[' + i + '] 的例句不是原文里的 —— 不许自己编');
+    const reg = String((x && x.reg) || '').trim();
+    if (reg && DREGS.indexOf(reg) < 0)
+      bad.push('items[' + i + '].reg 要 正式/中性/口语 三选一');
+  });
+  return bad;
+}
+
+async function pasteLook(raw){
+  let last = null;
+  for (let i = 0; i < 3; i++){
+    let j = null;
+    try {
+      j = firstJson(await textCall(pastePrompt(raw)
+        + (last ? '\n' + '\n' + '🚨 上一次被判废了：' + last + '，这次避开。' : ''), 0.3));
+    } catch(err){ last = err.message || String(err); continue; }
+    const bad = pasteBad(j, raw);
+    if (!bad.length){
+      j.items = (Array.isArray(j.items) ? j.items : []).filter(x => x && x.en);
+      j.cut = String(raw || '').length > PASTE_CAP;
+      return j;
+    }
+    last = bad.join('；');
+  }
+  throw new Error(last || '提炼不出来');
+}
+
 /* ═══ 自由问答（Kevin 2026-08-24）═══════════════════════════
    他在查词框里打一句问题（中英都有），要的是**答案**，不是词典卡。
 
@@ -19389,11 +19828,16 @@ function showNotebook(){
     '" data-nbk="' + k + '">' + BOOKS[k] + ' ' + nbCount(k) + '</button>';
 
   f.innerHTML = dictTop() +
-    '<div class="tabs" style="margin-bottom:10px">' + bkChip('word') + bkChip('pro') + '</div>' +
+    '<div class="tabs" style="margin-bottom:10px">' + bkChip('word') + bkChip('pro') +
+      /* 🚨 分叉 A：入口就放在本子里 —— 产物是本子，入口跟产物放一起。
+         查词页保持干净（他 2026-08-24 拍板）。 */
+      '<button class="rchip" id="nbpaste" style="margin-left:auto">📋 粘贴导入</button>' +
+      '</div>' +
     (all.length ? '' :
       '<div class="note">本子还是空的。<br><br>去「查词」查一个词或表达，' +
       '结果下面就有「收进单词本 / 收进专业表达本」。<br><br>' +
-      '在阅读的范文里长按选中一段文字，浮条上也有「🔍 查这个」。</div>') +
+      '在阅读的范文里长按选中一段文字，浮条上也有「🔍 查这个」。<br><br>' +
+      '也可以把 Gemini / 豆包给你的整段回答贴进来 —— 上面那颗「📋 粘贴导入」。</div>') +
     (mine.length ? (
       (due.length
         ? '<div class="card" id="nbrev" style="background:var(--soft)">' +
@@ -19412,6 +19856,10 @@ function showNotebook(){
   bindDictTop();
   f.querySelectorAll('[data-nbk]').forEach(b =>
     b.onclick = () => { DICT.book = b.dataset.nbk; DICT.fq = ''; showNotebook(); });
+  /* 🚨 画了就得绑 —— 这项目为「渲染了没绑事件」返工过好几次
+     （记录页的「再次尝试」、换一批之后的题库卡）。 */
+  const pb = $('#nbpaste');
+  if (pb) pb.onclick = () => { pasteReset(); go(showPaste, '粘贴导入'); };
   const rv = $('#nbrev');
   if (rv) rv.onclick = () => startReview(due);
   const inp = $('#nbq');
