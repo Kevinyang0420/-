@@ -19219,33 +19219,60 @@ function dSec(title, inner){
       两个键指向**同一条记录**。所以收完一律 `redrawDict()` 整块重画，
       不各自 paint —— 各画各的必然出现「一个显✓一个显☆」的自相矛盾。 */
 
-function doSave(e, bk){
+function doSave(e, bk, local){
   if (!e) return;
   const r = nbAdd(e, bk);
   if (r === 'full') return toast('存不下了（浏览器存储满），先去本子里删几条', 3200);
   toast(r === 'same' ? '已经在本子里' : '收进本子了');
-  redrawDict(); refreshDictTop();
+  /* 🚨 `local` = 调用方自己刷新自己那颗，别整块重画 ——
+     重画会把运行时插进去的东西（tweak 的结果）整段抹掉。 */
+  if (!local) redrawDict();
+  refreshDictTop();
 }
 
 /* 一小块内容的收藏键：一个 chip，收进默认的那本；已收的再点一下就去掉。
    想换本子在「我的本子」里点开那一条改（那儿有完整的两个键）。 */
-function saveMini(e){
+/* `opt.local` = 点完**只刷新自己这颗**，不整块重画。
+
+   🚨 2026-08-24 真页面实测出来的：点 ☆ 之后条目确实进了本子，
+      但按钮还是「☆ 收进本子」**没变 ✓**（他会以为没点上），
+      而且「进一步修改」改出来的两版**一起消失了**。
+      根因：`doSave` / `nbDel` 都调 `redrawDict()` → `dictRender(DICT.cur)`
+      **整块重画词条**，而 tweak 的展开框是运行时 appendChild 进去的、
+      不在 `DICT.cur` 里 —— 重画一次就没了。
+
+   🚨 不能简单删掉重画：整块重画本来是为了解决另一个真问题 ——
+      同一个表达在页面上出现两处时，各画各的必然一个显 ★ 一个显 ☆。
+      所以分情况：词条本身的收藏键照旧整块重画；
+      **运行时插进去的**（tweak 的产物）只刷新自己。 */
+function saveMini(e, opt){
   const s = document.createElement('span');
   if (!e) return s;
   const id = qId(e.q || e.w);
-  const rec = nbFind(id);
+  const local = !!(opt && opt.local);
   const b = document.createElement('button');
-  b.className = 'rchip' + (rec ? ' on' : '');
   b.style.cssText = 'font-size:12px;padding:4px 10px;margin-top:6px';
-  b.textContent = rec ? '✓ 已在本子里' : '☆ 收进本子';
+  /* 🚨 状态**现算**，不存标志位 —— 存了重画一次就打回原形
+     （星星那件事栽过一次，见 chatCritHTML 里的 `star()`）。 */
+  const paint = () => {
+    const rec = nbFind(id);
+    b.className = 'rchip' + (rec ? ' on' : '');
+    b.textContent = rec ? '✓ 已在本子里' : '☆ 收进本子';
+    return rec;
+  };
+  paint();
   b.onclick = ev => {
     ev.stopPropagation();
+    const rec = nbFind(id);
     if (rec){
-      if (nbDel(id)){ toast('去掉了'); redrawDict(); refreshDictTop(); }
-      else toast('删不动（存储满了）');
+      if (!nbDel(id)) return toast('删不动（存储满了）');
+      toast('去掉了');
+      if (local){ paint(); refreshDictTop(); }
+      else { redrawDict(); refreshDictTop(); }
       return;
     }
-    doSave(e, bookFor(e));
+    doSave(e, bookFor(e), local);
+    if (local) paint();
   };
   s.appendChild(b);
   return s;
@@ -19514,10 +19541,14 @@ function miniBtns(en, ctx, host, rec){
   /* ☆ 收进本子。没给 rec 就地造一条 —— tweak 改出来的版本没有现成记录，
      但它跟查词条目一样该能进本子、能复习。
      `from` 记住它是从哪条改出来的，本子里看得到来路。 */
+  /* 🚨 没传 rec = 这一颗长在**运行时插进去的**元素上（tweak 改出来的版本）。
+     那种必须走 local：整块重画会把它自己连同结果一起抹掉
+     —— 2026-08-24 真页面实测到的，按钮不变 ✓、两版一起消失。 */
   const r = rec || (typeof subEntry === 'function'
     ? subEntry(en, '', {pos: '', from: ctx || '', reg: ''})
     : null);
-  if (r && typeof saveMini === 'function') wrap.appendChild(saveMini(r));
+  if (r && typeof saveMini === 'function')
+    wrap.appendChild(saveMini(r, {local: !rec}));
 
   return wrap;
 }
