@@ -36,39 +36,45 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 选 Xcode（最新的 16.x，并打印环境清单）
+      - name: 选 Xcode（26 及以上，上架强制；并打印环境清单）
         run: |
           set -euo pipefail
-          # 🚨 两个约束同时成立，只有「最新的 **16.x**」能满足，别自作主张挑更新的：
+          # 🚨🚨 这一步来回改过三次，把三条约束一次写清，别再凭印象动它：
           #
           # ① 不能用 Xcode_16.app（16.0）：它的 iphonesimulator SDK 是 22A3362（iOS 18.0），
-          #    而 runner 上一个 18.0 运行时都没有（只有 18.5/18.6/26.x）。
-          #    appex 编 asset catalog 时 actool 带 `--standalone-icon-behavior all`
-          #    去查模拟器运行时，查不到就报 `No simulator runtime version ... available`，
-          #    整个 archive 挂掉。2026-08-25 run #2/#3 连挂两次都是这个。
+          #    而 runner 上一个 18.0 运行时都没有。appex 编 asset catalog 时 actool 带
+          #    `--standalone-icon-behavior all` 去查模拟器运行时，查不到就报
+          #    `No simulator runtime version ... available`，整个 archive 挂掉（run #2/#3）。
           #
-          # ② 🚨 也不能挑「装着的最新」：那会选到 Xcode 26.x。而 `ci-workflow.yml`
-          #    是**故意**钉在 16 的 —— 2026-08-20 用 Xcode 26.6 编的键盘扩展在
-          #    Kevin 的 iPhone 上「列表里有、选中就弹回上一个键盘」，装/权限/plist
-          #    逐项核过全对，最新工具链本身就是嫌疑之一。
-          #    run #4~#7 我一度选到了 26.3 —— 那批包带着同一个嫌疑，别拿去测。
+          # ② 我一度改成钉「最新的 16.x」，因为 `ci-workflow.yml` 是故意钉 16 的
+          #    （2026-08-20 用 Xcode 26.6 编的键盘扩展在 Kevin 手机上「选中就弹回」）。
+          #    🚨 **那条路交不上去**：run #8 上传时被苹果硬拒 ——
+          #    `This app was built with the iOS 18.5 SDK. All iOS and iPadOS apps must be
+          #     built with the iOS 26 SDK or later, included in Xcode 26 or later.`
+          #    上架这条线**没有选择**，必须 26+。
           #
-          # 16.4 的 iphonesimulator SDK 是 22F，正好对上 runner 上的 22F77(18.5)。
+          # ③ 而 08-20 那次「选中就弹回」是**免费证书 + Windows 签名器**时代的观察，
+          #    当时的注释自己写的也是「嫌疑之一」，从没证实过；而那正是签名坏掉的
+          #    典型症状。现在签名是真的了，这个嫌疑站不住。
+          #    真机上要是还弹回，再回来重新怀疑工具链 —— 但别拿它当拒绝 26 的理由。
           echo "装着的 Xcode："
           ls -d /Applications/Xcode*.app
-          PICK=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)
-          test -n "${PICK}" || { echo "::error::runner 上没有 Xcode 16.x，别拿 26.x 顶替 —— 见上面②"; exit 1; }
+          PICK=$(ls -d /Applications/Xcode_2[6-9]*.app /Applications/Xcode_[3-9][0-9]*.app 2>/dev/null | sort -V | tail -1)
+          test -n "${PICK}" || { echo "::error::runner 上没有 Xcode 26+，上架必然被拒 —— 见上面②"; exit 1; }
           echo "选用：${PICK}"
           sudo xcode-select -s "${PICK}"
           xcodebuild -version
+          # 闸门：真的拿到 26+ 的 iOS SDK 了吗（不是"选了个目录"就算）
+          SDKV=$(xcodebuild -showsdks | grep -oE "iphoneos[0-9]+" | grep -oE "[0-9]+" | sort -n | tail -1)
+          echo "iphoneos SDK 主版本=${SDKV}"
+          test "${SDKV}" -ge 26 || { echo "::error::iOS SDK 是 ${SDKV}，苹果要求 ≥26"; exit 1; }
           echo "--- iphonesimulator SDK ---"
           xcodebuild -showsdks | grep -i "simulator - ios" || true
-          echo "--- 装着的 iOS 模拟器运行时 ---"
+          echo "--- 装着的 iOS 模拟器运行时（要跟上面的模拟器 SDK 对得上）---"
           xcrun simctl list runtimes | grep -i "^iOS" || true
-          echo "--- 上传工具在不在（TestFlight 那步要用，别等到最后才发现没有）---"
-          xcrun --find altool && altool_ok=1 || altool_ok=0
-          echo "altool 可用=${altool_ok}"
-          test "${altool_ok}" -eq 1 || echo "::warning::altool 不在，上传步骤要改走 Transporter"
+          echo "--- 上传工具在不在 ---"
+          xcrun --find altool && echo "altool 可用" || echo "::warning::altool 不在，上传要改走 Transporter"
+
 
 
       # ---- 生成 Secrets.swift（与现有流程同一套逻辑，单一来源）----
