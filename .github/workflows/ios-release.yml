@@ -129,22 +129,42 @@ jobs:
           echo "$PROF_APP_B64" | base64 --decode > "$PROF_DIR/app.mobileprovision"
           echo "$PROF_KB_B64"  | base64 --decode > "$PROF_DIR/kb.mobileprovision"
 
-          # 读出两个描述文件对应的 bundle id，供后面核对
+          # 读出两个描述文件的 bundle id 和名字。
+          # 🚨 名字要传给导出那步：两个 target 各挂各的描述文件，只能靠名字点名。
+          #    bundle id 也在这儿核一遍 —— 两份装反了的话，错误会推迟到导出时才炸，
+          #    而那时的报错跟「描述文件装反了」完全看不出关系。
           for f in app kb; do
             security cms -D -i "$PROF_DIR/$f.mobileprovision" > "$RUNNER_TEMP/$f.plist"
-            /usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" \
-              "$RUNNER_TEMP/$f.plist"
+            AID=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" \
+                  "$RUNNER_TEMP/$f.plist")
+            NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" "$RUNNER_TEMP/$f.plist")
+            BID=${AID#*.}          # 去掉前面的 TEAMID.
+            echo "  $f: bundle=$BID  profile=「$NAME」"
+            if [ "$f" = app ]; then WANT=com.kevin.transless; VAR=PROF_APP_NAME
+            else                    WANT=com.kevin.transless.keyboard; VAR=PROF_KB_NAME; fi
+            test "$BID" = "$WANT" || {
+              echo "::error::$f 的描述文件对应 $BID，应为 $WANT（两份装反了？）"; exit 1; }
+            echo "$VAR=$NAME" >> "$GITHUB_ENV"
           done
 
           echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
           echo "KEYCHAIN_PW=$KEYCHAIN_PW" >> "$GITHUB_ENV"
 
-      - name: Archive（带签名）
+      - name: Archive（不签，签名交给导出那步）
         working-directory: ios
         env:
           TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
         run: |
           set -euo pipefail
+          # 🚨 2026-08-25 改。原来这步写 `CODE_SIGN_STYLE=Automatic -allowProvisioningUpdates`，
+          #    结果 run #4 归档出来的包 `code object is not signed at all` ——
+          #    因为 project.yml 的 `settings.base` 里有 `CODE_SIGNING_ALLOWED: NO`
+          #    （当初为无签名 CI 设的），命令行没点名它就压不掉。
+          #
+          #    而且就算打开，**manual 签名没法在命令行区分两个 target**：
+          #    `PROVISIONING_PROFILE_SPECIFIER` 是全局的，主 App 和键盘扩展要挂不同的描述文件。
+          #    苹果给这件事准备的机制是 exportOptions 的 `provisioningProfiles`
+          #    字典（bundle id → 描述文件名），所以签名整个挪到导出那步。
           security unlock-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
           xcodebuild archive \
             -project Transless.xcodeproj \
@@ -154,20 +174,70 @@ jobs:
             -archivePath "$RUNNER_TEMP/Transless.xcarchive" \
             -derivedDataPath build \
             DEVELOPMENT_TEAM="$TEAM_ID" \
-            CODE_SIGN_STYLE=Automatic \
-            -allowProvisioningUpdates
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
 
-      # ---- 🚨 核心闸门：主 App 和键盘扩展**都**要被签名 ----
-      - name: 签名闸门（双 target）
+      # ---- 结构闸门：键盘扩展有没有被打进包（这一步不管签名）----
+      - name: 结构闸门（键盘扩展在不在包里）
         run: |
           set -euo pipefail
           APP="$RUNNER_TEMP/Transless.xcarchive/Products/Applications/Transless.app"
-          KB="$APP/PlugIns/Keyboard.appex"
-
           test -d "$APP" || { echo "::error::没产出 .app"; exit 1; }
-          # 🚨 这一条是这次的核心问题：键盘扩展在不在包里、签没签上。
-          #    只验主 App = 闸门看的范围不对，正是导致上次白折腾的那类错。
-          test -d "$KB" || { echo "::error::包里没有键盘扩展 Keyboard.appex"; exit 1; }
+          # 🚨 这条单独提前，是因为"扩展根本没进包"和"进了但没签上"是两种病，
+          #    混在一个闸门里报出来的信息不够指路。
+          test -d "$APP/PlugIns/Keyboard.appex" || \
+            { echo "::error::包里没有键盘扩展 Keyboard.appex"; exit 1; }
+          echo "=== 键盘扩展已在归档里 ==="
+
+      - name: 导出 IPA（在这里做 manual 签名）
+        working-directory: ios
+        env:
+          TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$PROF_APP_NAME" && test -n "$PROF_KB_NAME"
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>uploadSymbols</key><true/>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.kevin.transless</key><string>${PROF_APP_NAME}</string>
+              <key>com.kevin.transless.keyboard</key><string>${PROF_KB_NAME}</string>
+            </dict>
+          </dict>
+          </plist>
+          PLIST
+          cat "$RUNNER_TEMP/ExportOptions.plist"
+          security unlock-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Transless.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export"
+          ls -lh "$RUNNER_TEMP/export"
+          test -f "$RUNNER_TEMP/export/Transless.ipa" || \
+            { echo "::error::没导出 ipa"; exit 1; }
+
+      # ---- 🚨 核心闸门：查**真正要发出去的那个 IPA**，主 App 和键盘扩展都要签上 ----
+      - name: 签名闸门（双 target · 查 IPA）
+        run: |
+          set -euo pipefail
+          # 🚨 2026-08-25 挪到这儿。原来它查的是 archive，而 archive 现在是不签的 ——
+          #    更要紧的是：**装到手机上的是 IPA，不是 archive**。
+          #    闸门要挂在真正被使用的那个对象上。
+          cd "$RUNNER_TEMP"
+          rm -rf ipacheck && mkdir ipacheck && cd ipacheck
+          unzip -q "$RUNNER_TEMP/export/Transless.ipa"
+          APP="Payload/Transless.app"
+          KB="$APP/PlugIns/Keyboard.appex"
+          test -d "$APP" || { echo "::error::IPA 里没有 .app"; exit 1; }
+          test -d "$KB"  || { echo "::error::IPA 里没有键盘扩展"; exit 1; }
 
           echo "--- 主 App 签名 ---"
           codesign -dv --verbose=4 "$APP" 2>&1 | tee "$RUNNER_TEMP/sig_app.txt"
@@ -176,7 +246,9 @@ jobs:
 
           FAIL=0
           for f in app kb; do
-            if grep -qE "(Apple|iPhone) Distribution" "$RUNNER_TEMP/sig_$f.txt"; then
+            # 🚨 两种命名都算数：新证书叫 Apple Distribution，旧的叫 iPhone Distribution，
+            #    Kevin 这张是后者。只认一种会把对的判成错的（run #1 就栽在这）。
+            if grep -qE "Authority=(Apple|iPhone) Distribution" "$RUNNER_TEMP/sig_$f.txt"; then
               echo "  $f 用发布证书签名   PASS"
             else
               echo "  $f 用发布证书签名   FAIL"; FAIL=1
@@ -187,36 +259,17 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$APP" || FAIL=1
           codesign --verify --strict --verbose=2 "$KB" || FAIL=1
 
-          test "$FAIL" -eq 0 || { echo "::error::签名闸门未过"; exit 1; }
-          echo "=== 双 target 签名闸门 PASS ==="
+          # 键盘扩展的 entitlements 里必须有 app group 之外最要紧的那条：
+          # 它得是 keyboard-service 扩展且带完全访问（否则装上去也发不出网络请求）
+          /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionPointIdentifier" \
+            "$KB/Info.plist" | grep -q "com.apple.keyboard-service" || {
+              echo "::error::键盘扩展的 NSExtensionPointIdentifier 不对"; FAIL=1; }
+          /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionAttributes:RequestsOpenAccess" \
+            "$KB/Info.plist" | grep -qi true || {
+              echo "::error::键盘扩展 RequestsOpenAccess 不是 true，装上去发不出网络请求"; FAIL=1; }
 
-      - name: 导出 IPA
-        working-directory: ios
-        env:
-          TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
-        run: |
-          set -euo pipefail
-          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key><string>app-store</string>
-            <key>teamID</key><string>${TEAM_ID}</string>
-            <key>uploadSymbols</key><true/>
-            <key>signingStyle</key><string>automatic</string>
-          </dict>
-          </plist>
-          PLIST
-          security unlock-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
-          xcodebuild -exportArchive \
-            -archivePath "$RUNNER_TEMP/Transless.xcarchive" \
-            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
-            -exportPath "$RUNNER_TEMP/export" \
-            -allowProvisioningUpdates
-          ls -lh "$RUNNER_TEMP/export"
-          test -f "$RUNNER_TEMP/export/Transless.ipa" || \
-            { echo "::error::没导出 ipa"; exit 1; }
+          test "$FAIL" -eq 0 || { echo "::error::签名闸门未过"; exit 1; }
+          echo "=== 双 target 签名闸门 PASS（查的是 IPA）==="
 
       - name: 上传 App Store Connect
         if: ${{ inputs.upload }}
