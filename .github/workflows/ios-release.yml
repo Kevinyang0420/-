@@ -139,11 +139,11 @@ jobs:
                   "$RUNNER_TEMP/$f.plist")
             NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" "$RUNNER_TEMP/$f.plist")
             BID=${AID#*.}          # 去掉前面的 TEAMID.
-            echo "  $f: bundle=$BID  profile=「$NAME」"
+            echo "  $f: bundle=${BID}  profile=[${NAME}]"
             if [ "$f" = app ]; then WANT=com.kevin.transless; VAR=PROF_APP_NAME
             else                    WANT=com.kevin.transless.keyboard; VAR=PROF_KB_NAME; fi
             test "$BID" = "$WANT" || {
-              echo "::error::$f 的描述文件对应 $BID，应为 $WANT（两份装反了？）"; exit 1; }
+              echo "::error::${f} 的描述文件对应 ${BID}，应为 ${WANT}（两份装反了？）"; exit 1; }
             echo "$VAR=$NAME" >> "$GITHUB_ENV"
           done
 
