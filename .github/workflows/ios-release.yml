@@ -59,7 +59,11 @@ jobs:
           #    真机上要是还弹回，再回来重新怀疑工具链 —— 但别拿它当拒绝 26 的理由。
           echo "装着的 Xcode："
           ls -d /Applications/Xcode*.app
-          PICK=$(ls -d /Applications/Xcode_2[6-9]*.app /Applications/Xcode_[3-9][0-9]*.app 2>/dev/null | sort -V | tail -1)
+          # 🚨 别把两个通配符直接喂给 ls：`set -o pipefail` 下只要有一个没匹配到，
+          #    ls 就返回非零，整步会在下面那句 test 跑到之前被 set -e 打死
+          #    —— 于是我写的错误提示一个字都不会打出来（2026-08-25 run #9 实撞）。
+          #    改成单通配符 + grep 筛版本，并用 `|| true` 兜住「一个都没有」。
+          PICK=$(ls -d /Applications/Xcode_*.app 2>/dev/null \n                 | grep -E "/Xcode_(2[6-9]|[3-9][0-9])" | sort -V | tail -1 || true)
           test -n "${PICK}" || { echo "::error::runner 上没有 Xcode 26+，上架必然被拒 —— 见上面②"; exit 1; }
           echo "选用：${PICK}"
           sudo xcode-select -s "${PICK}"
