@@ -25,9 +25,9 @@ final class KeyboardViewController: UIInputViewController {
         case idle, listening, thinking
     }
 
-    private let tones = ["work", "email", "casual", "formal"]
-    private let toneLabels = [L.tone_work, L.tone_email, L.tone_casual, L.kb_formal]
-    private var tone = UserDefaults.standard.string(forKey: "vime.tone") ?? "work"
+    private let tones = Prompts.all
+    private let toneLabels = Prompts.all.map(Prompts.label)
+    private var tone = Prompts.normalize(UserDefaults.standard.string(forKey: "vime.tone"))
 
     private let hintLabel = UILabel()
     private let heardLabel = UILabel()
@@ -139,7 +139,7 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     @objc private func cycleTone() {
-        let i = (tones.firstIndex(of: tone) ?? 0 + 0)
+        let i = tones.firstIndex(of: tone) ?? 0
         tone = tones[(i + 1) % tones.count]
         UserDefaults.standard.set(tone, forKey: "vime.tone")
         toneButton.setTitle(toneTitle(), for: .normal)
