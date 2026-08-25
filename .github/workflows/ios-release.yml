@@ -4,7 +4,11 @@
 #    那条用于日常出侧载包，这条用于上架。手动触发，不自动跑。
 #
 # 需要的 Secrets（在仓库 Settings → Secrets and variables → Actions 配）：
-#   IOS_CERT_P12_BASE64     Apple Distribution 证书 .p12 的 base64
+#   IOS_CERT_P12_BASE64     iOS 发布证书 .p12 的 base64
+#     🚨 苹果有两种命名，**都能上架**，判据不能只认一种：
+#        · 旧：iPhone Distribution: 姓名 (TEAMID)   ← ASC API 的 IOS_DISTRIBUTION 出这个
+#        · 新：Apple Distribution: 姓名 (TEAMID)    ← DISTRIBUTION
+#        2026-08-25 run #1 就是死抠 "Apple Distribution" 把一个对的证书判成了错的。
 #   IOS_CERT_PASSWORD       .p12 的密码
 #   IOS_PROFILE_APP_BASE64  主 App 的 .mobileprovision base64
 #   IOS_PROFILE_KB_BASE64   键盘扩展的 .mobileprovision base64
@@ -97,8 +101,10 @@ jobs:
             -s -k "$KEYCHAIN_PW" "$KEYCHAIN" >/dev/null
 
           # 🚨 闸门：证书真的进钥匙串了吗（不是"命令没报错"就算）
-          N=$(security find-identity -v -p codesigning "$KEYCHAIN" | grep -c "Apple Distribution" || true)
-          echo "找到 $N 个 Apple Distribution 身份"
+          # 🚨 两种命名都算数（见文件顶部说明）。用 -E 一次匹配，别只认一种。
+          security find-identity -v -p codesigning "$KEYCHAIN" | tee "$RUNNER_TEMP/ids.txt"
+          N=$(grep -cE "(Apple|iPhone) Distribution" "$RUNNER_TEMP/ids.txt" || true)
+          echo "找到 $N 个发布证书身份（Apple/iPhone Distribution 都算）"
           test "$N" -ge 1 || { echo "::error::证书没导入成功"; exit 1; }
 
           PROF_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
@@ -153,10 +159,10 @@ jobs:
 
           FAIL=0
           for f in app kb; do
-            if grep -q "Apple Distribution" "$RUNNER_TEMP/sig_$f.txt"; then
-              echo "  $f 用 Apple Distribution 证书签名   PASS"
+            if grep -qE "(Apple|iPhone) Distribution" "$RUNNER_TEMP/sig_$f.txt"; then
+              echo "  $f 用发布证书签名   PASS"
             else
-              echo "  $f 用 Apple Distribution 证书签名   FAIL"; FAIL=1
+              echo "  $f 用发布证书签名   FAIL"; FAIL=1
             fi
           done
 
