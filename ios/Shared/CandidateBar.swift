@@ -49,6 +49,12 @@ final class CandidateBar: UIView {
     }
     private var topKeyViews: [UIButton] = []
 
+    /// 点了左上角的波形键 = 去语音面板。
+    /// 🚨 安卓待命态候选栏左起就是这个键（真机截图 `_kb_idle.png`），
+    ///    它是**打字 → 语音**的唯一入口。
+    var onVoice: (() -> Void)?
+
+    private let voiceBtn = UIButton(type: .system)
     private let chipZh = UIButton(type: .system)
     private let chipEn = UIButton(type: .system)
     private var candViews: [UIView] = []
@@ -61,6 +67,16 @@ final class CandidateBar: UIView {
             b.layer.cornerRadius = Theme.rKey
             addSubview(b)
         }
+        // 波形键。安卓那个是画出来的声波图标，这里用同一套画法
+        // （`Theme.waveIcon`），别用 emoji —— 系统 emoji 在深色底上发灰。
+        voiceBtn.setImage(Theme.waveIcon(color: Theme.text), for: .normal)
+        voiceBtn.tintColor = Theme.text
+        voiceBtn.backgroundColor = Theme.key
+        voiceBtn.layer.cornerRadius = Theme.rKey
+        voiceBtn.addAction(UIAction { [weak self] _ in self?.onVoice?() },
+                           for: .touchUpInside)
+        addSubview(voiceBtn)
+
         chipZh.addTarget(self, action: #selector(tapZh), for: .touchUpInside)
         chipEn.addTarget(self, action: #selector(tapEn), for: .touchUpInside)
         refreshChips()
@@ -97,6 +113,10 @@ final class CandidateBar: UIView {
         let showChips = !typing
         chipZh.isHidden = !showChips
         chipEn.isHidden = !showChips
+        // 🚨 波形键跟芯片一起让位。安卓也是"一打字整行都给候选"
+        //    （Kevin 2026-08-23：「返回那一行是不是可以再放字了？
+        //    这样就不需要这么高了。人要灵活一点。」）
+        voiceBtn.isHidden = !showChips
 
         let y = (bounds.height - K.h) / 2
         var x: CGFloat = K.margin
@@ -109,6 +129,10 @@ final class CandidateBar: UIView {
             rightEdge -= K.chipW + K.margin * 2
         }
         if showChips {
+            // 🚨 尺寸跟芯片**共用 K.chipW / K.h**。他点名过
+            //    「语音波纹键和中/EN 切换键的方格大小不一致」。
+            voiceBtn.frame = CGRect(x: x, y: y, width: K.chipW, height: K.h)
+            x += K.chipW + 6
             chipZh.frame = CGRect(x: x, y: y, width: K.chipW, height: K.h)
             x += K.chipW + 6
             chipEn.frame = CGRect(x: x, y: y, width: K.chipW, height: K.h)

@@ -167,3 +167,37 @@ enum Theme {
         }.withRenderingMode(.alwaysOriginal)
     }
 }
+
+
+// MARK: - 波形图标（「回语音」那个键）
+
+extension Theme {
+    /// 键盘候选栏左上角那个**波形**图标。照抄安卓 `WaveIcon.java`。
+    ///
+    /// 🚨 不用喇叭、不写字（Kevin 2026-08-23：「语音也不要用这个喇叭，
+    ///    很丑，太 low 了…Typeless 的语音符号是个波浪形的符号。不需要写字」）。
+    /// 🚨 一个图标同时取代「返回」和「语音」两个键 ——
+    ///    他说「点返回和点语音都是回到同一个地方，重复了」。
+    static func waveIcon(color: UIColor,
+                         barW: CGFloat = 2.5, gap: CGFloat = 2.5,
+                         size: CGSize = CGSize(width: 26, height: 18))
+        -> UIImage {
+        // 六根竖条的相对高度（0~1），中间高两边低 —— 就是"说话"那个形状
+        let hs: [CGFloat] = [0.22, 0.62, 1.00, 0.74, 0.42, 0.22]
+        let r = UIGraphicsImageRenderer(size: size)
+        return r.image { ctx in
+            color.setFill()
+            let total = CGFloat(hs.count) * barW
+                + CGFloat(hs.count - 1) * gap
+            var x = (size.width - total) / 2
+            let cy = size.height / 2
+            for h in hs {
+                let half = size.height * h / 2
+                let rect = CGRect(x: x, y: cy - half,
+                                  width: barW, height: half * 2)
+                UIBezierPath(roundedRect: rect, cornerRadius: barW / 2).fill()
+                x += barW + gap
+            }
+        }.withRenderingMode(.alwaysOriginal)
+    }
+}

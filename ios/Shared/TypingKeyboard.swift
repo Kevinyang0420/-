@@ -48,6 +48,14 @@ enum Layout {
     static let numKeyTextSize: CGFloat = 22
     /// 一行按键的高度。安卓键高 `dp(46)` + 行内边距 `ROW_PAD_DP=2` 上下各一份。
     static let keyRowH: CGFloat = 46 + rowPad * 2
+
+    /// 首行字母长按出的数字：q→1 w→2 … o→9 p→0（安卓 `longPressDigit`）。
+    /// 🚨 这是 Gboard 的做法：**零占位**，不用切到 ?123 页，
+    ///    也不用常驻一行数字把键盘顶高。
+    static func longPressDigit(_ k: String) -> String? {
+        guard let i = row1.firstIndex(of: k) else { return nil }
+        return String((i + 1) % 10)          // q..o → 1..9，p → 0
+    }
     /// 安卓 ROW2 那一行左右各缩进 14dp（:270 `keyRow(ROW2, dp(14))`）
     static let row2Indent: CGFloat = 14
     static let keyGap: CGFloat = 3
@@ -86,6 +94,10 @@ final class TypingKeyboardView: UIView {
     var onText: ((String) -> Void)?
     var onDelete: (() -> Void)?
     var onSwitchToVoice: (() -> Void)?
+    /// 拿宿主的输入连接。**退格要用**（长按连删、按词删都得读光标前的文字），
+    /// 而键盘视图本身拿不到 —— 由 `KeyboardViewController` 注入。
+    /// 🚨 为 nil 时退格退化成 `onDelete?()`（单次删除），**不会失灵**。
+    var proxyProvider: (() -> UITextDocumentProxy?)?
     var onGlobe: (() -> Void)?
 
     private var mode: Mode = .letters
@@ -153,6 +165,9 @@ final class TypingKeyboardView: UIView {
     ///    「拼音那一栏显示字母，文本框里也显示字母，就重复了」。
     var onComposing: ((String) -> Void)?
     private var letterButtons: [UIButton] = []
+    /// 按钮 → 它长按该出的数字。**不挂在按钮的 tag 上** ——
+    /// tag 是个 Int，存不下字符串，而且别处也可能用它。
+    private var longPressDigits: [ObjectIdentifier: String] = [:]
     private var punctButtons: [(UIButton, String)] = []
     private var shiftBtn: UIButton?
     private var symBtn: UIButton?
@@ -184,6 +199,11 @@ final class TypingKeyboardView: UIView {
         ])
         candBar.onPick = { [weak self] s in self?.pickCandidate(s) }
         candBar.onMode = { [weak self] zh in self?.setChinese(zh) }
+        candBar.onVoice = { [weak self] in
+            // 切走之前把没上屏的拼音上掉 —— 绝不静默吞掉他打的东西
+            self?.commitPending()
+            self?.onSwitchToVoice?()
+        }
         rebuild()
     }
 
@@ -198,6 +218,7 @@ final class TypingKeyboardView: UIView {
         }
         letterButtons.removeAll()
         punctButtons.removeAll()
+        longPressDigits.removeAll()
 
         // 🚨 候选栏在最上面，跟安卓 `suggestBar` 同一个位置。
         //    它**不参与等分**（字母行才等分），所以单独固高。
@@ -344,7 +365,15 @@ final class TypingKeyboardView: UIView {
                     self?.numMode = false
                     self?.rebuild()
                 }),
-               ("\u{232B}", { [weak self] in self?.onDelete?() })]
+               ("\u{232B}", { [weak self] in
+                    // 九宫格顶行那个退格。这里是闭包不是按钮，
+                    // 拿不到长按事件 —— 走 proxy 的单次删除，跟别处同源。
+                    if let p = self?.proxyProvider?() {
+                        p.deleteBackward()
+                    } else {
+                        self?.onDelete?()
+                    }
+                })]
             : []
         let box = UIView()
         candBar.translatesAutoresizingMaskIntoConstraints = false
@@ -376,6 +405,7 @@ final class TypingKeyboardView: UIView {
                 }, for: .touchUpInside)
             } else {
                 letterButtons.append(b)
+                attachLongPressDigit(b, k)
                 b.addAction(UIAction { [weak self] _ in
                     self?.tapLetter(k)
                 }, for: .touchUpInside)
@@ -412,8 +442,7 @@ final class TypingKeyboardView: UIView {
         h.addArrangedSubview(mid)
 
         let del = makeKey("⌫")
-        del.addAction(UIAction { [weak self] _ in self?.onDelete?() },
-                      for: .touchUpInside)
+        attachDelete(del)
         h.addArrangedSubview(del)
 
         // 两边的功能键各占 1.5 格（跟安卓 wide(1.5f) 一致）
@@ -454,8 +483,7 @@ final class TypingKeyboardView: UIView {
         h.addArrangedSubview(mid)
 
         let del = makeKey("⌫")
-        del.addAction(UIAction { [weak self] _ in self?.onDelete?() },
-                      for: .touchUpInside)
+        attachDelete(del)
         h.addArrangedSubview(del)
 
         more.widthAnchor.constraint(
@@ -638,6 +666,40 @@ final class TypingKeyboardView: UIView {
     }
 
     // MARK: - 行为
+
+    /// 给一个键装上完整退格行为（长按连删、1.2 秒后按词删）。
+    ///
+    /// 🚨 **所有退格键都必须走这里**（安卓那句注释：「退格统一走 Backspace，
+    ///    不在这里再写一份」）。散着写的结果就是"这个键的退格跟那个键不一样"，
+    ///    而且改的时候必漏一处。
+    private func attachDelete(_ b: UIButton) {
+        if let provider = proxyProvider {
+            Backspace.attach(b, proxy: provider)
+        } else {
+            // 宿主没注入（比如 App 里的预览页）：退化成单次删除，不失灵
+            b.addAction(UIAction { [weak self] _ in self?.onDelete?() },
+                        for: .touchUpInside)
+        }
+    }
+
+    /// 给首行字母装长按出数字。
+    private func attachLongPressDigit(_ b: UIButton, _ k: String) {
+        guard let digit = Layout.longPressDigit(k) else { return }
+        let g = UILongPressGestureRecognizer(target: self,
+                                             action: #selector(onLongPressDigit(_:)))
+        g.minimumPressDuration = 0.35
+        b.addGestureRecognizer(g)
+        longPressDigits[ObjectIdentifier(b)] = digit
+    }
+
+    @objc private func onLongPressDigit(_ g: UILongPressGestureRecognizer) {
+        guard g.state == .began, let b = g.view as? UIButton,
+              let digit = longPressDigits[ObjectIdentifier(b)] else { return }
+        // 🚨 先把没上屏的拼音上掉，别让「你好」变成「1你好」——
+        //    跟符号键同一个口径（安卓那边写着这条）。
+        commitPending()
+        onText?(digit)
+    }
 
     private func tapLetter(_ k: String) {
         // 中文档：字母先进拼音缓冲，不直接上屏（安卓 `pinyin.append(k)`）

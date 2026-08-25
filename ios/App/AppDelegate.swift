@@ -29,6 +29,10 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ app: UIApplication,
                      didFinishLaunchingWithOptions o: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // 🚨 导航栏样式要在**任何页面建出来之前**设，而且只设这一次。
+        //    上一版我加在首页那条分支里，深链（TRANSLESS_PAGE）走的是另一条 —— 
+        //    截图上「设为当前输入法」还是黑字。**一处配置要盖住所有入口**。
+        NavStyle.apply()
         DeviceId.ensure()
         let w = UIWindow(frame: UIScreen.main.bounds)
         // 🚨 **调试用的直达入口**：`xcrun simctl launch … --page speak` 之类，
@@ -279,18 +283,30 @@ final class HomeViewController: UIViewController {
         // 下半：两个长条
         let bars = UIStackView()
         bars.axis = .vertical
-        bars.spacing = 9
+        // 🚨 按钮间距 14。原来是 9 —— Grok 评审：「按钮间距仅约 8–10pt，
+        //    形成"上松下紧"的失衡，主 CTA 没有足够的垂直呼吸空间」。
+        bars.spacing = 14
+
+        // 🚨🚨 **顺序：先让他体验，再要他付出**（Kevin 2026-08-25）：
+        //    「『说一段试试』可以放在第一个 tab 里。甚至可以这样设计：
+        //      新用户下载之后，必须要先完成『说一段试试』，
+        //      然后再去注册登录，以及设为当前输入法。」
+        //    所以「说一段试试」排第一、并且是**主按钮** ——
+        //    它原来是最不起眼的第三个。
+        //
+        // 🚨 「必须先完成才能点后两个」那个**硬锁没做**：
+        //    判断一旦出错（重装 App、换设备、本地标记丢），就会把人锁在门外，
+        //    而"App 自作主张不让我用"正是他反复骂过的那类。
+        //    先上顺序和主次这一半；真要硬锁再加，一行的事。
+        bars.addArrangedSubview(Bars.make(L.home_try_speak, primary: true,
+                                          target: self,
+                                          action: #selector(openSpeak)))
         bars.addArrangedSubview(Bars.make(L.home_login, primary: false,
                                           target: self,
                                           action: #selector(loginSoon)))
-        bars.addArrangedSubview(Bars.make(L.home_set_ime, primary: true,
+        bars.addArrangedSubview(Bars.make(L.home_set_ime, primary: false,
                                           target: self,
                                           action: #selector(openSetup)))
-        // 🚨 第三个入口：进 App 内的说话界面。
-        //    在 iOS 键盘扩展补齐之前，这是**唯一能用的路**（交叉审查 H1）。
-        bars.addArrangedSubview(Bars.make(L.home_try_speak, primary: false,
-                                          target: self,
-                                          action: #selector(openSpeak)))
         root.addArrangedSubview(bars)
     }
 
@@ -362,6 +378,30 @@ enum Bars {
 ///    安卓第 ③ 步是"设为默认输入法"，iOS 根本没有这个概念 ——
 ///    照抄会写出一句做不到的指引，比不写还糟。
 ///    iOS 的三步是：加键盘 → 允许完全访问 → 允许麦克风。
+/// 导航栏统一样式。**单一配置点** —— 每个页面各设一遍必然漏一处。
+///
+/// 🚨 Kevin 2026-08-25：「设置里面的字又是黑色的，根本看不清楚
+///    『设置』这两个字。这个 UI 我都说了很多次了」。
+///    根因是从来没设过 `UINavigationBar` 的样式：深色背景 +
+///    系统默认的黑标题。不是某个页面写错，是整个 App 都没设。
+enum NavStyle {
+    static func apply() {
+        let a = UINavigationBarAppearance()
+        a.configureWithTransparentBackground()      // 背景交给页面的渐变
+        a.titleTextAttributes = [
+            .foregroundColor: Skin.text,
+            .font: UIFont.systemFont(ofSize: 17, weight: .medium),
+        ]
+        a.largeTitleTextAttributes = [.foregroundColor: Skin.text]
+        let bar = UINavigationBar.appearance()
+        bar.standardAppearance = a
+        bar.scrollEdgeAppearance = a
+        bar.compactAppearance = a
+        // 返回箭头也得是浅色，否则同样看不见
+        bar.tintColor = Skin.text
+    }
+}
+
 final class SetupViewController: UIViewController {
 
     // 🚨 子页要显示导航栏（首页是隐藏的）—— 不然进来就出不去。
@@ -389,21 +429,20 @@ final class SetupViewController: UIViewController {
 
         let stack = UIStackView()
         stack.axis = .vertical
-        stack.spacing = 12
+        // 行间 15、左右 21，照安卓 SetupActivity
+        //（`lp.setMargins(0,0,0,dp(15))` / `root.setPadding(dp(21),0,dp(21),0)`）
+        stack.spacing = 15
         stack.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
-            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 21),
+            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -21),
             stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
         ])
 
-        let h1 = UILabel()
-        h1.text = L.home_set_ime
-        h1.font = .systemFont(ofSize: 21, weight: .medium)
-        h1.textColor = Skin.text
-        stack.addArrangedSubview(h1)
-        stack.setCustomSpacing(20, after: h1)
+        // 🚨 这里**不再放大标题**。导航栏上已经写着「设为当前输入法」，
+        //    正文再来一个一模一样的，白占一屏高度还削弱了真正的步骤层级
+        //    （Grok 评审：「用户第一眼看到两个相同标题，信息冗余」）。
 
         for (n, t) in [("1", L.ios_step_add),
                        ("2", L.ios_step_full),
@@ -412,6 +451,16 @@ final class SetupViewController: UIViewController {
             rows.append((row, num, state))
             stack.addArrangedSubview(row)
         }
+        // 第 2 项底下补一句说明 —— 那一项永远不会变绿，得说清为什么，
+        // 否则他会一直以为没设成功（他 2026-08-25 就是这么卡住的）。
+        let fullNote = UILabel()
+        fullNote.text = L.full_note
+        fullNote.font = .systemFont(ofSize: 12)
+        fullNote.textColor = Skin.dim
+        fullNote.numberOfLines = 0
+        stack.insertArrangedSubview(fullNote,
+                                    at: stack.arrangedSubviews.count)
+
         // 🚨🚨 第 3 步要**可点，而且真的去请求麦克风权限**（交叉审查 H2）。
         //    iOS 只有在 App 请求过一次之后，「设置 → Transless」里才会
         //    出现麦克风开关。我上一版把 requestRecordPermission 删干净了，
@@ -423,6 +472,32 @@ final class SetupViewController: UIViewController {
                                             action: #selector(askMic))
         rows[2].0.isUserInteractionEnabled = true
         rows[2].0.addGestureRecognizer(micTap)
+        // 🚨 让它**看起来能点** —— 但**不能给整行换底色**。
+        //    Kevin 2026-08-25 说「允许录音那个我就是找不到啊」（这一行一直
+        //    可点，他是自己撞对的）；我上一版给整行加了底色，
+        //    Grok 评审当场指出「三张卡片颜色不一致，会让人误以为步骤 3
+        //    是当前高亮/已完成状态」。两条都对。
+        //    正解：**三张卡片底色一律相同**，"能点"由右边那个
+        //    「去启用 ›」自己表达 —— 把它做成按钮的样子（见 refresh 里
+        //    对 `.some(false)` 的处理）。
+        rows[2].2.layer.cornerRadius = 9
+        rows[2].2.clipsToBounds = true
+        rows[2].2.textAlignment = .center
+        // 🚨 状态标签**不许被压缩**。加了内边距之后它变宽了，
+        //    横向 stack 默认按 hugging 分配，结果标题把它挤成「去启…」
+        //    「请手动…」（截图上看到的）。让标题那边先缩。
+        for (row, _, lab) in rows {
+            lab.setContentCompressionResistancePriority(.required, for: .horizontal)
+            lab.setContentHuggingPriority(.required, for: .horizontal)
+            if let box = row as? UIStackView,
+               let title = box.arrangedSubviews.first(where: {
+                   ($0 as? UILabel) != nil && $0 !== lab
+               }) as? UILabel {
+                title.numberOfLines = 2          // 挤不下就换行，不截断
+                title.setContentCompressionResistancePriority(.defaultLow,
+                                                              for: .horizontal)
+            }
+        }
 
         let go = UIButton(type: .system)
         go.setTitle(L.act_settings, for: .normal)
@@ -436,13 +511,11 @@ final class SetupViewController: UIViewController {
         stack.setCustomSpacing(26, after: rows.last!.0)
         stack.addArrangedSubview(go)
 
-        let notice = UILabel()
-        notice.text = L.ai_notice
-        notice.textColor = Skin.dim
-        notice.font = .systemFont(ofSize: 12)
-        notice.numberOfLines = 0
-        stack.setCustomSpacing(18, after: go)
-        stack.addArrangedSubview(notice)
+        // 🚨 这里**没有** AI 免责声明。
+        //    「译文由 AI 生成，发送前请自行核对」原来挂在这一页 ——
+        //    而这一页是"怎么把键盘装上"的引导，跟译文毫无关系，
+        //    用户看到会想"我现在在翻译什么？"（Grok 评审指出，属实）。
+        //    那句话该出现在**真正出译文的地方**，不在这儿。
     }
 
     override func viewDidLayoutSubviews() {
@@ -462,6 +535,8 @@ final class SetupViewController: UIViewController {
         // 🚨 「完全访问」在容器 App 里**查不到** —— 那是键盘扩展侧的状态，
         //    系统没给容器 App 这个接口。所以这一项如实显示"去设置里开"，
         //    不假装知道。宁可少报一个状态，也不报一个可能是错的。
+        // 🚨 第 2 项是 `nil`：**查不到**，不是"未完成"。
+        //    见下面 `case .none` 的呈现 —— 不能跟未完成长一个样。
         let states: [Bool?] = [added, nil, mic]
         for (i, s) in states.enumerated() {
             let (_, num, lab) = rows[i]
@@ -469,14 +544,31 @@ final class SetupViewController: UIViewController {
             case .some(true):
                 lab.text = L.done_enabled
                 lab.textColor = Skin.ok
+                // 🚨 每个分支都要**把底色清掉**，不能只在设的那个分支里管。
+                //    只在一处设、别处不清，状态一变就留着上一次的底
+                //    —— 那种错只在"来回切几次"时才现形。
+                lab.backgroundColor = .clear
                 num.backgroundColor = Skin.ok
             case .some(false):
-                lab.text = L.act_enable
-                lab.textColor = Skin.dim
+                lab.text = "  " + L.act_enable + "  "
+                lab.textColor = Skin.text
+                // 🚨 「能点」由这个小标签自己表达（浅底 + 亮字），
+                //    而不是给整行换底色 —— 后者会破坏三张卡片的一致性。
+                lab.backgroundColor = Skin.accent.withAlphaComponent(0.35)
+                lab.layer.cornerRadius = 9
+                lab.clipsToBounds = true
                 num.backgroundColor = Skin.accent2
             case .none:
-                lab.text = L.act_settings
+                // 🚨 **不摆成"待办"的样子**。Kevin 2026-08-25：
+                //    「第二个『允许完全访问』，我设置了之后，它还是显示
+                //     要我去设置啊，没有设好啊」——
+                //    他设好了，是我这一行永远显示「去设置 ›」在误导他。
+                // 🚨 但也不能是个光秃秃的「—」：其他两步写着「去启用 ›」，
+                //    这里突然一个破折号，"已完成 / 不可点 / 状态未知"分不出来
+                //    （Grok 评审指出）。写清楚**它是什么状态**。
+                lab.text = L.act_manual
                 lab.textColor = Skin.dim
+                lab.backgroundColor = .clear
                 num.backgroundColor = Skin.accent2
             }
         }
@@ -494,8 +586,19 @@ final class SetupViewController: UIViewController {
         -> (UIView, UILabel, UILabel) {
         let row = UIStackView()
         row.axis = .horizontal
-        row.spacing = 14
+        // 🚨 数字和文字之间 13，照安卓 `nlp.setMargins(0, 0, dp(13), 0)`
+        row.spacing = 13
         row.alignment = .center
+        // 🚨🚨 每一行是**一张卡片**，`padding(18,20,18,20)` ——
+        //    照安卓 `SetupActivity`：`row.setPadding(dp(18), dp(20), dp(18), dp(20))`。
+        //    iOS 原来是裸行、只有 12 的 spacing，挤成一坨
+        //    （Kevin 2026-08-25：「这个界面太丑了，怎么会这么密呢？
+        //     你看一下安卓怎么设计的吧，我不是让你对着安卓来做吗？」）。
+        row.isLayoutMarginsRelativeArrangement = true
+        row.layoutMargins = UIEdgeInsets(top: 20, left: 18,
+                                         bottom: 20, right: 18)
+        row.backgroundColor = UIColor.white.withAlphaComponent(0.06)
+        row.layer.cornerRadius = 14
 
         let num = UILabel()
         num.text = n
@@ -673,11 +776,12 @@ final class PrefsViewController: UIViewController {
         let t = UILabel()
         t.text = title
         t.textColor = Skin.text
-        t.font = .systemFont(ofSize: 16)
+        // 字号照安卓 PrefsActivity：标题 15.5、副标题 11.5
+        t.font = .systemFont(ofSize: 15.5)
         let s = UILabel()
         s.text = sub
         s.textColor = Skin.dim
-        s.font = .systemFont(ofSize: 13)
+        s.font = .systemFont(ofSize: 11.5)
         s.numberOfLines = 0
         let col = UIStackView(arrangedSubviews: sub == nil ? [t] : [t, s])
         col.axis = .vertical
@@ -688,8 +792,11 @@ final class PrefsViewController: UIViewController {
         NSLayoutConstraint.activate([
             col.leadingAnchor.constraint(equalTo: b.leadingAnchor, constant: 16),
             col.trailingAnchor.constraint(equalTo: b.trailingAnchor, constant: -34),
-            col.topAnchor.constraint(equalTo: b.topAnchor, constant: 11),
-            col.bottomAnchor.constraint(equalTo: b.bottomAnchor, constant: -11),
+            // 🚨 上下 15，照安卓 `r.setPadding(dp(16), dp(15), dp(16), dp(15))`。
+            //    原来写的是 11 —— 每行矮 8pt，一整页看着就"密"
+            //    （Kevin 2026-08-25：「里面的排版太密了，不像安卓那样会铺开一些」）。
+            col.topAnchor.constraint(equalTo: b.topAnchor, constant: 15),
+            col.bottomAnchor.constraint(equalTo: b.bottomAnchor, constant: -15),
         ])
         if let a = action {
             b.addTarget(self, action: a, for: .touchUpInside)
@@ -712,7 +819,8 @@ final class PrefsViewController: UIViewController {
             b.leadingAnchor.constraint(equalTo: pad.leadingAnchor),
             b.trailingAnchor.constraint(equalTo: pad.trailingAnchor),
             b.topAnchor.constraint(equalTo: pad.topAnchor),
-            b.bottomAnchor.constraint(equalTo: pad.bottomAnchor, constant: -8),
+            // 行间距 9，照安卓 `lp.setMargins(0, 0, 0, dp(9))`
+            b.bottomAnchor.constraint(equalTo: pad.bottomAnchor, constant: -9),
         ])
         return pad
     }

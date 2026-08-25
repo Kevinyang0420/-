@@ -39,6 +39,10 @@ final class KeyboardViewController: UIInputViewController {
     private var typingView: TypingKeyboardView?
     private var voiceRoot: UIStackView?
     private var heightC: NSLayoutConstraint?
+    /// 第一次显示时要不要直接进打字键盘。见 `viewDidLoad` 里的说明。
+    private var needsInitialTyping = false
+    /// 没开「允许完全访问」时挂的那条提示。开了就是 nil。
+    private var fullAccessWarning: UILabel?
 
     // 🚨 懒加载，不在扩展启动瞬间创建。
     //    Voice() 里会 init AVAudioEngine + SFSpeechRecognizer —— 键盘扩展的启动预算
@@ -58,6 +62,34 @@ final class KeyboardViewController: UIInputViewController {
         view.backgroundColor = .clear
         bgLayer = Theme.keyboardBackground(view.bounds)
         view.layer.insertSublayer(bgLayer!, at: 0)
+
+        // 🚨 **这里查得到**「允许完全访问」（`hasFullAccess` 是扩展侧的 API，
+        //    容器 App 拿不到）。没开就在键盘上直说 ——
+        //    判据要放在查得到的地方，而不是在 App 里猜。
+        if !hasFullAccess {
+            let warn = UILabel()
+            warn.text = L.kb_need_full
+            warn.font = .systemFont(ofSize: 12)
+            warn.textColor = Theme.danger
+            warn.numberOfLines = 2
+            warn.textAlignment = .center
+            warn.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(warn)
+            NSLayoutConstraint.activate([
+                warn.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+                                              constant: 8),
+                warn.trailingAnchor.constraint(equalTo: view.trailingAnchor,
+                                               constant: -8),
+                warn.topAnchor.constraint(equalTo: view.topAnchor, constant: 4),
+            ])
+            fullAccessWarning = warn
+        }
+
+        // 🚨 起手就是**打字键盘**，跟安卓一致（真机截图 `_kb_idle.png`：
+        //    键盘一弹出来是字母 + 候选栏，左上角波形键才是去语音的入口）。
+        //    放在 viewDidAppear 而不是这里 —— 这会儿子视图还没布好，
+        //    高度约束会被随后的初始布局盖掉。
+        needsInitialTyping = true
 
         hintLabel.font = .systemFont(ofSize: 13)
         hintLabel.textColor = Theme.dim
@@ -109,20 +141,18 @@ final class KeyboardViewController: UIInputViewController {
         let del = smallButton("⌫")
         del.addTarget(self, action: #selector(backspace), for: .touchUpInside)
 
-        // 🚨 进打字键盘的入口。安卓底排有这个键，iOS 一直没有 ——
-        //    于是 iOS 用户只能对着一个麦克风，打不了字。
-        let typeBtn = smallButton(L.kb_type)
-        typeBtn.addTarget(self, action: #selector(showTyping),
-                          for: .touchUpInside)
-
+        // 🚨 这里**不再有**「⌨ 打字」键。安卓的结构是：
+        //    键盘默认就是打字键盘，候选栏左上角的波形键切来语音；
+        //    语音面板这一屏靠 `onSwitchToVoice` 的反向操作回去。
+        //    （原来 iOS 是反的 —— 默认语音、底排挂个 Type 键，
+        //     于是同一个 App 在两个平台上打开键盘看到的东西完全不同。）
         let bottom = UIStackView(arrangedSubviews:
-            [globe, typeBtn, toneButton, fallbackButton, del])
+            [globe, toneButton, fallbackButton, del])
         bottom.axis = .horizontal
         bottom.spacing = 8
         globe.widthAnchor.constraint(equalToConstant: 44).isActive = true
         del.widthAnchor.constraint(equalToConstant: 44).isActive = true
         toneButton.widthAnchor.constraint(equalToConstant: 56).isActive = true
-        typeBtn.widthAnchor.constraint(equalToConstant: 52).isActive = true
         bottom.heightAnchor.constraint(equalToConstant: 38).isActive = true
 
         let root = UIStackView(arrangedSubviews: [hintLabel, heardLabel, micWrap, bottom])
@@ -140,6 +170,14 @@ final class KeyboardViewController: UIInputViewController {
             root.topAnchor.constraint(equalTo: view.topAnchor, constant: 10),
             hc,
         ])
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if needsInitialTyping {
+            needsInitialTyping = false
+            showTyping()
+        }
     }
 
     // MARK: - 语音面板 / 打字键盘 切换
@@ -166,6 +204,8 @@ final class KeyboardViewController: UIInputViewController {
                 self?.textDocumentProxy.deleteBackward()
             }
             t.onSwitchToVoice = { [weak self] in self?.showVoice() }
+            // 退格要读光标前的文字（长按连删、按词删），把输入连接给它。
+            t.proxyProvider = { [weak self] in self?.textDocumentProxy }
             t.onHeightChange = { [weak self] h in
                 guard let s = self, s.voiceRoot?.isHidden == true else { return }
                 s.heightC?.constant = h

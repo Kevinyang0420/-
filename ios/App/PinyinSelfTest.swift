@@ -27,6 +27,20 @@ final class PinyinSelfTestController: UIViewController {
         ("xiexie", "xie/xie"),
     ]
 
+    /// 退格按词删的用例。第三列是**为什么是这个数**——
+    /// 期望值靠推的话就是假断言，得说得出理由。
+    private static let wordCases: [(String, Int, String)] = [
+        ("hello world", 5, "删 world 五个字母"),
+        ("hello world ", 6, "先吃掉尾部那个空格，再删 world"),
+        ("hello   ", 3, "只有空白就把空白吃掉"),
+        ("a", 1, "只剩一个字符"),
+        ("", 1, "空串也要删一下，不能一动不动"),
+        ("你好", 1, "🚨 汉字按单字删 —— 中文没空格分词，"
+                    + "一路吃到空白会把整句删光"),
+        ("hello 你好", 1, "同上，汉字只删一个"),
+        ("ab12", 4, "字母数字混在一起算一个词"),
+    ]
+
     /// 候选用例。右＝期望的**前 5 个**（空格分隔）。
     private static let candCases: [(String, String)] = [
         ("ni", "你 泥 尼 拟 逆"),
@@ -90,6 +104,36 @@ final class PinyinSelfTestController: UIViewController {
         //    期望值该是「不该出现明显生僻字」而不是某个固定串。
         lines.append(w.isEmpty ? "FAIL 打 j 一个候选都没有" : "PASS " + w.joined(separator: " "))
         if w.isEmpty { fail += 1 }
+
+        lines.append("")
+        lines.append("— 退格按词删（光标前是什么 → 删几个）—")
+        // 期望值是**手推的**，每条都写清为什么：
+        for (before, want, why) in Self.wordCases {
+            let got = Backspace.wordDeleteCount(before)
+            let ok = got == want
+            if !ok { fail += 1 }
+            lines.append(String(format: "%@ %-16@ %d  %@",
+                                ok ? "PASS" : "FAIL", before as NSString,
+                                got, ok ? why : "🚨期望 \(want)  " + why))
+        }
+
+        lines.append("")
+        lines.append("— 长按字母出数字 —")
+        for (k, want) in [("q", "1"), ("w", "2"), ("o", "9"), ("p", "0")] {
+            let got = Layout.longPressDigit(k) ?? "nil"
+            let ok = got == want
+            if !ok { fail += 1 }
+            lines.append("\(ok ? "PASS" : "FAIL") \(k) → \(got)"
+                         + (ok ? "" : "  期望 \(want)"))
+        }
+        // 非首行不该有数字 —— 这条守的是"别给所有字母都装上"
+        for k in ["a", "z", "m"] {
+            let got = Layout.longPressDigit(k)
+            let ok = got == nil
+            if !ok { fail += 1 }
+            lines.append("\(ok ? "PASS" : "FAIL") \(k) → "
+                         + (got ?? "nil（非首行，正确）"))
+        }
 
         lines.append("")
         lines.append(fail == 0 ? "=== 全过 ===" : "=== FAIL：\(fail) 项 ===")

@@ -40,6 +40,10 @@ enum L {
     static var step_default: String { s("设为默认", "Make it default", "設為預設") }
     static var act_allow: String { s("去允许 ›", "Allow ›", "去允許 ›") }
     static var act_enable: String { s("去启用 ›", "Enable ›", "去啟用 ›") }
+    /// 「这一步只能你自己去系统设置里开，App 查不到状态」。
+    /// 🚨 不能用「—」：其他两步写着「去启用 ›」，突然一个破折号，
+    ///    "已完成 / 不可点 / 状态未知"分不出来（Grok 评审指出）。
+    static var act_manual: String { s("请手动开启", "Turn on manually", "請手動開啟") }
     static var act_settings: String { s("去设置 ›", "Settings ›", "去設定 ›") }
     static var done_allowed: String { s("已允许", "Allowed", "已允許") }
     static var done_enabled: String { s("已启用", "Enabled", "已啟用") }
@@ -151,6 +155,23 @@ enum L {
     static var kb_hand_s: String { s("写", "HW", "寫") }
     static var kb_done: String { s("完成", "Done", "完成") }
     static var kb_space: String { s("空格", "Space", "空格") }
+    /// 引导页第 2 项的说明。🚨 iOS 不给容器 App 查「完全访问」的接口，
+    /// 所以这里如实说明，不假装知道状态。
+    static var full_note: String {
+        s("在设置里打开就行。开好之后这一行不会变绿 —— iOS 不让 App 查这个状态，"
+          + "以键盘里的提示为准。",
+          "Just switch it on in Settings. This line won't turn green afterwards — "
+          + "iOS doesn't let the app read that state. The keyboard will tell you.",
+          "在設定裡打開就行。開好之後這一行不會變綠 —— iOS 不讓 App 查這個狀態，"
+          + "以鍵盤裡的提示為準。")
+    }
+    /// 键盘扩展里没有完全访问时挂的提示。
+    static var kb_need_full: String {
+        s("请到 设置 › 通用 › 键盘 › Transless 打开「允许完全访问」，否则联网用不了",
+          "Open Settings › General › Keyboard › Transless and turn on Allow Full "
+          + "Access — networking won't work without it",
+          "請到 設定 › 一般 › 鍵盤 › Transless 打開「允許完全存取」，否則聯網用不了")
+    }
     static var kb_polish: String { s("整理", "Clean up", "整理") }
     static var kb_verbatim: String { s("逐字", "Verbatim", "逐字") }
     static var kb_resend: String { s("重新上屏", "Insert again", "重新上屏") }
