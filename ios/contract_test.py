@@ -69,10 +69,13 @@ def check_assets():
           对着正确的配置报 FAIL —— 判据要挂在**素材在不在**，不是**目录叫什么名**。
 
     B. app-extension 的 sources 里**不许**出现装着 AppIcon.appiconset 的 catalog。
-       🚨 2026-08-25 补：appex 的 actool 会带 `--standalone-icon-behavior all` 去
-          **渲染** AppIcon，而渲染要一个跟 iphonesimulator SDK 同版本的模拟器运行时。
-          CI runner 上没有 → `No simulator runtime version ... available` → archive 全挂。
-          这个错**只在 CI 上出现**（本地装着模拟器运行时就看不见），所以只能由闸门守。
+       理由是体积和语义：appex 有自己的 bundle，把容器 App 的图标打进去纯属白搭。
+       ⚠️ 更正（2026-08-25）：这条**当初是按错误的诊断加的** —— 我以为 CI 那个
+          `No simulator runtime version ...` 是 appex 渲染 AppIcon 引起的，
+          于是拆表 + 加这道闸门。结果 run #3 照挂，报错对象换成了只装 mic 的
+          SharedAssets，证明跟 AppIcon 无关（真根因是 Xcode 版本，见 CI 那份 yml）。
+          闸门留着，因为它守的规矩本身成立；但**它不是那个构建错误的防线**，
+          别下次看到同样的报错就来查这里。
     """
     proj = io.open(os.path.join(HERE, "project.yml"), encoding="utf-8").read()
     # 按 target 切块：顶格两空格的 `  <名字>:` 是一个 target 的起点
