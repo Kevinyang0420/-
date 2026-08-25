@@ -1261,7 +1261,7 @@ final class MainViewController: UIViewController {
         speakButton.setTitleColor(Theme.text, for: .normal)
         speakButton.backgroundColor = Theme.key
         speakButton.layer.cornerRadius = 16
-        speakButton.isEnabled = false          // 没东西可念时不给点
+        paintOutputButtons()
         speakButton.addTarget(self, action: #selector(tapSpeak), for: .touchUpInside)
 
         bigButton.setTitle(L.try_bigtext, for: .normal)
@@ -1269,7 +1269,7 @@ final class MainViewController: UIViewController {
         bigButton.setTitleColor(Theme.text, for: .normal)
         bigButton.backgroundColor = Theme.key
         bigButton.layer.cornerRadius = 16
-        bigButton.isEnabled = false        // 没东西可看时不给点
+        paintOutputButtons()
         bigButton.addTarget(self, action: #selector(tapBig),
                             for: .touchUpInside)
 
@@ -1419,12 +1419,12 @@ final class MainViewController: UIViewController {
         }
         let text = lastOut.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { hintLabel.text = L.nothing_to_speak; return }
-        speakButton.isEnabled = false
+        paintOutputButtons()
         speakButton.setTitle("…", for: .normal)
         Backend.speak(text: text) { [weak self] r in
             DispatchQueue.main.async {
                 guard let self = self else { return }
-                self.speakButton.isEnabled = true
+                self.paintOutputButtons()
                 switch r {
                 case .failure(let e):
                     self.speakButton.setTitle(L.kb_speak, for: .normal)
@@ -1545,8 +1545,7 @@ final class MainViewController: UIViewController {
             // 走 setLine 那条真实回填路径的等价物：写结果区 + 按真实规则点亮
             resultView.text = t
             lastOut = t
-            speakButton.isEnabled = true
-            bigButton.isEnabled = !bigTextNow().isEmpty
+            paintOutputButtons()
         }
         if env["TRANSLESS_CONT"] == "1" { toggleContinuous() }
         if env["TRANSLESS_REV"] == "1" { tapReverse() }
@@ -1758,7 +1757,7 @@ final class MainViewController: UIViewController {
                             switch r2 {
                             case .success(let en):
                                 self.lastOut = en
-                                self.speakButton.isEnabled = true
+                                self.paintOutputButtons()
                                 self.setLine(idx, en)
                             case .failure(let e):
                                 self.setLine(idx, "\(e)")
@@ -1792,6 +1791,29 @@ final class MainViewController: UIViewController {
         return reversed ? Reverse.target(for: Lang.current) : lang
     }
 
+    /// 「朗读 / 大字」的显隐。**只由这里决定**，别在别处再写一遍。
+    ///
+    /// 🚨 跟安卓一致：没内容时**隐藏**（不是置灰）。
+    ///    `speakBtn.setVisibility(lastText.length() > 0 ? VISIBLE : GONE)`
+    ///
+    /// 🚨 两个判据不同，别合并：
+    ///    朗读看 `lastOut`（念最后那一句），
+    ///    大字看 `resultView`（展示整段 —— 连续模式下有好几句）。
+    private func paintOutputButtons() {
+        // 🚨🚨 这两行**曾经被我自己的批量正则替换成了 `paintOutputButtons()`**，
+        //    于是方法调用自己 → 无限递归 → EXC_BAD_ACCESS/SIGSEGV，
+        //    App 一启动就崩。**编译完全通过**，只有真跑才看得见。
+        //    根因是顺序错了：我先插入这个方法、再跑全局替换，
+        //    方法体自然也在替换范围里。
+        //    → 批量替换一律**先换、后插新代码**；插完再 grep 一遍新方法体。
+        let canSpeak = !lastOut.isEmpty
+        let canBig = !bigTextNow().isEmpty
+        speakButton.isHidden = !canSpeak
+        speakButton.isEnabled = canSpeak
+        bigButton.isHidden = !canBig
+        bigButton.isEnabled = canBig
+    }
+
     /// 现在该拿去大字展示的内容：连续模式给整段，单句模式给那一句。
     private func bigTextNow() -> String {
         return (resultView.text ?? "").trimmingCharacters(
@@ -1813,7 +1835,7 @@ final class MainViewController: UIViewController {
         paintLines()
         // 🚨 大字按钮的判据是**结果区有没有东西**，不是 `lastOut` ——
         //    连续模式下 lastOut 只是最后一句，而结果区是整段对话。
-        bigButton.isEnabled = !bigTextNow().isEmpty
+        paintOutputButtons()
     }
 
     private func polish(_ zh: String) {
@@ -1829,10 +1851,10 @@ final class MainViewController: UIViewController {
                 switch result {
                 case .success(let en):
                     self.resultView.text = en
-                    self.bigButton.isEnabled = !en.isEmpty
+                    self.paintOutputButtons()
                     UIPasteboard.general.string = en   // 自动进剪贴板
                     self.lastOut = en                  // 给「🔊 朗读」用
-                    self.speakButton.isEnabled = true
+                    self.paintOutputButtons()
                     self.setPhase(.idle, hint: "已复制 ✓　去微信长按输入框 → 粘贴\n再按一下麦克风说下一条")
                 case .failure(let err):
                     self.setPhase(.idle, hint: "失败：\(err)")
