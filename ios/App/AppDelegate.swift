@@ -347,7 +347,6 @@ final class SetupViewController: UIViewController {
     }
 
     /// 子类各自的「回到前台要刷新什么」。默认什么都不做。
-    @objc func onAppear() { }
 
     private var rows: [(UIView, UILabel, UILabel)] = []
 
@@ -419,7 +418,7 @@ final class SetupViewController: UIViewController {
         UI.resizeBg(self)
     }
 
-    override func onAppear() {
+    func onAppear() {
         refresh()      // 从系统设置回来要重新查状态
     }
 
@@ -541,7 +540,6 @@ final class PrefsViewController: UIViewController {
     }
 
     /// 子类各自的「回到前台要刷新什么」。默认什么都不做。
-    @objc func onAppear() { }
 
     private let list = UIStackView()
 
@@ -575,7 +573,7 @@ final class PrefsViewController: UIViewController {
         UI.resizeBg(self)
     }
 
-    override func onAppear() {
+    func onAppear() {
         build()      // 状态可能变了（比如刚去加了键盘）
     }
 
@@ -776,8 +774,12 @@ final class MainViewController: UIViewController {
         }
     }
 
+    /// 🚨 `viewWillAppear` 里调了它，所以**必须有定义**。
+    ///    这个页回到前台不用刷新什么，留空即可 —— 但不能不定义，
+    ///    CI 上报的就是 "type has no member"。
+    func onAppear() { }
+
     /// 子类各自的「回到前台要刷新什么」。默认什么都不做。
-    @objc func onAppear() { }
 
     private enum Phase { case idle, listening, thinking }
 
@@ -1241,124 +1243,3 @@ final class MainViewController: UIViewController {
     }
 }
 
-// MARK: - 权限/自测页（原来的首页，降级成二级页）
-
-final class SetupViewController: UIViewController {
-
-    private let micState = UILabel()
-    private let testOut = UILabel()
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // 🚨 原来是 `.systemBackground`（浅色）—— 从深紫主界面点进来会闪一下白。
-        //    这种不一致只有真机点进去才看得见，代码里看着毫无问题。
-        view.backgroundColor = Theme.bg
-        title = L.ios_setup_title
-
-        let s1 = step(L.ios_step1, L.ios_step1_why)
-        micState.font = .systemFont(ofSize: 14)
-        micState.textColor = Theme.text
-        micState.numberOfLines = 0
-        let askBtn = button(L.ios_allow_mic, #selector(askPerms))
-
-        let s2 = step(L.ios_step2, "")
-        let testBtn = button(L.ios_test_once, #selector(selfTest))
-        testOut.font = .systemFont(ofSize: 13)
-        testOut.textColor = Theme.dim
-        testOut.numberOfLines = 0
-
-        let stack = UIStackView(arrangedSubviews: [s1, micState, askBtn, s2, testBtn, testOut])
-        stack.axis = .vertical
-        stack.spacing = 10
-
-        let scroll = UIScrollView()
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        scroll.addSubview(stack)
-        view.addSubview(scroll)
-        NSLayoutConstraint.activate([
-            scroll.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: scroll.topAnchor, constant: 20),
-            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            stack.bottomAnchor.constraint(equalTo: scroll.bottomAnchor, constant: -40),
-        ])
-        refresh()
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        refresh()
-    }
-
-    private func step(_ t: String, _ why: String) -> UIStackView {
-        let a = UILabel()
-        a.text = t
-        a.font = .systemFont(ofSize: 17, weight: .semibold)
-        a.textColor = Theme.text
-        let b = UILabel()
-        b.text = why
-        b.font = .systemFont(ofSize: 13)
-        b.textColor = Theme.dim
-        b.numberOfLines = 0
-        let s = UIStackView(arrangedSubviews: why.isEmpty ? [a] : [a, b])
-        s.axis = .vertical
-        s.spacing = 4
-        return s
-    }
-
-    private func button(_ t: String, _ sel: Selector) -> UIButton {
-        let b = UIButton(type: .system)
-        b.setTitle(t, for: .normal)
-        b.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        b.backgroundColor = .secondarySystemBackground
-        b.layer.cornerRadius = 10
-        b.heightAnchor.constraint(equalToConstant: 46).isActive = true
-        b.addTarget(self, action: sel, for: .touchUpInside)
-        return b
-    }
-
-    private func refresh() {
-        let mic = AVAudioSession.sharedInstance().recordPermission == .granted
-        micState.text = mic ? L.mic_allowed : L.mic_not_allowed
-        micState.textColor = mic ? .systemTeal : .systemOrange
-    }
-
-    @objc private func askPerms() {
-        AVAudioSession.sharedInstance().requestRecordPermission { _ in
-            DispatchQueue.main.async { self.refresh() }
-        }
-    }
-
-    /// 自测：判据不是"没报错"，是英文里必须保住关键事实。
-    @objc private func selfTest() {
-        let sample = "哎那个我跟你说一下啊,就是那个报表啊,嗯,我明天早上,"
-                   + "不对,是明天下午三点之前给你,然后要抄送给 Annie。"
-        testOut.text = L.st_testing
-        testOut.textColor = .secondaryLabel
-        Backend.polish(text: sample, tone: "work") { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .failure(let e):
-                    self.testOut.text = "失败：\(e)\n\n把这一屏发给 Claude。"
-                    self.testOut.textColor = .systemOrange
-                case .success(let en):
-                    let name = en.contains("Annie")
-                    let time = en.contains("3") || en.lowercased().contains("afternoon")
-                    let dropped = !en.lowercased().contains("morning")
-                    var s = "输出：\n\(en)\n\n判据：\n"
-                    s += name ? "  ✓ 人名 Annie 保住了\n" : "  ✗ 人名 Annie 丢了\n"
-                    s += time ? "  ✓ 改口后的时间保住了\n" : "  ✗ 改口后的时间丢了\n"
-                    s += dropped ? "  ✓ 说错的「早上」已丢弃\n" : "  ✗ 说错的「早上」还在\n"
-                    let all = name && time && dropped
-                    s += all ? "\n通过" : "\n有问题 —— 把这一屏发给 Claude"
-                    self.testOut.text = s
-                    self.testOut.textColor = all ? .systemTeal : .systemOrange
-                }
-            }
-        }
-    }
-}
