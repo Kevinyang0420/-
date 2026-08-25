@@ -28,12 +28,15 @@ targets:
       # 只给主 App：AppIcon + logo。🚨 AppIcon 绝不能进 appex，见下面 Keyboard 的说明。
       - path: Assets.xcassets
       - path: SharedAssets.xcassets
+      # 拼音/五笔码表。🚨 唯一源头是 android/assets，`sync_pinyin_ios.py` 复制过来，
+      #    `gate_pinyin_sync.py` 守着两边不漂。
+      - path: Resources
     info:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260825.465"
-        CFBundleVersion: "465"
+        CFBundleShortVersionString: "20260825.466"
+        CFBundleVersion: "466"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -82,8 +85,8 @@ targets:
       path: Probe/App/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260825.465"
-        CFBundleVersion: "465"
+        CFBundleShortVersionString: "20260825.466"
+        CFBundleVersion: "466"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -106,8 +109,8 @@ targets:
       path: Probe/Keyboard/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260825.465"
-        CFBundleVersion: "465"
+        CFBundleShortVersionString: "20260825.466"
+        CFBundleVersion: "466"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -139,12 +142,16 @@ targets:
       #    真根因在 Xcode 版本（见 ci-release-workflow.yml 的「选 Xcode」那步）。
       #    这条拆分保留，因为它本身就对；但别把它当那个错误的修复记着。
       - path: SharedAssets.xcassets
+      # 🚨 键盘扩展是独立 bundle，码表也得编进它自己 —— 只给容器 App 的话
+      #    扩展里 `Bundle.url(forResource:)` 返回 nil，
+      #    候选区一片空白而且**不报错**（PinyinSplit 装不上就退化成空表）。
+      - path: Resources
     info:
       path: Keyboard/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260825.465"
-        CFBundleVersion: "465"
+        CFBundleShortVersionString: "20260825.466"
+        CFBundleVersion: "466"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController

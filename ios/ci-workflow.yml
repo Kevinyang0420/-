@@ -1,0 +1,179 @@
+name: Transless iOS 键盘
+
+# 在 GitHub 免费的 macOS runner 上编译出 IPA（公开仓库不限量免费）。
+# Kevin 不需要 Mac。
+#
+# 🚨 口令走仓库 Secret（ALEX_PASS），不进公开代码。
+#    Secrets.swift 是构建时生成的，不提交。
+#
+# 🚨 产物是**未签名**的 .ipa，用 AltStore / SideStore 侧载。
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios-keyboard.yml"
+
+jobs:
+  build:
+    # 🚨 钉在 macos-15 + Xcode 16，不用 macos-latest。
+    #    latest 已经滚到 Xcode 26.6 / iOS 26.5 SDK —— 2026-08-20 用它编的键盘扩展
+    #    在 Kevin 的 iPhone 上「列表里有、选中就弹回上一个键盘」，装/权限/plist 逐项
+    #    核过全对，最新工具链本身就是嫌疑之一。iOS 18 SDK 是键盘扩展被验证最充分的一代。
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 选 Xcode 16
+        run: |
+          ls /Applications | grep -i xcode || true
+          sudo xcode-select -s /Applications/Xcode_16.4.app || sudo xcode-select -s /Applications/Xcode_16.2.app || sudo xcode-select -s /Applications/Xcode_16.1.app
+          xcodebuild -version
+
+      - name: 装 XcodeGen
+        run: brew install xcodegen
+
+      - name: 生成 Secrets.swift（口令来自 Secret，提示词来自仓库里的 prompt.txt）
+        env:
+          ALEX_PASS: ${{ secrets.ALEX_PASS }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ALEX_PASS}" ]; then
+            echo "::error::仓库 Secret ALEX_PASS 没配，装出来的包用不了"
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json, os, pathlib
+          root = pathlib.Path("ios")
+          prompt = (root / "prompt.txt").read_text(encoding="utf-8")
+          if "PASS 2 - STRUCTURE" not in prompt:
+              raise SystemExit("prompt.txt 不对劲，缺特征串")
+          pw = os.environ["ALEX_PASS"]
+          def swift(s):
+              return json.dumps(s, ensure_ascii=False).replace("\\u", "\\u{").replace("}", "}")
+          out = root / "Shared" / "Secrets.swift"
+          body = "// 构建时生成，勿提交。提示词来自 ios/prompt.txt（源头是 engine.py）。\n"
+          zh = (root / "prompt_zh.txt").read_text(encoding="utf-8")
+          if "Chinese speech-cleanup engine" not in zh:
+              raise SystemExit("prompt_zh.txt 不对劲，缺特征串")
+          body += "enum Secrets {\n"
+          body += "    static let pass = %s\n" % json.dumps(pw)
+          body += "    static let prompt = %s\n" % json.dumps(prompt, ensure_ascii=False)
+          body += "    static let promptZh = %s\n" % json.dumps(zh, ensure_ascii=False)
+          body += "}\n"
+          out.write_text(body, encoding="utf-8")
+          # 闸门就在这儿验，别等编译完去 strings 二进制 ——
+          # ALEX_PASS 只有 14 字符，Swift 的小字符串优化(<=15 字节)会把它编成
+          # 指令里的立即数，根本不进 __cstring，strings 永远找不到。
+          # 查错对象 = 白查。
+          written = out.read_text(encoding="utf-8")
+          assert pw in written, "Secrets.swift 里没有口令"
+          assert "PASS 2 - STRUCTURE" in written, "Secrets.swift 里没有提示词"
+          assert len(written) > 3000, "Secrets.swift 太小，提示词八成没进去"
+          print("Secrets.swift 生成完毕：prompt %d 字符，口令已注入，%d 字节" % (len(prompt), len(written)))
+          PY
+
+      - name: 生成 Xcode 工程
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: 编译（不签名）
+        working-directory: ios
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project Transless.xcodeproj \
+            -scheme Transless \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: 打成 IPA + 收工闸
+        working-directory: ios
+        run: |
+          set -euo pipefail
+          APP="build/Build/Products/Release-iphoneos/Transless.app"
+          test -d "$APP" || { echo "::error::没产出 .app"; exit 1; }
+
+          # 闸门：键盘扩展必须真的被打进 App 里，否则装上去看不到键盘
+          EXT="$APP/PlugIns/Keyboard.appex"
+          test -d "$EXT" || { echo "::error::键盘扩展没被打包进去"; exit 1; }
+
+          # 闸门：扩展的 Info.plist 必须声明 RequestsOpenAccess，否则发不出网络请求
+          /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionAttributes:RequestsOpenAccess" \
+            "$EXT/Info.plist" | grep -q true \
+            || { echo "::error::RequestsOpenAccess 不是 true"; exit 1; }
+
+          # 闸门：App 的 Info.plist 必须有麦克风权限说明，否则一调录音就崩。
+          # （转写改到后端后不再需要 NSSpeechRecognitionUsageDescription）
+          /usr/libexec/PlistBuddy -c "Print :NSMicrophoneUsageDescription" "$APP/Info.plist" >/dev/null \
+            || { echo "::error::App Info.plist 缺 NSMicrophoneUsageDescription"; exit 1; }
+
+          # 闸门：提示词必须真的编进键盘二进制。
+          # 用它而不是口令 —— 提示词 3588 字节，一定落在 __cstring 里，strings 找得到；
+          # 口令只有 14 字符，被 Swift 小字符串优化编成立即数，strings 永远找不到（踩过）。
+          strings "$EXT/Keyboard" | grep -q "PASS 2 - STRUCTURE"             || { echo "::error::提示词没编进键盘二进制"; exit 1; }
+          # 阴性对照：一个绝不该出现的串必须查不到，否则说明这条 grep 是恒真的
+          if strings "$EXT/Keyboard" | grep -q "ZZ-THIS-MUST-NOT-EXIST-ZZ"; then
+            echo "::error::阴性对照命中了，这道闸是假的"; exit 1
+          fi
+          echo "二进制含提示词 ✓（阴性对照未命中 ✓）"
+
+          # 闸门：icon 必须真的被编进去。
+          # 判据不是「Assets.xcassets 目录在仓库里」—— 那只证明源文件在，
+          # 不证明 actool 跑过、也不证明 iOS 会去用它。要查两样都成立：
+          #   ① 编出了 Assets.car（actool 真跑了）
+          #   ② Info.plist 里 CFBundleIcons 指名了 AppIcon（系统才会去 car 里找）
+          test -f "$APP/Assets.car" \
+            || { echo "::error::没有 Assets.car，icon 没被编译进去"; exit 1; }
+          /usr/libexec/PlistBuddy -c \
+            "Print :CFBundleIcons:CFBundlePrimaryIcon:CFBundleIconName" "$APP/Info.plist" \
+            | grep -q AppIcon \
+            || { echo "::error::Info.plist 没指向 AppIcon，桌面上会是白图标"; exit 1; }
+          echo "icon 已编入 ✓（Assets.car + Info.plist 双判据）"
+
+          mkdir -p Payload && cp -R "$APP" Payload/
+          zip -qry Transless.ipa Payload
+          ls -lh Transless.ipa
+          echo "闸门全过"
+
+      - name: 编译探针（最小对照键盘）
+        working-directory: ios
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project Transless.xcodeproj \
+            -scheme TransProbe \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
+          P="build/Build/Products/Release-iphoneos/TransProbe.app"
+          test -d "$P/PlugIns/ProbeKeyboard.appex" || { echo "::error::探针键盘没打进去"; exit 1; }
+          rm -rf /tmp/probe && mkdir -p /tmp/probe/Payload
+          cp -R "$P" /tmp/probe/Payload/
+          (cd /tmp/probe && zip -qry TransProbe.ipa Payload)
+          cp /tmp/probe/TransProbe.ipa .
+          ls -lh TransProbe.ipa
+
+      # 🚨🚨 2026-08-22 **停止上传 IPA**。
+      #    这个仓库是公开的（因为 GitHub Pages 上还挂着 Kevin 天天在用的
+      #    alex / candy / spell / roundtable / kb，改私有会把它们一起打掉）。
+      #    而公开仓库的 Actions artifact **任何人都能下载**，
+      #    IPA 里编着后端口令（ALEX_PASS）—— 等于口令公开。
+      #    跟他当天让我删掉安卓 release 是同一个洞。
+      #
+      #    构建照跑（这条流水线的作用是**验证能不能编译**，那才是我要的结果）；
+      #    要装到手机上的包，由我构建后传他飞书云空间、只授权他本人。
+      #
+      #    🚨 别顺手把 upload-artifact 加回来。真要拿 IPA，
+      #    改成上传到有访问控制的地方，不能是公开 artifact。
+      - name: 产物检查（不上传 —— 公开仓库的 artifact 谁都能下）
+        run: |
+          ls -lh ios/Transless.ipa ios/TransProbe.ipa
+          echo "IPA 构建成功但**不上传**：公开仓库的 artifact 任何人都能下载，"
+          echo "而包里编着后端口令。要装机的包走飞书私发。"

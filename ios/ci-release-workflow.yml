@@ -1,0 +1,317 @@
+# Transless · 正式签名打包并上传 App Store Connect
+#
+# 🚨 跟现有的 ci-workflow.yml（不签名）**并存不冲突**：
+#    那条用于日常出侧载包，这条用于上架。手动触发，不自动跑。
+#
+# 需要的 Secrets（在仓库 Settings → Secrets and variables → Actions 配）：
+#   IOS_CERT_P12_BASE64     iOS 发布证书 .p12 的 base64
+#     🚨 苹果有两种命名，**都能上架**，判据不能只认一种：
+#        · 旧：iPhone Distribution: 姓名 (TEAMID)   ← ASC API 的 IOS_DISTRIBUTION 出这个
+#        · 新：Apple Distribution: 姓名 (TEAMID)    ← DISTRIBUTION
+#        2026-08-25 run #1 就是死抠 "Apple Distribution" 把一个对的证书判成了错的。
+#   IOS_CERT_PASSWORD       .p12 的密码
+#   IOS_PROFILE_APP_BASE64  主 App 的 .mobileprovision base64
+#   IOS_PROFILE_KB_BASE64   键盘扩展的 .mobileprovision base64
+#   IOS_TEAM_ID             10 位 Team ID
+#   ASC_API_KEY_ID          App Store Connect API Key ID（上传用）
+#   ASC_API_ISSUER_ID       Issuer ID
+#   ASC_API_KEY_BASE64      .p8 私钥的 base64
+#   ALEX_PASS               后端口令（生成 Secrets.swift 用，同现有流程）
+
+name: iOS Release (signed)
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "打完包是否上传 App Store Connect"
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 选 Xcode（26 及以上，上架强制；并打印环境清单）
+        run: |
+          set -euo pipefail
+          # 🚨🚨 这一步来回改过三次，把三条约束一次写清，别再凭印象动它：
+          #
+          # ① 不能用 Xcode_16.app（16.0）：它的 iphonesimulator SDK 是 22A3362（iOS 18.0），
+          #    而 runner 上一个 18.0 运行时都没有。appex 编 asset catalog 时 actool 带
+          #    `--standalone-icon-behavior all` 去查模拟器运行时，查不到就报
+          #    `No simulator runtime version ... available`，整个 archive 挂掉（run #2/#3）。
+          #
+          # ② 我一度改成钉「最新的 16.x」，因为 `ci-workflow.yml` 是故意钉 16 的
+          #    （2026-08-20 用 Xcode 26.6 编的键盘扩展在 Kevin 手机上「选中就弹回」）。
+          #    🚨 **那条路交不上去**：run #8 上传时被苹果硬拒 ——
+          #    `This app was built with the iOS 18.5 SDK. All iOS and iPadOS apps must be
+          #     built with the iOS 26 SDK or later, included in Xcode 26 or later.`
+          #    上架这条线**没有选择**，必须 26+。
+          #
+          # ③ 而 08-20 那次「选中就弹回」是**免费证书 + Windows 签名器**时代的观察，
+          #    当时的注释自己写的也是「嫌疑之一」，从没证实过；而那正是签名坏掉的
+          #    典型症状。现在签名是真的了，这个嫌疑站不住。
+          #    真机上要是还弹回，再回来重新怀疑工具链 —— 但别拿它当拒绝 26 的理由。
+          echo "装着的 Xcode："
+          ls -d /Applications/Xcode*.app
+          # 🚨 别把两个通配符直接喂给 ls：`set -o pipefail` 下只要有一个没匹配到，
+          #    ls 就返回非零，整步会在下面那句 test 跑到之前被 set -e 打死
+          #    —— 于是我写的错误提示一个字都不会打出来（2026-08-25 run #9 实撞）。
+          #    改成单通配符 + grep 筛版本，并用 `|| true` 兜住「一个都没有」。
+          PICK=$(ls -d /Applications/Xcode_*.app 2>/dev/null \n                 | grep -E "/Xcode_(2[6-9]|[3-9][0-9])" | sort -V | tail -1 || true)
+          test -n "${PICK}" || { echo "::error::runner 上没有 Xcode 26+，上架必然被拒 —— 见上面②"; exit 1; }
+          echo "选用：${PICK}"
+          sudo xcode-select -s "${PICK}"
+          xcodebuild -version
+          # 闸门：真的拿到 26+ 的 iOS SDK 了吗（不是"选了个目录"就算）
+          SDKV=$(xcodebuild -showsdks | grep -oE "iphoneos[0-9]+" | grep -oE "[0-9]+" | sort -n | tail -1)
+          echo "iphoneos SDK 主版本=${SDKV}"
+          test "${SDKV}" -ge 26 || { echo "::error::iOS SDK 是 ${SDKV}，苹果要求 ≥26"; exit 1; }
+          echo "--- iphonesimulator SDK ---"
+          xcodebuild -showsdks | grep -i "simulator - ios" || true
+          echo "--- 装着的 iOS 模拟器运行时（要跟上面的模拟器 SDK 对得上）---"
+          xcrun simctl list runtimes | grep -i "^iOS" || true
+          echo "--- 上传工具在不在 ---"
+          xcrun --find altool && echo "altool 可用" || echo "::warning::altool 不在，上传要改走 Transporter"
+
+
+
+      # ---- 生成 Secrets.swift（与现有流程同一套逻辑，单一来源）----
+      - name: 生成 Secrets.swift
+        working-directory: ios
+        env:
+          ALEX_PASS: ${{ secrets.ALEX_PASS }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, pathlib
+          root = pathlib.Path("Shared")
+          pw = os.environ["ALEX_PASS"]
+          prompt = pathlib.Path("prompt.txt").read_text(encoding="utf-8")
+          prompt_zh = pathlib.Path("prompt_zh.txt").read_text(encoding="utf-8")
+          def swift_str(s):
+              return '"' + s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n') + '"'
+          body = "// 构建时生成，勿提交\nimport Foundation\n\n"
+          body += "enum Secrets {\n"
+          body += "    static let pass = %s\n" % swift_str(pw)
+          body += "    static let prompt = %s\n" % swift_str(prompt)
+          body += "    static let promptZh = %s\n" % swift_str(prompt_zh)
+          body += "}\n"
+          out = root / "Secrets.swift"
+          out.write_text(body, encoding="utf-8")
+          written = out.read_text(encoding="utf-8")
+          assert pw in written, "Secrets.swift 里没有口令"
+          print("Secrets.swift OK, %d 字节" % len(written))
+          PY
+
+      - name: 生成 Xcode 工程
+        working-directory: ios
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          xcodegen generate
+
+      # ---- 证书与描述文件 ----
+      - name: 导入证书和描述文件
+        env:
+          CERT_B64: ${{ secrets.IOS_CERT_P12_BASE64 }}
+          CERT_PW: ${{ secrets.IOS_CERT_PASSWORD }}
+          PROF_APP_B64: ${{ secrets.IOS_PROFILE_APP_BASE64 }}
+          PROF_KB_B64: ${{ secrets.IOS_PROFILE_KB_BASE64 }}
+        run: |
+          set -euo pipefail
+          KEYCHAIN="$RUNNER_TEMP/build.keychain"
+          KEYCHAIN_PW="$(uuidgen)"
+
+          security create-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain
+
+          echo "$CERT_B64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" \
+            -P "$CERT_PW" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$KEYCHAIN_PW" "$KEYCHAIN" >/dev/null
+
+          # 🚨 闸门：证书真的进钥匙串了吗（不是"命令没报错"就算）
+          # 🚨 两种命名都算数（见文件顶部说明）。用 -E 一次匹配，别只认一种。
+          security find-identity -v -p codesigning "$KEYCHAIN" | tee "$RUNNER_TEMP/ids.txt"
+          N=$(grep -cE "(Apple|iPhone) Distribution" "$RUNNER_TEMP/ids.txt" || true)
+          echo "找到 $N 个发布证书身份（Apple/iPhone Distribution 都算）"
+          test "$N" -ge 1 || { echo "::error::证书没导入成功"; exit 1; }
+
+          PROF_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROF_DIR"
+          echo "$PROF_APP_B64" | base64 --decode > "$PROF_DIR/app.mobileprovision"
+          echo "$PROF_KB_B64"  | base64 --decode > "$PROF_DIR/kb.mobileprovision"
+
+          # 读出两个描述文件的 bundle id 和名字。
+          # 🚨 名字要传给导出那步：两个 target 各挂各的描述文件，只能靠名字点名。
+          #    bundle id 也在这儿核一遍 —— 两份装反了的话，错误会推迟到导出时才炸，
+          #    而那时的报错跟「描述文件装反了」完全看不出关系。
+          for f in app kb; do
+            security cms -D -i "$PROF_DIR/$f.mobileprovision" > "$RUNNER_TEMP/$f.plist"
+            AID=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" \
+                  "$RUNNER_TEMP/$f.plist")
+            NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" "$RUNNER_TEMP/$f.plist")
+            BID=${AID#*.}          # 去掉前面的 TEAMID.
+            echo "  $f: bundle=${BID}  profile=[${NAME}]"
+            if [ "$f" = app ]; then WANT=com.kevin.transless; VAR=PROF_APP_NAME
+            else                    WANT=com.kevin.transless.keyboard; VAR=PROF_KB_NAME; fi
+            test "$BID" = "$WANT" || {
+              echo "::error::${f} 的描述文件对应 ${BID}，应为 ${WANT}（两份装反了？）"; exit 1; }
+            echo "$VAR=$NAME" >> "$GITHUB_ENV"
+          done
+
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+          echo "KEYCHAIN_PW=$KEYCHAIN_PW" >> "$GITHUB_ENV"
+
+      - name: Archive（不签，签名交给导出那步）
+        working-directory: ios
+        env:
+          TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          # 🚨 2026-08-25 改。原来这步写 `CODE_SIGN_STYLE=Automatic -allowProvisioningUpdates`，
+          #    结果 run #4 归档出来的包 `code object is not signed at all` ——
+          #    因为 project.yml 的 `settings.base` 里有 `CODE_SIGNING_ALLOWED: NO`
+          #    （当初为无签名 CI 设的），命令行没点名它就压不掉。
+          #
+          #    而且就算打开，**manual 签名没法在命令行区分两个 target**：
+          #    `PROVISIONING_PROFILE_SPECIFIER` 是全局的，主 App 和键盘扩展要挂不同的描述文件。
+          #    苹果给这件事准备的机制是 exportOptions 的 `provisioningProfiles`
+          #    字典（bundle id → 描述文件名），所以签名整个挪到导出那步。
+          security unlock-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
+          xcodebuild archive \
+            -project Transless.xcodeproj \
+            -scheme Transless \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath "$RUNNER_TEMP/Transless.xcarchive" \
+            -derivedDataPath build \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      # ---- 结构闸门：键盘扩展有没有被打进包（这一步不管签名）----
+      - name: 结构闸门（键盘扩展在不在包里）
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/Transless.xcarchive/Products/Applications/Transless.app"
+          test -d "$APP" || { echo "::error::没产出 .app"; exit 1; }
+          # 🚨 这条单独提前，是因为"扩展根本没进包"和"进了但没签上"是两种病，
+          #    混在一个闸门里报出来的信息不够指路。
+          test -d "$APP/PlugIns/Keyboard.appex" || \
+            { echo "::error::包里没有键盘扩展 Keyboard.appex"; exit 1; }
+          echo "=== 键盘扩展已在归档里 ==="
+
+      - name: 导出 IPA（在这里做 manual 签名）
+        working-directory: ios
+        env:
+          TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$PROF_APP_NAME" && test -n "$PROF_KB_NAME"
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>uploadSymbols</key><true/>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.kevin.transless</key><string>${PROF_APP_NAME}</string>
+              <key>com.kevin.transless.keyboard</key><string>${PROF_KB_NAME}</string>
+            </dict>
+          </dict>
+          </plist>
+          PLIST
+          cat "$RUNNER_TEMP/ExportOptions.plist"
+          security unlock-keychain -p "$KEYCHAIN_PW" "$KEYCHAIN"
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Transless.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -exportPath "$RUNNER_TEMP/export"
+          ls -lh "$RUNNER_TEMP/export"
+          test -f "$RUNNER_TEMP/export/Transless.ipa" || \
+            { echo "::error::没导出 ipa"; exit 1; }
+
+      # ---- 🚨 核心闸门：查**真正要发出去的那个 IPA**，主 App 和键盘扩展都要签上 ----
+      - name: 签名闸门（双 target · 查 IPA）
+        run: |
+          set -euo pipefail
+          # 🚨 2026-08-25 挪到这儿。原来它查的是 archive，而 archive 现在是不签的 ——
+          #    更要紧的是：**装到手机上的是 IPA，不是 archive**。
+          #    闸门要挂在真正被使用的那个对象上。
+          cd "$RUNNER_TEMP"
+          rm -rf ipacheck && mkdir ipacheck && cd ipacheck
+          unzip -q "$RUNNER_TEMP/export/Transless.ipa"
+          APP="Payload/Transless.app"
+          KB="$APP/PlugIns/Keyboard.appex"
+          test -d "$APP" || { echo "::error::IPA 里没有 .app"; exit 1; }
+          test -d "$KB"  || { echo "::error::IPA 里没有键盘扩展"; exit 1; }
+
+          echo "--- 主 App 签名 ---"
+          codesign -dv --verbose=4 "$APP" 2>&1 | tee "$RUNNER_TEMP/sig_app.txt"
+          echo "--- 键盘扩展签名 ---"
+          codesign -dv --verbose=4 "$KB" 2>&1 | tee "$RUNNER_TEMP/sig_kb.txt"
+
+          FAIL=0
+          for f in app kb; do
+            # 🚨 两种命名都算数：新证书叫 Apple Distribution，旧的叫 iPhone Distribution，
+            #    Kevin 这张是后者。只认一种会把对的判成错的（run #1 就栽在这）。
+            if grep -qE "Authority=(Apple|iPhone) Distribution" "$RUNNER_TEMP/sig_$f.txt"; then
+              echo "  $f 用发布证书签名   PASS"
+            else
+              echo "  $f 用发布证书签名   FAIL"; FAIL=1
+            fi
+          done
+
+          # 严格校验（会真的失败，不是走过场）
+          codesign --verify --deep --strict --verbose=2 "$APP" || FAIL=1
+          codesign --verify --strict --verbose=2 "$KB" || FAIL=1
+
+          # 键盘扩展的 entitlements 里必须有 app group 之外最要紧的那条：
+          # 它得是 keyboard-service 扩展且带完全访问（否则装上去也发不出网络请求）
+          /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionPointIdentifier" \
+            "$KB/Info.plist" | grep -q "com.apple.keyboard-service" || {
+              echo "::error::键盘扩展的 NSExtensionPointIdentifier 不对"; FAIL=1; }
+          /usr/libexec/PlistBuddy -c "Print :NSExtension:NSExtensionAttributes:RequestsOpenAccess" \
+            "$KB/Info.plist" | grep -qi true || {
+              echo "::error::键盘扩展 RequestsOpenAccess 不是 true，装上去发不出网络请求"; FAIL=1; }
+
+          test "$FAIL" -eq 0 || { echo "::error::签名闸门未过"; exit 1; }
+          echo "=== 双 target 签名闸门 PASS（查的是 IPA）==="
+
+      - name: 上传 App Store Connect
+        if: ${{ inputs.upload }}
+        env:
+          KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          KEY_B64: ${{ secrets.ASC_API_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/private_keys
+          echo "$KEY_B64" | base64 --decode > ~/private_keys/AuthKey_${KEY_ID}.p8
+          xcrun altool --upload-app -f "$RUNNER_TEMP/export/Transless.ipa" \
+            -t ios --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Transless-signed-ipa
+          path: ${{ runner.temp }}/export/Transless.ipa
+          if-no-files-found: error
+
+      - name: 清理钥匙串
+        if: always()
+        run: security delete-keychain "$KEYCHAIN" || true

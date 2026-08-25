@@ -34,6 +34,11 @@ final class KeyboardViewController: UIInputViewController {
     private let micButton = UIButton(type: .system)
     private let toneButton = UIButton(type: .system)
     private let fallbackButton = UIButton(type: .system)
+    /// 打字键盘（字母/符号）。**懒建**：没点 Type 之前不占内存 ——
+    /// 键盘扩展的内存上限很紧（约 60MB），建了不用是浪费。
+    private var typingView: TypingKeyboardView?
+    private var voiceRoot: UIStackView?
+    private var heightC: NSLayoutConstraint?
 
     // 🚨 懒加载，不在扩展启动瞬间创建。
     //    Voice() 里会 init AVAudioEngine + SFSpeechRecognizer —— 键盘扩展的启动预算
@@ -104,12 +109,20 @@ final class KeyboardViewController: UIInputViewController {
         let del = smallButton("⌫")
         del.addTarget(self, action: #selector(backspace), for: .touchUpInside)
 
-        let bottom = UIStackView(arrangedSubviews: [globe, toneButton, fallbackButton, del])
+        // 🚨 进打字键盘的入口。安卓底排有这个键，iOS 一直没有 ——
+        //    于是 iOS 用户只能对着一个麦克风，打不了字。
+        let typeBtn = smallButton(L.kb_type)
+        typeBtn.addTarget(self, action: #selector(showTyping),
+                          for: .touchUpInside)
+
+        let bottom = UIStackView(arrangedSubviews:
+            [globe, typeBtn, toneButton, fallbackButton, del])
         bottom.axis = .horizontal
         bottom.spacing = 8
         globe.widthAnchor.constraint(equalToConstant: 44).isActive = true
         del.widthAnchor.constraint(equalToConstant: 44).isActive = true
         toneButton.widthAnchor.constraint(equalToConstant: 56).isActive = true
+        typeBtn.widthAnchor.constraint(equalToConstant: 52).isActive = true
         bottom.heightAnchor.constraint(equalToConstant: 38).isActive = true
 
         let root = UIStackView(arrangedSubviews: [hintLabel, heardLabel, micWrap, bottom])
@@ -117,12 +130,78 @@ final class KeyboardViewController: UIInputViewController {
         root.spacing = 10
         root.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(root)
+        voiceRoot = root
+        // 🚨 高度要能改：打字键盘比语音面板高。存下这个约束，切换时改 constant。
+        let hc = view.heightAnchor.constraint(equalToConstant: 250)
+        heightC = hc
         NSLayoutConstraint.activate([
             root.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
             root.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
             root.topAnchor.constraint(equalTo: view.topAnchor, constant: 10),
-            view.heightAnchor.constraint(equalToConstant: 250),
+            hc,
         ])
+    }
+
+    // MARK: - 语音面板 / 打字键盘 切换
+
+    /// 切到打字键盘。**懒建**，第一次点才创建。
+    @objc private func showTyping() {
+        if typingView == nil {
+            let t = TypingKeyboardView()
+            t.translatesAutoresizingMaskIntoConstraints = false
+            t.onText = { [weak self] s in
+                guard let p = self?.textDocumentProxy else { return }
+                // 🚨 先撤掉 marked text 再插入。拼音缓冲走的是 marked text，
+                //    而 `insertText` 在**有 marked text 时**的行为 UIKit 没承诺
+                //    —— 宿主可能替换、也可能让「marked 的 nihao」和
+                //    「插入的 你好」叠在一起。安卓那边没这个问题：
+                //    `commitText` 的语义就是替换 composing。
+                //    ⚠️ 未在真实宿主实测（预览页没有宿主输入框，模拟器切键盘
+                //       扩展要点 🌐，脚本点不了）。这是按 UIKit 稳妥写法加的，
+                //       代价为零；等能在 Safari 里真跑一次再确认。
+                p.unmarkText()
+                p.insertText(s)
+            }
+            t.onDelete = { [weak self] in
+                self?.textDocumentProxy.deleteBackward()
+            }
+            t.onSwitchToVoice = { [weak self] in self?.showVoice() }
+            t.onHeightChange = { [weak self] h in
+                guard let s = self, s.voiceRoot?.isHidden == true else { return }
+                s.heightC?.constant = h
+            }
+            // 拼音缓冲 -> 输入框的 marked text（安卓的 setComposingText）。
+            // 🚨 空串要 `unmarkText()`，直接 setMarkedText("") 在有些宿主 App
+            //    里会留下一个空的标记段，光标行为变怪。
+            t.onComposing = { [weak self] s in
+                guard let p = self?.textDocumentProxy else { return }
+                if s.isEmpty {
+                    p.unmarkText()
+                } else {
+                    p.setMarkedText(s, selectedRange: NSRange(location: s.count,
+                                                              length: 0))
+                }
+            }
+            view.addSubview(t)
+            NSLayoutConstraint.activate([
+                t.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                t.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                t.topAnchor.constraint(equalTo: view.topAnchor),
+                t.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            ])
+            typingView = t
+        }
+        typingView?.isHidden = false
+        voiceRoot?.isHidden = true
+        // 🚨 高度由键盘自己按当前档位算（手写档比字母档高一截）。
+        //    以前这里写死 280，手写档的底排就被挤扁了。
+        heightC?.constant = typingView?.preferredHeight ?? 250
+    }
+
+    @objc private func showVoice() {
+        typingView?.isHidden = true
+        voiceRoot?.isHidden = false
+        heightC?.constant = 250
     }
 
     private func smallButton(_ t: String) -> UIButton {

@@ -1,0 +1,4 @@
+# 由 sync_pinyin_ios.py 生成。安卓 android/assets 是唯一源头，别手改这里。
+3e29d8c108086b5294b1d4aa0ddbf585046c7e4f2e62bae4e7f29c0e472d0a48  syllables.txt  2138
+89ef37edb981de5a696168b897245b65a8b28683af83e429aa45cd13bdd2f91d  dict.txt  232249
+b5e97918c2d1d93628a29c201568601e6421b5c003f32d14dcdd99ad2c72df99  wubi.txt  273971

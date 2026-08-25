@@ -31,6 +31,38 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                      didFinishLaunchingWithOptions o: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         DeviceId.ensure()
         let w = UIWindow(frame: UIScreen.main.bounds)
+        // 🚨 **调试用的直达入口**：`xcrun simctl launch … --page speak` 之类，
+        //    直接跳到某一页，免得在模拟器里手点（脚本点不了，
+        //    AppleScript 点击要辅助功能授权）。
+        //    这条只认启动参数，正常安装的包收不到，不影响用户。
+        //    有了它，我改完 UI 能自己截图核对，不用等 Kevin 装了来告诉我。
+        // 🚨 用**环境变量**不用启动参数：`simctl launch` 有自己的参数解析，
+        //    `--page speak` 被它吞掉了，App 侧 arguments 里根本收不到
+        //    （实测：传了 speak 却进了 setup —— 我一度以为是 switch 写错）。
+        //    环境变量走 `SIMCTL_CHILD_` 前缀，simctl 会原样传进来。
+        let env = ProcessInfo.processInfo.environment
+        if let page = env["TRANSLESS_PAGE"], !page.isEmpty {
+            let nav = UINavigationController(rootViewController: HomeViewController())
+            nav.setNavigationBarHidden(true, animated: false)
+            switch page {
+            case "speak": nav.pushViewController(MainViewController(), animated: false)
+            case "setup": nav.pushViewController(SetupViewController(), animated: false)
+            case "prefs": nav.pushViewController(PrefsViewController(), animated: false)
+            // 🚨 只为**我自己看键盘长什么样**：键盘扩展要在系统设置里启用、
+            //    再点 🌐 切过去，这两步模拟器上脚本点不动。把同一个
+            //    `TypingKeyboardView` 直接塞进 App 里截图，看到的是同一份代码。
+            //    正式界面里没有任何入口，只有这个环境变量能进。
+            case "kb": nav.pushViewController(KeyboardPreviewController(), animated: false)
+            // 拼音引擎对拍（期望值来自独立的 Python 参照实现）
+            case "pysplit": nav.pushViewController(PinyinSelfTestController(),
+                                                   animated: false)
+            default: break
+            }
+            w.rootViewController = nav
+            w.makeKeyAndVisible()
+            window = w
+            return true
+        }
         // 🚨 跟安卓一样：先开屏，再进首页。安卓那边 LAUNCHER 指向 SplashActivity。
         w.rootViewController = SplashViewController()
         w.makeKeyAndVisible()
@@ -1243,3 +1275,72 @@ final class MainViewController: UIViewController {
     }
 }
 
+
+
+// MARK: - 键盘预览（只给 TRANSLESS_PAGE=kb 用）
+
+/// 把打字键盘按**它在键盘扩展里的真实高度**摆出来，贴在屏幕底部。
+/// 上面留一个假的输入框，好看清键盘和输入区的相对关系（跟安卓截图对齐用）。
+final class KeyboardPreviewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // 🚨🚨 预览页**必须复刻键盘扩展里的环境**，否则截出来的图不代表真相。
+        //    第一版我在这里刷了个灰底，截图一片灰 —— 我差点以为是键盘配色错了，
+        //    去改 TypingKeyboard 的颜色。实际扩展里
+        //    `KeyboardViewController` 铺的是 `Theme.keyboardBackground`，
+        //    键是 `#16FFFFFF` 半透明白，**透的是什么底就是什么色**。
+        view.backgroundColor = .clear
+        let bg = Theme.keyboardBackground(UIScreen.main.bounds)
+        bg.frame = UIScreen.main.bounds
+        bg.sublayers?.forEach { $0.frame = UIScreen.main.bounds }
+        view.layer.insertSublayer(bg, at: 0)
+
+        let fakeField = UILabel()
+        fakeField.text = "  预览：打字键盘"
+        fakeField.textColor = UIColor(white: 0.6, alpha: 1)
+        fakeField.font = .systemFont(ofSize: 15)
+        fakeField.backgroundColor = UIColor(white: 0.16, alpha: 1)
+        fakeField.layer.cornerRadius = 8
+        fakeField.clipsToBounds = true
+        fakeField.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(fakeField)
+
+        let kb = TypingKeyboardView()
+        // 预览页也要跟着档位改高，否则截出来的图跟真实键盘不是一回事
+        let kbH = kb.heightAnchor.constraint(equalToConstant: kb.preferredHeight)
+        kb.onHeightChange = { h in kbH.constant = h }
+        // 🚨 预览页把 composing 显示在上面那个假输入框里 ——
+        //    键盘扩展里它进的是宿主 App 的输入框，这里没有宿主。
+        kb.onComposing = { [weak fakeField] s in
+            fakeField?.text = s.isEmpty ? "  预览：打字键盘" : "  " + s
+        }
+        kb.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(kb)
+
+        NSLayoutConstraint.activate([
+            fakeField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            fakeField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            fakeField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            fakeField.heightAnchor.constraint(equalToConstant: 40),
+
+            kb.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            kb.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            kb.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            // 键盘扩展里给的是 280（见 KeyboardViewController.showTyping）
+            kbH,
+        ])
+
+        if let m = ProcessInfo.processInfo.environment["TRANSLESS_KB_MODE"],
+           !m.isEmpty {
+            kb.debugMode(m)
+        }
+
+        // 自动按键：让候选栏在截图里有东西，且走的是真实按键路径。
+        if let seq = ProcessInfo.processInfo.environment["TRANSLESS_KB_TYPE"],
+           !seq.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                for ch in seq { kb.debugTap(String(ch)) }
+            }
+        }
+    }
+}
