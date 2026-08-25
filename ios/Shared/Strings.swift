@@ -145,7 +145,7 @@ enum L {
     static var msg_speak_failed: String { s("朗读失败：%1$s", "Couldn't read it aloud: %1$s", "朗讀失敗：%1$s") }
     static var msg_mic_open_failed: String { s("打不开麦克风：%1$s", "Can't open the microphone: %1$s", "打不開麥克風：%1$s") }
     static var prefs_title: String { s("设置", "Settings", "設定") }
-    static var home_try_speak: String { s("说一段试试", "Try speaking", "說一段試試") }
+    static var home_try_speak: String { s("随手翻译", "Translate as you go", "隨手翻譯") }
     static var ios_step_add: String { s("在系统设置里添加 Transless 键盘", "Add the Transless keyboard in Settings", "在系統設定裡添加 Transless 鍵盤") }
     static var ios_step_full: String { s("打开「允许完全访问」（联网要用）", "Turn on Allow Full Access (needed for network)", "打開「允許完全訪問」（聯網要用）") }
     static var ios_update_note: String { s("iOS 通过 TestFlight 更新", "Updates arrive through TestFlight", "iOS 通過 TestFlight 更新") }
@@ -160,6 +160,7 @@ enum L {
     static var prefs_ime_off: String { s("还没设为当前输入法", "Not your keyboard yet", "還沒設為當前輸入法") }
     static var prefs_diag_sub: String { s("看最近几次录音为什么没转出来", "Why recent recordings did not come through", "看最近幾次錄音為什麼沒轉出來") }
     static var prefs_about: String { s("关于 Transless", "About Transless", "關於 Transless") }
+    static var prefs_privacy: String { s("隐私政策", "Privacy Policy", "私隱政策") }
     static var prefs_check_update: String { s("检查更新", "Check for updates", "檢查更新") }
     static var prefs_copy: String { s("复制", "Copy", "複製") }
     static var msg_no_input_conn: String { s("输入框没连上，先点一下输入框再试", "Tap the text field once, then try again", "輸入框沒連上，先點一下輸入框再試") }
@@ -225,6 +226,11 @@ enum L {
           + "Access — networking won't work without it",
           "請到 設定 › 一般 › 鍵盤 › Transless 打開「允許完全存取」，否則聯網用不了")
     }
+    static var try_bigtext: String { s("大字", "Big text", "大字") }
+    static var try_reverse: String { s("⇄ 对方说", "⇄ Them", "⇄ 對方說") }
+    static var try_reverse_on: String { s("反向：对方说外语，译成你的语言", "Reverse: they speak, you read it in your language", "反向：對方說外語，譯成你的語言") }
+    static var try_continuous: String { s("连续", "Continuous", "連續") }
+    static var try_cont_on: String { s("连续模式：说一句出一句，说完点停止", "Continuous mode: speak, and each sentence comes back. Tap to stop.", "連續模式：說一句出一句，說完點停止") }
     static var kb_polish: String { s("整理", "Clean up", "整理") }
     static var kb_verbatim: String { s("逐字", "Verbatim", "逐字") }
     static var kb_resend: String { s("重新上屏", "Insert again", "重新上屏") }

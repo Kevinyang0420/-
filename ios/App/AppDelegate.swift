@@ -817,6 +817,11 @@ final class PrefsViewController: UIViewController {
         //    所以这一项如实说明走 TestFlight，不做一个按了没反应的假按钮。
         list.addArrangedSubview(row(L.prefs_check_update, L.ios_update_note,
                                     nil))
+        // 🚨 隐私政策入口。**AI 生成披露从产品界面移走之后，这一条是必需的**
+        //    —— 条款 8.1 要的是「向终端用户明确披露」，
+        //    藏在一个够不着的文档里不叫披露。
+        list.addArrangedSubview(row(L.prefs_privacy, nil,
+                                    #selector(openPrivacy)))
     }
 
     private func group(_ s: String) -> UILabel {
@@ -899,6 +904,19 @@ final class PrefsViewController: UIViewController {
             b.bottomAnchor.constraint(equalTo: pad.bottomAnchor, constant: -9),
         ])
         return pad
+    }
+
+    /// 隐私政策地址。**只写这一处** —— 域名变了只改这儿。
+    /// 🚨 必须定义在 `PrefsViewController` 里 —— 调用点在这个类的设置列表里。
+    ///    上一版我按 `openSetup` 这个名字找锚点，结果插进了
+    ///    `HomeViewController`（它也有同名方法），编译报
+    ///    `cannot find 'openPrivacy' in scope`。
+    ///    **「在哪儿定义」跟「定义什么」一样重要**（今天第三次栽在这上面）。
+    private static let privacyURL = "https://transless.net/privacy.html"
+
+    @objc private func openPrivacy() {
+        guard let u = URL(string: Self.privacyURL) else { return }
+        UIApplication.shared.open(u)
     }
 
     @objc private func openSetup() {
@@ -1048,10 +1066,34 @@ final class MainViewController: UIViewController {
     private let speakButton = UIButton(type: .system)
     private var lastOut = ""
 
+    // MARK: - 连续模式（Kevin 2026-08-26 的"随手翻译"同传场景）
+
+    /// 连续模式开关。点一次一直听，说一句出一句。
+    private let contButton = UIButton(type: .system)
+    private var continuous = false
+    /// 结果行。**按序号占位**，不是来一句 append 一句 ——
+    /// 🚨 多句会并发在飞（第 2 句说完时第 1 句可能还没回来），
+    ///    直接 append 的话顺序由**网络快慢**决定，
+    ///    说的顺序和显示的顺序会对不上。
+    private var lines: [String] = []
+    /// 已经发出去几句（下一句的下标）。
+    private var seq = 0
+    /// 大字展示。旅游时把译文铺满屏幕，手机一转给对方看。
+    private let bigButton = UIButton(type: .system)
+    /// 反向翻译：**对方**说外语 → 译成我的语言（界面语言那一档）。
+    /// 正向是我说话 → 译成 `lang`（给对方看）。
+    private let revButton = UIButton(type: .system)
+    private var reversed = false
+
     private let hintLabel = UILabel()
     private let heardLabel = UILabel()
     private let resultView = UITextView()
-    private let aiNoticeLabel = UILabel()   // DeepSeek 条款 8.1/3.7 要求的 AI 生成披露
+    /// 🚨 **不再放进版面**。Kevin 2026-08-26：
+    ///    「不用每次在产品功能里面写这个…换在隐私政策里面写就好了。」
+    ///    隐私政策第八节「AI 生成内容提示」写着这条，设置页有入口能打开
+    ///    —— 满足 DeepSeek 条款 8.1「向终端用户明确披露」。
+    ///    对象留着只是为了不改一堆引用，**永远不进版面**。
+    private let aiNoticeLabel = UILabel()
     private let micButton = UIButton(type: .system)
     private let toneButton = UIButton(type: .system)
 
@@ -1061,8 +1103,14 @@ final class MainViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = Theme.bg
-        title = "Transless"
+        // 🚨 这是 **App 里的页面**，要用 App 的渐变底（跟首页/设置页一致），
+        //    不是 `Theme.bg` —— 那是**键盘扩展**的底色。
+        //    刷错的后果：说话页看起来跟 App 其他页不是一套东西。
+        //    安卓构建的漂移闸门抓到的（"iOS 主 App 还在刷 Theme.bg"）。
+        UI.paintBg(self)
+        // 🚨 标题跟安卓的 `try_title` 一致 —— 两端一模一样是硬规矩。
+        //    原来写死 "Transless"，而安卓那边是「随手翻译」。
+        title = L.home_try_speak
         navigationController?.navigationBar.tintColor = Theme.accent
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: L.perm_title, style: .plain, target: self, action: #selector(openSetup))
@@ -1079,8 +1127,11 @@ final class MainViewController: UIViewController {
         }
         // Kevin 2026-08-21：Tab 右边那块空地放 logo（G3 图标里的整个 T+麦克风，同源）。
         // 压到次要文字色，不抢戏 —— 这一屏的强调色只留给说话长条。
-        logoView.image = UIImage(named: "logo")?.withRenderingMode(.alwaysTemplate)
-        logoView.tintColor = Theme.dim
+        // 🚨 **不能用 `.alwaysTemplate`** —— logo 是一张带紫色圆角底的方形图标，
+        //    template 模式会把所有非透明像素**整块涂成 tintColor**，
+        //    渲染出来就是 tab 行右边那个莫名其妙的灰方块（2026-08-26 截图发现）。
+        //    template 只适合单色描边图形，不适合有底的图标。
+        logoView.image = UIImage(named: "logo")
         logoView.contentMode = .scaleAspectFit
 
         let modeStack = UIStackView(arrangedSubviews: [tabTranslate, tabTranscribe, logoView])
@@ -1120,6 +1171,21 @@ final class MainViewController: UIViewController {
             b.layer.cornerRadius = 16
             b.addTarget(self, action: sel, for: .touchUpInside)
         }
+        contButton.setTitle(L.try_continuous, for: .normal)
+        contButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
+        contButton.titleLabel?.adjustsFontSizeToFitWidth = true
+        contButton.titleLabel?.minimumScaleFactor = 0.7
+        // 🚨 摘出 subStack 之后要**自己设底色和字色** ——
+        //    原来是靠 `paintMode()` 给 stack 里那几个统一刷的。
+        contButton.setTitleColor(Theme.text, for: .normal)
+        contButton.backgroundColor = Theme.key
+        contButton.layer.cornerRadius = 16
+        contButton.addTarget(self, action: #selector(toggleContinuous),
+                             for: .touchUpInside)
+        // 🚨 `contButton` **不能放进 subStack** —— `paintMode()` 里
+        //    `subStack.isHidden = isTranslate`，那一行是转写模式的子选项，
+        //    翻译模式下整行隐藏。放进去的话「连续」在主模式下就没了。
+        //    它现在跟「⇄ 对方说」一样，独立约束在麦克风旁边。
         subStack = UIStackView(arrangedSubviews: [modeZhButton, modeRawButton])
         subStack.axis = .horizontal
         subStack.spacing = Theme.gap * 0.7
@@ -1198,8 +1264,28 @@ final class MainViewController: UIViewController {
         speakButton.isEnabled = false          // 没东西可念时不给点
         speakButton.addTarget(self, action: #selector(tapSpeak), for: .touchUpInside)
 
-        [modeStack, subStack, hintLabel, heardLabel, resultView, aiNoticeLabel, micButton,
-         toneButton, langButton, speakButton].forEach {
+        bigButton.setTitle(L.try_bigtext, for: .normal)
+        bigButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        bigButton.setTitleColor(Theme.text, for: .normal)
+        bigButton.backgroundColor = Theme.key
+        bigButton.layer.cornerRadius = 16
+        bigButton.isEnabled = false        // 没东西可看时不给点
+        bigButton.addTarget(self, action: #selector(tapBig),
+                            for: .touchUpInside)
+
+        revButton.setTitle(L.try_reverse, for: .normal)
+        revButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
+        revButton.titleLabel?.adjustsFontSizeToFitWidth = true
+        revButton.titleLabel?.minimumScaleFactor = 0.7
+        revButton.setTitleColor(Theme.text, for: .normal)
+        revButton.backgroundColor = Theme.key
+        revButton.layer.cornerRadius = 16
+        revButton.addTarget(self, action: #selector(tapReverse),
+                            for: .touchUpInside)
+
+        [modeStack, subStack, hintLabel, heardLabel, resultView, micButton,
+         toneButton, langButton, speakButton, bigButton,
+         revButton, contButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
         }
@@ -1220,6 +1306,22 @@ final class MainViewController: UIViewController {
 
             // 圆形：等宽高 + 居中（跟安卓 MIC_CIRCLE_DP 那套一一对应）
             micButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            // 🚨 反向钮贴在麦克风**左边**，不进那一行选项 ——
+            //    那行已经有「整理/逐字/连续」，Kevin 说过「排版太密了」。
+            //    麦克风自己的居中约束不动，所以视觉重心不会被推偏。
+            revButton.trailingAnchor.constraint(
+                equalTo: micButton.leadingAnchor, constant: -16),
+            revButton.centerYAnchor.constraint(equalTo: micButton.centerYAnchor),
+            revButton.widthAnchor.constraint(equalToConstant: 76),
+            revButton.heightAnchor.constraint(equalToConstant: 32),
+
+            // 「连续」在麦克风**右边**，跟左边的「⇄ 对方说」对称。
+            contButton.leadingAnchor.constraint(
+                equalTo: micButton.trailingAnchor, constant: 16),
+            contButton.centerYAnchor.constraint(equalTo: micButton.centerYAnchor),
+            contButton.widthAnchor.constraint(equalToConstant: 76),
+            contButton.heightAnchor.constraint(equalToConstant: 32),
+
             micButton.topAnchor.constraint(equalTo: hintLabel.bottomAnchor, constant: Theme.gap + 4),
             micButton.widthAnchor.constraint(equalToConstant: Theme.micBarHeight),
             micButton.heightAnchor.constraint(equalToConstant: Theme.micBarHeight),
@@ -1234,7 +1336,16 @@ final class MainViewController: UIViewController {
             langButton.widthAnchor.constraint(equalToConstant: 110),
             langButton.heightAnchor.constraint(equalToConstant: 34),
 
-            speakButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            // 🚨 朗读 + 大字**并排居中**：总宽 140+8+100=248，
+            //    所以朗读的中心要落在 centerX-54（= -124+70）。
+            speakButton.centerXAnchor.constraint(
+                equalTo: view.centerXAnchor, constant: -54),
+            bigButton.leadingAnchor.constraint(
+                equalTo: speakButton.trailingAnchor, constant: 8),
+            bigButton.centerYAnchor.constraint(
+                equalTo: speakButton.centerYAnchor),
+            bigButton.widthAnchor.constraint(equalToConstant: 100),
+            bigButton.heightAnchor.constraint(equalToConstant: 36),
             speakButton.topAnchor.constraint(equalTo: toneButton.bottomAnchor, constant: 10),
             speakButton.widthAnchor.constraint(equalToConstant: 140),
             speakButton.heightAnchor.constraint(equalToConstant: 36),
@@ -1246,15 +1357,18 @@ final class MainViewController: UIViewController {
             resultView.topAnchor.constraint(equalTo: heardLabel.bottomAnchor, constant: 14),
             resultView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
             resultView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            resultView.bottomAnchor.constraint(equalTo: aiNoticeLabel.topAnchor, constant: -8),
-            aiNoticeLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            aiNoticeLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            aiNoticeLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            // 🚨 原来这里锚在 `aiNoticeLabel.topAnchor` 上。
+            //    那条披露移走之后，resultView 的底要直接接 safeArea
+            //    —— 只删视图不改约束的话它会失去底部约束、整块塌掉，
+            //    而且**编译不报错**，只有跑起来才看得见。
+            resultView.bottomAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+                constant: -16),
         ])
         // 🚨 立体感统一在这儿走一遍，别在每个控件后面各写一行 —— 漏一个就少一个阴影，
         //    而"少了一个"是看不出来的（跟安卓 Theme.elevateAll 同一套做法）。
         for v in [tabTranslate, tabTranscribe, modeZhButton, modeRawButton,
-                  toneButton, langButton, speakButton] {
+                  toneButton, langButton, speakButton, bigButton] {
             v.layer.cornerRadius = Theme.rKey
             Theme.elevate(v, 3)
         }
@@ -1299,6 +1413,8 @@ final class MainViewController: UIViewController {
         if Speaker.isPlaying {
             Speaker.stop()
             speakButton.setTitle(L.kb_speak, for: .normal)
+            bigButton.setTitle(L.try_bigtext, for: .normal)
+            revButton.setTitle(L.try_reverse, for: .normal)
             return
         }
         let text = lastOut.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1413,8 +1529,39 @@ final class MainViewController: UIViewController {
         }
     }
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        UI.resizeBg(self)
+    }
+
+    /// 调试口子：把新功能的状态摆出来好截图。
+    ///
+    /// 🚨 **每一条都调真实方法**，不是另设一个布尔。
+    ///    伪造状态截出来的图只能证明"我画得出来"，
+    ///    证明不了那个按钮点下去真会这样。
+    private func applyDebugEnv() {
+        let env = ProcessInfo.processInfo.environment
+        if let t = env["TRANSLESS_RESULT"], !t.isEmpty {
+            // 走 setLine 那条真实回填路径的等价物：写结果区 + 按真实规则点亮
+            resultView.text = t
+            lastOut = t
+            speakButton.isEnabled = true
+            bigButton.isEnabled = !bigTextNow().isEmpty
+        }
+        if env["TRANSLESS_CONT"] == "1" { toggleContinuous() }
+        if env["TRANSLESS_REV"] == "1" { tapReverse() }
+        if env["TRANSLESS_BIG"] == "1" {
+            // 🚨 延后一拍：`present` 要等这一层真的上了屏，
+            //    在 viewDidAppear 同步调会被系统忽略（而且不报错）。
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                [weak self] in self?.tapBig()
+            }
+        }
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        applyDebugEnv()
         // 🚨🚨 **一上来就弹系统麦克风授权框**，别 push 引导页。
         //    Kevin 2026-08-25：「Typeless 现在就是这样子，它就是让你先给权限，
         //    然后去试一下…用户下载你这个软件的时候，他就有预期这是需要录音的…
@@ -1507,7 +1654,11 @@ final class MainViewController: UIViewController {
 
         heardLabel.text = ""
         resultView.text = ""
-        setPhase(.listening, hint: "听着呢，想到哪说到哪（最长 60 秒）\n说完再按一下红色按钮")
+        lines.removeAll()
+        seq = 0
+        setPhase(.listening, hint: continuous
+                 ? L.try_cont_on
+                 : "听着呢，想到哪说到哪（最长 60 秒）\n说完再按一下红色按钮")
         elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             guard let self = self, self.phase == .listening else { return }
             let s = Int(self.voice.elapsed)
@@ -1515,7 +1666,13 @@ final class MainViewController: UIViewController {
         }
 
         // 录音 → 停止后拿到 WAV → 传后端转写 → 再润色（跟安卓同一条链）
-        voice.start(onPartial: { _ in }, onWav: { [weak self] result in
+        // 🚨 连续模式才传 `onUtterance`。不传 = 老的单句行为，
+        //    一个字节的行为差别都没有（同一段 tap，只是不切）。
+        voice.start(onPartial: { _ in },
+                    onUtterance: continuous ? { [weak self] wav in
+                        self?.sendUtterance(wav)
+                    } : nil,
+                    onWav: { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.elapsedTimer?.invalidate(); self.elapsedTimer = nil
@@ -1523,6 +1680,13 @@ final class MainViewController: UIViewController {
                 case .failure(let f):
                     self.setPhase(.idle, hint: "\(f)")
                 case .success(let wav):
+                    // 🚨 连续模式下空 WAV 是**正常收尾**（刚切完一句才按的停止，
+                    //    `Voice.stop()` 查过 `hasVoice` 才交空的），不是错。
+                    if self.continuous {
+                        self.setPhase(.idle, hint: "")
+                        if wav.count > 44 { self.sendUtterance(wav) }
+                        return
+                    }
                     self.setPhase(.thinking, hint: L.st_recognizing)
                     Backend.transcribe(wav: wav) { [weak self] r in
                         DispatchQueue.main.async {
@@ -1540,18 +1704,132 @@ final class MainViewController: UIViewController {
         })
     }
 
+    /// 切连续模式。**录音中不许切** —— 切了之后录音器还在老模式跑，
+    /// 界面显示的却是新模式，两份状态会对不上。
+    @objc private func toggleContinuous() {
+        if phase != .idle { return }
+        continuous.toggle()
+        paintContinuous()
+        hintLabel.text = continuous ? L.try_cont_on : ""
+    }
+
+    private func paintContinuous() {
+        contButton.backgroundColor = continuous ? Theme.accent : Theme.panel
+        contButton.setTitleColor(continuous ? .white : Theme.text,
+                                 for: .normal)
+    }
+
+    /// 把 `lines` 拼成结果文本。还没回来的那行显示成省略号占位。
+    private func paintLines() {
+        resultView.text = lines
+            .map { $0.isEmpty ? "\u{2026}" : $0 }
+            .joined(separator: "\n")
+    }
+
+    /// 连续模式：一句走完 transcribe → polish 两步，回填到 `lines[idx]`。
+    ///
+    /// 🚨 idx **必须贯穿两步**。只在 polish 那步取 `lines.count` 的话，
+    ///    第 2 句先回来时会写到第 1 句的位置上。
+    private func sendUtterance(_ wav: Data) {
+        // 🚨 在**发出去之前**把目标语言定死。等结果时用户点了反向的话，
+        //    这一句会用错的语言回来。
+        let fLang = langNow
+        let idx = seq
+        seq += 1
+        lines.append("")            // 先占位，保住说话的顺序
+        paintLines()
+        Backend.transcribe(wav: wav) { [weak self] r in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                switch r {
+                case .failure(let f):
+                    // 错误落在**那一行**上，别把整块已经出来的结果冲掉
+                    self.setLine(idx, "\(f)")
+                case .success(let zh):
+                    self.heardLabel.text = zh
+                    // 🚨 反向时目标语言换成**我的语言**。
+                    //    用 `self.lang` 的话反向按钮点了等于没点，
+                    //    而界面还亮着 —— 那种"看起来生效了"的错最难查。
+                    Backend.polish(text: zh, tone: self.tone,
+                                   mode: self.mode, lang: fLang) {
+                        [weak self] r2 in
+                        DispatchQueue.main.async {
+                            guard let self = self else { return }
+                            switch r2 {
+                            case .success(let en):
+                                self.lastOut = en
+                                self.speakButton.isEnabled = true
+                                self.setLine(idx, en)
+                            case .failure(let e):
+                                self.setLine(idx, "\(e)")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// 切正向/反向。**录音中不许切** —— 这一次录的是谁的话，
+    /// 中途改了的话发出去的目标语言跟界面显示的对不上。
+    @objc private func tapReverse() {
+        if phase != .idle { return }
+        reversed.toggle()
+        revButton.backgroundColor = reversed ? Theme.accent : Theme.key
+        revButton.setTitleColor(reversed ? .white : Theme.text, for: .normal)
+        hintLabel.text = reversed ? L.try_reverse_on : ""
+        // 🚨 反向必须是**翻译**模式。停在「逐字」上的话，
+        //    对方说的英文会被原样吐回来 —— 一个字都没翻，
+        //    而用户以为反向没生效。
+        if reversed && mode == .raw { pickEn() }
+    }
+
+    /// 这一次要译成什么语言。
+    ///
+    /// 🚨 反向时走 `Reverse`（两端同一份口径、有自测），
+    ///    **不要在这里现写 if-else**。
+    private var langNow: String {
+        return reversed ? Reverse.target(for: Lang.current) : lang
+    }
+
+    /// 现在该拿去大字展示的内容：连续模式给整段，单句模式给那一句。
+    private func bigTextNow() -> String {
+        return (resultView.text ?? "").trimmingCharacters(
+            in: .whitespacesAndNewlines)
+    }
+
+    /// 大字展示：译文铺满屏幕，点一下关掉。
+    @objc private func tapBig() {
+        let text = bigTextNow()
+        guard !text.isEmpty else { return }
+        let vc = BigTextViewController(text: text)
+        vc.modalPresentationStyle = .fullScreen
+        present(vc, animated: true)
+    }
+
+    private func setLine(_ idx: Int, _ text: String) {
+        guard idx < lines.count else { return }
+        lines[idx] = text
+        paintLines()
+        // 🚨 大字按钮的判据是**结果区有没有东西**，不是 `lastOut` ——
+        //    连续模式下 lastOut 只是最后一句，而结果区是整段对话。
+        bigButton.isEnabled = !bigTextNow().isEmpty
+    }
+
     private func polish(_ zh: String) {
         switch mode {
         case .en:  setPhase(.thinking, hint: L.st_translating)
         case .zh:  setPhase(.thinking, hint: L.st_polishing)
         case .raw: setPhase(.thinking, hint: L.st_inserting)   // 不过模型，一瞬间
         }
-        Backend.polish(text: zh, tone: tone, mode: mode, lang: lang) { [weak self] result in
+        let fLang = langNow
+        Backend.polish(text: zh, tone: tone, mode: mode, lang: fLang) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 switch result {
                 case .success(let en):
                     self.resultView.text = en
+                    self.bigButton.isEnabled = !en.isEmpty
                     UIPasteboard.general.string = en   // 自动进剪贴板
                     self.lastOut = en                  // 给「🔊 朗读」用
                     self.speakButton.isEnabled = true
@@ -1632,4 +1910,89 @@ final class KeyboardPreviewController: UIViewController {
             }
         }
     }
+}
+
+
+// MARK: - 大字展示
+
+/// 译文铺满屏幕，点一下关掉。旅游时手机一转给对方看。
+///
+/// 🚨 字号走 `BigText`（跟安卓同一张表、有自测），**不在这里现算**。
+/// 🚨 展示期间不让屏幕灭掉 —— 给对方看的时候没人在碰手机，
+///    十几秒就黑屏了。`isIdleTimerDisabled` 在 `viewWillDisappear` 里**必须
+///    还原**，否则整个 App 从此不再自动锁屏（用户会当成耗电 bug）。
+final class BigTextViewController: UIViewController {
+
+    private let text: String
+
+    init(text: String) {
+        self.text = text
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) 用不到") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // 🚨 用**主界面那个渐变底**（`Skin.screenBg`），不是 `Theme.bg` ——
+        //    后者是**键盘扩展**的底色。这两个搞混过一次，被漂移闸门抓出来。
+        //    也别自己挑颜色：Kevin 说过「你不要自己设计了」。
+        // 🚨 **不设 backgroundColor** —— 主 App 的页面一律只插渐变层。
+        //    我第一版写了 `Theme.bg`，那是**键盘扩展**的底色，
+        //    当场被漂移闸门拦下来（`iOS 跟安卓没有漂移` 那一项）。
+        //    页面别处（AppDelegate:108）就是只 insertSublayer、不设色。
+        let bg = Skin.screenBg(UIScreen.main.bounds)
+        bg.frame = UIScreen.main.bounds
+        view.layer.insertSublayer(bg, at: 0)
+
+        let scroll = UIScrollView()
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(scroll)
+
+        let label = UILabel()
+        label.text = text
+        label.textColor = .white
+        label.font = .systemFont(ofSize: BigText.size(text), weight: .semibold)
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        scroll.addSubview(label)
+
+        NSLayoutConstraint.activate([
+            scroll.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scroll.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+
+            label.topAnchor.constraint(greaterThanOrEqualTo: scroll.topAnchor, constant: 20),
+            label.bottomAnchor.constraint(lessThanOrEqualTo: scroll.bottomAnchor, constant: -20),
+            label.leadingAnchor.constraint(equalTo: scroll.leadingAnchor, constant: 20),
+            label.trailingAnchor.constraint(equalTo: scroll.trailingAnchor, constant: -20),
+            label.widthAnchor.constraint(equalTo: scroll.widthAnchor, constant: -40),
+            // 🚨 文字少时要**垂直居中**，不能贴在顶上。
+            //    `centerY` 用低优先级，文字长到撑破一屏时让它让位给上面
+            //    那两条 greaterThan/lessThan，否则约束会冲突。
+            {
+                let c = label.centerYAnchor.constraint(equalTo: scroll.centerYAnchor)
+                c.priority = .defaultHigh
+                return c
+            }(),
+        ])
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(close))
+        view.addGestureRecognizer(tap)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        UIApplication.shared.isIdleTimerDisabled = true
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // 🚨 一定要还原 —— 忘了的话整个 App 从此不自动锁屏。
+        UIApplication.shared.isIdleTimerDisabled = false
+    }
+
+    @objc private func close() { dismiss(animated: true) }
 }
