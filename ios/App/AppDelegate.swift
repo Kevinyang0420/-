@@ -40,6 +40,17 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         if ProcessInfo.processInfo.environment["TRANSLESS_MARK_TRIED"] == "1" {
             Onboard.markTried()
         }
+        // 调试口子：预设说话页的档位，好并排截"选中翻译"和"选中转写"两张图。
+        // 🚨 写的是 `setMode` 读的那个 key，走的是**同一条真实路径**，
+        //    不是另建一套状态。
+        if let m = ProcessInfo.processInfo.environment["TRANSLESS_MODE"],
+           !m.isEmpty {
+            UserDefaults.standard.set(m, forKey: "vime.mode")
+            // 🚨 设了档位就等于"他点过 Tab" —— 这两件事在真实操作里
+            //    本来就是同一下点击带来的（`pickEn`/`pickTranscribe`
+            //    先 `touchTabs()` 再 `setMode`）。截图要复刻的正是那个状态。
+            UserDefaults.standard.set(true, forKey: "vime.tabTouched")
+        }
         DeviceId.ensure()
         let w = UIWindow(frame: UIScreen.main.bounds)
         // 🚨 **调试用的直达入口**：`xcrun simctl launch … --page speak` 之类，
@@ -206,15 +217,14 @@ final class SplashViewController: UIViewController {
         guard !went else { return }     // 只走一次
         went = true
         let home = UINavigationController(rootViewController: HomeViewController())
-        // 🚨🚨 **新用户直接推进「说一段试试」**，不是让他自己在首页找。
-        //    Kevin 2026-08-25：「用户下载下来后，必须要先去体验一下…
-        //    这个是系统自动推给他，必须让他试的。然后才会出现『注册登录』
-        //    和『设为当前输入法』的按钮。」
-        //    首页仍然在导航栈底 —— 他从说话页返回就落到首页，
-        //    而不是"退无可退只能杀进程"。
-        if !Onboard.tried {
-            home.pushViewController(MainViewController(), animated: false)
-        }
+        // 🚨🚨 **不自动跳转**。新用户看到的是**首页本身**，
+        //    只不过那时候首页上只有「说一段试试」一个按钮 ——
+        //    "必须让他试"是靠**没别的可点**实现的，不是靠强制跳走。
+        //
+        //    我上一版做成了"开 App 直接 push 说话页"，Kevin 2026-08-25 纠正：
+        //    「应该是先 2（他第一次看到的），然后才是 1，试完之后变成 3。
+        //      这个顺序是不是反过来了？」——是反了。
+        //    直接跳走的话他连 logo 和 slogan 都没看见就被丢进功能页了。
         home.modalTransitionStyle = .crossDissolve
         home.modalPresentationStyle = .fullScreen
         // 🚨 只在**首页**隐藏导航栏，子页要显示 —— 否则设置页/引导页
@@ -992,6 +1002,25 @@ final class MainViewController: UIViewController {
     private let modeRawButton = UIButton(type: .system)
     private var subStack = UIStackView()
 
+    /// 未选中的 Tab 收窄到多宽。要放得下完整标签，别截字。
+    static let tabNarrow: CGFloat = 88
+    /// 收窄约束：**只激活未选中那一个**，选中的没有宽度约束、自然吃满剩余。
+    private var narrowTranslate: NSLayoutConstraint?
+    private var narrowTranscribe: NSLayoutConstraint?
+    /// 两个 Tab 等宽 —— **他还没点过任何一个**时用这个。
+    private var equalTabs: NSLayoutConstraint?
+
+    /// 他有没有点过这两个 Tab。
+    ///
+    /// 🚨 **不能拿 `mode` 判**：mode 有默认值（`.en`），拿它判的话新用户
+    ///    一进来就是"翻译被选中"的样子 —— 而 Kevin 2026-08-25 要的是
+    ///    「如果用户不点的话，它默认两边都是一样长」。
+    ///    **默认档位** 和 **他点过没有** 是两件事。
+    private var tabTouched: Bool {
+        get { UserDefaults.standard.bool(forKey: "vime.tabTouched") }
+        set { UserDefaults.standard.set(newValue, forKey: "vime.tabTouched") }
+    }
+
     /// 目标语言（翻译模式用）。跟安卓共用同一套 code。
     private var lang = UserDefaults.standard.string(forKey: "vime.lang") ?? "en"
     private let langButton = UIButton(type: .system)
@@ -1041,6 +1070,24 @@ final class MainViewController: UIViewController {
         modeStack.distribution = .fill
         tabTranslate.setContentHuggingPriority(.defaultLow, for: .horizontal)
         tabTranscribe.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        // 🚨 **未选中的那个**收窄到固定宽，选中的自然吃满剩下的。
+        //    Kevin 2026-08-25：「它应该是一个动态的图标，而不是静态的…
+        //    我点『转写』的时候，『转写』进一步拉，也是可以拉长到那么长。」
+        //    原来两个 hugging 一样低，`.fill` 把富余空间**全给第一个**
+        //    （「翻译」）—— 跟谁被选中毫无关系，所以永远长短固定。
+        //
+        // 🚨 88 是要放得下未选中时的完整标签。太窄会截成「转…」，
+        //    那比不做动画更糟。
+        narrowTranslate = tabTranslate.widthAnchor.constraint(
+            equalToConstant: Self.tabNarrow)
+        narrowTranscribe = tabTranscribe.widthAnchor.constraint(
+            equalToConstant: Self.tabNarrow)
+        equalTabs = tabTranslate.widthAnchor.constraint(
+            equalTo: tabTranscribe.widthAnchor)
+        tabTranslate.titleLabel?.adjustsFontSizeToFitWidth = true
+        tabTranslate.titleLabel?.minimumScaleFactor = 0.75
+        tabTranscribe.titleLabel?.adjustsFontSizeToFitWidth = true
+        tabTranscribe.titleLabel?.minimumScaleFactor = 0.75
         logoView.setContentHuggingPriority(.required, for: .horizontal)
         logoView.widthAnchor.constraint(equalToConstant: 26).isActive = true
 
@@ -1276,11 +1323,19 @@ final class MainViewController: UIViewController {
         present(ac, animated: true)
     }
 
-    @objc private func pickEn() { setMode(.en) }
+    /// 🚨 只有**点这两个一级 Tab** 才算"点过"。
+    ///    二级的「整理 / 逐字」不算 —— 那是转写档里面的子选择，
+    ///    跟"他有没有在翻译/转写之间做过选择"是两回事。
+    private func touchTabs() { tabTouched = true }
+
+    @objc private func pickEn() { touchTabs(); setMode(.en) }
     @objc private func pickZh() { setMode(.zh) }
     @objc private func pickRaw() { setMode(.raw) }
     /// 点第一级「转写」：默认落在结构化转写；已经在转写档就保持原子档。
-    @objc private func pickTranscribe() { setMode(mode == .raw ? .raw : .zh) }
+    @objc private func pickTranscribe() {
+        touchTabs()
+        setMode(mode == .raw ? .raw : .zh)
+    }
 
     private func setMode(_ m: Backend.Mode) {
         mode = m
@@ -1295,6 +1350,29 @@ final class MainViewController: UIViewController {
         tabTranslate.setTitleColor(isTranslate ? .white : Theme.dim, for: .normal)
         tabTranscribe.backgroundColor = isTranslate ? Theme.key : Theme.accent
         tabTranscribe.setTitleColor(isTranslate ? Theme.dim : .white, for: .normal)
+
+        // 🚨 三态：**没点过 → 两边等长**；点了谁谁吃满、另一个收窄。
+        //    只动**约束的启用状态**，不重建约束：重建的话动画没有起点，
+        //    会直接跳过去而不是拉伸。
+        if tabTouched {
+            equalTabs?.isActive = false
+            narrowTranslate?.isActive = !isTranslate
+            narrowTranscribe?.isActive = isTranslate
+        } else {
+            narrowTranslate?.isActive = false
+            narrowTranscribe?.isActive = false
+            equalTabs?.isActive = true
+        }
+        // 首帧不做动画（还没上屏，animate 会闪一下）
+        if view.window != nil {
+            UIView.animate(withDuration: 0.22,
+                           delay: 0,
+                           usingSpringWithDamping: 0.9,
+                           initialSpringVelocity: 0.2,
+                           options: [.curveEaseOut]) {
+                self.view.layoutIfNeeded()
+            }
+        }
 
         // 第二级：翻译下是语气+语言，转写下是 结构化/逐字。永远只出现一排。
         subStack.isHidden = isTranslate
