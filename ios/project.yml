@@ -49,6 +49,12 @@ targets:
         #    （2026-08-25 run #8 实撞。归档时只是一条 warning，**编译照样过**，
         #     只有传上去那一刻才变成硬错误 —— 所以 contract_test.py 里有闸门守这条。）
         #    iPhone 仍然只竖屏；iPad 那把键盘横竖都要能用。
+        # 🚨 出口合规：不填的话每传一版都要人手在 ASC 上点一次「是否使用非豁免加密」，
+        #    不点 TestFlight 就卡在 Missing Compliance 不给测（2026-08-25 版本 5 实撞）。
+        #    这个 App 只用 HTTPS（系统给的 TLS）和 Keychain，源码里没有 CryptoKit /
+        #    CommonCrypto / 自实现的 AES 或 HMAC，设备令牌是个不透明字符串、只用于认证
+        #    —— 属于标准豁免情形，所以是 false。哪天真加了自研加密，回来改这里。
+        ITSAppUsesNonExemptEncryption: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UISupportedInterfaceOrientations~ipad:
