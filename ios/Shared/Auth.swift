@@ -107,7 +107,33 @@ enum Auth {
         //    后端踩过：那个头也可能装的是共享口令（不是设备令牌），
         //    原来写成「头 or 体」，只要带了头就盖掉体，
         //    于是拿口令去验签必然失败，最后被报成"验证码不对"，排查了很久。
-        body["device_token"] = DeviceId.pass
+        // 🚨🚨 **发之前先确保设备真的注册过**。
+        //    `DeviceId.pass` 在没注册时会**回落到共用口令**
+        //    （回落本身是对的：注册失败也不能让人用不了），
+        //    而后端拿共用口令去验设备签名必然失败，
+        //    报「验证码是对的，但这台设备的登录凭据无效」——
+        //    用户会以为是自己输错了码。
+        //    安卓那边 2026-08-26 真机 e2e 抓到过，两端结构一样。
+        //
+        //    🚨 `ensure` 是**异步**的，必须在它的回调里再发 verify。
+        //       写成 `if !registered { ensure() }` 然后往下走的话，
+        //       ensure 还没回来就把旧令牌发出去了 —— 等于没修。
+        func send() {
+            var b = body
+            b["device_token"] = DeviceId.pass
+            postVerify(b, done)
+        }
+        if DeviceId.registered {
+            send()
+        } else {
+            DeviceId.ensure { _ in send() }
+        }
+    }
+
+    /// verify 的实际发送 —— 从 `verify` 里拆出来，好在设备注册回调里复用。
+    private static func postVerify(
+        _ body: [String: Any],
+        _ done: @escaping (Result<Session, Failure>) -> Void) {
         post("/api/auth/verify", body) { r in
             switch r {
             case .success(let job):
