@@ -70,6 +70,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             case "speak": nav.pushViewController(MainViewController(), animated: false)
             case "setup": nav.pushViewController(SetupViewController(), animated: false)
             case "prefs": nav.pushViewController(PrefsViewController(), animated: false)
+            case "login": nav.pushViewController(LoginViewController(), animated: false)
             // 🚨 只为**我自己看键盘长什么样**：键盘扩展要在系统设置里启用、
             //    再点 🌐 切过去，这两步模拟器上脚本点不动。把同一个
             //    `TypingKeyboardView` 直接塞进 App 里截图，看到的是同一份代码。
@@ -240,15 +241,19 @@ final class SplashViewController: UIViewController {
 
 final class HomeViewController: UIViewController {
 
-    /// 建首页那三个长条时，他有没有体验过。
-    /// 🚨 存下来是为了**知道什么时候要重建** —— 从说话页返回时状态可能刚变，
-    ///    不重建的话那两个按钮不会冒出来，看着就像"试了也没用"。
+    /// 建首页那几个长条时的状态：体验过没有、登录了没有。
+    ///
+    /// 🚨 存下来是为了**知道什么时候要重建** —— 从说话页/登录页返回时
+    ///    状态可能刚变，不重建的话按钮不会冒出来，看着就像"试了也没用"。
+    /// 🚨 **两个状态都要记**：只记 `tried` 的话，登录完回来首页不会变，
+    ///    「设为当前输入法」永远出不来 —— 那种漏只在走到第三级时才现形。
     private var builtWithTried = false
+    private var builtWithLogin = false
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
-        if builtWithTried != Onboard.tried {
+        if builtWithTried != Onboard.tried || builtWithLogin != Auth.loggedIn {
             // 状态变了：整页重搭（首页很轻，重搭比逐个增删可靠）
             view.subviews.forEach { $0.removeFromSuperview() }
             viewDidLoad()
@@ -258,6 +263,7 @@ final class HomeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         builtWithTried = Onboard.tried
+        builtWithLogin = Auth.loggedIn
         UI.paintBg(self)
 
         let root = UIStackView()
@@ -343,14 +349,20 @@ final class HomeViewController: UIViewController {
         bars.addArrangedSubview(Bars.make(L.home_try_speak, primary: true,
                                           target: self,
                                           action: #selector(openSpeak)))
-        // 🚨🚨 **没体验过就只有这一个按钮**，另外两个**不建出来**
-        //    （不是置灰 —— 置灰会留一个点不动的东西在那儿更让人困惑）。
+        // 🚨🚨 **三级解锁**，每一级都是"不建那个按钮"而不是置灰
+        //    （置灰会留一个点不动的东西在那儿，比不显示更让人困惑）：
+        //      ① 没体验过       → 只有「说一段试试」
+        //      ② 体验过、没登录 → 加「注册 / 登录」
+        //      ③ 登录了         → 加「设为当前输入法」
         //    Kevin 2026-08-25：「必须让他试的，然后才会出现『注册登录』
-        //    和『设为当前输入法』的按钮。」
+        //    和『设为当前输入法』的按钮」＋「用户必须先注册和登录，
+        //    然后才能设置为默认输入法」。
         if Onboard.tried {
             bars.addArrangedSubview(Bars.make(L.home_login, primary: false,
                                               target: self,
                                               action: #selector(loginSoon)))
+        }
+        if Onboard.tried && Auth.loggedIn {
             bars.addArrangedSubview(Bars.make(L.home_set_ime, primary: false,
                                               target: self,
                                               action: #selector(openSetup)))
@@ -364,10 +376,11 @@ final class HomeViewController: UIViewController {
     }
 
     @objc private func loginSoon() {
-        let a = UIAlertController(title: nil, message: L.login_next_ver,
-                                  preferredStyle: .alert)
-        a.addAction(UIAlertAction(title: "OK", style: .default))
-        present(a, animated: true)
+        // 🚨 以前这里只弹一句"下个版本"。后端 2026-08-25 已经全链路跑通
+        //    （Supabase users 表 + 阿里云短信），Kevin：「注册登录已经 OK 了…
+        //    那就把注册登录给做实吧」。
+        navigationController?.pushViewController(LoginViewController(),
+                                                 animated: true)
     }
 
     @objc private func openSetup() {
