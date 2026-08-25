@@ -50,6 +50,24 @@ enum L {
           + "settings when you switch phones.",
           "登入之後才能把 Transless 設為輸入法，也方便你換手機時找回設定。")
     }
+    static var login_tab_email: String { s("邮箱", "Email", "電郵") }
+    static var login_tab_phone: String { s("手机号", "Phone", "手機號") }
+    static var login_email_ph: String { s("邮箱地址", "Email address", "電郵地址") }
+    static var login_need_email: String { s("填一个邮箱地址", "Enter an email address", "填一個電郵地址") }
+    /// 🚨 后端走阿里云短信，**它只发中国内地**。当场说清比让人等一个
+    ///    看不懂的服务端错误强。
+    static var login_mainland_only: String {
+        s("目前手机号登录只支持中国内地号码，海外请用邮箱",
+          "Phone sign-in currently supports mainland China numbers only — "
+          + "please use email",
+          "目前手機號登入只支援中國內地號碼，海外請用電郵")
+    }
+    static var login_sent_mail: String {
+        s("验证码已发到邮箱，注意查收（也看一下垃圾邮件）",
+          "Code sent to your email — check spam too",
+          "驗證碼已發到電郵，注意查收（也看一下垃圾郵件）")
+    }
+
     static var login_phone_ph: String { s("手机号", "Phone number", "手機號") }
     static var login_code_ph: String { s("6 位验证码", "6-digit code", "6 位驗證碼") }
     static var login_send_code: String { s("获取验证码", "Send code", "獲取驗證碼") }
@@ -63,11 +81,19 @@ enum L {
     static var login_need_code: String { s("填一下收到的验证码", "Enter the code you received", "填一下收到的驗證碼") }
     static var login_too_often: String { s("发得太频繁了，%d 秒后再试", "Too many requests — try again in %ds", "發得太頻繁了，%d 秒後再試") }
     /// 🚨 说清「没注册过会自动建号」——不然他会去找"注册"按钮找不到。
+    /// 🚨 **跟着 tab 换**：邮箱 tab 下写"手机号"是明显的错话
+    ///    （截图上看到过一次）。
     static var login_note: String {
         s("没注册过的手机号会自动创建账号。我们只用它做登录，不会发广告。",
           "A new number gets an account automatically. We only use it to sign "
           + "you in — no marketing.",
           "沒註冊過的手機號會自動建立帳號。我們只用它做登入，不會發廣告。")
+    }
+    static var login_note_mail: String {
+        s("没注册过的邮箱会自动创建账号。我们只用它做登录，不会发广告。",
+          "A new email gets an account automatically. We only use it to sign "
+          + "you in — no marketing.",
+          "沒註冊過的電郵會自動建立帳號。我們只用它做登入，不會發廣告。")
     }
 
     static var act_manual: String { s("请手动开启", "Turn on manually", "請手動開啟") }

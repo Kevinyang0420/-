@@ -35,9 +35,20 @@ enum Auth {
     }
 
     /// 登录成功后拿到的东西。
+    ///
+    /// 🚨 **没有 token 这个东西**。后端 `verify_code` 返回的只有
+    ///    `{"user_id": …, "new_user": …}` —— 登录后的凭证**还是设备令牌**
+    ///    （`DeviceId.pass`）。后端 `bind_user` 的注释写着
+    ///    「绑定后设备令牌继续有效 —— 不能因为登录一下就把他正在用的输入法踢下线」。
+    ///
+    ///    我上一版在这里要了一个 `token` 字段，而后端从来不返回它，
+    ///    于是**所有人**（新老用户都一样）都卡在「返回里没有 user_id/token」
+    ///    这句话上，一个都登不进去。Kevin 2026-08-25 实测撞到。
+    ///    —— 后端那份代码就在手边，读一眼就知道它返回什么，我没读。
     struct Session {
         let userId: String
-        let token: String
+        /// 这次是不是**新建的号**。后端本来就是"没注册过自动建号"，
+        /// 不存在"注册 / 登录"两条路 —— 这个字段只用来决定欢迎语。
         let isNew: Bool
     }
 
@@ -66,6 +77,32 @@ enum Auth {
                        done: @escaping (Result<Session, Failure>) -> Void) {
         var body: [String: Any] = ["kind": kind.rawValue, "target": target,
                                    "code": code]
+        // 🚨 上报**设备地区**（ISO 国家码，如 CN / US / HK）。
+        //    Kevin 要按国家统计用户，而 `users` 表原来只有
+        //    `source(android|ios)`，看不出国家。
+        //    这不是定位：地区设置是他自己在系统里设的，
+        //    不需要位置权限、也不用问他。
+        //    🚨 它反映"他是哪儿人"；IP 反映"他此刻在哪"（出差/VPN 会污染）。
+        //       两个都存，交叉起来才有意思。
+        if #available(iOS 16, *) {
+            body["region"] = Locale.current.region?.identifier ?? ""
+        } else {
+            body["region"] = Locale.current.regionCode ?? ""
+        }
+        body["locale"] = Locale.current.identifier
+        // 🚨🚨 **时区可能是三个信号里最准的一个**（Kevin 2026-08-25 点出
+        //    前两个都会被污染之后想到的）：
+        //      · 设备地区 —— 他自己设的，「我经常会设置为我的美区账户」
+        //      · IP 国家   —— VPN 一开就废
+        //      · **时区**   —— 手机**自动**跟着实际位置设，
+        //                     而 VPN 改 IP **不改时区**
+        //    三个都存，冲突时才看得出是哪种情况：
+        //      地区 US + 时区 Asia/Shanghai ＝ 华人在国内用美区账号
+        //      地区 CN + 时区 America/*      ＝ 中国人在美国
+        //      IP 和时区对不上               ＝ 多半在用 VPN
+        body["tz"] = TimeZone.current.identifier
+        // 系统首选语言（"zh-Hans-CN" 这种也带地区信息，可作旁证）
+        body["lang"] = Locale.preferredLanguages.first ?? ""
         // 🚨 设备令牌走请求体的 `device_token`，**不要只靠 `X-Alex-Pass` 头** ——
         //    后端踩过：那个头也可能装的是共享口令（不是设备令牌），
         //    原来写成「头 or 体」，只要带了头就盖掉体，
@@ -77,13 +114,15 @@ enum Auth {
                 poll(job) { pr in
                     switch pr {
                     case .success(let obj):
+                        // 🚨 只要 `user_id`。**别再要 token** —— 后端不返回它。
                         guard let uid = obj["user_id"] as? String,
-                              let tok = obj["token"] as? String else {
-                            done(.failure(.failed("返回里没有 user_id/token")))
+                              !uid.isEmpty else {
+                            done(.failure(.failed("服务端没返回 user_id")))
                             return
                         }
-                        let s = Session(userId: uid, token: tok,
-                                        isNew: (obj["new_user"] as? Bool) ?? false)
+                        let s = Session(
+                            userId: uid,
+                            isNew: (obj["new_user"] as? Bool) ?? false)
                         save(s)
                         done(.success(s))
                     case .failure(let e):
@@ -99,26 +138,22 @@ enum Auth {
     // MARK: - 会话存储
 
     private static let kUser = "transless.auth.userId"
-    private static let kTok = "transless.auth.token"
 
     /// 登录了没有。
     static var loggedIn: Bool { current != nil }
 
     static var current: Session? {
-        guard let u = UserDefaults.standard.string(forKey: kUser), !u.isEmpty,
-              let t = UserDefaults.standard.string(forKey: kTok), !t.isEmpty
+        guard let u = UserDefaults.standard.string(forKey: kUser), !u.isEmpty
         else { return nil }
-        return Session(userId: u, token: t, isNew: false)
+        return Session(userId: u, isNew: false)
     }
 
     private static func save(_ s: Session) {
         UserDefaults.standard.set(s.userId, forKey: kUser)
-        UserDefaults.standard.set(s.token, forKey: kTok)
     }
 
     static func signOut() {
         UserDefaults.standard.removeObject(forKey: kUser)
-        UserDefaults.standard.removeObject(forKey: kTok)
     }
 
     // MARK: - 网络

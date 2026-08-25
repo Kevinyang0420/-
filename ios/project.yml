@@ -35,8 +35,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260825.470"
-        CFBundleVersion: "470"
+        CFBundleShortVersionString: "20260825.471"
+        CFBundleVersion: "471"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -85,8 +85,8 @@ targets:
       path: Probe/App/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260825.470"
-        CFBundleVersion: "470"
+        CFBundleShortVersionString: "20260825.471"
+        CFBundleVersion: "471"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -109,8 +109,8 @@ targets:
       path: Probe/Keyboard/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260825.470"
-        CFBundleVersion: "470"
+        CFBundleShortVersionString: "20260825.471"
+        CFBundleVersion: "471"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -150,8 +150,8 @@ targets:
       path: Keyboard/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260825.470"
-        CFBundleVersion: "470"
+        CFBundleShortVersionString: "20260825.471"
+        CFBundleVersion: "471"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController

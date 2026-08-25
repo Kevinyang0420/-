@@ -71,6 +71,12 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             case "setup": nav.pushViewController(SetupViewController(), animated: false)
             case "prefs": nav.pushViewController(PrefsViewController(), animated: false)
             case "login": nav.pushViewController(LoginViewController(), animated: false)
+            // 调试：直接落在手机号 tab（好并排截两个 tab 的图）。
+            // 🚨 走的是**真实的 tab 切换方法**，不是另建一套状态。
+            case "login-phone":
+                let lv = LoginViewController()
+                lv.startOnPhoneTab = true
+                nav.pushViewController(lv, animated: false)
             // 🚨 只为**我自己看键盘长什么样**：键盘扩展要在系统设置里启用、
             //    再点 🌐 切过去，这两步模拟器上脚本点不动。把同一个
             //    `TypingKeyboardView` 直接塞进 App 里截图，看到的是同一份代码。
