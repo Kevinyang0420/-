@@ -42,8 +42,20 @@ targets:
         # 🚨 键盘扩展弹不出系统权限框，必须由容器 App 先要过一次。
         #    转写改到后端后只需要麦克风；语音识别不再走 iOS 的 Speech 框架。
         NSMicrophoneUsageDescription: 用来听你说的中文，转成文字后整理并译成英文。
+        # 🚨 声明支持 iPad（TARGETED_DEVICE_FAMILY "1,2"）就**必须给 iPad 全四个方向**，
+        #    否则上传 App Store 直接被拒：
+        #    `Invalid bundle. The "UIInterfaceOrientationPortrait" orientations were
+        #     provided for the UISupportedInterfaceOrientations Info.plist key ...`
+        #    （2026-08-25 run #8 实撞。归档时只是一条 warning，**编译照样过**，
+        #     只有传上去那一刻才变成硬错误 —— 所以 contract_test.py 里有闸门守这条。）
+        #    iPhone 仍然只竖屏；iPad 那把键盘横竖都要能用。
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kevin.transless
