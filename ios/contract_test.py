@@ -138,6 +138,30 @@ def check_assets():
     return results, mic_ok, len(需要), leaks
 
 
+def check_orientations():
+    """声明支持 iPad 就必须给 iPad **全四个**方向。
+
+    🚨 这条只有**上传 App Store 那一刻**才会被苹果查出来
+       （`Invalid bundle. The "UIInterfaceOrientationPortrait" orientations were
+        provided for the UISupportedInterfaceOrientations Info.plist key ...`）。
+       本地编译一路绿，归档时顶多一条 warning —— 2026-08-25 run #8 就是这么撞的：
+       前面每道闸门都 PASS，死在最后一步。所以判据必须提前到这里。
+
+    判据取两边：`TARGETED_DEVICE_FAMILY` 含不含 iPad(2)，以及 `~ipad` 那把方向齐不齐。
+    """
+    proj = io.open(os.path.join(HERE, "project.yml"), encoding="utf-8").read()
+    m = re.search(r"TARGETED_DEVICE_FAMILY:\s*\"?([0-9,\s]+)\"?", proj)
+    fams = [x.strip() for x in m.group(1).split(",")] if m else []
+    ipad = "2" in fams
+    seg = proj[proj.find("UISupportedInterfaceOrientations~ipad:"):] \
+        if "UISupportedInterfaceOrientations~ipad:" in proj else ""
+    seg = seg[:seg.find("\n    settings:")] if "\n    settings:" in seg else seg
+    want = ["UIInterfaceOrientationPortrait", "UIInterfaceOrientationPortraitUpsideDown",
+            "UIInterfaceOrientationLandscapeLeft", "UIInterfaceOrientationLandscapeRight"]
+    missing = [w for w in want if w not in seg]
+    return ipad, fams, missing
+
+
 def check_two_level():
     """两级 Tab 必须跟安卓对齐（Kevin：两端一起改）。
 
@@ -306,6 +330,15 @@ def main():
         print("\n=== 版式闸门未过 ===")
         return 1
 
+    ipad, fams, missing = check_orientations()
+    if ipad:
+        print("  %-28s %s" % ("iPad 四个方向齐（上架硬要求）",
+                              "PASS" if not missing else "FAIL 缺 %s" % missing))
+        if missing:
+            print("\n=== 版式闸门未过：传 App Store 会被硬拒 ===")
+            return 1
+    else:
+        print("  %-28s %s" % ("不声明 iPad，方向不受限", "PASS 设备族=%s" % fams))
     n_tabs, got_top, got_sub, want_top, want_sub, missing = check_two_level()
     two = n_tabs == 2
     print("  %-28s %s" % ("第一级 Tab 恰好 2 个(现 %d)" % n_tabs,
