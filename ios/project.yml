@@ -25,7 +25,9 @@ targets:
     sources:
       - path: App
       - path: Shared
+      # 只给主 App：AppIcon + logo。🚨 AppIcon 绝不能进 appex，见下面 Keyboard 的说明。
       - path: Assets.xcassets
+      - path: SharedAssets.xcassets
     info:
       path: App/Info.plist
       properties:
@@ -36,7 +38,7 @@ targets:
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
         #    开发语言，英文界面**一辈子出不来**而且不报错。
-        CFBundleLocalizations: [zh-Hans, en]
+        CFBundleLocalizations: [zh-Hans, zh-Hant, en]
         # 🚨 键盘扩展弹不出系统权限框，必须由容器 App 先要过一次。
         #    转写改到后端后只需要麦克风；语音识别不再走 iOS 的 Speech 框架。
         NSMicrophoneUsageDescription: 用来听你说的中文，转成文字后整理并译成英文。
@@ -68,7 +70,7 @@ targets:
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
         #    开发语言，英文界面**一辈子出不来**而且不报错。
-        CFBundleLocalizations: [zh-Hans, en]
+        CFBundleLocalizations: [zh-Hans, zh-Hant, en]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kevin.tprobe
@@ -109,9 +111,14 @@ targets:
       - path: Keyboard
       - path: Shared
       # 🚨 键盘扩展是**独立 bundle**，`UIImage(named:)` 只找自己 bundle 里的资源。
-      #    不把 Assets 编进这个 target，麦克风图会静默变 nil、按钮一片空白 ——
+      #    不把图编进这个 target，麦克风图会静默变 nil、按钮一片空白 ——
       #    编译照样通过，只有装到手机上才看得出来。contract_test.py 有闸门守这条。
-      - path: Assets.xcassets
+      # 🚨🚨 但这里**只能给 SharedAssets**，绝不能给 Assets.xcassets（那里有 AppIcon）。
+      #    appex 的 actool 会带 `--standalone-icon-behavior all` 去**渲染** AppIcon，
+      #    而渲染要一个跟 iphonesimulator SDK 同版本的模拟器运行时；CI runner 上没有
+      #    → `No simulator runtime version ... available`，整个 archive 挂掉。
+      #    （2026-08-25 run #2 就死在这儿。appex 本来也不该带 App 图标。）
+      - path: SharedAssets.xcassets
     info:
       path: Keyboard/Info.plist
       properties:
