@@ -184,8 +184,19 @@ def check_two_level():
     # 🚨 只数 **tab** 开头的成员：那一排里除了两个 Tab 还挂着 logoView，
     #    数「arrangedSubviews 有几项」会把 logo 算成第三个 Tab（2026-08-21 撞过）。
     #    判据要说清查的是什么对象，不是数一排里有几个东西。
-    m = re.search(r"UIStackView\(arrangedSubviews:\s*\[([^\]]*)\]\)", src)
-    items = [x.strip() for x in m.group(1).split(",") if x.strip()] if m else []
+    # 🚨🚨 **找含 tab 的那一个，不是第一个**（2026-08-25 修）。
+    #    原来用 `re.search` 取**第一个** `UIStackView(arrangedSubviews:[...])`。
+    #    文件里新加了开屏界面之后，第一个变成了 `[logo, brand, zh, en]`，
+    #    于是数出 n_tabs=0，**对着正确的代码报 FAIL**。
+    #    判据要挂在"要查的那个对象"上，不是"文件里第一个长得像的东西"。
+    #    今天这是第四条同型的过期闸门。
+    cands = re.findall(r"UIStackView\(arrangedSubviews:\s*\[([^\]]*)\]\)", src)
+    items = []
+    for c in cands:
+        parts = [x.strip() for x in c.split(",") if x.strip()]
+        if any(p.startswith("tab") for p in parts):
+            items = parts
+            break
     n_tabs = len([x for x in items if x.startswith("tab")])
 
     # 按钮 -> 文案 key：从 `for (b, t, sel) in [(按钮, L.key, #selector(…)), …]` 里取
