@@ -1,13 +1,35 @@
 import UIKit
-import AVFoundation
 
-// Transless 容器 App —— 现在它自己就是主战场。
+// Transless 容器 App —— **首页 + 引导**，真正干活的是键盘扩展。
 //
-// 🚨 为什么主界面是大按钮而不是设置页（2026-08-21 定的）：
-//    iOS 26.6 + 免费证书侧载，键盘扩展一启动就被代码签名校验击杀
-//    （CODESIGNING / Invalid Page，探针键盘同样被杀 → 与代码无关）。
-//    键盘那条路要换签名通道才能通；在那之前，App 内完成同样的事：
-//    按一下说中文 → 再按一下 → 自动转写+整理+译英 → 自动进剪贴板 → 去微信粘贴。
+// 🚨🚨 2026-08-25 重写：结构对齐安卓（Kevin 拍板「备份删除，然后再完全按照
+//    一样的结构对齐，没什么好犹豫的」）。
+//
+//    原来这里是**一整套翻译界面**（两级 Tab + 麦克风 + 语气 + 语言 + 朗读，615 行）。
+//    那是 2026-08-21 的产物，当时的前提是：
+//        「iOS 26.6 + 免费证书侧载，键盘扩展一启动就被代码签名校验击杀，
+//          键盘那条路走不通，所以在 App 内完成同样的事」
+//    **这个前提已经不成立了** —— 08-25 付费发布证书签键盘扩展走通了
+//    （CI run #7 逐字为证，Keyboard.appex 签名 valid on disk）。
+//    前提没了，那套 App 内翻译 UI 也就没有存在理由，而它让 iOS 和安卓
+//    变成两个不同的产品：他装上 TestFlight 那个包第一句话是
+//    「怎么还是黑色底的呢？还是 1.0？」
+//
+//    旧版备份在 `ios/_backup_before_home_align/AppDelegate.swift.20260825`
+//    （字节指纹核对过）。
+//
+// 🚨 配色和排版**全部从 `Skin.swift` 取**，那个文件是从安卓 `Skin.java`
+//    生成的（`py D:\_build\sync_skin_ios.py`）。这里一个色值都不许写死 ——
+//    键盘那 11 个色值一直没漂，就是因为它有生成器；主 App 这套漂了，
+//    因为它只有一句「注释说要同步」。
+
+/// 品牌语。**两端一模一样、不随界面语言变** —— 安卓那边同样是写死在
+/// SettingsActivity 里，不走 strings.xml。放进 i18n 反而制造
+/// "它可以被翻译"的错觉。
+enum Brand {
+    static let sloganZh = "让世界听懂你"
+    static let sloganEn = "No Language In Between"
+}
 
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -19,597 +41,297 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //    异步、失败自动回落共享口令，不阻塞启动。
         DeviceId.ensure()
         let w = UIWindow(frame: UIScreen.main.bounds)
-        w.rootViewController = UINavigationController(rootViewController: MainViewController())
+        w.rootViewController = HomeViewController()
         w.makeKeyAndVisible()
         window = w
         return true
     }
 }
 
-// MARK: - 主界面：一个大按钮
+// MARK: - 首页（对齐安卓 SettingsActivity）
 
-final class MainViewController: UIViewController {
+/// 安卓那边的结构：右上角齿轮 → Logo + 品牌 + 中英 slogan → 两个长条。
+/// 这里逐条照搬，间距用安卓的 dp 值（iOS pt 与安卓 dp 1:1）。
+final class HomeViewController: UIViewController {
 
-    private enum Phase { case idle, listening, thinking }
-
-    // 🚨 三档，跟 engine.py / 安卓 Gen.TONE_CODES 一致（Kevin 2026-08-21：
-    //    「邮件和正式合在一起吧，这两个没什么区别。就是随意、工作和邮件三种」）。
-    //    这里是**第三份**副本，暂时只能手工对齐 —— iOS 没走构建期生成那条路。
-    //    改档位时三处都要动：engine.py / build_apk.py 生成的 Gen / 这里。
-    private let tones = Prompts.all
-    private let toneLabels = Prompts.all.map(Prompts.label)
-    private var tone = Prompts.normalize(UserDefaults.standard.string(forKey: "vime.tone"))
-
-    /// 输出模式：译成英文（默认）/ 只转写。跟安卓一致。
-    private var mode: Backend.Mode =
-        Backend.Mode(rawValue: UserDefaults.standard.string(forKey: "vime.mode") ?? "en") ?? .en
-    private let logoView = UIImageView()
-    /// 长按说明的文案表。用 ObjectIdentifier 当键，免得给每个控件都挂 tag。
-    private var tips: [ObjectIdentifier: String] = [:]
-    // 第一级 Tab
-    private let tabTranslate = UIButton(type: .system)
-    private let tabTranscribe = UIButton(type: .system)
-    // 第二级：转写下的两个子档
-    private let modeZhButton = UIButton(type: .system)
-    private let modeRawButton = UIButton(type: .system)
-    private var subStack = UIStackView()
-
-    /// 目标语言（翻译模式用）。跟安卓共用同一套 code。
-    private var lang = UserDefaults.standard.string(forKey: "vime.lang") ?? "en"
-    private let langButton = UIButton(type: .system)
-
-    /// 🔊 朗读：把刚出的译文用 Andrew 的声音念出来
-    private let speakButton = UIButton(type: .system)
-    private var lastOut = ""
-
-    private let hintLabel = UILabel()
-    private let heardLabel = UILabel()
-    private let resultView = UITextView()
-    private let aiNoticeLabel = UILabel()   // DeepSeek 条款 8.1/3.7 要求的 AI 生成披露
-    private let micButton = UIButton(type: .system)
-    private let toneButton = UIButton(type: .system)
-
-    private lazy var voice = Voice()
-    private var phase: Phase = .idle
-    private var elapsedTimer: Timer?
+    private let gradient = CAGradientLayer()
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = Theme.bg
-        title = "Transless"
-        navigationController?.navigationBar.tintColor = Theme.accent
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: L.perm_title, style: .plain, target: self, action: #selector(openSetup))
 
-        // 🚨 两级 Tab（Kevin 2026-08-21：「按你最初的那个方案来」）：
-        //    第一级只有 翻译 / 转写；子档位（结构化 / 逐字）放第二级小 chip。
-        //    跟安卓 VoiceImeService 的版式一一对应 —— 两端一起改是硬规矩。
-        for (b, t, sel) in [(tabTranslate, L.kb_translate, #selector(pickEn)),
-                            (tabTranscribe, L.kb_transcribe, #selector(pickTranscribe))] {
-            b.setTitle(t, for: .normal)
-            b.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-            b.layer.cornerRadius = 17
-            b.addTarget(self, action: sel, for: .touchUpInside)
-        }
-        // Kevin 2026-08-21：Tab 右边那块空地放 logo（G3 图标里的整个 T+麦克风，同源）。
-        // 压到次要文字色，不抢戏 —— 这一屏的强调色只留给说话长条。
-        logoView.image = UIImage(named: "logo")?.withRenderingMode(.alwaysTemplate)
-        logoView.tintColor = Theme.dim
-        logoView.contentMode = .scaleAspectFit
+        // ---- 背景：三段渐变（安卓 Skin.screenBg）----
+        // 🚨 原来这里是 `view.backgroundColor = Theme.bg`，而 Theme.bg 是
+        //    **键盘**的底色 #141033 —— 他看到的「黑色底」就是这一行。
+        let g = Skin.screenBg(view.bounds)
+        view.layer.insertSublayer(g, at: 0)
+        gradient.frame = view.bounds
 
-        let modeStack = UIStackView(arrangedSubviews: [tabTranslate, tabTranscribe, logoView])
-        modeStack.axis = .horizontal
-        modeStack.spacing = Theme.gap * 0.7
-        modeStack.distribution = .fill
-        tabTranslate.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        tabTranscribe.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        logoView.setContentHuggingPriority(.required, for: .horizontal)
-        logoView.widthAnchor.constraint(equalToConstant: 26).isActive = true
-
-        // 🚨 「整理 / 逐字」，不是「结构化转写 / 逐字转录」——
-        //    Kevin 2026-08-21：「这几个表达让人听不懂」。安卓当天改了并加了闸门，
-        //    iOS 一直留着旧名字（2026-08-22 才发现）。
-        for (b, t, sel) in [(modeZhButton, L.kb_polish, #selector(pickZh)),
-                            (modeRawButton, L.kb_verbatim, #selector(pickRaw))] {
-            b.setTitle(t, for: .normal)
-            b.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
-            b.layer.cornerRadius = 16
-            b.addTarget(self, action: sel, for: .touchUpInside)
-        }
-        subStack = UIStackView(arrangedSubviews: [modeZhButton, modeRawButton])
-        subStack.axis = .horizontal
-        subStack.spacing = Theme.gap * 0.7
-        subStack.distribution = .fillEqually
-
-        // 🚨 Kevin 2026-08-21：那几行功能说明「至于要留这么大的位置吗？…
-        //    用户自己点着点着自然就明白了。或者长按的时候弹一个 box 来介绍」。
-        //    -> 常驻说明清空（下面 paintMode 里也不再写），改成**长按弹**（explain）。
-        hintLabel.font = .systemFont(ofSize: 15)
-        hintLabel.textColor = Theme.dim
-        hintLabel.textAlignment = .center
-        hintLabel.numberOfLines = 1
-        hintLabel.text = ""
-
-        heardLabel.font = .systemFont(ofSize: 15)
-        heardLabel.textColor = Theme.text
-        heardLabel.textAlignment = .center
-        heardLabel.numberOfLines = 4
-
-        resultView.font = .systemFont(ofSize: 17)
-        resultView.textColor = Theme.text
-        resultView.backgroundColor = Theme.panel
-        resultView.layer.cornerRadius = 12
-        resultView.isEditable = false
-        resultView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
-
-        // 🚨 AI 生成声明：DeepSeek 开放平台服务协议 8.1「应当向终端用户明确披露
-        //    相关输出内容系由人工智能生成」+ 3.7「对生成、合成的文本进行标识」。
-        aiNoticeLabel.text = L.ai_notice
-        aiNoticeLabel.font = .systemFont(ofSize: 12.5)
-        // 🚨 走 Theme，别硬编码 —— 硬编码的话换主题时它不跟着变，
-        //    紫色改版之后会剩一块土黄。
-        aiNoticeLabel.textColor = Theme.dim
-        aiNoticeLabel.numberOfLines = 0
-        aiNoticeLabel.textAlignment = .center
-
-        // 🚨🚨 说话键是**圆的**，别再改回长条。
-        //    Kevin 2026-08-21 先说「不要搞成圆圈…搞成一个长点的方框」，
-        //    当天**又改口**：「不需要留长…还是用回原来那个圆圈的形状，
-        //    这样整个输入法都显得干净一点」——以后说的为准。
-        //    安卓按后一次改了（build 闸门钉着 circle=3/bar=0），
-        //    iOS 停在前一次，2026-08-22 才发现。
-        micButton.setTitle("", for: .normal)
-        micButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .medium)
-        micButton.setTitleColor(.white, for: .normal)
-        micButton.setImage(Theme.micGlyph(Theme.micBarHeight * 0.6), for: .normal)
-        micButton.tintColor = .white
-        micButton.backgroundColor = Theme.accent
-        micButton.layer.cornerRadius = Theme.micBarHeight / 2
-        micButton.addTarget(self, action: #selector(tapMic), for: .touchUpInside)
-
-        toneButton.setTitle("语气：" + toneTitle(), for: .normal)
-        toneButton.setTitleColor(Theme.dim, for: .normal)
-        toneButton.titleLabel?.font = .systemFont(ofSize: 15)
-        toneButton.backgroundColor = Theme.key
-        toneButton.layer.cornerRadius = 16
-        toneButton.addTarget(self, action: #selector(cycleTone), for: .touchUpInside)
-
-        // 语言选择：跟语气并排，不藏进设置
-        langButton.titleLabel?.font = .systemFont(ofSize: 15)
-        langButton.setTitleColor(Theme.text, for: .normal)
-        langButton.backgroundColor = Theme.key
-        langButton.layer.cornerRadius = 16
-        langButton.addTarget(self, action: #selector(pickLang), for: .touchUpInside)
-
-        speakButton.setTitle(L.kb_speak, for: .normal)
-        // 🚨 单色喇叭贴在文字左边（原来是彩色 emoji，跟主题冲）
-        speakButton.setImage(Theme.speakGlyph(17), for: .normal)
-        speakButton.tintColor = Theme.text
-        speakButton.imageEdgeInsets =
-            UIEdgeInsets(top: 0, left: -4, bottom: 0, right: 4)
-        speakButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
-        speakButton.setTitleColor(Theme.text, for: .normal)
-        speakButton.backgroundColor = Theme.key
-        speakButton.layer.cornerRadius = 16
-        speakButton.isEnabled = false          // 没东西可念时不给点
-        speakButton.addTarget(self, action: #selector(tapSpeak), for: .touchUpInside)
-
-        [modeStack, subStack, hintLabel, heardLabel, resultView, aiNoticeLabel, micButton,
-         toneButton, langButton, speakButton].forEach {
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview($0)
-        }
+        let root = UIStackView()
+        root.axis = .vertical
+        root.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(root)
         NSLayoutConstraint.activate([
-            modeStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Theme.gap),
-            modeStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Theme.pad * 1.6),
-            modeStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Theme.pad * 1.6),
-            modeStack.heightAnchor.constraint(equalToConstant: 34),
-
-            subStack.topAnchor.constraint(equalTo: modeStack.bottomAnchor, constant: Theme.gap),
-            subStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Theme.pad * 1.6),
-            subStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Theme.pad * 1.6),
-            subStack.heightAnchor.constraint(equalToConstant: 32),
-
-            hintLabel.topAnchor.constraint(equalTo: subStack.bottomAnchor, constant: Theme.gap),
-            hintLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
-            hintLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
-
-            // 圆形：等宽高 + 居中（跟安卓 MIC_CIRCLE_DP 那套一一对应）
-            micButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            micButton.topAnchor.constraint(equalTo: hintLabel.bottomAnchor, constant: Theme.gap + 4),
-            micButton.widthAnchor.constraint(equalToConstant: Theme.micBarHeight),
-            micButton.heightAnchor.constraint(equalToConstant: Theme.micBarHeight),
-
-            toneButton.topAnchor.constraint(equalTo: micButton.bottomAnchor, constant: Theme.gap),
-            toneButton.trailingAnchor.constraint(equalTo: view.centerXAnchor, constant: -6),
-            toneButton.widthAnchor.constraint(equalToConstant: 130),
-            toneButton.heightAnchor.constraint(equalToConstant: 34),
-
-            langButton.topAnchor.constraint(equalTo: micButton.bottomAnchor, constant: Theme.gap),
-            langButton.leadingAnchor.constraint(equalTo: view.centerXAnchor, constant: 6),
-            langButton.widthAnchor.constraint(equalToConstant: 110),
-            langButton.heightAnchor.constraint(equalToConstant: 34),
-
-            speakButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            speakButton.topAnchor.constraint(equalTo: toneButton.bottomAnchor, constant: 10),
-            speakButton.widthAnchor.constraint(equalToConstant: 140),
-            speakButton.heightAnchor.constraint(equalToConstant: 36),
-
-            heardLabel.topAnchor.constraint(equalTo: speakButton.bottomAnchor, constant: Theme.gap),
-            heardLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
-            heardLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
-
-            resultView.topAnchor.constraint(equalTo: heardLabel.bottomAnchor, constant: 14),
-            resultView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            resultView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            resultView.bottomAnchor.constraint(equalTo: aiNoticeLabel.topAnchor, constant: -8),
-            aiNoticeLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            aiNoticeLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            aiNoticeLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            root.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            root.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            root.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+            root.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -30),
         ])
-        // 🚨 立体感统一在这儿走一遍，别在每个控件后面各写一行 —— 漏一个就少一个阴影，
-        //    而"少了一个"是看不出来的（跟安卓 Theme.elevateAll 同一套做法）。
-        for v in [tabTranslate, tabTranscribe, modeZhButton, modeRawButton,
-                  toneButton, langButton, speakButton] {
-            v.layer.cornerRadius = Theme.rKey
-            Theme.elevate(v, 3)
-        }
-        resultView.layer.cornerRadius = Theme.rCard
-        Theme.elevate(resultView, 3)
-        Theme.elevate(micButton, 6)     // 主操作，投影重一档，浮在最上层
 
-        // 长按弹说明（跟安卓 explain() 一一对应，文案保持一致）
-        explain(tabTranslate, L.ex_translate)
-        explain(tabTranscribe, L.ex_transcribe)
-        explain(modeZhButton, L.ex_polish)
-        explain(modeRawButton, L.ex_verbatim)
-        explain(micButton, L.ex_mic_ios)
-        explain(toneButton, L.ex_tone_cycle)
-        explain(langButton, L.ex_lang_pick)
-        explain(speakButton, L.ex_speak_ios)
+        // ---- 右上角：设置 ----
+        let head = UIStackView()
+        head.axis = .horizontal
+        let spacer = UIView()
+        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        head.addArrangedSubview(spacer)
+        let gear = UIButton(type: .system)
+        gear.setTitle(L.prefs_entry, for: .normal)
+        gear.setTitleColor(Skin.dim, for: .normal)
+        gear.titleLabel?.font = .systemFont(ofSize: 14)
+        gear.addTarget(self, action: #selector(openPrefs), for: .touchUpInside)
+        head.addArrangedSubview(gear)
+        root.addArrangedSubview(head)
 
-        paintMode()
-    }
+        // ---- 中间：Logo + 品牌 + 两行 slogan ----
+        let mid = UIStackView()
+        mid.axis = .vertical
+        mid.alignment = .center
 
-    // MARK: - 模式
-
-    /// 语言选择：用系统的 action sheet，不自己造轮子
-    @objc private func pickLang() {
-        let ac = UIAlertController(title: L.lbl_translate_to, message: nil, preferredStyle: .actionSheet)
-        for l in Backend.langs {
-            let title = (l.code == lang ? "✓ " : "") + l.label
-            ac.addAction(UIAlertAction(title: title, style: .default) { [weak self] _ in
-                guard let self = self else { return }
-                self.lang = l.code
-                UserDefaults.standard.set(l.code, forKey: "vime.lang")
-                self.paintMode()
-            })
-        }
-        ac.addAction(UIAlertAction(title: L.cancel, style: .cancel))
-        ac.popoverPresentationController?.sourceView = langButton
-        present(ac, animated: true)
-    }
-
-    /// 朗读最近一次的译文。再点一下 = 停。
-    @objc private func tapSpeak() {
-        if Speaker.isPlaying {
-            Speaker.stop()
-            speakButton.setTitle(L.kb_speak, for: .normal)
-            return
-        }
-        let text = lastOut.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { hintLabel.text = L.nothing_to_speak; return }
-        speakButton.isEnabled = false
-        speakButton.setTitle("…", for: .normal)
-        Backend.speak(text: text) { [weak self] r in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                self.speakButton.isEnabled = true
-                switch r {
-                case .failure(let e):
-                    self.speakButton.setTitle(L.kb_speak, for: .normal)
-                    self.hintLabel.text = "朗读失败：\(e)"
-                case .success(let mp3):
-                    self.speakButton.setTitle(L.kb_stop, for: .normal)
-                    Speaker.play(mp3) { [weak self] err in
-                        DispatchQueue.main.async {
-                            self?.speakButton.setTitle(L.kb_speak, for: .normal)
-                            if let err = err { self?.hintLabel.text = "朗读失败：\(err)" }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /// 长按弹一条说明（跟安卓 VoiceImeService.explain 同一套文案）。
-    /// 说明不占版面，只在长按时出现。
-    private func explain(_ v: UIView, _ text: String) {
-        let g = UILongPressGestureRecognizer(target: self, action: #selector(showTip(_:)))
-        v.addGestureRecognizer(g)
-        tips[ObjectIdentifier(v)] = text
-    }
-
-    @objc private func showTip(_ g: UILongPressGestureRecognizer) {
-        guard g.state == .began, let v = g.view,
-              let text = tips[ObjectIdentifier(v)] else { return }
-        let ac = UIAlertController(title: nil, message: text, preferredStyle: .alert)
-        ac.addAction(UIAlertAction(title: L.btn_got_it, style: .cancel))
-        present(ac, animated: true)
-    }
-
-    @objc private func pickEn() { setMode(.en) }
-    @objc private func pickZh() { setMode(.zh) }
-    @objc private func pickRaw() { setMode(.raw) }
-    /// 点第一级「转写」：默认落在结构化转写；已经在转写档就保持原子档。
-    @objc private func pickTranscribe() { setMode(mode == .raw ? .raw : .zh) }
-
-    private func setMode(_ m: Backend.Mode) {
-        mode = m
-        UserDefaults.standard.set(m.rawValue, forKey: "vime.mode")
-        paintMode()
-    }
-
-    private func paintMode() {
-        // 第一级
-        let isTranslate = (mode == .en)
-        tabTranslate.backgroundColor = isTranslate ? Theme.accent : Theme.key
-        tabTranslate.setTitleColor(isTranslate ? .white : Theme.dim, for: .normal)
-        tabTranscribe.backgroundColor = isTranslate ? Theme.key : Theme.accent
-        tabTranscribe.setTitleColor(isTranslate ? Theme.dim : .white, for: .normal)
-
-        // 第二级：翻译下是语气+语言，转写下是 结构化/逐字。永远只出现一排。
-        subStack.isHidden = isTranslate
-        for (b, m) in [(modeZhButton, Backend.Mode.zh), (modeRawButton, .raw)] {
-            let on = (mode == m)
-            b.backgroundColor = on ? Theme.accent : Theme.key
-            b.setTitleColor(on ? .white : Theme.dim, for: .normal)
-        }
-        toneButton.isHidden = !isTranslate
-        langButton.isHidden = !isTranslate
-        langButton.setTitle(Backend.langLabel(lang) + " ▾", for: .normal)
-        switch mode {
-        case .en:
-            hintLabel.text = ""
-        case .zh:
-            hintLabel.text = ""
-        case .raw:
-            hintLabel.text = ""
-        }
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        // 权限没给过就先把设置页推出来要一次。
-        // 🚨 转写改到后端后只需要**麦克风**权限（语音识别在服务器做，不用 Speech 授权）。
-        if AVAudioSession.sharedInstance().recordPermission != .granted {
-            navigationController?.pushViewController(SetupViewController(), animated: true)
-        }
-    }
-
-    private func toneTitle() -> String { toneLabels[tones.firstIndex(of: tone) ?? 0] }
-
-    @objc private func openSetup() {
-        navigationController?.pushViewController(SetupViewController(), animated: true)
-    }
-
-    @objc private func cycleTone() {
-        let i = tones.firstIndex(of: tone) ?? 0
-        tone = tones[(i + 1) % tones.count]
-        UserDefaults.standard.set(tone, forKey: "vime.tone")
-        toneButton.setTitle("语气：" + toneTitle(), for: .normal)
-    }
-
-    private func setPhase(_ p: Phase, hint: String) {
-        phase = p
-        hintLabel.text = hint
-        switch p {
-        case .idle:
-            micButton.setTitle("", for: .normal)
-            micButton.setImage(Theme.micGlyph(Theme.micBarHeight * 0.6), for: .normal)
-            micButton.tintColor = .white
-            micButton.backgroundColor = Theme.accent
-            micButton.isEnabled = true
-        case .listening:
-            micButton.setTitle("", for: .normal)
-            micButton.setImage(Theme.stopGlyph(Theme.micBarHeight * 0.6), for: .normal)
-            micButton.backgroundColor = Theme.danger
-            micButton.isEnabled = true
-        case .thinking:
-            micButton.setImage(nil, for: .normal)
-            micButton.setTitle("…", for: .normal)
-            micButton.setTitleColor(.white, for: .normal)
-            micButton.backgroundColor = Theme.keyDown
-            micButton.isEnabled = false
-        }
-    }
-
-    @objc private func tapMic() {
-        if phase == .listening {
-            elapsedTimer?.invalidate(); elapsedTimer = nil
-            setPhase(.thinking, hint: L.st_recognizing)
-            voice.stop()
-            return
-        }
-        if phase == .thinking { return }
-
-        heardLabel.text = ""
-        resultView.text = ""
-        setPhase(.listening, hint: "听着呢，想到哪说到哪（最长 60 秒）\n说完再按一下红色按钮")
-        elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            guard let self = self, self.phase == .listening else { return }
-            let s = Int(self.voice.elapsed)
-            self.hintLabel.text = String(format: L.st_listening_ios, s / 60, s % 60)
-        }
-
-        // 录音 → 停止后拿到 WAV → 传后端转写 → 再润色（跟安卓同一条链）
-        voice.start(onPartial: { _ in }, onWav: { [weak self] result in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                self.elapsedTimer?.invalidate(); self.elapsedTimer = nil
-                switch result {
-                case .failure(let f):
-                    self.setPhase(.idle, hint: "\(f)")
-                case .success(let wav):
-                    self.setPhase(.thinking, hint: L.st_recognizing)
-                    Backend.transcribe(wav: wav) { [weak self] r in
-                        DispatchQueue.main.async {
-                            guard let self = self else { return }
-                            switch r {
-                            case .failure(let f): self.setPhase(.idle, hint: "\(f)")
-                            case .success(let zh):
-                                self.heardLabel.text = zh
-                                self.polish(zh)
-                            }
-                        }
-                    }
-                }
-            }
-        })
-    }
-
-    private func polish(_ zh: String) {
-        switch mode {
-        case .en:  setPhase(.thinking, hint: L.st_translating)
-        case .zh:  setPhase(.thinking, hint: L.st_polishing)
-        case .raw: setPhase(.thinking, hint: L.st_inserting)   // 不过模型，一瞬间
-        }
-        Backend.polish(text: zh, tone: tone, mode: mode, lang: lang) { [weak self] result in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                switch result {
-                case .success(let en):
-                    self.resultView.text = en
-                    UIPasteboard.general.string = en   // 自动进剪贴板
-                    self.lastOut = en                  // 给「🔊 朗读」用
-                    self.speakButton.isEnabled = true
-                    self.setPhase(.idle, hint: "已复制 ✓　去微信长按输入框 → 粘贴\n再按一下麦克风说下一条")
-                case .failure(let err):
-                    self.setPhase(.idle, hint: "失败：\(err)")
-                }
-            }
-        }
-    }
-}
-
-// MARK: - 权限/自测页（原来的首页，降级成二级页）
-
-final class SetupViewController: UIViewController {
-
-    private let micState = UILabel()
-    private let testOut = UILabel()
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // 🚨 原来是 `.systemBackground`（浅色）—— 从深紫主界面点进来会闪一下白。
-        //    这种不一致只有真机点进去才看得见，代码里看着毫无问题。
-        view.backgroundColor = Theme.bg
-        title = L.ios_setup_title
-
-        let s1 = step(L.ios_step1, L.ios_step1_why)
-        micState.font = .systemFont(ofSize: 14)
-        micState.textColor = Theme.text
-        micState.numberOfLines = 0
-        let askBtn = button(L.ios_allow_mic, #selector(askPerms))
-
-        let s2 = step(L.ios_step2, "")
-        let testBtn = button(L.ios_test_once, #selector(selfTest))
-        testOut.font = .systemFont(ofSize: 13)
-        testOut.textColor = Theme.dim
-        testOut.numberOfLines = 0
-
-        let stack = UIStackView(arrangedSubviews: [s1, micState, askBtn, s2, testBtn, testOut])
-        stack.axis = .vertical
-        stack.spacing = 10
-
-        let scroll = UIScrollView()
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        scroll.addSubview(stack)
-        view.addSubview(scroll)
+        let logo = UIImageView(image: UIImage(named: "ic_logo"))
+        logo.contentMode = .scaleAspectFit
+        logo.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            scroll.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: scroll.topAnchor, constant: 20),
-            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            stack.bottomAnchor.constraint(equalTo: scroll.bottomAnchor, constant: -40),
+            logo.widthAnchor.constraint(equalToConstant: 92),
+            logo.heightAnchor.constraint(equalToConstant: 92),
         ])
-        refresh()
+        mid.addArrangedSubview(logo)
+
+        // 🚨 字号/字距/颜色全部来自 Skin（从安卓 Skin.java 生成）。
+        //    安卓那边是 Grok 定的四维度规格，属于他已经点过头的稿，
+        //    不是我能自己调的东西。
+        let brand = Self.label("Transless", size: Skin.brandSize,
+                               kern: Skin.brandKern, color: Skin.text,
+                               weight: .medium)
+        mid.setCustomSpacing(21, after: logo)
+        mid.addArrangedSubview(brand)
+
+        let zh = Self.label(Brand.sloganZh, size: Skin.sloganZhSize,
+                            kern: Skin.sloganZhKern, color: Skin.sloganZh,
+                            weight: .regular)
+        mid.setCustomSpacing(9, after: brand)
+        mid.addArrangedSubview(zh)
+
+        let en = Self.label(Brand.sloganEn, size: Skin.sloganEnSize,
+                            kern: Skin.sloganEnKern, color: Skin.dim,
+                            weight: .light)
+        mid.setCustomSpacing(5, after: zh)
+        mid.addArrangedSubview(en)
+
+        let wrap = UIView()
+        wrap.addSubview(mid)
+        mid.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            mid.centerXAnchor.constraint(equalTo: wrap.centerXAnchor),
+            mid.centerYAnchor.constraint(equalTo: wrap.centerYAnchor),
+            mid.leadingAnchor.constraint(greaterThanOrEqualTo: wrap.leadingAnchor),
+        ])
+        root.addArrangedSubview(wrap)
+
+        // ---- 下半：两个长条 ----
+        let bars = UIStackView()
+        bars.axis = .vertical
+        bars.spacing = 9
+        bars.addArrangedSubview(bar(L.home_login, primary: false,
+                                    action: #selector(loginSoon)))
+        bars.addArrangedSubview(bar(L.home_set_ime, primary: true,
+                                    action: #selector(openSetup)))
+        root.addArrangedSubview(bars)
     }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        refresh()
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        // 🚨 渐变层不跟着 Auto Layout 走，得手动同步 frame，
+        //    否则转屏之后背景只铺一半。
+        view.layer.sublayers?.first?.frame = view.bounds
     }
 
-    private func step(_ t: String, _ why: String) -> UIStackView {
-        let a = UILabel()
-        a.text = t
-        a.font = .systemFont(ofSize: 17, weight: .semibold)
-        a.textColor = Theme.text
-        let b = UILabel()
-        b.text = why
-        b.font = .systemFont(ofSize: 13)
-        b.textColor = Theme.dim
-        b.numberOfLines = 0
-        let s = UIStackView(arrangedSubviews: why.isEmpty ? [a] : [a, b])
-        s.axis = .vertical
-        s.spacing = 4
-        return s
+    private static func label(_ text: String, size: CGFloat, kern: CGFloat,
+                              color: UIColor, weight: UIFont.Weight) -> UILabel {
+        let l = UILabel()
+        l.attributedText = NSAttributedString(
+            string: text,
+            attributes: [.kern: kern,
+                         .font: UIFont.systemFont(ofSize: size, weight: weight),
+                         .foregroundColor: color])
+        l.textAlignment = .center
+        l.numberOfLines = 0
+        return l
     }
 
-    private func button(_ t: String, _ sel: Selector) -> UIButton {
+    /// 一个长条入口。安卓那边 `bar()` 的形状：整宽、圆角、右侧一个 ›。
+    private func bar(_ title: String, primary: Bool,
+                     action: Selector) -> UIButton {
         let b = UIButton(type: .system)
-        b.setTitle(t, for: .normal)
+        b.setTitle(title, for: .normal)
+        b.setTitleColor(primary ? .white : Skin.text, for: .normal)
         b.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        b.backgroundColor = .secondarySystemBackground
-        b.layer.cornerRadius = 10
-        b.heightAnchor.constraint(equalToConstant: 46).isActive = true
-        b.addTarget(self, action: sel, for: .touchUpInside)
+        b.backgroundColor = primary
+            ? Skin.accent
+            : UIColor.white.withAlphaComponent(0.09)
+        b.layer.cornerRadius = 12
+        b.contentHorizontalAlignment = .leading
+        b.contentEdgeInsets = UIEdgeInsets(top: 16, left: 18, bottom: 16, right: 18)
+        b.addTarget(self, action: action, for: .touchUpInside)
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.heightAnchor.constraint(equalToConstant: 56).isActive = true
+
+        let chev = UILabel()
+        chev.text = "›"
+        chev.textColor = primary ? .white : Skin.dim
+        chev.font = .systemFont(ofSize: 20)
+        chev.translatesAutoresizingMaskIntoConstraints = false
+        b.addSubview(chev)
+        NSLayoutConstraint.activate([
+            chev.trailingAnchor.constraint(equalTo: b.trailingAnchor, constant: -18),
+            chev.centerYAnchor.constraint(equalTo: b.centerYAnchor),
+        ])
         return b
     }
 
-    private func refresh() {
-        let mic = AVAudioSession.sharedInstance().recordPermission == .granted
-        micState.text = mic ? L.mic_allowed : L.mic_not_allowed
-        micState.textColor = mic ? .systemTeal : .systemOrange
+    @objc private func loginSoon() {
+        // 跟安卓一样：这一版还没做，先说清楚，别让人以为按坏了。
+        let a = UIAlertController(title: nil, message: L.login_next_ver,
+                                  preferredStyle: .alert)
+        a.addAction(UIAlertAction(title: "OK", style: .default))
+        present(a, animated: true)
     }
 
-    @objc private func askPerms() {
-        AVAudioSession.sharedInstance().requestRecordPermission { _ in
-            DispatchQueue.main.async { self.refresh() }
+    @objc private func openSetup() {
+        present(UINavigationController(rootViewController: SetupViewController()),
+                animated: true)
+    }
+
+    @objc private func openPrefs() {
+        present(UINavigationController(rootViewController: PrefsViewController()),
+                animated: true)
+    }
+}
+
+// MARK: - 引导页（对齐安卓 SetupActivity）
+
+/// 安卓那边是三步：① 允许录音 ② 启用输入法 ③ 设为默认。
+/// iOS 的键盘扩展在系统设置里启用，步骤跟安卓不是一一对应 ——
+/// 🚨 **要对齐的是观感和语言，不是流程**（这条 2026-08-22 就定了）。
+final class SetupViewController: UIViewController {
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.layer.insertSublayer(Skin.screenBg(view.bounds), at: 0)
+        title = L.home_set_ime
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .done, target: self, action: #selector(close))
+
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = 14
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
+        ])
+
+        stack.addArrangedSubview(step("1", L.step_enable))
+        stack.addArrangedSubview(step("2", L.step_default))
+        stack.addArrangedSubview(step("3", L.step_mic))
+
+        let go = UIButton(type: .system)
+        go.setTitle(L.act_settings, for: .normal)
+        go.setTitleColor(.white, for: .normal)
+        go.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        go.backgroundColor = Skin.accent
+        go.layer.cornerRadius = 12
+        go.heightAnchor.constraint(equalToConstant: 52).isActive = true
+        go.addTarget(self, action: #selector(openSystemSettings), for: .touchUpInside)
+        stack.setCustomSpacing(28, after: stack.arrangedSubviews.last!)
+        stack.addArrangedSubview(go)
+
+        let notice = UILabel()
+        notice.text = L.ai_notice
+        notice.textColor = Skin.dim
+        notice.font = .systemFont(ofSize: 12)
+        notice.numberOfLines = 0
+        stack.setCustomSpacing(20, after: go)
+        stack.addArrangedSubview(notice)
+    }
+
+    private func step(_ n: String, _ text: String) -> UIView {
+        let row = UIStackView()
+        row.axis = .horizontal
+        row.spacing = 14
+        row.alignment = .center
+
+        let num = UILabel()
+        num.text = n
+        num.textColor = .white
+        num.font = .systemFont(ofSize: 14, weight: .medium)
+        num.textAlignment = .center
+        num.backgroundColor = Skin.accent2
+        num.layer.cornerRadius = 14
+        num.clipsToBounds = true
+        num.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            num.widthAnchor.constraint(equalToConstant: 28),
+            num.heightAnchor.constraint(equalToConstant: 28),
+        ])
+        row.addArrangedSubview(num)
+
+        let t = UILabel()
+        t.text = text
+        t.textColor = Skin.text
+        t.font = .systemFont(ofSize: 15)
+        t.numberOfLines = 0
+        row.addArrangedSubview(t)
+        return row
+    }
+
+    @objc private func openSystemSettings() {
+        // iOS 只能开到本 App 的设置页，键盘那一项要用户自己往下点。
+        if let u = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(u)
         }
     }
 
-    /// 自测：判据不是"没报错"，是英文里必须保住关键事实。
-    @objc private func selfTest() {
-        let sample = "哎那个我跟你说一下啊,就是那个报表啊,嗯,我明天早上,"
-                   + "不对,是明天下午三点之前给你,然后要抄送给 Annie。"
-        testOut.text = L.st_testing
-        testOut.textColor = .secondaryLabel
-        Backend.polish(text: sample, tone: "work") { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .failure(let e):
-                    self.testOut.text = "失败：\(e)\n\n把这一屏发给 Claude。"
-                    self.testOut.textColor = .systemOrange
-                case .success(let en):
-                    let name = en.contains("Annie")
-                    let time = en.contains("3") || en.lowercased().contains("afternoon")
-                    let dropped = !en.lowercased().contains("morning")
-                    var s = "输出：\n\(en)\n\n判据：\n"
-                    s += name ? "  ✓ 人名 Annie 保住了\n" : "  ✗ 人名 Annie 丢了\n"
-                    s += time ? "  ✓ 改口后的时间保住了\n" : "  ✗ 改口后的时间丢了\n"
-                    s += dropped ? "  ✓ 说错的「早上」已丢弃\n" : "  ✗ 说错的「早上」还在\n"
-                    let all = name && time && dropped
-                    s += all ? "\n通过" : "\n有问题 —— 把这一屏发给 Claude"
-                    self.testOut.text = s
-                    self.testOut.textColor = all ? .systemTeal : .systemOrange
-                }
-            }
-        }
+    @objc private func close() { dismiss(animated: true) }
+}
+
+// MARK: - 偏好设置（占位，对齐安卓的入口）
+
+final class PrefsViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.layer.insertSublayer(Skin.screenBg(view.bounds), at: 0)
+        title = L.prefs_entry
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .done, target: self, action: #selector(close))
+
+        // 🚨 这一页安卓那边有内容（语言、语气、清历史…），iOS 先留入口。
+        //    留空白页比留一个假按钮好 —— 假按钮会让人以为坏了。
+        let t = UILabel()
+        t.text = L.prefs_soon
+        t.textColor = Skin.dim
+        t.font = .systemFont(ofSize: 15)
+        t.textAlignment = .center
+        t.numberOfLines = 0
+        t.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(t)
+        NSLayoutConstraint.activate([
+            t.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            t.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            t.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
+            t.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -32),
+        ])
     }
+
+    @objc private func close() { dismiss(animated: true) }
 }
