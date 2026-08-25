@@ -36,28 +36,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 选 Xcode（挑装着的最新一版，并打印环境清单）
+      - name: 选 Xcode（最新的 16.x，并打印环境清单）
         run: |
           set -euo pipefail
-          # 🚨 原来这里写死 `/Applications/Xcode_16.app`。那一版的 iphonesimulator SDK
-          #    是 22A3362（iOS 18.0），而 runner 上装的模拟器运行时只有 18.5/18.6/26.x
-          #    —— appex 编 asset catalog 时 actool 会带 `--standalone-icon-behavior all`
-          #    去查模拟器运行时，查不到同版本就报
-          #    `No simulator runtime version ... available`，整个 archive 挂掉。
-          #    （2026-08-25 run #2/#3 连挂两次都是这个。）
-          #    挑最新那版，SDK 才跟 runner 上的运行时对得上；顺便也满足 App Store
-          #    对「必须用较新 SDK 构建」的要求。
+          # 🚨 两个约束同时成立，只有「最新的 **16.x**」能满足，别自作主张挑更新的：
+          #
+          # ① 不能用 Xcode_16.app（16.0）：它的 iphonesimulator SDK 是 22A3362（iOS 18.0），
+          #    而 runner 上一个 18.0 运行时都没有（只有 18.5/18.6/26.x）。
+          #    appex 编 asset catalog 时 actool 带 `--standalone-icon-behavior all`
+          #    去查模拟器运行时，查不到就报 `No simulator runtime version ... available`，
+          #    整个 archive 挂掉。2026-08-25 run #2/#3 连挂两次都是这个。
+          #
+          # ② 🚨 也不能挑「装着的最新」：那会选到 Xcode 26.x。而 `ci-workflow.yml`
+          #    是**故意**钉在 16 的 —— 2026-08-20 用 Xcode 26.6 编的键盘扩展在
+          #    Kevin 的 iPhone 上「列表里有、选中就弹回上一个键盘」，装/权限/plist
+          #    逐项核过全对，最新工具链本身就是嫌疑之一。
+          #    run #4~#7 我一度选到了 26.3 —— 那批包带着同一个嫌疑，别拿去测。
+          #
+          # 16.4 的 iphonesimulator SDK 是 22F，正好对上 runner 上的 22F77(18.5)。
           echo "装着的 Xcode："
           ls -d /Applications/Xcode*.app
-          PICK=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
-          PICK=${PICK:-/Applications/Xcode.app}
-          echo "选用：$PICK"
-          sudo xcode-select -s "$PICK"
+          PICK=$(ls -d /Applications/Xcode_16*.app 2>/dev/null | sort -V | tail -1)
+          test -n "${PICK}" || { echo "::error::runner 上没有 Xcode 16.x，别拿 26.x 顶替 —— 见上面②"; exit 1; }
+          echo "选用：${PICK}"
+          sudo xcode-select -s "${PICK}"
           xcodebuild -version
           echo "--- iphonesimulator SDK ---"
-          xcodebuild -showsdks | grep -i simulator || true
-          echo "--- 装着的模拟器运行时 ---"
-          xcrun simctl list runtimes || true
+          xcodebuild -showsdks | grep -i "simulator - ios" || true
+          echo "--- 装着的 iOS 模拟器运行时 ---"
+          xcrun simctl list runtimes | grep -i "^iOS" || true
+          echo "--- 上传工具在不在（TestFlight 那步要用，别等到最后才发现没有）---"
+          xcrun --find altool && altool_ok=1 || altool_ok=0
+          echo "altool 可用=${altool_ok}"
+          test "${altool_ok}" -eq 1 || echo "::warning::altool 不在，上传步骤要改走 Transporter"
+
 
       # ---- 生成 Secrets.swift（与现有流程同一套逻辑，单一来源）----
       - name: 生成 Secrets.swift
