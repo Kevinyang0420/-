@@ -88,6 +88,7 @@ enum L {
     static var msg_speak_failed: String { s("朗读失败：%1$s", "Couldn't read it aloud: %1$s", "朗讀失敗：%1$s") }
     static var msg_mic_open_failed: String { s("打不开麦克风：%1$s", "Can't open the microphone: %1$s", "打不開麥克風：%1$s") }
     static var prefs_title: String { s("设置", "Settings", "設定") }
+    static var home_try_speak: String { s("说一段试试", "Try speaking", "說一段試試") }
     static var ios_step_add: String { s("在系统设置里添加 Transless 键盘", "Add the Transless keyboard in Settings", "在系統設定裡添加 Transless 鍵盤") }
     static var ios_step_full: String { s("打开「允许完全访问」（联网要用）", "Turn on Allow Full Access (needed for network)", "打開「允許完全訪問」（聯網要用）") }
     static var ios_update_note: String { s("iOS 通过 TestFlight 更新", "Updates arrive through TestFlight", "iOS 通過 TestFlight 更新") }
