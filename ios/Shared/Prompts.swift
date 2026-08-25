@@ -5,6 +5,28 @@ import Foundation
 ///    源头永远是 engine.py。别在这个文件里手抄一份。
 enum Prompts {
 
+    /// 🚨 语气档位的**唯一一份**（iOS 侧）。顺序也要跟 engine.TONES 一致。
+    ///    2026-08-25 之前 App 和键盘各抄一份，结果键盘一直留着已经删掉的
+    ///    第四档「正式」——而闸门只查 App 那份，整整漏了过去。
+    ///    要加/删档位就只改这里，别再在界面文件里写字面量数组。
+    static let all = ["casual", "work", "email"]
+
+    /// 界面上显示的名字。跟 all 是同一套 key，别各排各的顺序。
+    static func label(_ t: String) -> String {
+        switch t {
+        case "casual": return L.tone_casual
+        case "email":  return L.tone_email
+        default:       return L.tone_work
+        }
+    }
+
+    /// 存过的旧值可能已经被删掉（比如「正式」），落回 work 而不是崩或者发个后端不认的档位。
+    static func normalize(_ t: String?) -> String {
+        guard let t = t, all.contains(t) else { return "work" }
+        return t
+    }
+
+
     static func tone(_ t: String) -> String {
         switch t {
         case "email":
@@ -12,9 +34,6 @@ enum Prompts {
                  + "no greeting line and no sign-off unless the speaker said one."
         case "casual":
             return "a casual message to someone you know well. Relaxed, short, contractions."
-        case "formal":
-            return "a formal written communication to a client, regulator or auditor. "
-                 + "Precise, hedged where the speaker hedged, no slang."
         default:
             return "a direct work message to a colleague or counterpart (Slack / WhatsApp / Teams). "
                  + "Professional but not stiff. Contractions are fine."
