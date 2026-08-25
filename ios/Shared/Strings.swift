@@ -13,116 +13,145 @@ import Foundation
 ///    配套：project.yml 里必须声明 CFBundleLocalizations，
 ///    否则系统不知道这个 App 支持英文，永远返回开发语言。
 enum L {
-    /// 当前界面是不是英文。
-    static let isEn: Bool = {
-        let code = Bundle.main.preferredLocalizations.first ?? "zh-Hans"
-        return !code.hasPrefix("zh")
-    }()
+    /// 系统解析出来的界面语言代码。
+    private static let code: String =
+        Bundle.main.preferredLocalizations.first ?? "zh-Hans"
 
-    private static func s(_ zh: String, _ en: String) -> String {
-        isEn ? en : zh
+    /// 当前界面是不是英文。
+    static let isEn: Bool = !code.hasPrefix("zh")
+
+    /// 当前界面是不是繁体中文。
+    /// 🚨 判据用 `zh-Hant` 前缀，**不要枚举 zh-TW/zh-HK/zh-MO** ——
+    ///    系统在 App 声明支持 zh-Hant 时返回的就是 zh-Hant，
+    ///    枚举地区码会漏掉它，然后静默掉回简体。
+    static let isHant: Bool = code.hasPrefix("zh-Hant")
+
+    private static func s(_ zh: String, _ en: String,
+                          _ hant: String) -> String {
+        isEn ? en : (isHant ? hant : zh)
     }
 
-    static var ui_lang: String { s("zh", "en") }
-    static var home_login: String { s("注册 / 登录", "Sign in") }
-    static var home_set_ime: String { s("设为当前输入法", "Set as keyboard") }
-    static var login_next_ver: String { s("登录功能下一版做", "Sign-in arrives in the next version") }
-    static var step_mic: String { s("允许录音", "Allow microphone") }
-    static var step_enable: String { s("启用输入法", "Enable keyboard") }
-    static var step_default: String { s("设为默认", "Make it default") }
-    static var act_allow: String { s("去允许 ›", "Allow ›") }
-    static var act_enable: String { s("去启用 ›", "Enable ›") }
-    static var act_settings: String { s("去设置 ›", "Settings ›") }
-    static var done_allowed: String { s("已允许", "Allowed") }
-    static var done_enabled: String { s("已启用", "Enabled") }
-    static var done_default: String { s("已是默认", "Default") }
-    static var setup_hint: String { s("三步做完就能在任何输入框里说话", "Three steps, then just talk in any text field") }
-    static var ai_notice: String { s("⚠️ 译文由 AI 生成，可能有错，发送前请自行核对。", "⚠️ Translations are AI-generated and may be wrong. Check before you send.") }
-    static var check_update: String { s(" · 检查更新", " · Check for updates") }
-    static var checking: String { s("检查中…", "Checking…") }
-    static var ex_translate: String { s("翻译：说中文（或英文），出目标语言的干净短消息。语气和目标语言在下面那排选。", "Translate: speak Chinese (or English), get a clean short message in the target language. Pick the tone and target language in the row below.") }
-    static var ex_transcribe: String { s("转写：不翻译，保留你说的那个语言。下面可选「整理」（去口水话、该分点就分点）或「逐字」（一个字不改）。", "Transcribe: no translation — you get back the language you spoke. Below, pick Clean up (drops filler, splits into points where it helps) or Verbatim (nothing changed).") }
-    static var ex_history: String { s("历史：之前上屏过的内容都在这里，删没了可以回来重新复制。", "History: everything you've inserted lives here — if you delete it, come back and copy it again.") }
-    static var ex_polish: String { s("整理：滤掉「嗯、那个、就是说」这类口水话，说了几件事就分几条，但**不翻译**，你说什么语言就出什么语言。", "Clean up: drops filler like um and you know, splits several points into separate lines — but does **not** translate. You get back the language you spoke.") }
-    static var ex_verbatim: String { s("逐字：听到什么写什么，一个字不改、不整理、不翻译。", "Verbatim: exactly what you said — nothing changed, cleaned up or translated.") }
-    static var ex_mic: String { s("点一下开始说，说完再点一下停。中途停顿思考没关系，不会自动截断。单次最长 %1$s 秒，最后 %2$s 秒圆圈里会倒数，到点会自动帮你整理这一段。", "Tap once to start talking, tap again to stop. Pausing to think is fine — it won't cut you off. Up to %1$s seconds per take; the last %2$s seconds count down inside the circle, and it wraps up on its own at the end.") }
-    static var ex_type: String { s("打字：内置键盘，拼音/五笔/英文/手写四档，用来改错字。不会把你切到别的输入法。", "Type: the built-in keyboard — Pinyin, Wubi, English and handwriting — for fixing a wrong character. It never switches you to another keyboard.") }
-    static var ex_speak: String { s("朗读：把刚上屏的那段念出来。中文用中文女声，英文用 Andrew。", "Read aloud: plays back what was just inserted. A Chinese voice for Chinese, Andrew for English.") }
-    static var ex_backspace: String { s("退格：点一下删一个字，长按连删，1.2 秒后按词删。有选中就整段删。", "Backspace: one tap deletes one character; hold to repeat, and after 1.2 seconds it deletes whole words. If something is selected, it goes all at once.") }
-    static var ex_send: String { s("发送：相当于按输入框右边那个发送键。个别 App 不支持时，会退回按一下回车。", "Send: same as tapping the send button in the app. Where that isn't supported, it falls back to pressing Enter.") }
-    static var ex_tone_casual: String { s("随意：熟人之间的口气，短、放松，可以用缩写。", "Casual: how you'd talk to someone you know — short, relaxed, contractions are fine.") }
-    static var ex_tone_work: String { s("工作：发给同事或对接人的直接消息（Slack / 微信 / Teams），专业但不端着。", "Work: a direct message to a colleague or counterpart (Slack, WeChat, Teams) — professional without being stiff.") }
-    static var ex_tone_email: String { s("邮件：邮件正文，也用于给客户、监管、审计的正式书面沟通。完整句子、措辞精确，不加称呼和落款（除非你自己说了）。", "Email: the body of an email, and formal written contact with clients, regulators or auditors. Full sentences, precise wording, no greeting or sign-off unless you said one.") }
-    static var ex_mic_ios: String { s("点一下开始说，说完再点一下停。中途停顿思考没关系，不会自动截断。", "Tap once to start talking, tap again to stop. Pausing to think is fine — it won't cut you off.") }
-    static var ex_tone_cycle: String { s("语气：随意 / 工作 / 邮件三档，点一下轮换。", "Tone: Casual, Work or Email — tap to cycle.") }
-    static var ex_lang_pick: String { s("翻译成哪种语言。支持英文、日语、法语、德语、西班牙语、韩语。", "Which language to translate into. English, Japanese, French, German, Spanish and Korean are supported.") }
-    static var ex_speak_ios: String { s("朗读：把刚出的那段念出来。中文用中文女声，英文用 Andrew。", "Read aloud: plays back what just came out. A Chinese voice for Chinese, Andrew for English.") }
-    static var st_recognizing: String { s("识别中…", "Transcribing…") }
-    static var st_polishing: String { s("整理中…", "Cleaning up…") }
-    static var st_translating: String { s("整理并译成英文…", "Cleaning up and translating…") }
-    static var st_inserting: String { s("上屏…", "Inserting…") }
-    static var st_testing: String { s("测试中…", "Testing…") }
-    static var btn_got_it: String { s("知道了", "Got it") }
-    static var lbl_translate_to: String { s("翻译成", "Translate into") }
-    static var mic_allowed: String { s("麦克风：已允许 ✓", "Microphone: allowed ✓") }
-    static var mic_not_allowed: String { s("麦克风：还没允许", "Microphone: not allowed yet") }
-    static var kb_formal: String { s("正式", "Formal") }
-    static var kb_tr_before: String { s("译光标前的中文", "Translate the text before the cursor") }
-    static var kb_nothing_before: String { s("光标前没有内容", "Nothing before the cursor") }
-    static var kb_no_pass: String { s("这份包没配口令，重新构建一次", "This build has no backend password — rebuild it") }
-    static var st_listening_ios: String { s("听着呢 %d:%02d　·　说完再按一下红色按钮", "Listening %d:%02d　·　tap the red button when you're done") }
-    static var msg_update_unreachable: String { s("连不上更新服务器：%1$s\n新版安装包现在直接发到你的飞书，不再走 GitHub。\n（在家连着自己网时，这里可以自助更新）", "Can't reach the update server: %1$s\nNew builds are sent to your Feishu now, not GitHub.\n(Self-update works at home, on your own network.)") }
-    static var msg_already_latest: String { s("已经是最新版了（%1$s）", "You're already on the latest version (%1$s)") }
-    static var msg_new_version: String { s("发现新版 %1$s，下载中…", "Found version %1$s — downloading…") }
-    static var msg_downloading: String { s("下载中… %1$s%%", "Downloading… %1$s%%") }
-    static var msg_update_failed: String { s("更新失败：%1$s\n（App 内更新只在家里那台机器开着时可用；在外面我会把新版发你飞书）", "Update failed: %1$s\n(In-app update only works at home, with that machine on. When you're out, I send the build to your Feishu.)") }
-    static var msg_dl_done: String { s("下载完成 %1$s，正在打开安装界面", "Downloaded %1$s — opening the installer") }
-    static var msg_hw_missing: String { s("手写没装上", "Handwriting isn't installed") }
-    static var msg_speak_failed: String { s("朗读失败：%1$s", "Couldn't read it aloud: %1$s") }
-    static var msg_mic_open_failed: String { s("打不开麦克风：%1$s", "Can't open the microphone: %1$s") }
-    static var msg_mic_not_ready: String { s("麦克风没就绪，再点一次", "Microphone isn't ready — tap again") }
-    static var msg_max_len: String { s("说满 %1$s 秒，这一段先帮你整理了", "Hit the %1$s-second limit — cleaning up what you said so far") }
-    static var msg_mic_lost: String { s("麦克风断了（%1$s），先把已录到的转出来", "Microphone dropped (%1$s) — transcribing what was captured") }
-    static var msg_no_audio: String { s("没录到声音：%1$s", "No audio captured: %1$s") }
-    static var msg_not_heard: String { s("没听清，再说一次", "Didn't catch that — say it again") }
-    static var msg_nothing_recorded: String { s("没录到", "Nothing recorded") }
-    static var msg_failed: String { s("失败：%1$s", "Failed: %1$s") }
-    static var perm_title: String { s("权限", "Permissions") }
-    static var cancel: String { s("取消", "Cancel") }
-    static var nothing_to_speak: String { s("还没有可朗读的内容", "Nothing to read aloud yet") }
-    static var ios_setup_title: String { s("权限与自测", "Permissions & self-test") }
-    static var ios_step1: String { s("第 1 步 · 允许麦克风", "Step 1 · Allow microphone") }
-    static var ios_step1_why: String { s("只用要一次。语音识别在后端做，不用额外授权。", "Once only. Speech recognition runs on the server, so no extra permission is needed.") }
-    static var ios_allow_mic: String { s("允许麦克风", "Allow microphone") }
-    static var ios_step2: String { s("自测 · 后端通不通", "Self-test · Is the backend reachable?") }
-    static var ios_test_once: String { s("测一次", "Run test") }
-    static var kb_translate: String { s("翻译", "Translate") }
-    static var kb_transcribe: String { s("转写", "Transcribe") }
-    static var kb_history: String { s("历史", "History") }
-    static var kb_type: String { s("⌨  打字", "⌨  Type") }
-    static var kb_speak: String { s("朗读", "Speak") }
-    static var kb_send: String { s("发送", "Send") }
-    static var kb_stop: String { s("■ 停", "■ Stop") }
-    static var tone_casual: String { s("随意", "Casual") }
-    static var tone_work: String { s("工作", "Work") }
-    static var tone_email: String { s("邮件", "Email") }
-    static var kb_back: String { s("‹ 返回", "‹ Back") }
-    static var kb_pinyin: String { s("拼音", "Pinyin") }
-    static var kb_wubi: String { s("五笔", "Wubi") }
-    static var kb_hand: String { s("手写", "Handwriting") }
-    static var kb_english: String { s("英文", "English") }
-    static var kb_pinyin_s: String { s("拼", "PY") }
-    static var kb_wubi_s: String { s("五", "WB") }
-    static var kb_hand_s: String { s("写", "HW") }
-    static var kb_done: String { s("完成", "Done") }
-    static var kb_space: String { s("空格", "Space") }
-    static var kb_polish: String { s("整理", "Clean up") }
-    static var kb_verbatim: String { s("逐字", "Verbatim") }
-    static var kb_resend: String { s("重新上屏", "Insert again") }
-    static var kb_undo: String { s("撤销", "Undo") }
-    static var kb_clear: String { s("清空", "Clear") }
-    static var kb_delete: String { s("删除", "Delete") }
-    static var hist_title: String { s("  历史记录", "  History") }
-    static var hist_empty: String { s("还没有记录 · 说一句就会自动存下来", "Nothing yet · Everything you say gets saved here") }
-    static var rec_empty: String { s("还没有录音记录。", "No recordings yet.") }
+    static var ui_lang: String { s("zh", "en", "zh") }
+    static var home_login: String { s("注册 / 登录", "Sign in", "註冊 / 登錄") }
+    static var home_set_ime: String { s("设为当前输入法", "Set as keyboard", "設為當前輸入法") }
+    static var login_next_ver: String { s("登录功能下一版做", "Sign-in arrives in the next version", "登錄功能下一版做") }
+    static var step_mic: String { s("允许录音", "Allow microphone", "允許錄音") }
+    static var step_enable: String { s("启用输入法", "Enable keyboard", "啟用輸入法") }
+    static var step_default: String { s("设为默认", "Make it default", "設為預設") }
+    static var act_allow: String { s("去允许 ›", "Allow ›", "去允許 ›") }
+    static var act_enable: String { s("去启用 ›", "Enable ›", "去啟用 ›") }
+    static var act_settings: String { s("去设置 ›", "Settings ›", "去設定 ›") }
+    static var done_allowed: String { s("已允许", "Allowed", "已允許") }
+    static var done_enabled: String { s("已启用", "Enabled", "已啟用") }
+    static var done_default: String { s("已是默认", "Default", "已是預設") }
+    static var setup_hint: String { s("三步做完就能在任何输入框里说话", "Three steps, then just talk in any text field", "三步做完就能在任何輸入框裡說話") }
+    static var ai_notice: String { s("⚠️ 译文由 AI 生成，可能有错，发送前请自行核对。", "⚠️ Translations are AI-generated and may be wrong. Check before you send.", "⚠️ 譯文由 AI 生成，可能有錯，發送前請自行核對。") }
+    static var check_update: String { s(" · 检查更新", " · Check for updates", " · 檢查更新") }
+    static var checking: String { s("检查中…", "Checking…", "檢查中…") }
+    static var ex_translate: String { s("翻译：说中文（或英文），出目标语言的干净短消息。语气和目标语言在下面那排选。", "Translate: speak Chinese (or English), get a clean short message in the target language. Pick the tone and target language in the row below.", "翻譯：說中文（或英文），出目標語言的乾淨短消息。語氣和目標語言在下面那排選。") }
+    static var ex_transcribe: String { s("转写：不翻译，保留你说的那个语言。下面可选「整理」（去口水话、该分点就分点）或「逐字」（一个字不改）。", "Transcribe: no translation — you get back the language you spoke. Below, pick Clean up (drops filler, splits into points where it helps) or Verbatim (nothing changed).", "轉寫：不翻譯，保留你說的那個語言。下面可選「整理」（去口水話、該分點就分點）或「逐字」（一個字不改）。") }
+    static var ex_history: String { s("历史：之前上屏过的内容都在这里，删没了可以回来重新复制。", "History: everything you've inserted lives here — if you delete it, come back and copy it again.", "歷史：之前上屏過的內容都在這裡，刪沒了可以回來重新複製。") }
+    static var ex_polish: String { s("整理：滤掉「嗯、那个、就是说」这类口水话，说了几件事就分几条，但**不翻译**，你说什么语言就出什么语言。", "Clean up: drops filler like um and you know, splits several points into separate lines — but does **not** translate. You get back the language you spoke.", "整理：濾掉「嗯、那個、就是說」這類口水話，說了幾件事就分幾條，但**不翻譯**，你說什麼語言就出什麼語言。") }
+    static var ex_verbatim: String { s("逐字：听到什么写什么，一个字不改、不整理、不翻译。", "Verbatim: exactly what you said — nothing changed, cleaned up or translated.", "逐字：聽到什麼寫什麼，一個字不改、不整理、不翻譯。") }
+    static var ex_mic: String { s("点一下开始说，说完再点一下停。中途停顿思考没关系，不会自动截断。单次最长 %1$s 秒，最后 %2$s 秒圆圈里会倒数，到点会自动帮你整理这一段。", "Tap once to start talking, tap again to stop. Pausing to think is fine — it won't cut you off. Up to %1$s seconds per take; the last %2$s seconds count down inside the circle, and it wraps up on its own at the end.", "點一下開始說，說完再點一下停。中途停頓思考沒關係，不會自動截斷。單次最長 %1$s 秒，最後 %2$s 秒圓圈裡會倒數，到點會自動幫你整理這一段。") }
+    static var ex_type: String { s("打字：内置键盘，拼音/五笔/英文/手写四档，用来改错字。不会把你切到别的输入法。", "Type: the built-in keyboard — Pinyin, Wubi, English and handwriting — for fixing a wrong character. It never switches you to another keyboard.", "打字：內置鍵盤，拼音/五筆/英文/手寫四檔，用來改錯字。不會把你切到別的輸入法。") }
+    static var ex_speak: String { s("朗读：把刚上屏的那段念出来。中文用中文女声，英文用 Andrew。", "Read aloud: plays back what was just inserted. A Chinese voice for Chinese, Andrew for English.", "朗讀：把剛上屏的那段念出來。中文用中文女聲，英文用 Andrew。") }
+    static var ex_backspace: String { s("退格：点一下删一个字，长按连删，1.2 秒后按词删。有选中就整段删。", "Backspace: one tap deletes one character; hold to repeat, and after 1.2 seconds it deletes whole words. If something is selected, it goes all at once.", "退格：點一下刪一個字，長按連刪，1.2 秒後按詞刪。有選中就整段刪。") }
+    static var ex_send: String { s("发送：相当于按输入框右边那个发送键。个别 App 不支持时，会退回按一下回车。", "Send: same as tapping the send button in the app. Where that isn't supported, it falls back to pressing Enter.", "發送：相當於按輸入框右邊那個發送鍵。個別 App 不支持時，會退回按一下回車。") }
+    static var ex_tone_casual: String { s("随意：熟人之间的口气，短、放松，可以用缩写。", "Casual: how you'd talk to someone you know — short, relaxed, contractions are fine.", "隨意：熟人之間的口氣，短、放鬆，可以用縮寫。") }
+    static var ex_tone_work: String { s("工作：发给同事或对接人的直接消息（Slack / 微信 / Teams），专业但不端着。", "Work: a direct message to a colleague or counterpart (Slack, WeChat, Teams) — professional without being stiff.", "工作：發給同事或對接人的直接消息（Slack / 微信 / Teams），專業但不端著。") }
+    static var ex_tone_email: String { s("邮件：邮件正文，也用于给客户、监管、审计的正式书面沟通。完整句子、措辞精确，不加称呼和落款（除非你自己说了）。", "Email: the body of an email, and formal written contact with clients, regulators or auditors. Full sentences, precise wording, no greeting or sign-off unless you said one.", "郵件：郵件正文，也用於給客戶、監管、審計的正式書面溝通。完整句子、措辭精確，不加稱呼和落款（除非你自己說了）。") }
+    static var ex_mic_ios: String { s("点一下开始说，说完再点一下停。中途停顿思考没关系，不会自动截断。", "Tap once to start talking, tap again to stop. Pausing to think is fine — it won't cut you off.", "點一下開始說，說完再點一下停。中途停頓思考沒關係，不會自動截斷。") }
+    static var ex_tone_cycle: String { s("语气：随意 / 工作 / 邮件三档，点一下轮换。", "Tone: Casual, Work or Email — tap to cycle.", "語氣：隨意 / 工作 / 郵件三檔，點一下輪換。") }
+    static var ex_lang_pick: String { s("翻译成哪种语言。支持英文、日语、法语、德语、西班牙语、韩语。", "Which language to translate into. English, Japanese, French, German, Spanish and Korean are supported.", "翻譯成哪種語言。支持英文、日語、法語、德語、西班牙語、韓語。") }
+    static var ex_speak_ios: String { s("朗读：把刚出的那段念出来。中文用中文女声，英文用 Andrew。", "Read aloud: plays back what just came out. A Chinese voice for Chinese, Andrew for English.", "朗讀：把剛出的那段念出來。中文用中文女聲，英文用 Andrew。") }
+    static var st_recognizing: String { s("识别中…", "Transcribing…", "識別中…") }
+    static var st_polishing: String { s("整理中…", "Cleaning up…", "整理中…") }
+    static var st_translating: String { s("整理并译成英文…", "Cleaning up and translating…", "整理並譯成英文…") }
+    static var st_inserting: String { s("上屏…", "Inserting…", "上屏…") }
+    static var st_testing: String { s("测试中…", "Testing…", "測試中…") }
+    static var btn_got_it: String { s("知道了", "Got it", "知道了") }
+    static var lbl_translate_to: String { s("翻译成", "Translate into", "翻譯成") }
+    static var mic_allowed: String { s("麦克风：已允许 ✓", "Microphone: allowed ✓", "麥克風：已允許 ✓") }
+    static var mic_not_allowed: String { s("麦克风：还没允许", "Microphone: not allowed yet", "麥克風：還沒允許") }
+    static var kb_tr_before: String { s("译光标前的中文", "Translate the text before the cursor", "譯光標前的中文") }
+    static var kb_nothing_before: String { s("光标前没有内容", "Nothing before the cursor", "光標前沒有內容") }
+    static var kb_no_pass: String { s("这份包没配口令，重新构建一次", "This build has no backend password — rebuild it", "這份包沒配口令，重新構建一次") }
+    static var st_listening_ios: String { s("听着呢 %d:%02d　·　说完再按一下红色按钮", "Listening %d:%02d　·　tap the red button when you're done", "聽著呢 %d:%02d　·　說完再按一下紅色按鈕") }
+    static var msg_update_unreachable: String { s("连不上更新服务器：%1$s\n新版安装包现在直接发到你的飞书，不再走 GitHub。\n（在家连着自己网时，这里可以自助更新）", "Can't reach the update server: %1$s\nNew builds are sent to your Feishu now, not GitHub.\n(Self-update works at home, on your own network.)", "連不上更新伺服器：%1$s\n新版安裝包現在直接發到你的飛書，不再走 GitHub。\n（在家連著自己網時，這裡可以自助更新）") }
+    static var msg_already_latest: String { s("已经是最新版了（%1$s）", "You're already on the latest version (%1$s)", "已經是最新版了（%1$s）") }
+    static var msg_new_version: String { s("发现新版 %1$s，下载中…", "Found version %1$s — downloading…", "發現新版 %1$s，下載中…") }
+    static var msg_downloading: String { s("下载中… %1$s%%", "Downloading… %1$s%%", "下載中… %1$s%%") }
+    static var msg_update_failed: String { s("更新失败：%1$s\n（App 内更新只在家里那台机器开着时可用；在外面我会把新版发你飞书）", "Update failed: %1$s\n(In-app update only works at home, with that machine on. When you're out, I send the build to your Feishu.)", "更新失敗：%1$s\n（App 內更新只在家裡那臺機器開著時可用；在外面我會把新版發你飛書）") }
+    static var msg_dl_done: String { s("下载完成 %1$s，正在打开安装界面", "Downloaded %1$s — opening the installer", "下載完成 %1$s，正在打開安裝界面") }
+    static var msg_hw_missing: String { s("手写没装上", "Handwriting isn't installed", "手寫沒裝上") }
+    static var msg_speak_failed: String { s("朗读失败：%1$s", "Couldn't read it aloud: %1$s", "朗讀失敗：%1$s") }
+    static var msg_mic_open_failed: String { s("打不开麦克风：%1$s", "Can't open the microphone: %1$s", "打不開麥克風：%1$s") }
+    static var prefs_title: String { s("设置", "Settings", "設定") }
+    static var prefs_entry: String { s("设置", "Settings", "設定") }
+    static var prefs_g_ime: String { s("输入法", "Keyboard", "輸入法") }
+    static var prefs_g_pref: String { s("偏好", "Preferences", "偏好") }
+    static var prefs_g_diag: String { s("诊断", "Diagnostics", "診斷") }
+    static var prefs_g_about: String { s("关于", "About", "關於") }
+    static var prefs_ime_on: String { s("已经是当前输入法", "Currently in use", "已經是當前輸入法") }
+    static var prefs_ime_off: String { s("还没设为当前输入法", "Not your keyboard yet", "還沒設為當前輸入法") }
+    static var prefs_diag_sub: String { s("看最近几次录音为什么没转出来", "Why recent recordings did not come through", "看最近幾次錄音為什麼沒轉出來") }
+    static var prefs_about: String { s("关于 Transless", "About Transless", "關於 Transless") }
+    static var prefs_check_update: String { s("检查更新", "Check for updates", "檢查更新") }
+    static var prefs_copy: String { s("复制", "Copy", "複製") }
+    static var msg_no_input_conn: String { s("输入框没连上，先点一下输入框再试", "Tap the text field once, then try again", "輸入框沒連上，先點一下輸入框再試") }
+    static var msg_send_not_supported: String { s("这个 App 不让输入法代发，请点它自己的发送键", "This app doesn't let keyboards send — tap its own send button", "這個 App 不讓輸入法代發，請點它自己的發送鍵") }
+    static var msg_send_unknown_fail: String { s("没转出来，原因不明。设置 → 录音诊断 里有详细记录", "Couldn't transcribe. See Settings → Recording log for details", "沒轉出來，原因不明。設定 → 錄音診斷 裡有詳細記錄") }
+    static var msg_send_wechat: String { s("微信要先开「回车键发送消息」：我 → 设置 → 聊天", "Turn on \"Enter key sends messages\" in WeChat: Me → Settings → Chats", "微信要先開「回車鍵發送消息」：我 → 設定 → 聊天") }
+    static var msg_mic_not_ready: String { s("麦克风没就绪，再点一次", "Microphone isn't ready — tap again", "麥克風沒就緒，再點一次") }
+    static var msg_max_len: String { s("说满 %1$s 秒，这一段先帮你整理了", "Hit the %1$s-second limit — cleaning up what you said so far", "說滿 %1$s 秒，這一段先幫你整理了") }
+    static var msg_mic_lost: String { s("麦克风断了（%1$s），先把已录到的转出来", "Microphone dropped (%1$s) — transcribing what was captured", "麥克風斷了（%1$s），先把已錄到的轉出來") }
+    static var msg_no_audio: String { s("没录到声音：%1$s", "No audio captured: %1$s", "沒錄到聲音：%1$s") }
+    static var msg_not_heard: String { s("没听清，再说一次", "Didn't catch that — say it again", "沒聽清，再說一次") }
+    static var kb_chip_zh: String { s("中", "ZH", "中") }
+    static var kb_chip_voice: String { s("语音", "Voice", "語音") }
+    static var msg_cancelled: String { s("已取消", "Cancelled", "已取消") }
+    static var msg_nothing_recorded: String { s("没录到", "Nothing recorded", "沒錄到") }
+    static var msg_failed: String { s("失败：%1$s", "Failed: %1$s", "失敗：%1$s") }
+    static var perm_title: String { s("权限", "Permissions", "權限") }
+    static var cancel: String { s("取消", "Cancel", "取消") }
+    static var nothing_to_speak: String { s("还没有可朗读的内容", "Nothing to read aloud yet", "還沒有可朗讀的內容") }
+    static var ios_setup_title: String { s("权限与自测", "Permissions & self-test", "權限與自測") }
+    static var ios_step1: String { s("第 1 步 · 允许麦克风", "Step 1 · Allow microphone", "第 1 步 · 允許麥克風") }
+    static var ios_step1_why: String { s("只用要一次。语音识别在后端做，不用额外授权。", "Once only. Speech recognition runs on the server, so no extra permission is needed.", "只用要一次。語音識別在後端做，不用額外授權。") }
+    static var ios_allow_mic: String { s("允许麦克风", "Allow microphone", "允許麥克風") }
+    static var ios_step2: String { s("自测 · 后端通不通", "Self-test · Is the backend reachable?", "自測 · 後端通不通") }
+    static var ios_test_once: String { s("测一次", "Run test", "測一次") }
+    static var lang_follow_system: String { s("跟随系统", "Follow system", "跟隨系統") }
+    static var lang_title: String { s("界面语言", "App language", "界面語言") }
+    static var rec_log_title: String { s("录音诊断", "Recording log", "錄音診斷") }
+    static var kb_translate: String { s("翻译", "Translate", "翻譯") }
+    static var kb_transcribe: String { s("转写", "Transcribe", "轉寫") }
+    static var kb_history: String { s("历史", "History", "歷史") }
+    static var kb_type: String { s("⌨  打字", "⌨  Type", "⌨  打字") }
+    static var kb_speak: String { s("朗读", "Speak", "朗讀") }
+    static var kb_send: String { s("发送", "Send", "發送") }
+    static var kb_stop: String { s("■ 停", "■ Stop", "■ 停") }
+    static var tone_casual: String { s("随意", "Casual", "隨意") }
+    static var tone_work: String { s("工作", "Work", "工作") }
+    static var tone_email: String { s("邮件", "Email", "郵件") }
+    static var kb_back: String { s("‹ 返回", "‹ Back", "‹ 返回") }
+    static var kb_pinyin: String { s("拼音", "Pinyin", "拼音") }
+    static var kb_wubi: String { s("五笔", "Wubi", "五筆") }
+    static var kb_hand: String { s("手写", "Handwriting", "手寫") }
+    static var kb_english: String { s("英文", "English", "英文") }
+    static var kb_pinyin_s: String { s("拼", "PY", "拼") }
+    static var kb_wubi_s: String { s("五", "WB", "五") }
+    static var kb_hand_s: String { s("写", "HW", "寫") }
+    static var kb_done: String { s("完成", "Done", "完成") }
+    static var kb_space: String { s("空格", "Space", "空格") }
+    static var kb_polish: String { s("整理", "Clean up", "整理") }
+    static var kb_verbatim: String { s("逐字", "Verbatim", "逐字") }
+    static var kb_resend: String { s("重新上屏", "Insert again", "重新上屏") }
+    static var kb_undo: String { s("撤销", "Undo", "撤銷") }
+    static var kb_clear: String { s("清空", "Clear", "清空") }
+    static var kb_delete: String { s("删除", "Delete", "刪除") }
+    static var hist_title: String { s("  历史记录", "  History", "  歷史記錄") }
+    static var hist_empty: String { s("还没有记录 · 说一句就会自动存下来", "Nothing yet · Everything you say gets saved here", "還沒有記錄 · 說一句就會自動存下來") }
+    static var rec_empty: String { s("还没有录音记录。", "No recordings yet.", "還沒有錄音記錄。") }
 }
