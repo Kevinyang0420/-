@@ -36,7 +36,23 @@ enum Backend {
     /// 目标语言。跟 engine.py 的 LANGS、安卓的 Gen.LANG_CODES 一一对应。
     /// 🚨 单一配置点在 engine.py；这里加语言要三处一起加，别只改一边。
     static let langs: [(code: String, label: String, name: String)] = [
-        ("en", "英文", "English"), ("ja", "日语", "Japanese"),
+        ("en", "英文", "English"),
+        // 🚨 中文也是目标语言（Kevin 2026-08-23：「假如使用者是老外，
+        //    他也要翻译成中文嘛」）。跟「结构化转写」那一档不是一回事：
+        //    转写档是"说中文出中文"，这里是"说任何语言译成中文"。
+        ("zh", "中文",
+         "Simplified Chinese (简体中文). Use Mainland China wording "
+         + "and simplified characters throughout, never traditional."),
+        // 繁体中文是独立一档（Kevin 2026-08-25：「适合海外人群」），
+        //    不是「中文」的显示变体。用台湾用语，跟 engine.py 那份逐字一致。
+        ("zht", "繁体中文",
+         "Traditional Chinese (繁體中文), TAIWAN conventions. THREE hard requirements: "
+         + "(1) TRADITIONAL characters throughout (會/報/聽/開/實), never simplified; "
+         + "(2) TAIWAN vocabulary — use 軟體/網路/影片/資訊/設定/檔案/程式/滑鼠/列印, "
+         + "NOT 软件/网络/视频/信息/设置/文件/程序/鼠标/打印; "
+         + "(3) Taiwan punctuation: full-width corner brackets for quotes. "
+         + "This is Mandarin in traditional script — do NOT write Cantonese."),
+        ("ja", "日语", "Japanese"),
         ("fr", "法语", "French"), ("de", "德语", "German"),
         ("es", "西班牙语", "Spanish"), ("ko", "韩语", "Korean"),
         // 🚨 粤语的 name 里那一长串要求不能省：只写 "Cantonese" 模型会吐普通话，
