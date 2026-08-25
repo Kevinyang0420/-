@@ -1,16 +1,21 @@
 import Foundation
 
-/// 录音诊断台账。对齐安卓 `RecLog.java`。
+/// 录音诊断台账。键名取值跟安卓一致（对齐 RecLog.java）。
 ///
-/// 🚨 为什么要有它（安卓那边的由来）：Kevin 报过十次「说完话不出字」，
-///    每次我都只能猜。有了这个台账，他再报时能直接看**最后一条的状态**，
-///    不用靠推。
+/// 🚨🚨 **它现在只在本进程内有效，不跨进程。**
 ///
-/// 🚨🚨 **记了但没有查看入口 = 等于没记**（他点过名的一条）。
-///    所以设置页里那一项是能点开、能复制的，不是只写进文件。
+///    我第一版写的是「照 DeviceId 已经验证过的路子走（Keychain 跨进程共享）」——
+///    **那是个假前提**：Keychain 项的默认访问组是
+///    `$(AppIdentifierPrefix)<bundle id>`，主 App 是 `…transless`、
+///    键盘扩展是 `…transless.keyboard`，**不是同一个组**。
+///    要真共享，两个 target 都得声明 `keychain-access-groups`
+///    并且读写带 `kSecAttrAccessGroup` —— 而这个工程**一条 entitlement 都没有**。
+///    `DeviceId.swift` 也没被验证过，它只是同样在两个进程里各存各的。
 ///
-/// 存 Keychain 的理由跟 `Lang` 一样：键盘扩展是另一个进程，
-/// UserDefaults 不共享，而这个工程没配 App Group。
+///    **我把「别处也这么写」当成了「这么写是对的」。**（交叉审查 H5）
+///
+///    要修得动签名和描述文件（配 App Group + entitlements），那是单独一件事。
+///    在那之前**别在注释里写"共享"** —— 写了下一个人就会当真。
 enum RecLog {
 
     private static let service = "com.kevin.transless.prefs"
