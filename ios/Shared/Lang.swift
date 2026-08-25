@@ -1,15 +1,21 @@
 import Foundation
 
-/// 界面语言。**键名和取值跟安卓 `Lang.java` 一模一样**
-/// （`sys` / `zh` / `en` / `hant`），两端存的是同一回事。
+/// 界面语言。键名取值跟安卓一致（对齐 Lang.java）。
 ///
-/// 🚨🚨 **存 Keychain，不存 UserDefaults。**
-///    `DeviceId.swift` 里已经写清楚了：「UserDefaults 在键盘扩展和主 App 之间
-///    **不共享**」。我第一版写的是 `UserDefaults(suiteName: "group.…")` ——
-///    而这个工程**根本没配 App Group**，`suiteName` 拿不到就**静默回落**到
-///    `.standard`，于是主 App 里改了语言、键盘扩展读不到，
-///    而且不报任何错。
-///    照 DeviceId 已经验证过的路子走，不自己另开一套。
+/// 🚨🚨 **它现在只在本进程内有效，不跨进程。**
+///
+///    我第一版写的是「照 DeviceId 已经验证过的路子走（Keychain 跨进程共享）」——
+///    **那是个假前提**：Keychain 项的默认访问组是
+///    `$(AppIdentifierPrefix)<bundle id>`，主 App 是 `…transless`、
+///    键盘扩展是 `…transless.keyboard`，**不是同一个组**。
+///    要真共享，两个 target 都得声明 `keychain-access-groups`
+///    并且读写带 `kSecAttrAccessGroup` —— 而这个工程**一条 entitlement 都没有**。
+///    `DeviceId.swift` 也没被验证过，它只是同样在两个进程里各存各的。
+///
+///    **我把「别处也这么写」当成了「这么写是对的」。**（交叉审查 H5）
+///
+///    要修得动签名和描述文件（配 App Group + entitlements），那是单独一件事。
+///    在那之前**别在注释里写"共享"** —— 写了下一个人就会当真。
 enum Lang {
     static let sys = "sys"
     static let zh = "zh"
