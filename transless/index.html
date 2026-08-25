@@ -121,6 +121,9 @@ h1{
 .cta:hover{transform:scale(1.02);filter:brightness(1.12);box-shadow:0 12px 40px rgba(139,92,246,.38)}
 .cta:active{transform:scale(.98);transition-duration:.1s}
 .cta-note{font-size:13px;color:var(--text-secondary)}
+/* 八种目标语言，跟 engine.LANGS 一致 —— 加语言要两边一起改 */
+.langs{margin-top:26px;font-size:12px;letter-spacing:.04em;color:var(--text-secondary);
+       opacity:.72;line-height:1.9}
 
 /* ================= 演示卡：按 Theme.java 复刻的键盘 ================= */
 .demo{justify-self:end;width:560px;max-width:100%}
@@ -254,6 +257,7 @@ h2 .dim{color:var(--text-secondary)}
 .scene .tag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--highlight)}
 .scene h3{font-family:var(--cn);font-weight:500;font-size:20px;letter-spacing:.04em;margin:16px 0 12px}
 .scene p{font-size:14px;line-height:1.75;color:var(--text-secondary)}
+.scene p b{color:var(--text-primary);font-weight:500}
 
 /* ---- 屏 5 · 隐私 ----
    🚨 每条承诺都绑一个**可验证的机制**，不写形容词。
@@ -284,6 +288,7 @@ h2 .dim{color:var(--text-secondary)}
   color:var(--text-primary);margin-bottom:10px;
 }
 .qa p{font-size:14.5px;line-height:1.8;color:var(--text-secondary);max-width:70ch}
+.qa p b{color:var(--text-primary);font-weight:500}
 
 /* ---- 屏 7 · 收口 ---- */
 .final{display:flex;align-items:center;text-align:center;padding:130px 0 90px}
@@ -362,14 +367,15 @@ footer .wrap{display:flex;align-items:center;justify-content:space-between;flex-
 <header class="hero">
   <div class="wrap">
     <div class="hero-left">
-      <div class="hero-eyebrow">Voice keyboard &middot; 中译英</div>
+      <div class="hero-eyebrow">Voice keyboard &middot; 中文说，八种语言出</div>
       <h1>让世界听懂你</h1>
       <div class="slogan-en">No Language In Between</div>
-      <p class="lede">说中文口水话，直接上屏成地道英文。<br>该分点的自动分点，不用先想怎么说。</p>
+      <p class="lede">说中文口水话，直接上屏成地道的那门语言。<br>该分点的自动分点，不用先想怎么说。</p>
       <div class="cta-row">
         <a class="cta" href="#how">看看它怎么工作</a>
         <span class="cta-note">安卓内测中 · iOS 排队中</span>
       </div>
+      <div class="langs">English &middot; 日本語 &middot; Français &middot; Deutsch &middot; Español &middot; 한국어 &middot; 粵語 &middot; 简体中文</div>
     </div>
 
     <!-- 演示卡：按 Theme.java 复刻的键盘，不是截图 -->
@@ -499,7 +505,7 @@ footer .wrap{display:flex;align-items:center;justify-content:space-between;flex-
 <section id="where" class="scenes reveal" data-observe>
   <div class="wrap">
     <div class="eyebrow">Where it earns its place</div>
-    <h2>给那些<span class="dim">「中文想得清楚，英文写得费劲」</span>的时刻。</h2>
+    <h2>给那些<span class="dim">「话在嘴边，就是说不出来」</span>的时刻。</h2>
     <div class="scenes-grid">
       <div class="card scene">
         <div class="tag">Work</div>
@@ -512,9 +518,9 @@ footer .wrap{display:flex;align-items:center;justify-content:space-between;flex-
         <p>会开完了，把刚才说的复述一遍，直接得到一份带编号的要点。</p>
       </div>
       <div class="card scene">
-        <div class="tag">Anywhere</div>
-        <h3>只是想说清楚一点</h3>
-        <p>转写档一个字都不改，只补标点 —— 需要原话时它就只给你原话。</p>
+        <div class="tag">Travel</div>
+        <h3>在国外点菜、问路</h3>
+        <p>对着手机说中文，出来是当地语言 —— 再点一下朗读，<b>用母语嗓音念给对方听</b>。不用比划，也不用把手机怼到人脸前。</p>
       </div>
     </div>
   </div>
@@ -603,6 +609,10 @@ footer .wrap{display:flex;align-items:center;justify-content:space-between;flex-
         <p>现在不用，装上就能用。以后会加登录，是为了让你换手机时能恢复 —— 到时候也不会强制，不登录照样能用。</p>
       </div>
       <div class="qa">
+        <h3>支持哪些语言？</h3>
+        <p>目前八种：英文、日文、法文、德文、西班牙文、韩文、粤语、简体中文。说中文，选一个目标语言就行。<b>朗读会按文字本身的语种自动挑母语嗓音</b> —— 出日文就用日文嗓子念，不会拿英文腔念日文。</p>
+      </div>
+      <div class="qa">
         <h3>能在哪些 App 里用？</h3>
         <p>它是一个真正的输入法，不是单独的翻译 App。任何能打字的地方都能用 —— 微信、邮件、备忘录、浏览器。</p>
       </div>
@@ -668,6 +678,6 @@ if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
   }, {passive:true});
 }
 </script>
-<!-- build-7b6b23be5b -->
+<!-- build-ef721f374b -->
 </body>
 </html>
