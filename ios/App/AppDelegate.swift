@@ -33,6 +33,13 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //    上一版我加在首页那条分支里，深链（TRANSLESS_PAGE）走的是另一条 —— 
         //    截图上「设为当前输入法」还是黑字。**一处配置要盖住所有入口**。
         NavStyle.apply()
+        // 调试口子：模拟"他已经体验过了"。**走的是真实的 `Onboard.markTried()`**，
+        // 不是伪造一个状态 —— 验的是"标记真写进 Keychain 了 + 首页真会据此显示"。
+        // 🚨 没验到的那一半：点麦克风时会不会调 markTried（模拟器点不了，
+        //    脚本没有 tap API）。那是 `tapMic` 第一行的一句话，我改的时候盯着写的。
+        if ProcessInfo.processInfo.environment["TRANSLESS_MARK_TRIED"] == "1" {
+            Onboard.markTried()
+        }
         DeviceId.ensure()
         let w = UIWindow(frame: UIScreen.main.bounds)
         // 🚨 **调试用的直达入口**：`xcrun simctl launch … --page speak` 之类，
@@ -199,6 +206,15 @@ final class SplashViewController: UIViewController {
         guard !went else { return }     // 只走一次
         went = true
         let home = UINavigationController(rootViewController: HomeViewController())
+        // 🚨🚨 **新用户直接推进「说一段试试」**，不是让他自己在首页找。
+        //    Kevin 2026-08-25：「用户下载下来后，必须要先去体验一下…
+        //    这个是系统自动推给他，必须让他试的。然后才会出现『注册登录』
+        //    和『设为当前输入法』的按钮。」
+        //    首页仍然在导航栈底 —— 他从说话页返回就落到首页，
+        //    而不是"退无可退只能杀进程"。
+        if !Onboard.tried {
+            home.pushViewController(MainViewController(), animated: false)
+        }
         home.modalTransitionStyle = .crossDissolve
         home.modalPresentationStyle = .fullScreen
         // 🚨 只在**首页**隐藏导航栏，子页要显示 —— 否则设置页/引导页
@@ -214,8 +230,24 @@ final class SplashViewController: UIViewController {
 
 final class HomeViewController: UIViewController {
 
+    /// 建首页那三个长条时，他有没有体验过。
+    /// 🚨 存下来是为了**知道什么时候要重建** —— 从说话页返回时状态可能刚变，
+    ///    不重建的话那两个按钮不会冒出来，看着就像"试了也没用"。
+    private var builtWithTried = false
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+        if builtWithTried != Onboard.tried {
+            // 状态变了：整页重搭（首页很轻，重搭比逐个增删可靠）
+            view.subviews.forEach { $0.removeFromSuperview() }
+            viewDidLoad()
+        }
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        builtWithTried = Onboard.tried
         UI.paintBg(self)
 
         let root = UIStackView()
@@ -301,12 +333,18 @@ final class HomeViewController: UIViewController {
         bars.addArrangedSubview(Bars.make(L.home_try_speak, primary: true,
                                           target: self,
                                           action: #selector(openSpeak)))
-        bars.addArrangedSubview(Bars.make(L.home_login, primary: false,
-                                          target: self,
-                                          action: #selector(loginSoon)))
-        bars.addArrangedSubview(Bars.make(L.home_set_ime, primary: false,
-                                          target: self,
-                                          action: #selector(openSetup)))
+        // 🚨🚨 **没体验过就只有这一个按钮**，另外两个**不建出来**
+        //    （不是置灰 —— 置灰会留一个点不动的东西在那儿更让人困惑）。
+        //    Kevin 2026-08-25：「必须让他试的，然后才会出现『注册登录』
+        //    和『设为当前输入法』的按钮。」
+        if Onboard.tried {
+            bars.addArrangedSubview(Bars.make(L.home_login, primary: false,
+                                              target: self,
+                                              action: #selector(loginSoon)))
+            bars.addArrangedSubview(Bars.make(L.home_set_ime, primary: false,
+                                              target: self,
+                                              action: #selector(openSetup)))
+        }
         root.addArrangedSubview(bars)
     }
 
@@ -353,7 +391,10 @@ enum Bars {
         b.contentEdgeInsets = UIEdgeInsets(top: 16, left: 18, bottom: 16, right: 18)
         b.addTarget(target, action: action, for: .touchUpInside)
         b.translatesAutoresizingMaskIntoConstraints = false
-        b.heightAnchor.constraint(equalToConstant: 56).isActive = true
+        // Grok ⑧：三个按钮高度圆角完全一样，只靠颜色分主次，
+        //         主按钮没有尺寸权重。变体模式下主按钮高 5pt。
+        b.heightAnchor.constraint(
+            equalToConstant: primary ? 61 : 56).isActive = true
 
         let chev = UILabel()
         chev.text = "›"
@@ -736,7 +777,12 @@ final class PrefsViewController: UIViewController {
         list.addArrangedSubview(group(L.prefs_g_about))
         let ver = (Bundle.main.infoDictionary?["CFBundleShortVersionString"]
                    as? String) ?? "?"
-        list.addArrangedSubview(row(L.prefs_about, ver, nil))
+        // Grok ⑦：「20260825.467」纯日期+build 号，对普通用户毫无意义，
+        //         像内部调试信息。变体模式下显示成「版本 467」。
+        let build = (Bundle.main.infoDictionary?["CFBundleVersion"]
+                     as? String) ?? ver
+        list.addArrangedSubview(row(L.prefs_about,
+                                    "版本 " + build, nil))
         // 🚨 安卓的「检查更新」是连他局域网那台机下载 APK 的。
         //    **iOS 上不存在这条路** —— 苹果不允许 App 自己装包。
         //    所以这一项如实说明走 TestFlight，不做一个按了没反应的假按钮。
@@ -780,7 +826,8 @@ final class PrefsViewController: UIViewController {
         t.font = .systemFont(ofSize: 15.5)
         let s = UILabel()
         s.text = sub
-        s.textColor = Skin.dim
+        // Grok ⑥：副标题在深紫底上对比度偏低。`Skin.sub` 在变体模式下更亮。
+        s.textColor = Skin.sub
         s.font = .systemFont(ofSize: 11.5)
         s.numberOfLines = 0
         let col = UIStackView(arrangedSubviews: sub == nil ? [t] : [t, s])
@@ -1271,9 +1318,22 @@ final class MainViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        // 权限没给过就先把设置页推出来要一次。
-        // 🚨 转写改到后端后只需要**麦克风**权限（语音识别在服务器做，不用 Speech 授权）。
-        if AVAudioSession.sharedInstance().recordPermission != .granted {
+        // 🚨🚨 **一上来就弹系统麦克风授权框**，别 push 引导页。
+        //    Kevin 2026-08-25：「Typeless 现在就是这样子，它就是让你先给权限，
+        //    然后去试一下…用户下载你这个软件的时候，他就有预期这是需要录音的…
+        //    iPhone 的话，肯定还是要用户确认嘛。」
+        //
+        //    🚨 区分两件事：弹**系统权限框**是对的（一次点允许就完事）；
+        //       这里原本干的是 push **引导页**（"设为当前输入法"三步），
+        //       那跟录音毫无关系 —— 刚装的人一进来就被弹去那一屏，
+        //       答非所问，而且他要的体验一秒都没发生。
+        let perm = AVAudioSession.sharedInstance().recordPermission
+        if perm == .undetermined {
+            AVAudioSession.sharedInstance().requestRecordPermission { _ in }
+            return
+        }
+        // 被拒过：系统不会再弹了，这时候引导页才有意义（教他去设置里开）
+        if perm == .denied, Onboard.tried {
             navigationController?.pushViewController(SetupViewController(), animated: true)
         }
     }
@@ -1316,6 +1376,30 @@ final class MainViewController: UIViewController {
     }
 
     @objc private func tapMic() {
+        // 🚨 判据是**按过说话键**，不是"转写成功"。
+        //    要求成功的话，没给麦克风权限、或者当时没网的人会被**永久锁在门外**
+        //    —— 首页那两个按钮永远不出现，而他连原因都看不到。
+        //    宁可判松：他确实点了、确实试了，就算数。
+        Onboard.markTried()
+        // 🚨 权限还没决定就**先请求**，别直接走失败分支 ——
+        //    第一次体验的人就是靠这一下拿到麦克风的。
+        //    只在 `.undetermined` 时请求：已经被拒过的话系统不会再弹，
+        //    那种情况要给去设置的出口，不能装作在等他点（见下面的 else）。
+        let perm = AVAudioSession.sharedInstance().recordPermission
+        if perm == .undetermined {
+            AVAudioSession.sharedInstance().requestRecordPermission { ok in
+                DispatchQueue.main.async {
+                    if ok { self.tapMic() }        // 给了就接着走这一次
+                }
+            }
+            return
+        }
+        if perm == .denied {
+            // 被拒过：系统不会再弹，只能去设置里开
+            navigationController?.pushViewController(SetupViewController(),
+                                                     animated: true)
+            return
+        }
         if phase == .listening {
             elapsedTimer?.invalidate(); elapsedTimer = nil
             setPhase(.thinking, hint: L.st_recognizing)
