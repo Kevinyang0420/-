@@ -36,9 +36,9 @@ final class MainViewController: UIViewController {
     //    「邮件和正式合在一起吧，这两个没什么区别。就是随意、工作和邮件三种」）。
     //    这里是**第三份**副本，暂时只能手工对齐 —— iOS 没走构建期生成那条路。
     //    改档位时三处都要动：engine.py / build_apk.py 生成的 Gen / 这里。
-    private let tones = ["casual", "work", "email"]
-    private let toneLabels = [L.tone_casual, L.tone_work, L.tone_email]
-    private var tone = UserDefaults.standard.string(forKey: "vime.tone") ?? "work"
+    private let tones = Prompts.all
+    private let toneLabels = Prompts.all.map(Prompts.label)
+    private var tone = Prompts.normalize(UserDefaults.standard.string(forKey: "vime.tone"))
 
     /// 输出模式：译成英文（默认）/ 只转写。跟安卓一致。
     private var mode: Backend.Mode =
