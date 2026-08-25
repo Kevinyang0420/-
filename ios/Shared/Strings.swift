@@ -88,6 +88,7 @@ enum L {
     static var msg_speak_failed: String { s("朗读失败：%1$s", "Couldn't read it aloud: %1$s", "朗讀失敗：%1$s") }
     static var msg_mic_open_failed: String { s("打不开麦克风：%1$s", "Can't open the microphone: %1$s", "打不開麥克風：%1$s") }
     static var prefs_title: String { s("设置", "Settings", "設定") }
+    static var prefs_soon: String { s("设置项还在做，下一版给你", "Settings are coming in the next version", "設定項還在做，下一版給你") }
     static var prefs_entry: String { s("设置", "Settings", "設定") }
     static var prefs_g_ime: String { s("输入法", "Keyboard", "輸入法") }
     static var prefs_g_pref: String { s("偏好", "Preferences", "偏好") }
