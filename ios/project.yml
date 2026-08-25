@@ -113,11 +113,13 @@ targets:
       # 🚨 键盘扩展是**独立 bundle**，`UIImage(named:)` 只找自己 bundle 里的资源。
       #    不把图编进这个 target，麦克风图会静默变 nil、按钮一片空白 ——
       #    编译照样通过，只有装到手机上才看得出来。contract_test.py 有闸门守这条。
-      # 🚨🚨 但这里**只能给 SharedAssets**，绝不能给 Assets.xcassets（那里有 AppIcon）。
-      #    appex 的 actool 会带 `--standalone-icon-behavior all` 去**渲染** AppIcon，
-      #    而渲染要一个跟 iphonesimulator SDK 同版本的模拟器运行时；CI runner 上没有
-      #    → `No simulator runtime version ... available`，整个 archive 挂掉。
-      #    （2026-08-25 run #2 就死在这儿。appex 本来也不该带 App 图标。）
+      # 🚨🚨 但这里只给 SharedAssets，不给 Assets.xcassets（那张有 AppIcon）：
+      #    appex 不该把容器 App 的图标一起打进自己的 bundle，白白撑大扩展体积。
+      #    ⚠️ 更正（2026-08-25）：拆表**不是** CI 那个
+      #    `No simulator runtime version ...` 的解药 —— 我当时以为是 AppIcon 惹的，
+      #    拆完 run #3 照挂，报错换成了只装着 mic 的 SharedAssets。
+      #    真根因在 Xcode 版本（见 ci-release-workflow.yml 的「选 Xcode」那步）。
+      #    这条拆分保留，因为它本身就对；但别把它当那个错误的修复记着。
       - path: SharedAssets.xcassets
     info:
       path: Keyboard/Info.plist
