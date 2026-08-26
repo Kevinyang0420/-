@@ -40,6 +40,14 @@ enum L {
     static var profile_year: String { s("年", "Year", "年") }
     static var profile_month: String { s("月", "Month", "月") }
     static var profile_day: String { s("日", "Day", "日") }
+    static var profile_country: String { s("国家/地区", "Country", "國家/地區") }
+    static var profile_region: String { s("省份/州", "State / Province", "省份/州") }
+    static var profile_job: String { s("职业", "Occupation", "職業") }
+    static var profile_email: String { s("邮箱", "Email", "郵箱") }
+    static var account_page: String { s("我的账户", "My account", "我的帳戶") }
+    static var account_edit: String { s("点这里填写", "Tap to fill in", "點這裡填寫") }
+    static var account_signout_ask: String { s("确定要退出登录吗？下次要重新收验证码。", "Sign out? You'll need a new code to sign back in.", "確定要登出嗎？下次要重新收驗證碼。") }
+    static var save: String { s("保存", "Save", "儲存") }
     static var profile_title: String { s("完善资料", "Set up your profile", "完善資料") }
     static var profile_sub: String { s("起个昵称，以后界面上就显示它，不用挂着一长串邮箱。", "Pick a nickname — it shows up instead of your full email.", "起個暱稱，以後介面上就顯示它，不用掛著一長串郵箱。") }
     static var profile_nick: String { s("昵称", "Nickname", "暱稱") }

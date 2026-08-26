@@ -239,6 +239,42 @@ enum Auth {
         return a
     }
 
+    // MARK: - 账户资料
+
+    /// 账户页上那些**选填项**。`(资料 id, UserDefaults 键名)`。
+    ///
+    /// Kevin 2026-08-26：「用户信息页需要完善，可以多加一些选填项
+    /// （如邮箱、生日、国家、省份、职业等）」。
+    ///
+    /// 🚨 **表驱动，不给每个字段手写一对读写**。六个字段各写一对，
+    ///    加第七个时必然漏改一处，而漏的那处不报错。
+    ///
+    /// 🚨 生日复用注册那一步已经在写的 `auth_birthday`，**不新开键**。
+    ///
+    /// 🚨 顺序就是界面上的显示顺序，跟安卓 `Onboard.PROFILE_KEYS`
+    ///    必须一模一样 —— `gate_pure_logic.py` 的 Profile 单元会比。
+    static let profileKeys: [(id: String, key: String)] = [
+        ("nick", "auth_nickname"),
+        ("account", "auth_account"),
+        ("birthday", "auth_birthday"),
+        ("country", "auth_country"),
+        ("region", "auth_region"),
+        ("job", "auth_job"),
+    ]
+
+    /// 读一个资料项。没填就是空串。
+    static func profile(_ id: String) -> String {
+        guard let kv = profileKeys.first(where: { $0.id == id }) else { return "" }
+        return UserDefaults.standard.string(forKey: kv.key) ?? ""
+    }
+
+    /// 写一个资料项。写空串 = 清掉。
+    static func setProfile(_ id: String, _ v: String) {
+        guard let kv = profileKeys.first(where: { $0.id == id }) else { return }
+        UserDefaults.standard.set(
+            v.trimmingCharacters(in: .whitespaces), forKey: kv.key)
+    }
+
     // MARK: - 网络
 
     private static func post(_ path: String, _ body: [String: Any],

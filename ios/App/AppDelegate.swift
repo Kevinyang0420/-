@@ -331,16 +331,22 @@ final class HomeViewController: UIViewController {
         let en = UI.label(Brand.sloganEn, size: Skin.sloganEnSize,
                           kern: Skin.sloganEnKern, color: Skin.dim,
                           weight: .light)
-        // 🚨 登录后在 slogan 下面显示**昵称**（Kevin 2026-08-26：
-        //    「登录完之后应该有个地方显示我的登录状态」
-        //    +「账号尽量加个昵称，不要把那么长的邮箱一直放在左上角」）。
-        //    名字取自 `Auth.displayName` —— 截取逻辑只有那一份，这里不再抄。
-        var midItems: [UIView] = [logo, brand, zh, en]
+        // 🚨🚨 昵称**不再挂在 slogan 底下**（Kevin 2026-08-26 真机反馈：
+        //    「现在登录后的用户名显示在 slogan 下面，很不明显、很奇怪。
+        //      建议放到左上角，参考 Typeless 的设计：放一个小人图标/头像，
+        //      点击直接进入账户设置页」）。
+        //    挪到**导航栏左上角**：`person.circle` + 昵称，点了进账户页。
+        //    🚨 没登录就不放这个按钮，不是变灰 —— 首页该干净。
         if Auth.loggedIn {
-            let who = UI.label(Auth.displayName, size: 13, kern: 0,
-                               color: Skin.dim, weight: .regular)
-            midItems.append(who)
+            let item = UIBarButtonItem(
+                image: UIImage(systemName: "person.circle"),
+                style: .plain, target: self, action: #selector(tapAccount))
+            item.title = Auth.displayName
+            navigationItem.leftBarButtonItem = item
+        } else {
+            navigationItem.leftBarButtonItem = nil
         }
+        let midItems: [UIView] = [logo, brand, zh, en]
         let mid = UIStackView(arrangedSubviews: midItems)
         mid.axis = .vertical
         mid.alignment = .center
@@ -388,25 +394,27 @@ final class HomeViewController: UIViewController {
         // 🚨 修两个 bug（他自己撞到的，安卓那边同型）：
         //    · 登录后还显示「注册/登录」—— 原来 `if Onboard.tried` 漏判 loggedIn
         //    · 设完输入法那条不消失 —— 原来没判"是不是已经设好了"
-        let tried = Onboard.tried
+        // 🚨🚨 **方案 D**（Kevin 2026-08-26 14:0x 逐字拍板：
+        //    「D·随手翻译永久免登录」，选项说明是「只有单词本/输入法要登录。
+        //     最符合"登录是为了存我的东西"这个直觉。代价：随手翻译白送，
+        //     拿不到注册转化。」—— 他看到那个代价之后仍然选了它）。
+        //
+        //    所以**随手翻译永远都在**，不被任何门槛挡；
+        //    登录只挡「单词本」和「设为默认输入法」。
+        //    原来那个"体验过就转登录页"的分支已经拿掉 ——
+        //    他撞到的「一进去就是登录页」正是那个分支。
         let logged = Auth.loggedIn
         let imeAdded = SetupViewController.keyboardAdded()
 
-        if !tried {
-            // ① 强制体验
-            bars.addArrangedSubview(Bars.make(L.home_try_speak, primary: true,
-                                              target: self,
-                                              action: #selector(openSpeak)))
-        } else if !logged {
-            // ② 有且仅有注册登录
-            bars.addArrangedSubview(Bars.make(L.home_login, primary: true,
+        // 随手翻译：**永远第一个，永远都在**
+        bars.addArrangedSubview(Bars.make(L.home_try_speak, primary: true,
+                                          target: self,
+                                          action: #selector(openSpeak)))
+        if !logged {
+            bars.addArrangedSubview(Bars.make(L.home_login, primary: false,
                                               target: self,
                                               action: #selector(openLogin)))
         } else {
-            // ③④ 功能菜单
-            bars.addArrangedSubview(Bars.make(L.home_try_speak, primary: true,
-                                              target: self,
-                                              action: #selector(openSpeak)))
             bars.addArrangedSubview(Bars.make(L.home_wordbook, primary: false,
                                               target: self,
                                               action: #selector(openWordbook)))
@@ -984,14 +992,15 @@ final class PrefsViewController: UIViewController {
 
     /// 账户行：登录了就退出登录，没登录就去登录。
     @objc private func tapAccount() {
+        // 🚨🚨 点这一行是**进账户页**，不是登出。
+        //    Kevin 2026-08-26 真机撞到：「我在设置里点了一下『我的账户』，
+        //    它居然直接把我退出了。登出应该有专门的『退出登录』按钮，
+        //    而不是点一下账户就退出，重新发验证码登录非常繁琐。」
+        //    —— 原来这里直接 `Auth.signOut()`，**一点就登出、连确认都没有**。
+        //    退出登录现在在账户页底部，单独按钮 + 要确认。
         if Auth.loggedIn {
-            Auth.signOut()
-            let a = UIAlertController(title: nil, message: L.account_signout_done,
-                                      preferredStyle: .alert)
-            a.addAction(UIAlertAction(title: "OK", style: .default))
-            present(a, animated: true)
-            // 🚨 重建，否则这一行还显示着刚退掉的那个账号
-            viewDidLoad()
+            navigationController?.pushViewController(AccountViewController(),
+                                                     animated: true)
         } else {
             navigationController?.pushViewController(LoginViewController(),
                                                      animated: true)
@@ -1707,12 +1716,30 @@ final class MainViewController: UIViewController {
         }
     }
 
+    /// 出了结果才算"体验过"。**跟安卓 `TryActivity` 同一个判据**：
+    /// `if (fo.length() > 0) Onboard.markTried(...)`。
+    ///
+    /// 🚨 判据故意放在这一个函数里，两处调用点都走它 ——
+    ///    散成两行 `if ... { Onboard.markTried() }` 就是下一次走散的起点。
+    private func markTriedIfProduced(_ out: String) {
+        if !out.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            Onboard.markTried()
+        }
+    }
+
     @objc private func tapMic() {
-        // 🚨 判据是**按过说话键**，不是"转写成功"。
-        //    要求成功的话，没给麦克风权限、或者当时没网的人会被**永久锁在门外**
-        //    —— 首页那两个按钮永远不出现，而他连原因都看不到。
-        //    宁可判松：他确实点了、确实试了，就算数。
-        Onboard.markTried()
+        // 🚨🚨 **这里不再 `markTried()`**（2026-08-26 修）。
+        //    原来是函数第一行就置位 —— 权限都还没请求。
+        //    后果：Kevin 只是点了一下麦克风（弹窗都没点完），
+        //    就被记成"体验过了"，下次进来只剩注册登录页。
+        //    他的原话：**「没用过，一进去就是登录页」**。
+        //
+        //    而**安卓那边是拿到非空结果才置位**的
+        //    （`TryActivity`：`if (fo.length() > 0) markTried(...)`）。
+        //    同一个标志两端两套判据，两边注释还各自说自己那套才对
+        //    —— 典型的「同一规则两处实现，悄悄走散」。
+        //    现在统一成安卓那套：**真出了结果才算体验过**。
+        //    见 `markTriedIfProduced(_:)`。
         // 🚨 权限还没决定就**先请求**，别直接走失败分支 ——
         //    第一次体验的人就是靠这一下拿到麦克风的。
         //    只在 `.undetermined` 时请求：已经被拒过的话系统不会再弹，
@@ -1848,6 +1875,9 @@ final class MainViewController: UIViewController {
                                 self.lastOut = en
                                 self.paintOutputButtons()
                                 self.setLine(idx, en)
+                                // 🚨 连续模式也要算 —— 少接一处的话，
+                                //    只用连续模式的人永远解锁不了。
+                                self.markTriedIfProduced(en)
                             case .failure(let e):
                                 self.setLine(idx, "\(e)")
                             }
@@ -1945,6 +1975,9 @@ final class MainViewController: UIViewController {
                     self.paintOutputButtons()
                     UIPasteboard.general.string = en   // 自动进剪贴板
                     self.lastOut = en                  // 给「🔊 朗读」用
+                    // 🚨 **真出了结果才算体验过** —— 跟安卓 `TryActivity`
+                    //    的 `if (fo.length() > 0) markTried(...)` 同一个判据。
+                    self.markTriedIfProduced(en)
                     self.paintOutputButtons()
                     self.setPhase(.idle, hint: "已复制 ✓　去微信长按输入框 → 粘贴\n再按一下麦克风说下一条")
                 case .failure(let err):
