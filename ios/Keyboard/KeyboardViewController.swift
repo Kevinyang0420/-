@@ -89,7 +89,21 @@ final class KeyboardViewController: UIInputViewController {
         DeviceId.ensure()
         // 🚨 底改成渐变（跟安卓一致）。平涂 Theme.bg 时，
         //    半透明按键透上来的是一片均匀的紫 —— Kevin 说的"太紫了"就是这么来的。
-        view.backgroundColor = .clear
+        //
+        // 🚨🚨 **`backgroundColor` 不能是 `.clear`** —— 这就是那条
+        //    反复被点名的「白下巴」（Kevin 2026-08-26：「底部『白下巴』问题
+        //    还是没解决，留白太长了，这个强调过很多次，务必处理」）。
+        //
+        //    机制：`home indicator` 那条安全区**不在我们的 `view.bounds` 里**，
+        //    渐变 CALayer 铺的是 bounds，铺不到那儿；系统用**键盘视图的
+        //    `backgroundColor`** 去填那一条。设成 `.clear` 就露出系统默认浅色
+        //    —— 那条浅色就是他看到的"白下巴"。
+        //
+        //    所以背景色设成渐变**最底下那一档**（`Theme.bgBot`），
+        //    跟渐变的末端接上，视觉上是连续的。
+        //    🚨 渐变层仍然照铺 —— 背景色只负责安全区那一条，
+        //       正文区域还是渐变，不会变回"一片均匀的紫"。
+        view.backgroundColor = Theme.bgBot
         bgLayer = Theme.keyboardBackground(view.bounds)
         view.layer.insertSublayer(bgLayer!, at: 0)
 
