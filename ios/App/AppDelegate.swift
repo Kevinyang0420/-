@@ -337,15 +337,18 @@ final class HomeViewController: UIViewController {
         //      点击直接进入账户设置页」）。
         //    挪到**导航栏左上角**：`person.circle` + 昵称，点了进账户页。
         //    🚨 没登录就不放这个按钮，不是变灰 —— 首页该干净。
-        if Auth.loggedIn {
-            let item = UIBarButtonItem(
-                image: UIImage(systemName: "person.circle"),
-                style: .plain, target: self, action: #selector(openAccount))
-            item.title = Auth.displayName
-            navigationItem.leftBarButtonItem = item
-        } else {
-            navigationItem.leftBarButtonItem = nil
-        }
+        // 🚨🚨 D2（Kevin 2026-08-26 拍板）：**未登录也显示**，
+        //    灰色小人轮廓，点进登录页。原来是"没登录就不放这个按钮" ——
+        //    那样用户根本找不到登录入口。
+        //    **一个入口两种状态**，不做成两套控件（产品经理点名：
+        //    那会变成两个配置点，改一处等于没改）。
+        let signedIn = Auth.loggedIn
+        let item = UIBarButtonItem(
+            image: UIImage(systemName: "person.circle"),
+            style: .plain, target: self, action: #selector(openAccount))
+        item.title = signedIn ? Auth.displayName : L.home_login
+        item.tintColor = signedIn ? Skin.text : Skin.dim
+        navigationItem.leftBarButtonItem = item
         let midItems: [UIView] = [logo, brand, zh, en]
         let mid = UIStackView(arrangedSubviews: midItems)
         mid.axis = .vertical
@@ -410,11 +413,17 @@ final class HomeViewController: UIViewController {
         bars.addArrangedSubview(Bars.make(L.home_try_speak, primary: true,
                                           target: self,
                                           action: #selector(openSpeak)))
+        // 🚨 未登录时保留「注册 / 登录」这一条 —— 首页有哪几条是**产品决定**。
         if !logged {
             bars.addArrangedSubview(Bars.make(L.home_login, primary: false,
                                               target: self,
                                               action: #selector(openLogin)))
-        } else {
+        }
+        // 🚨🚨 单词本和「设为输入法」**未登录时也显示**，点了出登录引导
+        //    （产品经理 2026-08-26 的 N1-c / N1-d）。
+        //    不显示的话用户根本不知道有这两个功能 ——
+        //    "登录能换来什么"必须看得见，否则没人有动机去登录。
+        do {
             bars.addArrangedSubview(Bars.make(L.home_wordbook, primary: false,
                                               target: self,
                                               action: #selector(openWordbook)))
@@ -454,11 +463,42 @@ final class HomeViewController: UIViewController {
     ///    `#selector` 只在**当前类**里找。第一版直接写了 `tapAccount`，
     ///    报 `cannot find 'tapAccount' in scope`。
     @objc private func openAccount() {
-        navigationController?.pushViewController(AccountViewController(),
-                                                 animated: true)
+        // 同一个入口：登录了进账户页，没登录进登录页。
+        navigationController?.pushViewController(
+            Auth.loggedIn ? AccountViewController() : LoginViewController(),
+            animated: true)
+    }
+
+    /// 登录引导。**一个函数管所有需要登录的入口**，理由写清楚。
+    ///
+    /// 产品经理 2026-08-26 的判据：
+    ///   · 出引导，**并说明为什么要登录**（只弹登录不说理由 = FAIL）
+    ///   · **退得回去**，退回后随手翻译照样能用（N1-e）
+    ///
+    /// 🚨 文案是他给的，**照抄，不许自己发挥**：
+    ///   · 不许出现"还能免费用 N 次" —— 核心翻译**不限次**，那句是假的
+    ///   · 不许写"解锁高级功能" —— 要说清解锁的是**哪个具体功能**
+    ///
+    /// 🚨 返回 true = 已登录、调用方接着做自己的事；
+    ///    返回 false = 已经弹了引导，调用方**必须直接返回**。
+    private func loginGate(_ why: String) -> Bool {
+        if Auth.loggedIn { return true }
+        let a = UIAlertController(title: nil, message: why,
+                                  preferredStyle: .alert)
+        a.addAction(UIAlertAction(title: L.login_gate_go,
+                                  style: .default) { [weak self] _ in
+            self?.navigationController?.pushViewController(
+                LoginViewController(), animated: true)
+        })
+        // 🚨 「以后再说」= N1-e 的退路。点了什么都不做，
+        //    首页原样留着，随手翻译照常能用。
+        a.addAction(UIAlertAction(title: L.login_gate_later, style: .cancel))
+        present(a, animated: true)
+        return false
     }
 
     @objc private func openWordbook() {
+        guard loginGate(L.login_gate_wordbook) else { return }
         let a = UIAlertController(title: L.home_wordbook,
                                   message: L.home_wordbook_soon,
                                   preferredStyle: .alert)
@@ -467,6 +507,7 @@ final class HomeViewController: UIViewController {
     }
 
     @objc private func openSetup() {
+        guard loginGate(L.login_gate_ime) else { return }
         navigationController?.pushViewController(SetupViewController(),
                                                  animated: true)
     }

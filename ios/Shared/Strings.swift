@@ -49,6 +49,10 @@ enum L {
     static var account_edit: String { s("点这里填写", "Tap to fill in", "點這裡填寫") }
     static var account_signout_ask: String { s("确定要退出登录吗？下次要重新收验证码。", "Sign out? You'll need a new code to sign back in.", "確定要登出嗎？下次要重新收驗證碼。") }
     static var save: String { s("保存", "Save", "儲存") }
+    static var login_gate_wordbook: String { s("登录后才能用单词本。随手翻译不用登录，一直都能用。", "Sign in to use the word book. Translate as you go never needs an account.", "登入後才能用單詞本。隨手翻譯不用登入，一直都能用。") }
+    static var login_gate_ime: String { s("登录后才能把 Transless 设成输入法。随手翻译不用登录，一直都能用。", "Sign in to set Transless as your keyboard. Translate as you go never needs an account.", "登入後才能把 Transless 設成輸入法。隨手翻譯不用登入，一直都能用。") }
+    static var login_gate_go: String { s("去登录", "Sign in", "去登入") }
+    static var login_gate_later: String { s("以后再说", "Not now", "以後再說") }
     static var profile_title: String { s("完善资料", "Set up your profile", "完善資料") }
     static var profile_sub: String { s("起个昵称，以后界面上就显示它，不用挂着一长串邮箱。", "Pick a nickname — it shows up instead of your full email.", "起個暱稱，以後介面上就顯示它，不用掛著一長串郵箱。") }
     static var profile_nick: String { s("昵称", "Nickname", "暱稱") }
