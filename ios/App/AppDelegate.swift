@@ -340,7 +340,7 @@ final class HomeViewController: UIViewController {
         if Auth.loggedIn {
             let item = UIBarButtonItem(
                 image: UIImage(systemName: "person.circle"),
-                style: .plain, target: self, action: #selector(tapAccount))
+                style: .plain, target: self, action: #selector(openAccount))
             item.title = Auth.displayName
             navigationItem.leftBarButtonItem = item
         } else {
@@ -449,6 +449,15 @@ final class HomeViewController: UIViewController {
 
     /// 单词本：还没做，但**给真反馈**，不做纯装饰按钮
     /// （`gate_no_dead_feature.py` 会拦装饰按钮）。
+    /// 左上角小人 -> 账户页。
+    /// 🚨 **不能复用 `PrefsViewController.tapAccount`** —— 那是另一个类的方法，
+    ///    `#selector` 只在**当前类**里找。第一版直接写了 `tapAccount`，
+    ///    报 `cannot find 'tapAccount' in scope`。
+    @objc private func openAccount() {
+        navigationController?.pushViewController(AccountViewController(),
+                                                 animated: true)
+    }
+
     @objc private func openWordbook() {
         let a = UIAlertController(title: L.home_wordbook,
                                   message: L.home_wordbook_soon,

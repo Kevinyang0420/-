@@ -36,6 +36,7 @@ enum L {
     static var home_wordbook_soon: String { s("单词本下个版本上线", "Word book is coming next version", "單詞本下個版本上線") }
     static var account_title: String { s("账户", "Account", "帳戶") }
     static var account_none: String { s("未登录", "Not signed in", "未登入") }
+    static var account_signout: String { s("退出登录", "Sign out", "登出") }
     static var account_signout_done: String { s("已退出登录", "Signed out", "已登出") }
     static var profile_year: String { s("年", "Year", "年") }
     static var profile_month: String { s("月", "Month", "月") }

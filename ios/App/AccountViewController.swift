@@ -130,7 +130,7 @@ final class AccountViewController: UIViewController {
             col.topAnchor.constraint(equalTo: box.topAnchor, constant: 14),
             col.bottomAnchor.constraint(equalTo: box.bottomAnchor, constant: -14),
         ])
-        editing[box] = id
+        fieldOf[box] = id
         box.addTarget(self, action: #selector(tapRow(_:)), for: .touchUpInside)
         return box
     }
@@ -138,10 +138,16 @@ final class AccountViewController: UIViewController {
     /// 哪个格子对应哪个字段。
     /// 🚨 用 map 而不是 `tag`：`tag` 是 Int，得再维护一张 id ↔ 数字的对照表，
     ///    那就是第二个配置点。
-    private var editing: [UIControl: String] = [:]
+    /// 🚨🚨 **不能叫 `editing`** —— `UIViewController` 自己就有一个
+    ///    `isEditing`/`editing` 属性（Bool），重名会被当成"覆盖父类属性"，
+    ///    编译报 `property 'editing' with type '[UIControl : String]'
+    ///    cannot override a property with type 'Bool'`。
+    ///    跟 `acct` 撞 POSIX 函数名是同一族：**起名前先想想这个作用域里
+    ///    有没有同名的东西**，尤其是继承来的。
+    private var fieldOf: [UIControl: String] = [:]
 
     @objc private func tapRow(_ sender: UIControl) {
-        guard let id = editing[sender] else { return }
+        guard let id = fieldOf[sender] else { return }
         // 🚨 邮箱不给改：它是**登录凭据**，不是资料。改了就跟登录态对不上了。
         if id == "account" {
             let a = UIAlertController(title: L.account_title,
