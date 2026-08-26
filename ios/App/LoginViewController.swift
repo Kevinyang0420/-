@@ -287,8 +287,21 @@ final class LoginViewController: UIViewController {
                     //    `acct` 在发起验证**之前**就取好了 ——
                     //    回调里输入框可能已经被清了。
                     Auth.setAccount(loginAccount)
-                    // 回首页 —— 那边会重建，「设为当前输入法」这时才冒出来
-                    s.navigationController?.popViewController(animated: true)
+                    // 🚨 昵称**没填过**才去完善资料（Kevin 2026-08-26：
+                    //    「让用户在注册时输入昵称和出生日期」）。
+                    //    判据是"填过没"而不是"是不是新注册" ——
+                    //    老用户也该有机会填一次，填过的不该被反复拦。
+                    //
+                    // 🚨 用 push **替换**掉 pop，不能两个都做：
+                    //    先 pop 再 push 的话，导航栈在同一帧里被动两次，
+                    //    完善资料页会带着一次可见的回退动画闪出来。
+                    if !Auth.hasNickname {
+                        s.navigationController?.pushViewController(
+                            ProfileViewController(), animated: true)
+                    } else {
+                        // 回首页 —— 那边会重建，「设为当前输入法」这时才冒出来
+                        s.navigationController?.popViewController(animated: true)
+                    }
                 case .failure(let e):
                     s.say(s.text(for: e), bad: true)
                 }

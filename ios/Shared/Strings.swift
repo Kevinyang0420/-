@@ -37,6 +37,16 @@ enum L {
     static var account_title: String { s("账户", "Account", "帳戶") }
     static var account_none: String { s("未登录", "Not signed in", "未登入") }
     static var account_signout_done: String { s("已退出登录", "Signed out", "已登出") }
+    static var profile_year: String { s("年", "Year", "年") }
+    static var profile_month: String { s("月", "Month", "月") }
+    static var profile_day: String { s("日", "Day", "日") }
+    static var profile_title: String { s("完善资料", "Set up your profile", "完善資料") }
+    static var profile_sub: String { s("起个昵称，以后界面上就显示它，不用挂着一长串邮箱。", "Pick a nickname — it shows up instead of your full email.", "起個暱稱，以後介面上就顯示它，不用掛著一長串郵箱。") }
+    static var profile_nick: String { s("昵称", "Nickname", "暱稱") }
+    static var profile_nick_ph: String { s("怎么称呼你", "What should we call you", "怎麼稱呼你") }
+    static var profile_birth: String { s("出生日期（选填）", "Date of birth (optional)", "出生日期（選填）") }
+    static var profile_birth_none: String { s("选填", "Optional", "選填") }
+    static var profile_done: String { s("完成", "Done", "完成") }
     static var home_login: String { s("注册 / 登录", "Sign in", "註冊 / 登錄") }
     static var home_set_ime: String { s("设为当前输入法", "Set as keyboard", "設為當前輸入法") }
     static var login_next_ver: String { s("登录功能下一版做", "Sign-in arrives in the next version", "登錄功能下一版做") }

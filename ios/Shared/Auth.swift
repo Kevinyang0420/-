@@ -166,6 +166,7 @@ enum Auth {
     private static let kUser = "transless.auth.userId"
     private static let kAccount = "transless.auth.account"
     private static let kNick = "transless.auth.nickname"
+    private static let kBirth = "auth_birthday"
 
     /// 登录了没有。
     static var loggedIn: Bool { current != nil }
@@ -194,6 +195,27 @@ enum Auth {
 
     static var account: String {
         UserDefaults.standard.string(forKey: kAccount) ?? ""
+    }
+
+    /// 出生日期，格式固定 `yyyy-MM-dd`（跟安卓 `Onboard.birthday` 同一口径）。
+    /// **没填就是空串**，不是某个默认日期 —— 存了假默认值以后
+    /// 就分不出"他生日就是这天"和"他压根没填"。
+    static func setBirthday(_ d: String) {
+        UserDefaults.standard.set(d, forKey: kBirth)
+    }
+
+    static var birthday: String {
+        UserDefaults.standard.string(forKey: kBirth) ?? ""
+    }
+
+    /// 昵称填过没 —— 决定登录之后要不要推「完善资料」。
+    ///
+    /// 🚨 判据是**昵称填过没**，不是"是不是新注册"：
+    ///    这个功能上线前就登录过的老用户也该有机会填一次，
+    ///    而填过的人不管登录多少次都不该再被拦。
+    static var hasNickname: Bool {
+        !(UserDefaults.standard.string(forKey: kNick) ?? "")
+            .trimmingCharacters(in: .whitespaces).isEmpty
     }
 
     static func setNickname(_ n: String) {

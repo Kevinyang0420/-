@@ -255,15 +255,22 @@ final class HomeViewController: UIViewController {
     ///    「设为当前输入法」永远出不来 —— 那种漏只在走到第三级时才现形。
     private var builtWithTried = false
     private var builtWithIme = false
+    /// 建的时候首页显示的名字。改了昵称回来要刷新 —— 见 viewWillAppear。
+    private var builtWithName = ""
     private var builtWithLogin = false
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
-        // 🚨 三个状态**都要盯**：少盯一个，那一种变化回到首页就不刷新。
-        //    「设完输入法回来那条还在」就是这么来的。
+        // 🚨🚨 **四个**状态都要盯：少盯一个，那一种变化回到首页就不刷新。
+        //    这条被同一族的 bug 打过两次：
+        //      · 「设完输入法回来那条还在」—— 当时只盯了 tried/login
+        //      · 「填完昵称回来首页还是旧名字」—— 当时漏了 displayName
+        //    2026-08-26 在安卓上实测抓到第二个（强制重启看得到新名字、
+        //    走 viewWillAppear 看到的是旧的），iOS 这边同型，一并修。
         if builtWithTried != Onboard.tried
             || builtWithLogin != Auth.loggedIn
+            || builtWithName != Auth.displayName
             || builtWithIme != SetupViewController.keyboardAdded() {
             // 状态变了：整页重搭（首页很轻，重搭比逐个增删可靠）
             view.subviews.forEach { $0.removeFromSuperview() }
@@ -275,6 +282,7 @@ final class HomeViewController: UIViewController {
         super.viewDidLoad()
         builtWithTried = Onboard.tried
         builtWithIme = SetupViewController.keyboardAdded()
+        builtWithName = Auth.displayName
         builtWithLogin = Auth.loggedIn
         UI.paintBg(self)
 
