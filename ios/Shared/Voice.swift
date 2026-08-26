@@ -56,6 +56,45 @@ final class Voice: NSObject {
     private(set) var running = false
     var elapsed: TimeInterval { running ? Date().timeIntervalSince(startedAt) : 0 }
 
+    /// 音频会话配置的**退让阶梯**。从独占到最朴素，逐档试。
+    ///
+    /// 🚨 顺序有讲究：第一档跟容器 App 里一直在用的那套一模一样
+    ///    （改动不许影响本来就好用的那一端）；后面几档才是给扩展退让用的。
+    static let audioLadder: [(cat: AVAudioSession.Category,
+                              mode: AVAudioSession.Mode,
+                              opts: AVAudioSession.CategoryOptions)] = [
+        (.record, .measurement, .duckOthers),
+        (.playAndRecord, .measurement, [.mixWithOthers, .defaultToSpeaker]),
+        (.playAndRecord, .default, [.mixWithOthers, .allowBluetooth,
+                                    .defaultToSpeaker]),
+        (.record, .default, []),
+    ]
+
+    /// 跑在扩展里还是容器 App 里。
+    /// 🚨 判据是 bundle 路径以 `.appex` 结尾 —— 这是系统给的事实，
+    ///    不是我们自己设的标志位（标志位会忘了设）。
+    static var inExtension: Bool {
+        Bundle.main.bundleURL.pathExtension == "appex"
+    }
+
+    /// 失败时附的现场。**故意写得啰嗦** —— 用户截一张图就该够我定性，
+    /// 不该再花一轮来回问「你当时是在键盘里还是在 App 里」。
+    static func context(rung: Int = -1) -> String {
+        let perm: String
+        switch AVAudioSession.sharedInstance().recordPermission {
+        case .granted: perm = "已授权"
+        case .denied: perm = "被拒绝"
+        default: perm = "还没问"
+        }
+        var out = " [" + (inExtension ? "键盘扩展" : "主App")
+        out += " 权限\(perm)"
+        if rung >= 0 { out += " 配置档\(rung + 1)" }
+        let r = AVAudioSession.sharedInstance().currentRoute
+        out += " 输入源\(r.inputs.count)个"
+        if let first = r.inputs.first { out += "(\(first.portType.rawValue))" }
+        return out + "]"
+    }
+
     static func permissionState() -> Failure? {
         if AVAudioSession.sharedInstance().recordPermission != .granted {
             return Failure(stage: .permissionMic, detail: "去 Transless App 里授权一次")
@@ -81,17 +120,48 @@ final class Voice: NSObject {
         finished = false
         startedAt = Date()
 
+        // 🚨🚨 **按阶梯试配置**，不是只试一档（2026-08-26 加）。
+        //    `.record + .measurement + .duckOthers` 在**容器 App** 里一直没问题，
+        //    但 Kevin 在**键盘扩展**里录不了音 ——
+        //    「录音引擎未能完成操作，com.apple.coreaudio.avfaudio 错误 200」。
+        //    扩展的音频会话限制比 App 严，独占型的类别/选项常被拒。
+        //    所以退让着试：独占 → 混音共存 → 最朴素。
+        //    哪一档成了就记下来（`usedRung`），失败时一起报出去。
         let session = AVAudioSession.sharedInstance()
-        do {
-            try session.setCategory(.record, mode: .measurement, options: .duckOthers)
-            try session.setActive(true, options: .notifyOthersOnDeactivation)
-        } catch {
-            let ns = error as NSError
-            return onWav(.failure(Failure(stage: .audioSession, detail: "code \(ns.code)")))
+        var sessionErr: NSError?
+        var usedRung = -1
+        for (i, rung) in Voice.audioLadder.enumerated() {
+            do {
+                try session.setCategory(rung.cat, mode: rung.mode, options: rung.opts)
+                try session.setActive(true, options: .notifyOthersOnDeactivation)
+                usedRung = i
+                break
+            } catch {
+                sessionErr = error as NSError
+                continue
+            }
+        }
+        if usedRung < 0 {
+            let ns = sessionErr
+            return onWav(.failure(Failure(
+                stage: .audioSession,
+                detail: "四档配置全被拒（最后一次 code \(ns?.code ?? -1)）"
+                    + Voice.context())))
         }
 
         let node = engine.inputNode
         let inFormat = node.outputFormat(forBus: 0)
+        // 🚨 会话激活成功 ≠ 麦克风路由可用。扩展里常见的形态是
+        //    `setActive` 过了、但输入节点是 0 Hz / 0 声道 ——
+        //    再往下走只会在 `engine.start()` 抛一个看不懂的错误码。
+        //    在这里就拦住，并说清是"拿不到麦克风"而不是"引擎坏了"。
+        if inFormat.sampleRate <= 0 || inFormat.channelCount == 0 {
+            cleanup()
+            return onWav(.failure(Failure(
+                stage: .engine,
+                detail: "拿不到麦克风输入（格式 \(inFormat.sampleRate)Hz/"
+                    + "\(inFormat.channelCount)ch）" + Voice.context(rung: usedRung))))
+        }
         // 目标格式：16k 单声道 Int16。用转换器把麦克风原始格式转过来。
         guard let outFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
                                             sampleRate: Voice.SAMPLE_RATE,
@@ -155,7 +225,15 @@ final class Voice: NSObject {
         do { try engine.start() }
         catch {
             cleanup()
-            return onWav(.failure(Failure(stage: .engine, detail: error.localizedDescription)))
+            // 🚨 **把现场带上**。原来只报 `localizedDescription`，
+            //    到用户手里就是「com.apple.coreaudio.avfaudio 错误 200」——
+            //    那句话对定位一点用都没有，害我们多花了一轮才找到方向。
+            let ns = error as NSError
+            return onWav(.failure(Failure(
+                stage: .engine,
+                detail: "\(ns.domain) \(ns.code)"
+                    + " 输入 \(Int(inFormat.sampleRate))Hz/\(inFormat.channelCount)ch"
+                    + Voice.context(rung: usedRung))))
         }
 
         running = true

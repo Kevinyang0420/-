@@ -159,6 +159,18 @@ targets:
         CFBundleDisplayName: Transless
         CFBundleShortVersionString: "20260826.520"
         CFBundleVersion: "520"
+        # 🚨🚨 **键盘扩展自己也要声明麦克风**（2026-08-26 补）。
+        #    Kevin 真机反馈：主 App 的「随手翻译」能正常录音，
+        #    但同一台机、同一个已授权的麦克风，**键盘里录不了**，
+        #    报「录音引擎未能完成操作，com.apple.coreaudio.avfaudio 错误 200」。
+        #    查下来：`NSMicrophoneUsageDescription` **只写在容器 App 那边，
+        #    这个扩展 target 一条都没有**。扩展是独立 bundle、独立 Info.plist，
+        #    跟"资源和码表只给容器 App 就等于扩展里没有"完全同型。
+        #    ⚠️ 这是**强候选，不是已证实的根因** —— 真机还没复测。
+        #    所以同时改了 `Voice.swift`：失败时把「哪一环、什么格式、
+        #    什么类别、权限什么状态」全报出来，下次截个图就能定性。
+        NSMicrophoneUsageDescription: 用来听你说的中文，转成文字后整理并译成英文。
+        NSSpeechRecognitionUsageDescription: 把你说的话转成文字，只在你按下麦克风时进行。
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController

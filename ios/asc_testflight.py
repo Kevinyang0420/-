@@ -22,6 +22,9 @@ APP_BID = "com.kevin.transless"
 GROUP = "Internal"
 TESTER = ("kevinyang5425@gmail.com", "Kevin", "Yang")
 ENSURE = "--ensure" in sys.argv
+# 🚨 `--build <版本>` 用来**钉死操作对象**。不指定就按版本号数值挑最新。
+WANT_BUILD = next((v for f, v in zip(sys.argv, sys.argv[1:])
+                   if f == "--build"), None)
 
 
 def one(c, path, want_key=None):
@@ -46,26 +49,62 @@ def main():
           % (app["attributes"]["name"], APP_BID, app["id"]))
 
     # ---- 最新构建
-    builds = one(c, "/apps/%s/builds?limit=10" % app["id"])
+    # 🚨🚨 **服务端排序 + 拉够数量**（2026-08-26 又被坑了一次）：
+    #    `?limit=10` 那个窗口**本身不按上传时间排**，刚传上去的 516 / 520
+    #    直接不在窗口里 —— 于是"按上传时间挑"只是在一堆旧包里挑最新的旧包。
+    #    表现极像"苹果还在处理"，其实是**我根本没看到它**。
+    #    2026-08-25 那次修的是"别信 builds[0]"，方向对但没修够：
+    #    排序修对了，**取样范围没修**。
+    # 🚨 这个端点**不接受 `sort`**（试过：`400 The parameter 'sort' can not be
+    #    used with this request`），所以只能把窗口拉大再自己排。
+    builds = one(c, "/apps/%s/builds?limit=200" % app["id"])
     if not builds:
         sys.exit("FAIL: 这个 App 一个构建都没有 —— 先跑 CI 上传")
-    # 🚨 **按上传时间挑，不信接口顺序**（2026-08-25 实测被坑）：
-    #    那次 API 返回的是 464 / 5 / 465，最新的 465 排在最后，
-    #    取 builds[0] 就把 464 当成了最新，新包传上去却没进测试组。
-    #    接口从没承诺过顺序，是我当它有。
+
+    def _vnum(x):
+        v = (x.get("attributes") or {}).get("version") or ""
+        return int(v) if v.isdigit() else -1
+
     def _up(x):
         return (x.get("attributes") or {}).get("uploadedDate") or ""
-    builds = sorted(builds, key=_up, reverse=True)
-    b = builds[0]
-    if len(builds) > 1:
-        print("  （候选 %s，按上传时间挑了 %s）"
-              % ("/".join((x.get("attributes") or {}).get("version", "?")
-                          for x in builds[:4]),
-                 (b.get("attributes") or {}).get("version", "?")))
+
+    if WANT_BUILD:
+        # 🚨 指定版本时**必须真的找到它**，找不到就报错退出 ——
+        #    悄悄退回"最新的那个"会让我在错的包上填合规、加错的包进测试组。
+        hit = [x for x in builds if (x.get("attributes") or {}).get("version")
+               == WANT_BUILD]
+        if not hit:
+            sys.exit("FAIL: ASC 上没有构建 %s（现有：%s）—— 可能苹果还在处理"
+                     % (WANT_BUILD,
+                        ", ".join(sorted((x.get("attributes") or {}).get(
+                            "version", "?") for x in builds), reverse=True)[:200]))
+        b = hit[0]
+        print("  （指定了构建 %s）" % WANT_BUILD)
+    else:
+        # 🚨 按**版本号数值**挑，不按"不等于上一次"。
+        #    版本号是我们自己单调递增发的，数值最大的就是最新的；
+        #    上传时间只在数值并列时当次序。
+        b = sorted(builds, key=lambda x: (_vnum(x), _up(x)), reverse=True)[0]
+        print("  （%d 个构建，按版本号挑了 %s；最近几个：%s）"
+              % (len(builds), (b.get("attributes") or {}).get("version", "?"),
+                 "/".join(str(v) for v in sorted(
+                     (_vnum(x) for x in builds), reverse=True)[:5])))
     st = b["attributes"].get("processingState")
-    print("最新构建 : 版本 %s  %s  合规=%s"
-          % (b["attributes"].get("version"), st,
-             b["attributes"].get("usesNonExemptEncryption")))
+    # 🚨 `usesNonExemptEncryption` 是**布尔**：
+    #      None  = 没答  -> TestFlight 显示 Missing Compliance，谁都测不了
+    #      False = 已声明"**不含**非豁免加密" -> 正常，可测
+    #      True  = 用了，要交文档
+    #    原来直接打 `合规=False`，读起来像"合规：否"，
+    #    实际意思是"使用非豁免加密：否" —— 2026-08-26 我和总协调
+    #    **各被这一个字坑了一次**，都以为它挡着验收。措辞本身就是 bug。
+    _enc = b["attributes"].get("usesNonExemptEncryption")
+    _enc_txt = ("🚨 没答（TestFlight 会显示 Missing Compliance，装不了）"
+                if _enc is None else
+                "已声明不含非豁免加密 ✓" if _enc is False else
+                "声明了含非豁免加密（要交文档）")
+    print("最新构建 : 版本 %s  %s"
+          % (b["attributes"].get("version"), st))
+    print("出口合规 : %s" % _enc_txt)
 
     if ENSURE and st == "PROCESSING":
         print("  等苹果处理完……")
