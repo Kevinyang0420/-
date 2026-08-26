@@ -34,6 +34,9 @@ enum L {
     static var ui_lang: String { s("zh", "en", "zh") }
     static var home_wordbook: String { s("单词本", "Word book", "單詞本") }
     static var home_wordbook_soon: String { s("单词本下个版本上线", "Word book is coming next version", "單詞本下個版本上線") }
+    static var account_title: String { s("账户", "Account", "帳戶") }
+    static var account_none: String { s("未登录", "Not signed in", "未登入") }
+    static var account_signout_done: String { s("已退出登录", "Signed out", "已登出") }
     static var home_login: String { s("注册 / 登录", "Sign in", "註冊 / 登錄") }
     static var home_set_ime: String { s("设为当前输入法", "Set as keyboard", "設為當前輸入法") }
     static var login_next_ver: String { s("登录功能下一版做", "Sign-in arrives in the next version", "登錄功能下一版做") }

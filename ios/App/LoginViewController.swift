@@ -273,12 +273,20 @@ final class LoginViewController: UIViewController {
         guard !c.isEmpty else { say(L.login_need_code, bad: true); return }
         loginButton.isEnabled = false
         say(L.login_checking, bad: false)
+        // 🚨 在发起验证**之前**把账号取好 —— 成功回调里输入框可能已被清空。
+        //    🚨 变量别叫 `acct`：那是 POSIX 的函数名，Swift 会解析成函数引用
+        //       （报「cannot convert (UnsafePointer<CChar>?) -> Int32 to String」）。
+        let loginAccount = t
         Auth.verify(kind, t, code: c) { [weak self] r in
             DispatchQueue.main.async {
                 guard let s = self else { return }
                 s.loginButton.isEnabled = true
                 switch r {
                 case .success:
+                    // 🚨 记下账号给界面显示用（首页昵称 / 设置页账户栏目）。
+                    //    `acct` 在发起验证**之前**就取好了 ——
+                    //    回调里输入框可能已经被清了。
+                    Auth.setAccount(loginAccount)
                     // 回首页 —— 那边会重建，「设为当前输入法」这时才冒出来
                     s.navigationController?.popViewController(animated: true)
                 case .failure(let e):

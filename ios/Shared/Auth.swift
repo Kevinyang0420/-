@@ -164,6 +164,8 @@ enum Auth {
     // MARK: - 会话存储
 
     private static let kUser = "transless.auth.userId"
+    private static let kAccount = "transless.auth.account"
+    private static let kNick = "transless.auth.nickname"
 
     /// 登录了没有。
     static var loggedIn: Bool { current != nil }
@@ -180,6 +182,39 @@ enum Auth {
 
     static func signOut() {
         UserDefaults.standard.removeObject(forKey: kUser)
+        UserDefaults.standard.removeObject(forKey: kAccount)
+    }
+
+    // MARK: - 账号显示（跟安卓 `Onboard` 同口径）
+
+    /// 登录用的账号（邮箱或手机号）。**只为了显示**，不参与鉴权。
+    static func setAccount(_ a: String) {
+        UserDefaults.standard.set(a, forKey: kAccount)
+    }
+
+    static var account: String {
+        UserDefaults.standard.string(forKey: kAccount) ?? ""
+    }
+
+    static func setNickname(_ n: String) {
+        UserDefaults.standard.set(n, forKey: kNick)
+    }
+
+    /// 首页顶部显示的名字。
+    ///
+    /// 🚨 **不要把一长串邮箱挂在首页**（Kevin 2026-08-26：
+    ///    「账号尽量加个昵称，不要把那么长的邮箱一直放在左上角」）。
+    ///    真昵称要用户注册时填、且要后端加字段；在那之前用
+    ///    **邮箱 @ 前那一截**兜底 —— 那已经是他自己起的名字了。
+    ///    手机号只留后四位。
+    ///    🚨 截取逻辑**只有这一份**，界面层不许再抄一遍。
+    static var displayName: String {
+        let n = UserDefaults.standard.string(forKey: kNick) ?? ""
+        if !n.isEmpty { return n }
+        let a = account
+        if let at = a.firstIndex(of: "@") { return String(a[a.startIndex..<at]) }
+        if a.count >= 4 { return "***" + String(a.suffix(4)) }
+        return a
     }
 
     // MARK: - 网络

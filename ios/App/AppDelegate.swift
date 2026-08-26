@@ -323,12 +323,23 @@ final class HomeViewController: UIViewController {
         let en = UI.label(Brand.sloganEn, size: Skin.sloganEnSize,
                           kern: Skin.sloganEnKern, color: Skin.dim,
                           weight: .light)
-        let mid = UIStackView(arrangedSubviews: [logo, brand, zh, en])
+        // 🚨 登录后在 slogan 下面显示**昵称**（Kevin 2026-08-26：
+        //    「登录完之后应该有个地方显示我的登录状态」
+        //    +「账号尽量加个昵称，不要把那么长的邮箱一直放在左上角」）。
+        //    名字取自 `Auth.displayName` —— 截取逻辑只有那一份，这里不再抄。
+        var midItems: [UIView] = [logo, brand, zh, en]
+        if Auth.loggedIn {
+            let who = UI.label(Auth.displayName, size: 13, kern: 0,
+                               color: Skin.dim, weight: .regular)
+            midItems.append(who)
+        }
+        let mid = UIStackView(arrangedSubviews: midItems)
         mid.axis = .vertical
         mid.alignment = .center
         mid.setCustomSpacing(21, after: logo)
         mid.setCustomSpacing(9, after: brand)
         mid.setCustomSpacing(5, after: zh)
+        mid.setCustomSpacing(12, after: en)
 
         let wrap = UIView()
         wrap.addSubview(mid)
@@ -829,6 +840,14 @@ final class PrefsViewController: UIViewController {
         // ① 输入法
         list.addArrangedSubview(group(L.prefs_g_ime))
         let on = SetupViewController.keyboardAdded()
+        // 🚨 「账户」放**第一行** —— Kevin：「设置里应该有个账户栏目，
+        //    能看到我是用哪个账户登录的」。
+        //    这里显示**完整账号**（跟首页那行昵称不同）：
+        //    设置页就是查看账户的地方。
+        list.addArrangedSubview(row(
+            L.account_title,
+            Auth.account.isEmpty ? L.account_none : Auth.account,
+            #selector(tapAccount)))
         list.addArrangedSubview(row(L.home_set_ime,
                                     on ? L.prefs_ime_on : L.prefs_ime_off,
                                     #selector(openSetup)))
@@ -954,6 +973,22 @@ final class PrefsViewController: UIViewController {
     ///    `cannot find 'openPrivacy' in scope`。
     ///    **「在哪儿定义」跟「定义什么」一样重要**（今天第三次栽在这上面）。
     private static let privacyURL = "https://transless.net/privacy.html"
+
+    /// 账户行：登录了就退出登录，没登录就去登录。
+    @objc private func tapAccount() {
+        if Auth.loggedIn {
+            Auth.signOut()
+            let a = UIAlertController(title: nil, message: L.account_signout_done,
+                                      preferredStyle: .alert)
+            a.addAction(UIAlertAction(title: "OK", style: .default))
+            present(a, animated: true)
+            // 🚨 重建，否则这一行还显示着刚退掉的那个账号
+            viewDidLoad()
+        } else {
+            navigationController?.pushViewController(LoginViewController(),
+                                                     animated: true)
+        }
+    }
 
     @objc private func openPrivacy() {
         guard let u = URL(string: Self.privacyURL) else { return }

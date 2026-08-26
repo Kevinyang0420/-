@@ -234,7 +234,13 @@ def check_mic_bar():
     square = ("micButton.widthAnchor.constraint(equalToConstant: Theme.micBarHeight)" in code
               and "micButton.heightAnchor.constraint(equalToConstant: Theme.micBarHeight)" in code)
     centered = "micButton.centerXAnchor" in code
-    not_full = "micButton.leadingAnchor" not in code
+    # 🚨 判据必须挂在「micButton 自己被约束」上，不能裸搜子串。
+    #    2026-08-26 踩到：反向钮那条 `revButton.trailingAnchor.constraint(
+    #    equalTo: micButton.leadingAnchor …)` 里 micButton 是**参照物**，
+    #    裸子串把「别人参照我」误判成「我被左右拉满」→ 整个文件在版式闸门
+    #    就 return 1，**后面真正的网络契约检查一次都没跑过**。
+    #    误报比漏报更贵：它让真规则从没生效，而表面上天天有人在跑这个测试。
+    not_full = not re.search(r"micButton\.(leading|trailing)Anchor\.constraint", code)
     return square and centered and not_full, square, centered, not_full, ""
 
 
