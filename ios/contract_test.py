@@ -25,7 +25,7 @@ sys.stderr.reconfigure(encoding="utf-8")
 HERE = os.path.dirname(os.path.abspath(__file__))
 SWIFT = os.path.join(HERE, "Shared", "Backend.swift")
 COACH = r"D:\OneDrive\OneDrive - personal\OneDrive\Claude\english_coach"
-BASE = "https://sqg75i2mlmanf4sqde6nh.apigateway-cn-beijing.volceapi.com"
+BASE = "https://s473bcc0af89cidqeqrdr.apigateway-cn-beijing.volceapi.com"
 
 
 def swift_accepted_codes():
