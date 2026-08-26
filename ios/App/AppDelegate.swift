@@ -2018,10 +2018,16 @@ final class MainViewController: UIViewController {
 final class KeyboardPreviewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .clear
-        let bg = Theme.keyboardBackground(UIScreen.main.bounds)
-        bg.frame = UIScreen.main.bounds
-        view.layer.insertSublayer(bg, at: 0)
+        // 🚨🚨 预览壳的底**故意用一个跟键盘完全不同的纯色**（2026-08-26 改）。
+        //    原来这里铺的是 `Theme.keyboardBackground` —— **跟键盘自己的底
+        //    一模一样**，于是截图上"键盘从哪儿开始"根本看不出边界，
+        //    量高度的脚本只能退而求其次去找"第一行有结构的内容"，
+        //    量到的是**内容顶边**而不是键盘视图的高度：
+        //    语音面板和打字键盘的内边距不同，就会量出假的高度差。
+        //    换成纯色之后，"不是这个色的那一块"就是键盘，边界是硬的。
+        //    🚨 只影响预览页（`TRANSLESS_PAGE=kb`），正式界面没有入口。
+        view.backgroundColor = UIColor(red: 0.10, green: 0.42, blue: 0.16,
+                                       alpha: 1)   // 深绿，键盘配色里没有
 
         let fake = UILabel()
         fake.text = "  预览：真实键盘扩展（KeyboardViewController）"
@@ -2054,6 +2060,22 @@ final class KeyboardPreviewController: UIViewController {
             kb.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             kb.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+
+        // 🚨 预览页切到打字键盘并跳到指定档位（**只给截图/量高度用**，
+        //    正式界面没有入口 —— 走的是环境变量 `TRANSLESS_KB_MODE`）。
+        //
+        // 🚨 这个环境变量原来挂在 `_OldFakeKeyboardPreview` 上，而那个类
+        //    **已经没有任何入口引用**（它自己的注释就这么写着）——
+        //    也就是说它是**死的**。我第一次截各档位的图时被它骗了：
+        //    设了 mode、截出来三张一模一样的语音面板，还差点交出去。
+        //    现在接到**真的那个键盘**上。
+        if let m = ProcessInfo.processInfo.environment["TRANSLESS_KB_MODE"],
+           !m.isEmpty {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                kb.showTyping()
+                if m != "pinyin" { kb.typingView?.debugMode(m) }
+            }
+        }
     }
 }
 

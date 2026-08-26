@@ -64,7 +64,9 @@ final class KeyboardViewController: UIInputViewController {
     /// 最后一次上屏的结果 —— 「朗读」要用。
     private var lastOut = ""
 
-    private var typingView: TypingKeyboardView?
+    /// 🚨 只为**预览页**能切到打字键盘各档（截图/量高度）。
+    ///    正式界面里没有任何地方从外部碰它。
+    var typingView: TypingKeyboardView?   // 截图/预览用：放开可见性
     private var voiceRoot: UIStackView?
     private var heightC: NSLayoutConstraint?
     /// 第一次显示时要不要直接进打字键盘。见 `viewDidLoad` 里的说明。
@@ -436,7 +438,7 @@ final class KeyboardViewController: UIInputViewController {
     // MARK: - 语音面板 / 打字键盘 切换
 
     /// 切到打字键盘。**懒建**，第一次点才创建。
-    @objc private func showTyping() {
+    @objc func showTyping() {   // 截图/预览用：放开可见性
         if typingView == nil {
             let t = TypingKeyboardView()
             t.translatesAutoresizingMaskIntoConstraints = false
