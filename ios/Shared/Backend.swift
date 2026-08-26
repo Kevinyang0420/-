@@ -6,7 +6,24 @@ import Foundation
 ///    （2026-08-20 实测撞过）。
 enum Backend {
 
-    static let base = "https://sqg75i2mlmanf4sqde6nh.apigateway-cn-beijing.volceapi.com"
+    /// 后端地址。
+    ///
+    /// 🚨🚨 **想切到 Transless 自己那个函数就把 `USE_SPLIT` 改成 true。**
+    ///    Transless 2026-08-26 已从 Alex 拆成独立云函数
+    ///    （Alex `a6w6d6bm` ／ Transless `gu06v3lj`），靠 `/t` 路由前缀分流。
+    ///
+    /// 🚨 **现在暂时指回 Alex，因为 `/t` 那条路当天就坏了**：
+    ///    12:00 实测还好（零重叠、登录端到端通），12:20 再测变成
+    ///    `HTTP 404 {"error":"没有这个文件：/t/api/health"}` ——
+    ///    注意那是**我们自己的 404**（带中文 error），说明请求打到了函数，
+    ///    但 `/t` 前缀没被 `URLRewrite` 剥掉。多半是路由配置被动过。
+    ///    带着这个地址出包 = 发一个开机就废的 App，所以先切回来。
+    ///
+    /// 判据别用"两边返回一样"（两个函数跑同一份代码，本来就一样，
+    /// 那是同源自比），用 `/api/health` 的 **instance 指纹**。
+    /// 守这条的闸门：`D:\_build\gate_backend_split.py`。
+    private static let useSplitBackend = false
+    static let base = "https://sqg75i2mlmanf4sqde6nh.apigateway-cn-beijing.volceapi.com" + (useSplitBackend ? "/t" : "")
 
     enum Failure: Error, CustomStringConvertible {
         case http(Int)

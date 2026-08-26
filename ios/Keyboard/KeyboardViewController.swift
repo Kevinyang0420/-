@@ -36,6 +36,34 @@ final class KeyboardViewController: UIInputViewController {
     private let fallbackButton = UIButton(type: .system)
     /// 打字键盘（字母/符号）。**懒建**：没点 Type 之前不占内存 ——
     /// 键盘扩展的内存上限很紧（约 60MB），建了不用是浪费。
+    // ---- 语音面板的控件（照搬安卓 `buildVoicePanel()` 的结构）----
+    private let tabTranslate = UIButton(type: .system)
+    private let tabTranscribe = UIButton(type: .system)
+    private let langButton = UIButton(type: .system)
+    private let histButton = UIButton(type: .system)
+    private let modeZhButton = UIButton(type: .system)
+    private let modeRawButton = UIButton(type: .system)
+    private let typeButton = UIButton(type: .system)
+    private let speakButton = UIButton(type: .system)
+    private let sendButton = UIButton(type: .system)
+    private lazy var toneButtons: [UIButton] =
+        Prompts.all.map { _ in UIButton(type: .system) }
+    /// 语言那格的等宽约束 —— 隐藏它时要一起关掉（见 `paintMode`）。
+    private var langWidthC: NSLayoutConstraint?
+    private var toneRow: UIStackView?
+    private var transRow: UIStackView?
+    private var historyPanel: UIView?
+
+    /// 当前档位。**跟主 App 用同一个 key**（`vime.mode`），
+    /// 否则在键盘里切了档、回 App 一看还是老的。
+    private var mode: Backend.Mode =
+        Backend.Mode(rawValue: UserDefaults.standard
+            .string(forKey: "vime.mode") ?? "en") ?? .en
+    private var lang: String =
+        UserDefaults.standard.string(forKey: "vime.lang") ?? "en"
+    /// 最后一次上屏的结果 —— 「朗读」要用。
+    private var lastOut = ""
+
     private var typingView: TypingKeyboardView?
     private var voiceRoot: UIStackView?
     private var heightC: NSLayoutConstraint?
@@ -50,6 +78,8 @@ final class KeyboardViewController: UIInputViewController {
     //    表现就是「选了键盘却弹回上一个」且没有明显报错。录音引擎等第一次按麦克风再建。
     private lazy var voice = Voice()
     private var phase: Phase = .idle
+    /// 进入 thinking 的时刻 —— 用来判"是不是卡死了"。
+    private var thinkingSince = Date()
 
     // MARK: - 界面
 
@@ -63,33 +93,22 @@ final class KeyboardViewController: UIInputViewController {
         bgLayer = Theme.keyboardBackground(view.bounds)
         view.layer.insertSublayer(bgLayer!, at: 0)
 
-        // 🚨 **这里查得到**「允许完全访问」（`hasFullAccess` 是扩展侧的 API，
-        //    容器 App 拿不到）。没开就在键盘上直说 ——
-        //    判据要放在查得到的地方，而不是在 App 里猜。
-        if !hasFullAccess {
-            let warn = UILabel()
-            warn.text = L.kb_need_full
-            warn.font = .systemFont(ofSize: 12)
-            warn.textColor = Theme.danger
-            warn.numberOfLines = 2
-            warn.textAlignment = .center
-            warn.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview(warn)
-            NSLayoutConstraint.activate([
-                warn.leadingAnchor.constraint(equalTo: view.leadingAnchor,
-                                              constant: 8),
-                warn.trailingAnchor.constraint(equalTo: view.trailingAnchor,
-                                               constant: -8),
-                warn.topAnchor.constraint(equalTo: view.topAnchor, constant: 4),
-            ])
-            fullAccessWarning = warn
-        }
+        // 🚨🚨 「允许完全访问」的提示**不在这里建**（2026-08-26 修）。
+        //    原来在 viewDidLoad 里判 `hasFullAccess`，两个致命问题：
+        //      ① 这个属性在 viewDidLoad 时**本来就不可靠** ——
+        //         扩展刚起来时常读到 false，哪怕用户早就开了
+        //      ② 建出来之后**全文件没有任何移除逻辑**，
+        //         于是那行红字一旦出现就永远挂在键盘顶上
+        //    Kevin 2026-08-26 真机撞到：「为什么这个红字会显示出来？」
+        //    → 搬到 `viewWillAppear`，**每次弹键盘都重判**，有权限就摘掉。
 
-        // 🚨 起手就是**打字键盘**，跟安卓一致（真机截图 `_kb_idle.png`：
-        //    键盘一弹出来是字母 + 候选栏，左上角波形键才是去语音的入口）。
-        //    放在 viewDidAppear 而不是这里 —— 这会儿子视图还没布好，
-        //    高度约束会被随后的初始布局盖掉。
-        needsInitialTyping = true
+        // 🚨🚨 起手是**语音面板**，不是打字键盘 —— 这才是跟安卓一致。
+        //    安卓 `VoiceImeService.onStartInputView()` 里明明白白写着
+        //    `showTyping(false)`：每次弹出键盘都回到语音面板。
+        //    上一版这里写 `needsInitialTyping = true`，注释还说"跟安卓一致"
+        //    —— **那句注释是错的**，谁都没去对一眼安卓代码。
+        //    （Kevin 2026-08-26 真机截图对比后发现两端差一大截。）
+        needsInitialTyping = false
 
         hintLabel.font = .systemFont(ofSize: 13)
         hintLabel.textColor = Theme.dim
@@ -120,65 +139,282 @@ final class KeyboardViewController: UIInputViewController {
         micButton.topAnchor.constraint(equalTo: micWrap.topAnchor).isActive = true
         micButton.bottomAnchor.constraint(equalTo: micWrap.bottomAnchor).isActive = true
 
-        // 底部一排都做小，别跟主按钮抢注意力
-        let globe = smallButton("🌐")
-        globe.addTarget(self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
+        // ---------------------------------------------------------------
+        // 顶排：[翻译] [English ▾] (logo) [转写] [历史]
+        // 🚨 **照搬安卓 `buildVoicePanel()`**，不是重新设计。
+        //    安卓那边四格等宽 + logo 固定宽插正中间，顺序是
+        //    「翻译·语言 | logo | 转写·历史」—— 语言是**翻译的参数**，
+        //    所以挨着翻译放（Kevin 2026-08-22 专门调过这个顺序）。
+        // ---------------------------------------------------------------
+        tabTranslate.setTitle(L.kb_translate, for: .normal)
+        tabTranscribe.setTitle(L.kb_transcribe, for: .normal)
+        langButton.setTitle(langTitle() + " ▾", for: .normal)
+        histButton.setTitle(L.kb_history, for: .normal)
+        for b in [tabTranslate, langButton, tabTranscribe, histButton] {
+            b.titleLabel?.font = .systemFont(ofSize: 13)
+            b.titleLabel?.adjustsFontSizeToFitWidth = true
+            b.titleLabel?.minimumScaleFactor = 0.7
+            b.layer.cornerRadius = 8
+            b.backgroundColor = Theme.key
+            b.setTitleColor(Theme.dim, for: .normal)
+        }
+        tabTranslate.addTarget(self, action: #selector(pickTranslate),
+                               for: .touchUpInside)
+        tabTranscribe.addTarget(self, action: #selector(pickTranscribe),
+                                for: .touchUpInside)
+        langButton.addTarget(self, action: #selector(cycleLang),
+                             for: .touchUpInside)
+        histButton.addTarget(self, action: #selector(showHistory),
+                             for: .touchUpInside)
 
-        toneButton.setTitle(toneTitle(), for: .normal)
-        toneButton.titleLabel?.font = .systemFont(ofSize: 13)
-        toneButton.setTitleColor(Theme.dim, for: .normal)
-        toneButton.backgroundColor = Theme.key
-        toneButton.layer.cornerRadius = 8
-        toneButton.addTarget(self, action: #selector(cycleTone), for: .touchUpInside)
+        let logo = UIImageView(image: UIImage(named: "logo"))
+        logo.contentMode = .scaleAspectFit
+        logo.alpha = 0.55
+        logo.translatesAutoresizingMaskIntoConstraints = false
+        logo.widthAnchor.constraint(equalToConstant: 26).isActive = true
 
-        fallbackButton.setTitle(L.kb_tr_before, for: .normal)
-        fallbackButton.titleLabel?.font = .systemFont(ofSize: 13)
-        fallbackButton.setTitleColor(Theme.dim, for: .normal)
-        fallbackButton.backgroundColor = Theme.key
-        fallbackButton.layer.cornerRadius = 8
-        fallbackButton.addTarget(self, action: #selector(translatePending), for: .touchUpInside)
+        let top = UIStackView(arrangedSubviews:
+            [tabTranslate, langButton, logo, tabTranscribe, histButton])
+        top.axis = .horizontal
+        top.spacing = 6
+        top.distribution = .fill
+        // 四个格子等宽，logo 固定 —— 跟安卓一样让 logo 落在正中心
+        //
+        // 🚨🚨 `langButton` 那条等宽**必须存下来、隐藏时关掉**。
+        //    UIStackView 里隐藏一个 arrangedSubview 会把它的尺寸压成 0，
+        //    而"等于 tabTranslate 宽"这条约束还生效 —— 两边打架，
+        //    整排布局在切到「转写」那一下崩掉（交叉审查 H3）。
+        //    另外两个（转写/历史）不会隐藏，所以直接 active 就行。
+        for b in [tabTranscribe, histButton] {
+            b.widthAnchor.constraint(equalTo: tabTranslate.widthAnchor)
+                .isActive = true
+        }
+        let langW = langButton.widthAnchor.constraint(
+            equalTo: tabTranslate.widthAnchor)
+        langW.isActive = true
+        langWidthC = langW
+        top.heightAnchor.constraint(equalToConstant: 34).isActive = true
 
-        let del = smallButton("⌫")
+        // ---------------------------------------------------------------
+        // 第二排：翻译档 → 语气三档；转写档 → 整理/逐字
+        // 🚨 两排装在**同一个固定高度的容器**里，切档时键盘高度不跳。
+        //    安卓那边正是为这个才加的 `subWrap`（Kevin 2026-08-21：
+        //    「点翻译是一个高度，点转写它又长高了一点」）。
+        // ---------------------------------------------------------------
+        for (i, b) in toneButtons.enumerated() {
+            b.setTitle(Prompts.label(Prompts.all[i]), for: .normal)
+            b.titleLabel?.font = .systemFont(ofSize: 13)
+            b.layer.cornerRadius = 8
+            b.tag = i
+            b.addTarget(self, action: #selector(pickTone(_:)),
+                        for: .touchUpInside)
+        }
+        let toneRow = UIStackView(arrangedSubviews: toneButtons)
+        toneRow.axis = .horizontal
+        toneRow.spacing = 6
+        toneRow.distribution = .fillEqually
+
+        modeZhButton.setTitle(L.kb_polish, for: .normal)
+        modeRawButton.setTitle(L.kb_verbatim, for: .normal)
+        for b in [modeZhButton, modeRawButton] {
+            b.titleLabel?.font = .systemFont(ofSize: 13)
+            b.layer.cornerRadius = 8
+        }
+        modeZhButton.addTarget(self, action: #selector(pickPolish),
+                               for: .touchUpInside)
+        modeRawButton.addTarget(self, action: #selector(pickVerbatim),
+                                for: .touchUpInside)
+        let transRow = UIStackView(arrangedSubviews:
+            [modeZhButton, modeRawButton])
+        transRow.axis = .horizontal
+        transRow.spacing = 6
+        transRow.distribution = .fillEqually
+
+        let subWrap = UIView()
+        subWrap.translatesAutoresizingMaskIntoConstraints = false
+        subWrap.heightAnchor.constraint(equalToConstant: 32).isActive = true
+        for r in [toneRow, transRow] {
+            r.translatesAutoresizingMaskIntoConstraints = false
+            subWrap.addSubview(r)
+            NSLayoutConstraint.activate([
+                r.leadingAnchor.constraint(equalTo: subWrap.leadingAnchor),
+                r.trailingAnchor.constraint(equalTo: subWrap.trailingAnchor),
+                r.topAnchor.constraint(equalTo: subWrap.topAnchor),
+                r.bottomAnchor.constraint(equalTo: subWrap.bottomAnchor),
+            ])
+        }
+        self.toneRow = toneRow
+        self.transRow = transRow
+
+        // ---------------------------------------------------------------
+        // 底排：[🌐] [⌨ 打字] [🔊 朗读] [⌫] [发送]
+        // 🚨 安卓是四格 [打字][朗读][⌫][发送]；iOS 多一个 `🌐` ——
+        //    那是**平台必需**的（切回系统键盘的唯一入口，安卓由系统提供）。
+        //    这是两端唯一允许的差异，别顺手删掉。
+        // ---------------------------------------------------------------
+        // 🚨 **不用 emoji 当图标**：emoji 由系统按彩色渲染，
+        //    在深色键盘上是一颗突兀的蓝绿地球（Kevin：「很丑」）。
+        //    下面这套参数是 **Grok 评审给的**，不是我自己挑的
+        //    （Kevin：「你不要自己设计了…UI 的东西你问 Grok」）：
+        //      符号 globe/keyboard/speaker.wave.2/delete.left
+        //      字重 .medium · 尺寸 22pt · 颜色 white α0.85 · .alwaysTemplate
+        let globe = smallButton("")
+        globe.setImage(Self.kbIcon("globe"), for: .normal)
+        globe.tintColor = Self.iconTint
+        globe.addTarget(self, action: #selector(handleInputModeList(from:with:)),
+                        for: .allTouchEvents)
+
+        // 🚨 文案里**不再带 emoji**：`L.kb_type` 原来是「⌨  打字」，
+        //    那个 ⌨ 在 iOS 上是彩色 emoji，跟旁边的 SF Symbol 风格打架。
+        //    图标改用 `setImage`，文字只留「打字」。
+        typeButton.setTitle(L.kb_type_plain, for: .normal)
+        typeButton.setImage(Self.kbIcon("keyboard"), for: .normal)
+        speakButton.setTitle(L.kb_speak, for: .normal)
+        speakButton.setImage(Self.kbIcon("speaker.wave.2"), for: .normal)
+        sendButton.setTitle(L.kb_send, for: .normal)   // 发送保持纯文字
+        for b in [typeButton, speakButton, sendButton] {
+            b.titleLabel?.font = .systemFont(ofSize: 13)
+            b.layer.cornerRadius = 8
+            b.backgroundColor = Theme.key
+            b.setTitleColor(Theme.text, for: .normal)
+        }
+        // 图标在左、文字在右，间距 6pt（Grok 给的值）
+        for b in [typeButton, speakButton] {
+            b.tintColor = Self.iconTint
+            b.configuration = nil
+            b.imageEdgeInsets = UIEdgeInsets(top: 0, left: -3, bottom: 0, right: 3)
+            b.titleEdgeInsets = UIEdgeInsets(top: 0, left: 3, bottom: 0, right: -3)
+        }
+        // 发送是主操作，用强调色（跟安卓一致）
+        sendButton.backgroundColor = Theme.accent
+        sendButton.setTitleColor(.white, for: .normal)
+        speakButton.isEnabled = false        // 没内容可念时不给点
+        typeButton.addTarget(self, action: #selector(showTyping),
+                             for: .touchUpInside)
+        speakButton.addTarget(self, action: #selector(tapSpeak),
+                              for: .touchUpInside)
+        sendButton.addTarget(self, action: #selector(tapSend),
+                             for: .touchUpInside)
+
+        // 同上：⌫ 那个 emoji 在深色底上是蓝色的，跟整块配色打架。
+        let del = smallButton("")
+        del.setImage(Self.kbIcon("delete.left"), for: .normal)
+        del.tintColor = Self.iconTint
         del.addTarget(self, action: #selector(backspace), for: .touchUpInside)
 
-        // 🚨 这里**不再有**「⌨ 打字」键。安卓的结构是：
-        //    键盘默认就是打字键盘，候选栏左上角的波形键切来语音；
-        //    语音面板这一屏靠 `onSwitchToVoice` 的反向操作回去。
-        //    （原来 iOS 是反的 —— 默认语音、底排挂个 Type 键，
-        //     于是同一个 App 在两个平台上打开键盘看到的东西完全不同。）
         let bottom = UIStackView(arrangedSubviews:
-            [globe, toneButton, fallbackButton, del])
+            [globe, typeButton, speakButton, del, sendButton])
         bottom.axis = .horizontal
+        // Grok：键间距统一 8pt；五个键统一高度 44pt（iOS 最小可点区域）
         bottom.spacing = 8
-        globe.widthAnchor.constraint(equalToConstant: 44).isActive = true
-        del.widthAnchor.constraint(equalToConstant: 44).isActive = true
-        toneButton.widthAnchor.constraint(equalToConstant: 56).isActive = true
-        bottom.heightAnchor.constraint(equalToConstant: 38).isActive = true
+        globe.widthAnchor.constraint(equalToConstant: 46).isActive = true
+        del.widthAnchor.constraint(equalToConstant: 46).isActive = true
+        for b in [globe, del] {
+            b.backgroundColor = Theme.key
+            b.layer.cornerRadius = 8
+        }
+        // 🚨 三个文字键**等宽**。不加这条的话 UIStackView 的 `.fill`
+        //    会按 hugging 优先级分配剩余空间，「打字」被拉得老长
+        //    （截图里那格宽得离谱），跟安卓四格均分完全不是一回事。
+        speakButton.widthAnchor.constraint(
+            equalTo: typeButton.widthAnchor).isActive = true
+        sendButton.widthAnchor.constraint(
+            equalTo: typeButton.widthAnchor).isActive = true
+        bottom.heightAnchor.constraint(equalToConstant: 44).isActive = true
 
-        let root = UIStackView(arrangedSubviews: [hintLabel, heardLabel, micWrap, bottom])
+        let root = UIStackView(arrangedSubviews:
+            [top, subWrap, hintLabel, micWrap, bottom])
         root.axis = .vertical
-        root.spacing = 10
+        root.spacing = 8
         root.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(root)
         voiceRoot = root
         // 🚨 高度要能改：打字键盘比语音面板高。存下这个约束，切换时改 constant。
-        let hc = view.heightAnchor.constraint(equalToConstant: 250)
+        let hc = view.heightAnchor.constraint(equalToConstant: 300)
         heightC = hc
         NSLayoutConstraint.activate([
-            root.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
-            root.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
-            root.topAnchor.constraint(equalTo: view.topAnchor, constant: 10),
+            root.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
+            root.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -10),
+            root.topAnchor.constraint(equalTo: view.topAnchor, constant: 8),
+            // 🚨🚨 **bottom 必须约束**，否则 root 的高度由内容决定，
+            //    键盘下面留一条空白 —— Kevin 2026-08-26：「你现在这个下巴
+            //    这么大，根本就没有铺上」。原来只有 top + 固定 height，
+            //    内容自然撑不满那 250/300。
+            root.bottomAnchor.constraint(equalTo: view.bottomAnchor,
+                                         constant: -6),
             hc,
         ])
+        paintMode()
     }
 
+    // MARK: - 每次弹出键盘都重判「完全访问」
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshFullAccessWarning()
+    }
+
+    // 🚨🚨 `hasFullAccess` **在扩展刚起来时会读到 false**，哪怕用户早就开了。
+    //    Kevin 2026-08-26：「我已经确认我加了这个权限了，但是它还是会
+    //    一直出来」。所以判据必须**多个时机各判一次** ——
+    //    只判一次的那一次很可能恰好是不准的那一次。
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        refreshFullAccessWarning()
+        // 再延迟补一次：扩展的权限状态偶尔要过一拍才准。
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+            self?.refreshFullAccessWarning()
+        }
         if needsInitialTyping {
             needsInitialTyping = false
             showTyping()
         }
     }
+
+    /// 宿主输入框内容变了 —— 这时候扩展肯定已经完全就绪，
+    /// `hasFullAccess` 在这里最可信。
+    override func textDidChange(_ textInput: UITextInput?) {
+        super.textDidChange(textInput)
+        refreshFullAccessWarning()
+    }
+
+    /// 「允许完全访问」的提示：**每次弹键盘都重判**，有权限就摘掉。
+    ///
+    /// 🚨 不能只判一次：`hasFullAccess` 在 `viewDidLoad` 时不可靠，
+    ///    而且用户可能中途去设置里开了 —— 开完回来红字还挂着的话，
+    ///    他会以为没生效（Kevin 2026-08-26 真机撞到）。
+    private func refreshFullAccessWarning() {
+        if hasFullAccess {
+            fullAccessWarning?.removeFromSuperview()
+            fullAccessWarning = nil
+            return
+        }
+        if fullAccessWarning != nil { return }
+        // 🚨 **不再是一行裸红字**（Kevin：「上面还有那条红字」「很碍眼」）。
+        //    Grok 给的方案：淡红底的「轻警告条」+ 橙色警示图标，
+        //    保留警示感但不刺眼。数值照抄，没有自己调。
+        let warn = PaddedLabel()
+        warn.text = "  " + L.kb_need_full_short
+        warn.font = .systemFont(ofSize: 12)
+        warn.textColor = UIColor(red: 1, green: 0.847, blue: 0.847, alpha: 1)
+        warn.numberOfLines = 1
+        warn.adjustsFontSizeToFitWidth = true
+        warn.minimumScaleFactor = 0.85
+        warn.textAlignment = .center
+        warn.backgroundColor = UIColor(red: 1, green: 0.3, blue: 0.3,
+                                       alpha: 0.12)
+        warn.layer.cornerRadius = 8
+        warn.layer.masksToBounds = true
+        warn.heightAnchor.constraint(equalToConstant: 32).isActive = true
+        // 🚨🚨 **插进 root 当第一行**，不要绝对定位。
+        //    绝对定位（贴 top 或 bottom）会**压住按钮** ——
+        //    贴底压着「打字/朗读/⌫/发送」，贴顶压着「翻译/英文/转写/历史」。
+        //    进了 stack 就自己占一行，谁都不挡。
+        voiceRoot?.insertArrangedSubview(warn, at: 0)
+        fullAccessWarning = warn
+    }
+
+
 
     // MARK: - 语音面板 / 打字键盘 切换
 
@@ -244,6 +480,215 @@ final class KeyboardViewController: UIInputViewController {
         heightC?.constant = 250
     }
 
+    // MARK: - 顶排/第二排的行为（照搬安卓）
+
+    @objc private func pickTranslate() { setMode(.en) }
+
+    /// 从翻译切过来时落在「整理」；已经在转写档就保持原来那一档。
+    /// 🚨 跟安卓 `tabTranscribe.onClick` 一字不差 —— 别自己改成"总是落整理"。
+    @objc private func pickTranscribe() { setMode(mode == .raw ? .raw : .zh) }
+
+    @objc private func pickPolish() { setMode(.zh) }
+    @objc private func pickVerbatim() { setMode(.raw) }
+
+    private func setMode(_ m: Backend.Mode) {
+        mode = m
+        UserDefaults.standard.set(m.rawValue, forKey: "vime.mode")
+        paintMode()
+    }
+
+    @objc private func pickTone(_ b: UIButton) {
+        guard b.tag < Prompts.all.count else { return }
+        tone = Prompts.all[b.tag]
+        UserDefaults.standard.set(tone, forKey: "vime.tone")
+        paintMode()
+    }
+
+    /// 语言在支持的清单里循环。
+    /// 🚨 清单**从 `Backend.langs` 取**，不在这里再抄一份 ——
+    ///    安卓那边为这个栽过（手写的清单漏了新加的语言，同型第三次）。
+    @objc private func cycleLang() {
+        let all = Backend.langs.map { $0.code }
+        let i = all.firstIndex(of: lang) ?? 0
+        lang = all[(i + 1) % all.count]
+        UserDefaults.standard.set(lang, forKey: "vime.lang")
+        langButton.setTitle(langTitle() + " ▾", for: .normal)
+    }
+
+    private func langTitle() -> String { Backend.langLabel(lang) }
+
+    /// 按当前档位刷新两排的高亮和显隐。跟安卓 `paintTones()` + `setMode()` 一致。
+    private func paintMode() {
+        let isTranslate = (mode == .en)
+        tabTranslate.backgroundColor = isTranslate ? Theme.accent : Theme.key
+        tabTranslate.setTitleColor(isTranslate ? .white : Theme.dim,
+                                   for: .normal)
+        tabTranscribe.backgroundColor = isTranslate ? Theme.key : Theme.accent
+        tabTranscribe.setTitleColor(isTranslate ? Theme.dim : .white,
+                                    for: .normal)
+        // 🚨 语言只在翻译档有意义 —— 转写是「听到什么写什么」，跟目标语言无关。
+        //    安卓那边也是这么藏的。
+        langButton.isHidden = !isTranslate
+        // 🚨 跟着一起关，见上面那条注释：隐藏 + 等宽约束同时在会打架。
+        langWidthC?.isActive = isTranslate
+        toneRow?.isHidden = !isTranslate
+        transRow?.isHidden = isTranslate
+        for (i, b) in toneButtons.enumerated() {
+            let on = (Prompts.all[i] == tone)
+            b.backgroundColor = on ? Theme.accent : Theme.key
+            b.setTitleColor(on ? .white : Theme.dim, for: .normal)
+        }
+        modeZhButton.backgroundColor = (mode == .zh) ? Theme.accent : Theme.key
+        modeZhButton.setTitleColor(mode == .zh ? .white : Theme.dim,
+                                   for: .normal)
+        modeRawButton.backgroundColor = (mode == .raw) ? Theme.accent : Theme.key
+        modeRawButton.setTitleColor(mode == .raw ? .white : Theme.dim,
+                                    for: .normal)
+    }
+
+    // MARK: - 底排
+
+    /// 朗读最后一次上屏的结果。没有内容时按钮本来就是禁用的。
+    ///
+    /// 🚨 走主 App 同一条路：`Backend.speak` 拿 mp3 → `Speaker.play`。
+    ///    我第一版凭印象写了 `Speaker.speak(_:lang:)` 和 `Backend.tts`
+    ///    —— **两个都不存在**。这是今晚第三次凭印象写 API 了，
+    ///    以后引用任何跨文件的方法先 grep 一遍再写。
+    @objc private func tapSpeak() {
+        if Speaker.isPlaying {
+            Speaker.stop()
+            speakButton.setTitle(L.kb_speak, for: .normal)
+            return
+        }
+        let t = lastOut.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return }
+        speakButton.setTitle("…", for: .normal)
+        Backend.speak(text: t) { [weak self] r in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                switch r {
+                case .failure:
+                    self.speakButton.setTitle(L.kb_speak, for: .normal)
+                case .success(let mp3):
+                    Speaker.play(mp3) { [weak self] _ in
+                        DispatchQueue.main.async {
+                            self?.speakButton.setTitle(L.kb_speak, for: .normal)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// 「发送」：把宿主输入框里的内容提交。
+    ///
+    /// 🚨 iOS **没有安卓那个 `sendDefaultEditorAction`** —— 扩展只能通过
+    ///    `textDocumentProxy` 插入字符。对多数聊天 App 来说插入换行
+    ///    就是发送；对不吃换行的，用户还得自己按一下。
+    ///    这是平台限制，不是偷懒；写在这里免得下次有人以为是 bug。
+    @objc private func tapSend() {
+        textDocumentProxy.insertText("\n")
+    }
+
+    // MARK: - 历史
+
+    @objc private func showHistory() {
+        if historyPanel != nil { hideHistory(); return }
+        let items = History.list()
+        let panel = UIView()
+        panel.backgroundColor = Theme.bg
+        panel.translatesAutoresizingMaskIntoConstraints = false
+
+        let back = UIButton(type: .system)
+        back.setTitle("‹ " + L.kb_history, for: .normal)
+        back.titleLabel?.font = .systemFont(ofSize: 15)
+        back.setTitleColor(Theme.text, for: .normal)
+        back.addTarget(self, action: #selector(hideHistory),
+                       for: .touchUpInside)
+
+        let list = UIStackView()
+        list.axis = .vertical
+        list.spacing = 6
+        if items.isEmpty {
+            let e = UILabel()
+            e.text = L.kb_history_none
+            e.font = .systemFont(ofSize: 13)
+            e.textColor = Theme.dim
+            e.textAlignment = .center
+            list.addArrangedSubview(e)
+        } else {
+            // 🚨 只铺前 8 条。键盘扩展内存紧（~60MB），
+            //    50 条全建出来没必要 —— 要翻更多去 App 里看。
+            for it in items.prefix(8) {
+                let b = UIButton(type: .system)
+                b.contentHorizontalAlignment = .left
+                b.titleLabel?.font = .systemFont(ofSize: 13)
+                b.titleLabel?.lineBreakMode = .byTruncatingTail
+                b.setTitle(History.label(it) + "  " + it.out, for: .normal)
+                b.setTitleColor(Theme.text, for: .normal)
+                b.accessibilityValue = it.out
+                b.addTarget(self, action: #selector(insertHistory(_:)),
+                            for: .touchUpInside)
+                list.addArrangedSubview(b)
+            }
+        }
+        let scroll = UIScrollView()
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        list.translatesAutoresizingMaskIntoConstraints = false
+        scroll.addSubview(list)
+        panel.addSubview(back)
+        panel.addSubview(scroll)
+        back.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(panel)
+        NSLayoutConstraint.activate([
+            panel.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            panel.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            panel.topAnchor.constraint(equalTo: view.topAnchor),
+            panel.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            back.topAnchor.constraint(equalTo: panel.topAnchor, constant: 8),
+            back.leadingAnchor.constraint(equalTo: panel.leadingAnchor,
+                                          constant: 12),
+            scroll.topAnchor.constraint(equalTo: back.bottomAnchor, constant: 6),
+            scroll.leadingAnchor.constraint(equalTo: panel.leadingAnchor,
+                                            constant: 12),
+            scroll.trailingAnchor.constraint(equalTo: panel.trailingAnchor,
+                                             constant: -12),
+            scroll.bottomAnchor.constraint(equalTo: panel.bottomAnchor,
+                                           constant: -8),
+            list.topAnchor.constraint(equalTo: scroll.topAnchor),
+            list.leadingAnchor.constraint(equalTo: scroll.leadingAnchor),
+            list.trailingAnchor.constraint(equalTo: scroll.trailingAnchor),
+            list.bottomAnchor.constraint(equalTo: scroll.bottomAnchor),
+            list.widthAnchor.constraint(equalTo: scroll.widthAnchor),
+        ])
+        historyPanel = panel
+    }
+
+    @objc private func hideHistory() {
+        historyPanel?.removeFromSuperview()
+        historyPanel = nil
+    }
+
+    @objc private func insertHistory(_ b: UIButton) {
+        if let t = b.accessibilityValue, !t.isEmpty {
+            textDocumentProxy.insertText(t)
+        }
+        hideHistory()
+    }
+
+    // MARK: - 图标统一（参数来自 Grok 评审，别自己改）
+
+    /// 底排图标的统一色：白 α0.85。**不用系统灰** —— Grok 指名这一条，
+    /// 系统灰在深色紫底上发冷、跟旁边带文字的键不是一个观感。
+    static let iconTint = UIColor.white.withAlphaComponent(0.85)
+
+    /// 统一规格的 SF Symbol：22pt / .medium / alwaysTemplate。
+    static func kbIcon(_ name: String) -> UIImage? {
+        let cfg = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
+        return UIImage(systemName: name, withConfiguration: cfg)?
+            .withRenderingMode(.alwaysTemplate)
+    }
+
     private func smallButton(_ t: String) -> UIButton {
         let b = UIButton(type: .system)
         b.setTitle(t, for: .normal)
@@ -267,6 +712,7 @@ final class KeyboardViewController: UIInputViewController {
     @objc private func backspace() { textDocumentProxy.deleteBackward() }
 
     private func setPhase(_ p: Phase, hint: String) {
+        if p == .thinking && phase != .thinking { thinkingSince = Date() }
         phase = p
         hintLabel.text = hint
         switch p {
@@ -294,7 +740,17 @@ final class KeyboardViewController: UIInputViewController {
 
     @objc private func tapMic() {
         if phase == .listening { stopListening(); return }
-        if phase == .thinking { return }
+        // 🚨🚨 thinking 必须有出口（交叉审查 H4，安卓修过同型的）。
+        //    后端挂了/回调没来时，`phase` 会永远停在 thinking，
+        //    麦克风从此点不动 —— 用户只能杀掉宿主 App 才恢复。
+        //    超过 90 秒还在 thinking 就当它死了，放行重来。
+        if phase == .thinking {
+            if Date().timeIntervalSince(thinkingSince) > 90 {
+                setPhase(.idle, hint: "")
+            } else {
+                return
+            }
+        }
 
         heardLabel.text = ""
         setPhase(.listening, hint: "")
@@ -361,6 +817,20 @@ final class KeyboardViewController: UIInputViewController {
                 guard let self = self else { return }
                 switch result {
                 case .success(let en):
+                    // 🚨🚨 **先落历史 + 存 lastOut，再上屏** —— 顺序不许倒。
+                    //    照搬安卓那条血泪注释（他们 2026-08-23 交叉审查 H4）：
+                    //    上屏那一步可能失败（输入框失焦、宿主换了），
+                    //    而后端已经算完、钱也花了。先落历史，
+                    //    至少还留着"去历史里再点一次"这条退路。
+                    //
+                    //    🚨 这两行今天被交叉审查抓出来是**完全漏掉的**：
+                    //    我加了 `History` 类和「朗读」按钮，却没有任何地方
+                    //    调 `History.add()`、也没给 `lastOut` 赋值 ——
+                    //    两个新功能都是空壳（历史永远空、朗读永远没内容）。
+                    History.add(mode: mode.rawValue, tone: self.tone,
+                                zh: zh, out: en)
+                    self.lastOut = en
+                    self.speakButton.isEnabled = true
                     for _ in 0..<replaceChars { self.textDocumentProxy.deleteBackward() }
                     self.textDocumentProxy.insertText(en)
                     self.heardLabel.text = ""
@@ -382,5 +852,13 @@ final class KeyboardViewController: UIInputViewController {
         super.viewDidLayoutSubviews()
         bgLayer?.frame = view.bounds
         bgLayer?.sublayers?.forEach { $0.frame = view.bounds }
+    }
+}
+
+/// 键盘上带内边距的 label（轻警告条用）。
+private final class PaddedLabel: UILabel {
+    override func drawText(in rect: CGRect) {
+        super.drawText(in: rect.inset(by: UIEdgeInsets(top: 0, left: 16,
+                                                       bottom: 0, right: 16)))
     }
 }

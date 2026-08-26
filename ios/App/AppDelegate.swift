@@ -254,12 +254,17 @@ final class HomeViewController: UIViewController {
     /// 🚨 **两个状态都要记**：只记 `tried` 的话，登录完回来首页不会变，
     ///    「设为当前输入法」永远出不来 —— 那种漏只在走到第三级时才现形。
     private var builtWithTried = false
+    private var builtWithIme = false
     private var builtWithLogin = false
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
-        if builtWithTried != Onboard.tried || builtWithLogin != Auth.loggedIn {
+        // 🚨 三个状态**都要盯**：少盯一个，那一种变化回到首页就不刷新。
+        //    「设完输入法回来那条还在」就是这么来的。
+        if builtWithTried != Onboard.tried
+            || builtWithLogin != Auth.loggedIn
+            || builtWithIme != SetupViewController.keyboardAdded() {
             // 状态变了：整页重搭（首页很轻，重搭比逐个增删可靠）
             view.subviews.forEach { $0.removeFromSuperview() }
             viewDidLoad()
@@ -269,6 +274,7 @@ final class HomeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         builtWithTried = Onboard.tried
+        builtWithIme = SetupViewController.keyboardAdded()
         builtWithLogin = Auth.loggedIn
         UI.paintBg(self)
 
@@ -352,26 +358,47 @@ final class HomeViewController: UIViewController {
         //    判断一旦出错（重装 App、换设备、本地标记丢），就会把人锁在门外，
         //    而"App 自作主张不让我用"正是他反复骂过的那类。
         //    先上顺序和主次这一半；真要硬锁再加，一行的事。
-        bars.addArrangedSubview(Bars.make(L.home_try_speak, primary: true,
-                                          target: self,
-                                          action: #selector(openSpeak)))
-        // 🚨🚨 **三级解锁**，每一级都是"不建那个按钮"而不是置灰
-        //    （置灰会留一个点不动的东西在那儿，比不显示更让人困惑）：
-        //      ① 没体验过       → 只有「说一段试试」
-        //      ② 体验过、没登录 → 加「注册 / 登录」
-        //      ③ 登录了         → 加「设为当前输入法」
-        //    Kevin 2026-08-25：「必须让他试的，然后才会出现『注册登录』
-        //    和『设为当前输入法』的按钮」＋「用户必须先注册和登录，
-        //    然后才能设置为默认输入法」。
-        if Onboard.tried {
-            bars.addArrangedSubview(Bars.make(L.home_login, primary: false,
+        // 🚨🚨 **四态**（跟安卓 `SettingsActivity` 一字不差）：
+        //      ① 全新用户        → **强制体验**：只有「随手翻译」
+        //      ② 体验完、没登录  → **有且仅有**「注册 / 登录」
+        //         Kevin 2026-08-26：「它绝对不能跟注册登录放在同一个界面」
+        //         「全新用户的时候，就不要有那个虚线出来了」
+        //      ③ 登录了、没设输入法 → 「随手翻译」「单词本」「设为默认输入法」
+        //      ④ 设完输入法      → 设输入法那条**消失**（一次性配置）
+        //
+        // 🚨 修两个 bug（他自己撞到的，安卓那边同型）：
+        //    · 登录后还显示「注册/登录」—— 原来 `if Onboard.tried` 漏判 loggedIn
+        //    · 设完输入法那条不消失 —— 原来没判"是不是已经设好了"
+        let tried = Onboard.tried
+        let logged = Auth.loggedIn
+        let imeAdded = SetupViewController.keyboardAdded()
+
+        if !tried {
+            // ① 强制体验
+            bars.addArrangedSubview(Bars.make(L.home_try_speak, primary: true,
                                               target: self,
-                                              action: #selector(loginSoon)))
-        }
-        if Onboard.tried && Auth.loggedIn {
-            bars.addArrangedSubview(Bars.make(L.home_set_ime, primary: false,
+                                              action: #selector(openSpeak)))
+        } else if !logged {
+            // ② 有且仅有注册登录
+            bars.addArrangedSubview(Bars.make(L.home_login, primary: true,
                                               target: self,
-                                              action: #selector(openSetup)))
+                                              action: #selector(openLogin)))
+        } else {
+            // ③④ 功能菜单
+            bars.addArrangedSubview(Bars.make(L.home_try_speak, primary: true,
+                                              target: self,
+                                              action: #selector(openSpeak)))
+            bars.addArrangedSubview(Bars.make(L.home_wordbook, primary: false,
+                                              target: self,
+                                              action: #selector(openWordbook)))
+            if !imeAdded {
+                // 🚨 只在**还没设**时出现。设完就消失 —— Kevin：
+                //    「这其实是初始化时的一步配置，配置完就该消失」。
+                bars.addArrangedSubview(Bars.make(L.home_set_ime,
+                                                  primary: false,
+                                                  target: self,
+                                                  action: #selector(openSetup)))
+            }
         }
         root.addArrangedSubview(bars)
     }
@@ -381,12 +408,26 @@ final class HomeViewController: UIViewController {
         UI.resizeBg(self)
     }
 
-    @objc private func loginSoon() {
+    /// 打开注册/登录页。
+    ///
+    /// 🚨 方法名以前叫 `loginSoon` —— 那是"下个版本再说"时代留下的，
+    ///    现在它跳的是真登录页，名字却还在说"soon"，读代码的人会误判。
+    @objc private func openLogin() {
         // 🚨 以前这里只弹一句"下个版本"。后端 2026-08-25 已经全链路跑通
         //    （Supabase users 表 + 阿里云短信），Kevin：「注册登录已经 OK 了…
         //    那就把注册登录给做实吧」。
         navigationController?.pushViewController(LoginViewController(),
                                                  animated: true)
+    }
+
+    /// 单词本：还没做，但**给真反馈**，不做纯装饰按钮
+    /// （`gate_no_dead_feature.py` 会拦装饰按钮）。
+    @objc private func openWordbook() {
+        let a = UIAlertController(title: L.home_wordbook,
+                                  message: L.home_wordbook_soon,
+                                  preferredStyle: .alert)
+        a.addAction(UIAlertAction(title: "OK", style: .default))
+        present(a, animated: true)
     }
 
     @objc private func openSetup() {
@@ -1273,7 +1314,10 @@ final class MainViewController: UIViewController {
         bigButton.addTarget(self, action: #selector(tapBig),
                             for: .touchUpInside)
 
-        revButton.setTitle(L.try_reverse, for: .normal)
+        // 🚨 按钮文字**就是当前方向**（Kevin 2026-08-26：
+        //    「我点一下『对方说』就能变成『我说』」）。
+        //    只靠底色区分，用户回头看想不起来现在是哪个方向。
+        revButton.setTitle(L.try_dir_me, for: .normal)
         revButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
         revButton.titleLabel?.adjustsFontSizeToFitWidth = true
         revButton.titleLabel?.minimumScaleFactor = 0.7
@@ -1414,7 +1458,9 @@ final class MainViewController: UIViewController {
             Speaker.stop()
             speakButton.setTitle(L.kb_speak, for: .normal)
             bigButton.setTitle(L.try_bigtext, for: .normal)
-            revButton.setTitle(L.try_reverse, for: .normal)
+            revButton.setTitle(
+                reversed ? L.try_dir_them : L.try_dir_me,
+                for: .normal)
             return
         }
         let text = lastOut.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1774,6 +1820,8 @@ final class MainViewController: UIViewController {
     @objc private func tapReverse() {
         if phase != .idle { return }
         reversed.toggle()
+        revButton.setTitle(reversed ? L.try_dir_them : L.try_dir_me,
+                           for: .normal)
         revButton.backgroundColor = reversed ? Theme.accent : Theme.key
         revButton.setTitleColor(reversed ? .white : Theme.text, for: .normal)
         hintLabel.text = reversed ? L.try_reverse_on : ""
@@ -1870,7 +1918,62 @@ final class MainViewController: UIViewController {
 
 /// 把打字键盘按**它在键盘扩展里的真实高度**摆出来，贴在屏幕底部。
 /// 上面留一个假的输入框，好看清键盘和输入区的相对关系（跟安卓截图对齐用）。
+/// 键盘预览：**把真的 `KeyboardViewController` 嵌进来跑**。
+///
+/// 🚨🚨 上一版是我自己摆的一个假页面（直接 new 一个 `TypingKeyboardView`），
+///    于是截图永远显示"打字键盘、跟安卓一致"，
+///    而用户打开键盘看到的是语音面板、比安卓少两整行 ——
+///    我"验过"的每一次都是白验。**判据挂在了错的对象上。**
+///    （Kevin 2026-08-26 真机截图打脸后重写。）
+///
+/// 🚨 仍有两处跟真扩展不同，**写清楚，别当等价**：
+///    ① 没有宿主输入框，`textDocumentProxy` 是空的 → 能验版面，不能验上屏
+///    ② `hasFullAccess` 在容器 App 里恒 false → 预览里会看到那行红字，
+///       那是预览环境的限制，不代表真机也这样
 final class KeyboardPreviewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .clear
+        let bg = Theme.keyboardBackground(UIScreen.main.bounds)
+        bg.frame = UIScreen.main.bounds
+        view.layer.insertSublayer(bg, at: 0)
+
+        let fake = UILabel()
+        fake.text = "  预览：真实键盘扩展（KeyboardViewController）"
+        fake.font = .systemFont(ofSize: 13)
+        fake.textColor = Theme.dim
+        fake.backgroundColor = UIColor.white.withAlphaComponent(0.08)
+        fake.layer.cornerRadius = 8
+        fake.layer.masksToBounds = true
+        fake.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(fake)
+
+        // 🚨 **真的那个类**，不是复刻。改了键盘，这里跟着变；
+        //    改漏了，这里也一眼看得出来。
+        let kb = KeyboardViewController()
+        addChild(kb)
+        kb.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(kb.view)
+        kb.didMove(toParent: self)
+
+        NSLayoutConstraint.activate([
+            fake.topAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+            fake.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+                                          constant: 12),
+            fake.trailingAnchor.constraint(equalTo: view.trailingAnchor,
+                                           constant: -12),
+            fake.heightAnchor.constraint(equalToConstant: 40),
+
+            kb.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            kb.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            kb.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+    }
+}
+
+// 下面这个是**旧的假预览**，留着只为对照，不再被任何入口引用。
+private final class _OldFakeKeyboardPreview: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // 🚨🚨 预览页**必须复刻键盘扩展里的环境**，否则截出来的图不代表真相。

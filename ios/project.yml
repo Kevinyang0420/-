@@ -25,6 +25,13 @@ targets:
     sources:
       - path: App
       - path: Shared
+      # 🚨🚨 键盘扩展那个 `KeyboardViewController` **也编进主 App**，
+      #    只为了让预览页能跑**真的那一个**。
+      #    上一版预览页是我自己摆的假页面（直接摆打字键盘），
+      #    于是我截图永远看到"跟安卓一致"，而用户看到的是语音面板
+      #    —— 每一次"验过"都是白验（Kevin 2026-08-26 真机截图打脸）。
+      #    代价：主 App 体积多几十 KB。换"看到的就是用户看到的"，值。
+      - path: Keyboard/KeyboardViewController.swift
       # 只给主 App：AppIcon + logo。🚨 AppIcon 绝不能进 appex，见下面 Keyboard 的说明。
       - path: Assets.xcassets
       - path: SharedAssets.xcassets
@@ -35,8 +42,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260826.498"
-        CFBundleVersion: "498"
+        CFBundleShortVersionString: "20260826.511"
+        CFBundleVersion: "511"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -85,8 +92,8 @@ targets:
       path: Probe/App/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260826.498"
-        CFBundleVersion: "498"
+        CFBundleShortVersionString: "20260826.511"
+        CFBundleVersion: "511"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -109,8 +116,8 @@ targets:
       path: Probe/Keyboard/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260826.498"
-        CFBundleVersion: "498"
+        CFBundleShortVersionString: "20260826.511"
+        CFBundleVersion: "511"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -150,8 +157,8 @@ targets:
       path: Keyboard/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260826.498"
-        CFBundleVersion: "498"
+        CFBundleShortVersionString: "20260826.511"
+        CFBundleVersion: "511"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController

@@ -32,6 +32,8 @@ enum L {
     }
 
     static var ui_lang: String { s("zh", "en", "zh") }
+    static var home_wordbook: String { s("单词本", "Word book", "單詞本") }
+    static var home_wordbook_soon: String { s("单词本下个版本上线", "Word book is coming next version", "單詞本下個版本上線") }
     static var home_login: String { s("注册 / 登录", "Sign in", "註冊 / 登錄") }
     static var home_set_ime: String { s("设为当前输入法", "Set as keyboard", "設為當前輸入法") }
     static var login_next_ver: String { s("登录功能下一版做", "Sign-in arrives in the next version", "登錄功能下一版做") }
@@ -191,8 +193,14 @@ enum L {
     static var rec_log_title: String { s("录音诊断", "Recording log", "錄音診斷") }
     static var kb_translate: String { s("翻译", "Translate", "翻譯") }
     static var kb_transcribe: String { s("转写", "Transcribe", "轉寫") }
+    static var kb_history_none: String { s("还没有记录", "Nothing yet", "還沒有記錄") }
     static var kb_history: String { s("历史", "History", "歷史") }
     static var kb_type: String { s("⌨  打字", "⌨  Type", "⌨  打字") }
+    /// 🚨 不带 emoji 的版本 —— 图标改用 SF Symbol setImage()，
+    ///    文案里的 ⌨ 在 iOS 上是彩色 emoji，跟旁边的描边图标打架。
+    static var kb_type_plain: String { s("打字", "Type", "打字") }
+    /// 轻警告条用的短文案（Grok：原文太长、一行放不下）。
+    static var kb_need_full_short: String { s("设置 › 通用 › 键盘 › Transless 开启「允许完全访问」", "Settings › General › Keyboard › Transless › Allow Full Access", "設定 › 一般 › 鍵盤 › Transless 開啟「允許完全存取」") }
     static var kb_speak: String { s("朗读", "Speak", "朗讀") }
     static var kb_send: String { s("发送", "Send", "發送") }
     static var kb_stop: String { s("■ 停", "■ Stop", "■ 停") }
@@ -227,6 +235,8 @@ enum L {
           "請到 設定 › 一般 › 鍵盤 › Transless 打開「允許完全存取」，否則聯網用不了")
     }
     static var try_bigtext: String { s("大字", "Big text", "大字") }
+    static var try_dir_me: String { s("⇄ 我说", "⇄ Me", "⇄ 我說") }
+    static var try_dir_them: String { s("⇄ 对方说", "⇄ Them", "⇄ 對方說") }
     static var try_reverse: String { s("⇄ 对方说", "⇄ Them", "⇄ 對方說") }
     static var try_reverse_on: String { s("反向：对方说外语，译成你的语言", "Reverse: they speak, you read it in your language", "反向：對方說外語，譯成你的語言") }
     static var try_continuous: String { s("连续", "Continuous", "連續") }
