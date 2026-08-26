@@ -37,6 +37,19 @@ enum Layout {
     /// 键面字号。安卓 `TypingKeyboard.java:357` baseKey `setTextSize(17)`。
     static let keyTextSize: CGFloat = 17
     /// 候选栏高。安卓 `suggestBar` 里候选键 34dp + 上下留白。
+    /// 🚨🚨 **键盘面板的标准高度 —— 唯一真值**。
+    ///    语音面板和打字键盘（除手写外）都必须用它。
+    ///    Kevin 反复点名：「只有手写的时候允许调高一些，
+    ///    其他的都必须要保持高度一致，又当耳旁风了吗？」
+    ///
+    ///    2026-08-26 之前这个数在代码里有**三份**：
+    ///    键盘初始约束 300、`showVoice()` 250、打字档算出来的 242。
+    ///    于是语音面板比打字键盘高 58pt（=174px），
+    ///    而且语音面板自己还有两个高度（没切过是 300、切回来是 250）。
+    ///    产品经理在真截图上量出 901 vs 727 才发现。
+    ///    **收成一个常量之后，改高度只能改这一处。**
+    static let panelH: CGFloat = 250
+
     static let candBarH: CGFloat = 42
     /// 手写板 / 九宫格的高度。安卓 `PAD_H = 216`，两个档位共用它。
     static let padH: CGFloat = 216
@@ -604,9 +617,12 @@ final class TypingKeyboardView: UIView {
     ///    写死一个数的话，换档时不是被挤扁就是空一块（截图上看到过）。
     var preferredHeight: CGFloat {
         if imMode == .hand {
+            // 手写**显式豁免**：Kevin 只允许手写更高。
             return Layout.candBarH + Layout.padH + Layout.keyRowH
         }
-        return Layout.candBarH + Layout.keyRowH * 4
+        // 🚨 其它档位一律用**唯一常量** `Layout.panelH`，
+        //    不再各自算一个数 —— 见 `panelH` 的注释。
+        return Layout.panelH
     }
 
     /// 档位变了要通知宿主改高度约束。

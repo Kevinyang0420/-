@@ -344,7 +344,10 @@ final class KeyboardViewController: UIInputViewController {
         view.addSubview(root)
         voiceRoot = root
         // 🚨 高度要能改：打字键盘比语音面板高。存下这个约束，切换时改 constant。
-        let hc = view.heightAnchor.constraint(equalToConstant: 300)
+        // 🚨 初始高度 = **同一个常量**。原来写死 300，而语音面板
+        //    切一轮回来是 250、打字键盘是 242 —— 一个高度三个数。
+        let hc = view.heightAnchor.constraint(
+            equalToConstant: TypingKeyboardView.Layout.panelH)
         heightC = hc
         NSLayoutConstraint.activate([
             root.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
@@ -485,13 +488,15 @@ final class KeyboardViewController: UIInputViewController {
         voiceRoot?.isHidden = true
         // 🚨 高度由键盘自己按当前档位算（手写档比字母档高一截）。
         //    以前这里写死 280，手写档的底排就被挤扁了。
-        heightC?.constant = typingView?.preferredHeight ?? 250
+        heightC?.constant = typingView?.preferredHeight
+            ?? TypingKeyboardView.Layout.panelH
     }
 
     @objc private func showVoice() {
         typingView?.isHidden = true
         voiceRoot?.isHidden = false
-        heightC?.constant = 250
+        // 🚨 语音面板跟打字键盘**同高**（除手写外都一样高）。
+        heightC?.constant = TypingKeyboardView.Layout.panelH
     }
 
     // MARK: - 顶排/第二排的行为（照搬安卓）
