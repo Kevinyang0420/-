@@ -498,13 +498,31 @@ final class HomeViewController: UIViewController {
     }
 
     @objc private func openWordbook() {
-        // 🚨 **登录门槛保留** —— 那是产品决定（方案 D：只有单词本/输入法
-        //    要登录，随手翻译永久免登录）。我只把占位弹窗换成真界面，
-        //    不顺手动它。
-        guard loginGate(L.login_gate_wordbook) else { return }
-        // 🚨 单词本已经真做出来了，不再是占位。
-        //    `home_wordbook_soon` 和 `login_gate_wordbook` 里的"即将上线"
-        //    要跟着改（归产品经理），别留过期的承诺。
+        // 🚨🚨 **功能没上线就不挂登录门**（产品经理 2026-08-28 定）：
+        //    门后是空的时候挂一扇门，等于"骗一次注册" —— 登录之后还是用不了。
+        //    **光换措辞绕不过去，问题不在词，在门后面现在是空的。**
+        //    所以这里**一个字都不提登录**。
+        //
+        // 🚨 iOS 现在为什么算没上线：三个视图做完了，但**没有任何办法把词收进去**
+        //    （键盘的「收藏」入口是安卓独有的；iOS 键盘是扩展进程，
+        //     要先配 App Group）。**视图存在 ≠ 功能可用。**
+        guard WordBookFeature.isLive else {
+            let a = UIAlertController(title: L.home_wordbook,
+                                      message: L.home_wordbook_soon,
+                                      preferredStyle: .alert)
+            a.addAction(UIAlertAction(title: "OK", style: .default))
+            present(a, animated: true)
+            return
+        }
+        // 上线之后**要把门挂回来**（方案 D —— 只有单词本/输入法要登录）。
+        //
+        // 🚨 这一行现在**故意注释掉**，不是忘了：闸门
+        //    `gate_wordbook_copy.py` 检的是"源码里有没有 `login_gate_wordbook`"，
+        //    留成活代码它就红 —— 而它红得对：**门在那儿就是门**，
+        //    哪怕前面有个 `guard` 拦着，源码层面这一端仍然挂着一扇
+        //    门后是空的门。
+        //    `isLive` 改成 true 时，把下面这行取消注释，闸门会要求它必须在。
+        // guard loginGate(L.login_gate_wordbook) else { return }
         navigationController?.pushViewController(
             WordBookViewController(), animated: true)
     }
