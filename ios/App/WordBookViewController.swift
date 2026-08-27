@@ -16,6 +16,11 @@ import UIKit
 ///    这里做得到是因为正面只是**渲染时读一个开关**，没有把方向写进记录。
 ///    如果哪天有人把方向存进 `Item`，这条就会悄悄坏掉。
 ///
+/// 🚨 危险色用 `Theme.danger`（跟安卓 `Theme.DANGER` 同源），
+///    **`Skin` 里没有 danger** —— 我凭印象写了 `Skin.danger`，
+///    CI 编译当场挂。安卓那边同一天也犯过一模一样的（`Skin.DANGER`）。
+///    **用常量前先 grep 一下它真的存在。**
+///
 /// 🚨 一行纯逻辑都不写在这里：去重、插入、封顶、该不该复习在 `WordBookCore`，
 ///    间隔重复在 `Srs`，两者都进了 `gate_pure_logic.py`。
 final class WordBookViewController: UIViewController {
@@ -99,7 +104,7 @@ final class WordBookViewController: UIViewController {
         //    键盘收的词落在扩展本地、主 App 读自己那份 —— 两边各存各的，
         //    界面上只表现为"空" —— 那是最贵的一类错。
         if !WordBook.groupReady {
-            let warn = label(L.wb_nogroup, 13, Skin.danger)
+            let warn = label(L.wb_nogroup, 13, Theme.danger)
             warn.numberOfLines = 0
             body.addArrangedSubview(warn)
         }
@@ -268,7 +273,7 @@ final class WordBookViewController: UIViewController {
                 15, Skin.dim)
 
         let del = bigButton(L.wb_delete, #selector(tapDelete))
-        del.backgroundColor = Skin.danger
+        del.backgroundColor = Theme.danger
         body.addArrangedSubview(del)
         body.addArrangedSubview(bigButton(L.wb_back, #selector(showListAction)))
     }
