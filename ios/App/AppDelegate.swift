@@ -498,12 +498,15 @@ final class HomeViewController: UIViewController {
     }
 
     @objc private func openWordbook() {
+        // 🚨 **登录门槛保留** —— 那是产品决定（方案 D：只有单词本/输入法
+        //    要登录，随手翻译永久免登录）。我只把占位弹窗换成真界面，
+        //    不顺手动它。
         guard loginGate(L.login_gate_wordbook) else { return }
-        let a = UIAlertController(title: L.home_wordbook,
-                                  message: L.home_wordbook_soon,
-                                  preferredStyle: .alert)
-        a.addAction(UIAlertAction(title: "OK", style: .default))
-        present(a, animated: true)
+        // 🚨 单词本已经真做出来了，不再是占位。
+        //    `home_wordbook_soon` 和 `login_gate_wordbook` 里的"即将上线"
+        //    要跟着改（归产品经理），别留过期的承诺。
+        navigationController?.pushViewController(
+            WordBookViewController(), animated: true)
     }
 
     @objc private func openSetup() {

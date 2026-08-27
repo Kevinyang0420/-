@@ -32,6 +32,21 @@ enum L {
     }
 
     static var ui_lang: String { s("zh", "en", "zh") }
+    static var wb_count: String { s("共 %d 条，今天要复习 %d 条", "%d saved · %d due today", "共 %d 條，今天要複習 %d 條") }
+    static var wb_review_n: String { s("复习（%d）", "Review (%d)", "複習（%d）") }
+    static var wb_back: String { s("返回", "Back", "返回") }
+    static var wb_zh: String { s("你当时说的", "What you said", "你當時說的") }
+    static var wb_en: String { s("英文", "English", "英文") }
+    static var wb_tone: String { s("语气", "Tone", "語氣") }
+    static var wb_on: String { s("收进来的日期", "Saved on", "收進來的日期") }
+    static var wb_added_on: String { s("收于 %@", "Added %@", "收於 %@") }
+    static var wb_progress: String { s("记住 %d 次 · 跨 %d 天", "%d hits · %d days", "記住 %d 次 · 跨 %d 天") }
+    static var wb_progress_label: String { s("复习进度", "Progress", "複習進度") }
+    static var wb_front_fmt: String { s("正面显示：%@", "Card front: %@", "正面顯示：%@") }
+    static var wb_save_failed: String { s("没收成功，再试一次", "Couldn\'t save, try again", "沒收成功，再試一次") }
+    /// 🚨 iOS 独有：App Group 没配好时，键盘收的词主 App 读不到。
+    ///    这条**必须说出来**，不能让它长得像"本子是空的"。
+    static var wb_nogroup: String { s("键盘里收的词现在同步不过来（App Group 没配好）。", "Words saved from the keyboard can't sync yet (App Group not set up).", "鍵盤裡收的詞現在同步不過來（App Group 沒配好）。") }
     static var home_wordbook: String { s("单词本", "Word book", "單詞本") }
     static var home_wordbook_soon: String { s("单词本下个版本上线", "Word book is coming next version", "單詞本下個版本上線") }
     static var account_title: String { s("账户", "Account", "帳戶") }
@@ -53,6 +68,24 @@ enum L {
     static var login_gate_ime: String { s("登录后才能把 Transless 设成输入法。随手翻译不用登录，一直都能用。", "Sign in to set Transless as your keyboard. Translate as you go never needs an account.", "登入後才能把 Transless 設成輸入法。隨手翻譯不用登入，一直都能用。") }
     static var login_gate_go: String { s("去登录", "Sign in", "去登入") }
     static var login_gate_later: String { s("以后再说", "Not now", "以後再說") }
+    static var wb_title: String { s("单词本", "Word book", "單詞本") }
+    static var wb_empty: String { s("还没收东西。用随手翻译说一句，出结果后点 ＋ 就收进来了。", "Nothing yet. Say something in Translate as you go, then tap + on the result.", "還沒收東西。用隨手翻譯說一句，出結果後點 ＋ 就收進來了。") }
+    static var wb_review: String { s("开始复习", "Review", "開始複習") }
+    static func wb_review_n(_ a: Any) -> String { s("复习（\(a)）", "Review (\(a))", "複習（\(a)）") }
+    static var wb_review_done: String { s("今天没有要复习的了。", "Nothing due today.", "今天沒有要複習的了。") }
+    static var wb_show: String { s("翻面看答案", "Show answer", "翻面看答案") }
+    static var wb_got: String { s("想起来了", "Got it", "想起來了") }
+    static var wb_missed: String { s("没想起来", "Missed it", "沒想起來") }
+    static var wb_front: String { s("正面显示", "Card front", "正面顯示") }
+    static var wb_front_zh: String { s("中文", "Chinese", "中文") }
+    static var wb_front_en: String { s("英文", "English", "英文") }
+    static func wb_progress(_ a: Any, _ b: Any) -> String { s("记住 \(a) 次 · 跨 \(b) 天", "\(a) hits · \(b) days", "記住 \(a) 次 · 跨 \(b) 天") }
+    static var wb_graduated: String { s("熟了", "Learned", "熟了") }
+    static func wb_added_on(_ a: Any) -> String { s("收于 \(a)", "Added \(a)", "收於 \(a)") }
+    static var wb_delete: String { s("删掉这条", "Delete", "刪掉這條") }
+    static var wb_delete_ask: String { s("删掉之后复习进度也没了，确定吗？", "Deleting also clears its review progress. Sure?", "刪掉之後複習進度也沒了，確定嗎？") }
+    static var wb_saved: String { s("已收进单词本", "Saved to word book", "已收進單詞本") }
+    static var wb_dupe: String { s("已经在单词本里了", "Already in your word book", "已經在單詞本裡了") }
     static var profile_title: String { s("完善资料", "Set up your profile", "完善資料") }
     static var profile_sub: String { s("起个昵称，以后界面上就显示它，不用挂着一长串邮箱。", "Pick a nickname — it shows up instead of your full email.", "起個暱稱，以後介面上就顯示它，不用掛著一長串郵箱。") }
     static var profile_nick: String { s("昵称", "Nickname", "暱稱") }
