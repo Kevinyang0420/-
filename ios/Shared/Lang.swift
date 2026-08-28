@@ -81,7 +81,22 @@ enum Lang {
     static var effective: String {
         let c = current
         if c != sys { return c }
-        let pref = Locale.preferredLanguages.first ?? "en"
+        // 🚨🚨 **必须跟 `L` 用同一个来源**（2026-08-28 改）。
+        //    原来这里读 `Locale.preferredLanguages`（用户的**原始偏好**），
+        //    而 `Strings.swift` 的 `L` 读 `Bundle.main.preferredLocalizations`
+        //    （系统**解析后**的结果 = 用户偏好 ∩ 我们声明支持的语言）。
+        //    **同一件事两个来源，它们会不一致**：
+        //    用户偏好是我们没声明的语言（如 `yue-Hant-HK`）时，
+        //    系统可能解析成 `zh-Hant`（于是 L 出繁体），
+        //    而这里按原始偏好判成 `en` —— **界面一半中文一半英文**。
+        //    这跟安卓 2026-08-28 那条「中文系统显示全英文」是同族：
+        //    **同一个语言判断有两个真值。**
+        //    改成读同一个来源之后，两边结构上不可能再分叉。
+        //    🚨 **不留 `?? Locale.preferredLanguages` 这个兜底** ——
+        //       那等于把第二个来源又请回来了（`gate_lang_single_source.py`
+        //       当场抓住了我自己写的这一行）。
+        //       `preferredLocalizations` 至少会返回开发语言，不会是空。
+        let pref = Bundle.main.preferredLocalizations.first ?? "en"
         if pref.hasPrefix("zh") {
             return (pref.contains("Hant") || pref.contains("TW")
                     || pref.contains("HK")) ? hant : zh
