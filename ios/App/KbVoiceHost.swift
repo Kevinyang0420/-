@@ -335,5 +335,19 @@ private final class AudioHold {
         engine?.stop()
         player = nil
         engine = nil
+        // 🚨🚨 **必须把会话也停掉，不能只停引擎**（2026-08-28 真机实证）。
+        //    Kevin 装 592 之后报「四档配置全被拒，code 560557684」——
+        //    `560557684` = `0x21696e74` = `'!int'` = **CannotInterruptOthers**：
+        //    **别的东西正占着音频，我们打断不了。**
+        //    而占着的那个**就是我们自己**：保活的 `.playback` 会话还是 active 的，
+        //    引擎停了不代表会话让开了。于是切到 `.record` 时被自己挡住。
+        //
+        //    🚨 这跟前五次完全不是一类（前五次是扩展里的 `'what'` Unspecified）——
+        //    **App Group 那条链已经通了，卡点前移到主 App 自己配不起会话。**
+        //
+        //    判据别挂在"不报错"上，挂在**当前路由 入N ≥ 1**（今天已经被
+        //    "配置成功但路由没有输入口"骗过一次）。
+        try? AVAudioSession.sharedInstance()
+            .setActive(false, options: .notifyOthersOnDeactivation)
     }
 }
