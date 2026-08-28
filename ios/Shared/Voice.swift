@@ -199,6 +199,9 @@ final class Voice: NSObject {
         //    哪一档成了就记下来（`usedRung`），失败时一起报出去。
         let session = AVAudioSession.sharedInstance()
         var sessionErr: NSError?
+        // 🚨 M9：**四档各自失败于什么原因，是这个实验最有价值的信息之一** ——
+        //    被别人占着（`!int`）和被权限拒，code 完全不同。原来只报最后一档。
+        var rungErrs: [String] = []
         var usedRung = -1
         for (i, rung) in Voice.audioLadder.enumerated() {
             do {
@@ -207,7 +210,9 @@ final class Voice: NSObject {
                 usedRung = i
                 break
             } catch {
-                sessionErr = error as NSError
+                let e = error as NSError
+                sessionErr = e
+                rungErrs.append("档\(i)=\(e.code)")
                 continue
             }
         }
@@ -215,8 +220,8 @@ final class Voice: NSObject {
             let ns = sessionErr
             return onWav(.failure(Failure(
                 stage: .audioSession,
-                detail: "四档配置全被拒（最后一次 code \(ns?.code ?? -1)）"
-                    + Voice.context())))
+                detail: "四档配置全被拒（各档 code：\(rungErrs.joined(separator: " "))"
+                    + "，最后一次 \(ns?.code ?? -1)）" + Voice.context())))
         }
 
         // 🚨 会话配好之后**重建引擎** —— 见 `engine` 那段注释。
@@ -230,13 +235,15 @@ final class Voice: NSObject {
         //    `setActive` 过了、但输入节点是 0 Hz / 0 声道 ——
         //    再往下走只会在 `engine.start()` 抛一个看不懂的错误码。
         //    在这里就拦住，并说清是"拿不到麦克风"而不是"引擎坏了"。
-        if inFormat.sampleRate <= 0 || inFormat.channelCount == 0 {
-            cleanup()
-            return onWav(.failure(Failure(
-                stage: .engine,
-                detail: "拿不到麦克风输入（格式 \(inFormat.sampleRate)Hz/"
-                    + "\(inFormat.channelCount)ch）" + Voice.context(rung: usedRung))))
-        }
+        // 🚨🚨 **这里原来直接 return failure，已改成只记录不拦**（交叉审查 H5）。
+        //    它跟 `permissionState()` 是同一族：**在 `engine.start()` 让系统
+        //    给出裁决之前，我们自己先判了失败。**
+        //    而 `inputNode.outputFormat` 在 `setActive` 之后、路由还没落定时
+        //    返回 0Hz/0ch 是**已知瞬态**，扩展这种随起随停的进程尤其容易撞上。
+        //    后果：引擎一次都没被 start 过，我们却据此得出"扩展不能录音"。
+        //    → 记下观测值，照常往下走；真起不来时系统会拒，
+        //      **报出来的是系统的原因**，而且诊断里分得清是谁拦的。
+        let badFormat = inFormat.sampleRate <= 0 || inFormat.channelCount == 0
         // 目标格式：16k 单声道 Int16。用转换器把麦克风原始格式转过来。
         guard let outFormat = AVAudioFormat(commonFormat: .pcmFormatInt16,
                                             sampleRate: Voice.SAMPLE_RATE,
@@ -307,6 +314,9 @@ final class Voice: NSObject {
             }
         }
         engine.prepare()
+        // 🚨 `badFormat` 只进诊断、不做判决 —— 见上面 H5 那段。
+        //    诊断文本必须能分辨**「我们自己拦的」还是「系统拒的」**，
+        //    今晚这两类长得一模一样，害我们把自己的门当成苹果的限制。
         do { try engine.start() }
         catch {
             cleanup()
@@ -322,6 +332,11 @@ final class Voice: NSObject {
                 detail: "\(ns.code)\n\(ns.domain)\n"
                     + "输入 \(Int(inFormat.sampleRate))Hz/"
                     + "\(inFormat.channelCount)ch\n"
+                    // 🚨 H5：把「起 engine 之前格式就已经是 0」作为**观测**记下来，
+                    //    但**判决交给系统**。有这一行我们才分得清是路由没落定
+                    //    还是系统真的拒绝 —— 这两类今晚长得一模一样，
+                    //    害我们把自己写的门当成了苹果的限制。
+                    + (badFormat ? "起 engine 前格式已是 0（路由未落定？）\n" : "")
                     + Voice.context(rung: usedRung))))
         }
 
