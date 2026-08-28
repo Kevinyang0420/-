@@ -108,7 +108,6 @@ final class KeyboardViewController: UIInputViewController {
     //    Voice() 里会 init AVAudioEngine + SFSpeechRecognizer —— 键盘扩展的启动预算
     //    只有几十 MB / 极短的看门狗时限，启动路径上任何重活都可能被系统直接杀掉，
     //    表现就是「选了键盘却弹回上一个」且没有明显报错。录音引擎等第一次按麦克风再建。
-    private lazy var voice = Voice()
     private var phase: Phase = .idle
     /// 进入 thinking 的时刻 —— 用来判"是不是卡死了"。
     private var thinkingSince = Date()
@@ -159,7 +158,22 @@ final class KeyboardViewController: UIInputViewController {
         hintLabel.font = .systemFont(ofSize: 13)
         hintLabel.textColor = Theme.dim
         hintLabel.textAlignment = .center
-        hintLabel.numberOfLines = 1
+        // 🚨🚨 **这一行被压扁过**（2026-08-28 在模拟器上抓到，发包前）。
+        //    现象：「先打开 Transless，点一下「键盘语音」再回来说话」
+        //    只剩上下各半截，读不了。
+        //    根因跟麦克风变橄榄形**同型**：`root` 那个竖直 stack 的总高被
+        //    `heightC` 卡死，撑不下时 UIKit 会打断某条约束 —— 这次断的是
+        //    这个 label 的固有高度。
+        //    **它是新架构里唯一告诉用户"该去开待机"的地方**，压扁了等于没有。
+        //
+        //    修法两条：
+        //      ① 竖直方向**不许被压缩**（优先级 required）。麦克风那边是
+        //         999，所以撑不下时先缩麦克风 —— 麦克风本来就设计成会缩的。
+        //      ② 允许两行：这句话在窄屏上一行放不下，
+        //         1 行会截成「先打开 Trans…」，那跟压扁一样读不了。
+        hintLabel.numberOfLines = 2
+        hintLabel.setContentCompressionResistancePriority(.required,
+                                                          for: .vertical)
         hintLabel.text = ""
 
         heardLabel.font = .systemFont(ofSize: 15)
@@ -720,6 +734,34 @@ final class KeyboardViewController: UIInputViewController {
 
     // MARK: - 历史
 
+    /// 当前铺出来的那几条 —— 「收藏」按钮靠 `tag` 回来找它。
+    private var historyRows: [History.Item] = []
+
+    private func paintKeep(_ b: UIButton, _ got: Bool) {
+        b.setTitle(got ? L.kb_kept : L.kb_keep, for: .normal)
+        b.setTitleColor(got ? Theme.dim : Theme.accent, for: .normal)
+        b.isEnabled = !got
+    }
+
+    /// 把这一条收进单词本。
+    ///
+    /// 🚨 **按真实返回值改按钮**，不是先宣布成功。安卓那边犯过：
+    ///    无条件写「已收」，而 `add` 可能返回 empty / 失败，
+    ///    用户以为收了，本子里没有。
+    @objc private func keepHistory(_ sender: UIButton) {
+        let i = sender.tag
+        guard i >= 0, i < historyRows.count else { return }
+        let it = historyRows[i]
+        let r = WordBook.add(zh: it.zh, en: it.out, span: "full",
+                             tone: it.tone, today: Srs.todayString())
+        let ok = (r == "added" || r == "added_evicted" || r == "same")
+        paintKeep(sender, ok)
+        // 🚨 键盘里弹不了 UIAlertController（没有可present的层级），
+        //    所以结果只能落在按钮和这行提示上。失败必须说出来。
+        hintLabel.text = (r == "same") ? L.wb_dupe
+            : (ok ? L.wb_saved : L.wb_save_failed)
+    }
+
     @objc private func showHistory() {
         if historyPanel != nil { hideHistory(); return }
         let items = History.list()
@@ -747,7 +789,8 @@ final class KeyboardViewController: UIInputViewController {
         } else {
             // 🚨 只铺前 8 条。键盘扩展内存紧（~60MB），
             //    50 条全建出来没必要 —— 要翻更多去 App 里看。
-            for it in items.prefix(8) {
+            historyRows = Array(items.prefix(8))
+            for (i, it) in historyRows.enumerated() {
                 let b = UIButton(type: .system)
                 b.contentHorizontalAlignment = .left
                 b.titleLabel?.font = .systemFont(ofSize: 13)
@@ -757,7 +800,30 @@ final class KeyboardViewController: UIInputViewController {
                 b.accessibilityValue = it.out
                 b.addTarget(self, action: #selector(insertHistory(_:)),
                             for: .touchUpInside)
-                list.addArrangedSubview(b)
+
+                // 🚨🚨 **收藏入口就放在这里** —— Kevin 2026-08-28 原话：
+                //    「历史记录里可以留个入口，支持把我说过的这些翻译
+                //     同步到我的单词本里」。
+                let keep = UIButton(type: .system)
+                keep.tag = i
+                keep.titleLabel?.font = .systemFont(ofSize: 13)
+                // 🚨 按钮自带约 16dp 横向内边距，不清掉就会把「收藏」挤成「收…」
+                //    —— 安卓那边「Delete」被截成「Delet」就是这一条。
+                keep.contentEdgeInsets = UIEdgeInsets(top: 2, left: 6,
+                                                      bottom: 2, right: 6)
+                keep.setContentHuggingPriority(.required, for: .horizontal)
+                keep.setContentCompressionResistancePriority(.required,
+                                                             for: .horizontal)
+                paintKeep(keep, WordBook.list().contains {
+                    $0.id == WordBookCore.idOf(it.zh, it.out)
+                })
+                keep.addTarget(self, action: #selector(keepHistory(_:)),
+                               for: .touchUpInside)
+
+                let row = UIStackView(arrangedSubviews: [b, keep])
+                row.axis = .horizontal
+                row.spacing = 8
+                list.addArrangedSubview(row)
             }
         }
         let scroll = UIScrollView()
@@ -910,6 +976,12 @@ final class KeyboardViewController: UIInputViewController {
 
     // MARK: - 录音（说完自动收）
 
+    /// 这一轮遥控的命令序号；`-1` = 没有在进行的。
+    private var remoteSeq = -1
+    /// 已经读到过的结果时间戳，用来只认更新的那条。
+    private var lastResAt: TimeInterval = 0
+    private var pollTimer: Timer?
+
     @objc private func tapMic() {
         if phase == .listening { stopListening(); return }
         // 🚨🚨 thinking 必须有出口（交叉审查 H4，安卓修过同型的）。
@@ -924,42 +996,130 @@ final class KeyboardViewController: UIInputViewController {
             }
         }
 
+        // 🚨🚨 **键盘扩展自己录不了音，这是 iOS 的硬限制，不是我们的 bug。**
+        //    苹果技术问答 QA1872：「App extensions in iOS 8 are not allowed to
+        //    record audio」，并点名 `AVAudioEngine startAndReturnError:`（用了
+        //    inputNode 时）会返错 —— 那正是 `Voice.start()` 走的路。
+        //    系统日志里的判词是
+        //    `CMSUtility_IsAllowedToStartRecording: ... was NOT allowed to start
+        //     recording **because it is an extension**`（论坛 thread 742601，
+        //    2023-12，现代 iOS 上仍然如此）。
+        //    **系统查的是「调用方是不是扩展」**，跟音频会话怎么配、Full Access
+        //    开没开、麦克风权限给没给全都无关。
+        //    2026-08-28 之前那三次真机失败（`2003329396` =
+        //    `AVAudioSessionErrorCodeUnspecified`）都是这一条，
+        //    「引擎在会话激活前创建」那个假设是错的。
+        //    → 所以录音交给主 App，键盘退化成遥控器。见 `KbBridge`。
+        guard KbBridge.available else {
+            setPhase(.idle, hint: L.kb_rec_failed_tap)
+            showDiag(bridgeMissingDiag())
+            return
+        }
+        guard KbBridge.hostAlive else {
+            setPhase(.idle, hint: L.kb_need_standby)
+            return
+        }
+
         heardLabel.text = ""
         setPhase(.listening, hint: "")
-
-        // 录音 → 停止后拿到 WAV → 后端转写 → 整理翻译上屏（跟安卓、跟 App 同一条链）
-        voice.start(onPartial: { _ in }, onWav: { [weak self] result in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                switch result {
-                case .failure(let f):
-                    // 🚨 一行**摘要**留在 hintLabel（它 numberOfLines = 1，
-                    //    塞多行进去只会显示第一行 —— 557 就是这么把唯一的
-                    //    诊断线索弄丢的）。**完整现场走独立面板**。
-                    self.setPhase(.idle, hint: L.kb_rec_failed_tap)
-                    self.showDiag("\(f)\n\n" + Voice.diagnostics())
-                case .success(let wav):
-                    self.setPhase(.thinking, hint: "")
-                    Backend.transcribe(wav: wav) { [weak self] r in
-                        DispatchQueue.main.async {
-                            guard let self = self else { return }
-                            switch r {
-                            case .failure(let f):
-                                self.setPhase(.idle, hint: "\(f)")
-                            case .success(let zh):
-                                self.heardLabel.text = zh
-                                self.send(zh, replaceChars: 0)   // 自动往下走
-                            }
-                        }
-                    }
-                }
-            }
-        })
+        lastResAt = 0
+        // 🚨 语气/模式/语言必须**跟着命令送过去**。
+        //    原来这里的注释写着「模式跟 App 共用同一个 UserDefaults 键，
+        //    两处切换互通」——**那是错的**：键盘扩展有自己独立的偏好域，
+        //    `UserDefaults.standard` 两边从来不是同一份。让主 App 读它自己的，
+        //    就会出现「在键盘里选了邮件语气，出来的却是随意」，
+        //    而键盘上那个按钮还亮着。
+        remoteSeq = KbBridge.send("start", args: [
+            "tone": tone,
+            "mode": UserDefaults.standard.string(forKey: "vime.mode") ?? "en",
+            "lang": UserDefaults.standard.string(forKey: "vime.lang") ?? "en",
+        ])
+        startPolling()
     }
 
     private func stopListening() {
         setPhase(.thinking, hint: "")
-        voice.stop()
+        KbBridge.send("stop")
+    }
+
+    // MARK: - 遥控：等主 App 把结果递回来
+
+    /// 🚨 Darwin 通知只降延迟、**不作唯一路径** —— 进程被挂起时它会丢，
+    ///    只靠它的表现是「有时候能用」，那种间歇性故障比彻底坏掉还难查。
+    ///    所以这里是**轮询**，通知那条以后可以加，加了也只是让它更快。
+    private func startPolling() {
+        pollTimer?.invalidate()
+        let deadline = Date().addingTimeInterval(120)
+        pollTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) {
+            [weak self] t in
+            guard let self = self else { t.invalidate(); return }
+            if self.remoteSeq < 0 { t.invalidate(); return }
+            // 宿主中途被系统关掉：说清楚，别让他对着一个死掉的宿主干等
+            if !KbBridge.hostAlive {
+                t.invalidate()
+                self.remoteSeq = -1
+                self.setPhase(.idle, hint: L.kb_host_gone)
+                return
+            }
+            if Date() > deadline {
+                t.invalidate()
+                self.remoteSeq = -1
+                self.setPhase(.idle, hint: L.kb_host_slow)
+                return
+            }
+            guard let r = KbBridge.takeResult(seq: self.remoteSeq,
+                                              after: self.lastResAt) else { return }
+            self.lastResAt = r.at
+            switch r.kind {
+            case "partial":
+                self.heardLabel.text = r.body
+            case "error":
+                t.invalidate()
+                self.remoteSeq = -1
+                self.setPhase(.idle, hint: r.body)
+            case "text":
+                t.invalidate()
+                self.remoteSeq = -1
+                self.deliver(r.body)
+            default:
+                break
+            }
+        }
+    }
+
+    /// 主 App 交回来的最终结果：`{"zh": 听到的, "out": 出稿}`。
+    ///
+    /// 🚨 **先落历史再上屏**，顺序不许倒 —— 照搬 `send()` 里那条：
+    ///    上屏可能失败（输入框失焦、宿主换了），而后端已经算完、钱也花了。
+    private func deliver(_ json: String) {
+        guard let d = json.data(using: .utf8),
+              let o = try? JSONSerialization.jsonObject(with: d) as? [String: String],
+              let out = o["out"], !out.isEmpty else {
+            setPhase(.idle, hint: L.kb_host_slow)
+            return
+        }
+        let zh = o["zh"] ?? ""
+        let mode = UserDefaults.standard.string(forKey: "vime.mode") ?? "en"
+        History.add(mode: mode, tone: tone, zh: zh, out: out)
+        lastOut = out
+        speakButton.isEnabled = true
+        heardLabel.text = ""
+        textDocumentProxy.insertText(out)
+        setPhase(.idle, hint: "")
+    }
+
+    /// 共享容器都拿不到时的现场。**这条是配置问题，不是运行时故障**，
+    /// 所以报的东西也不一样：报的是「谁没配好」，不是音频会话那一堆。
+    private func bridgeMissingDiag() -> String {
+        return """
+        === 键盘语音没接通 ===
+        共享容器  拿不到（App Group 未生效）
+        组名      \(KbBridge.group)
+
+        这是**打包配置**的问题，不是你手机的问题：
+        主 App 和键盘要挂在同一个 App Group 上才能互相递话。
+        把这一屏发给开发，不用做别的。
+        """
     }
 
     // MARK: - 兜底：翻译光标前已有的中文
@@ -1019,7 +1179,12 @@ final class KeyboardViewController: UIInputViewController {
         }
     }
 
-    deinit { voice.stop() }
+    deinit {
+        // 🚨 键盘被销毁时**必须撤单**：否则主 App 还在替一个已经不存在的键盘
+        //    录音，麦克风指示灯一直亮着，而没有任何人会来收结果。
+        pollTimer?.invalidate()
+        if remoteSeq >= 0 { KbBridge.send("cancel") }
+    }
 
     /// 🚨 渐变底的 frame 必须跟着 bounds 走。
     ///    不更新的话，转屏或键盘高度变化（切数字层/候选条出现）时
