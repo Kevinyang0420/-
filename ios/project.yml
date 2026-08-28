@@ -96,6 +96,22 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kevin.transless
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        # 🚨🚨 **归档时就必须签名，否则 entitlements 进不了二进制**（2026-08-28 实撞）。
+        #    原来 CI 的 archive 那步写 `CODE_SIGNING_ALLOWED=NO`、把签名整个挪到
+        #    导出那步。后果：**不签名时 Xcode 根本不处理 `CODE_SIGN_ENTITLEMENTS`**，
+        #    归档里没有 entitlements；`-exportArchive` 再签时只能从描述文件派生出
+        #    那几个默认项（application-identifier / team-identifier /
+        #    keychain-access-groups / get-task-allow），
+        #    **我们那条 `com.apple.security.application-groups` 被丢掉。**
+        #    表现：描述文件里有组 ✅、构建成功 ✅、装到手机上 `containerURL` 返回 nil ❌。
+        #    Kevin 为此白试了一次（582）。
+        #    当初挪走的理由是「`PROVISIONING_PROFILE_SPECIFIER` 是全局的，
+        #    两个 target 挂不了不同的描述文件」—— **但按 target 写在这里就能分开。**
+        #    描述文件名是我们自己建的、固定的（`asc_appgroup_wire.py` 里同一串）。
+        CODE_SIGNING_ALLOWED: YES
+        CODE_SIGNING_REQUIRED: YES
+        CODE_SIGN_STYLE: Manual
+        PROVISIONING_PROFILE_SPECIFIER: "Transless AppStore"
         # icon 走 asset catalog。名字要跟 Assets.xcassets 里那个 .appiconset 同名。
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
@@ -227,3 +243,19 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kevin.transless.keyboard
+        # 🚨🚨 **归档时就必须签名，否则 entitlements 进不了二进制**（2026-08-28 实撞）。
+        #    原来 CI 的 archive 那步写 `CODE_SIGNING_ALLOWED=NO`、把签名整个挪到
+        #    导出那步。后果：**不签名时 Xcode 根本不处理 `CODE_SIGN_ENTITLEMENTS`**，
+        #    归档里没有 entitlements；`-exportArchive` 再签时只能从描述文件派生出
+        #    那几个默认项（application-identifier / team-identifier /
+        #    keychain-access-groups / get-task-allow），
+        #    **我们那条 `com.apple.security.application-groups` 被丢掉。**
+        #    表现：描述文件里有组 ✅、构建成功 ✅、装到手机上 `containerURL` 返回 nil ❌。
+        #    Kevin 为此白试了一次（582）。
+        #    当初挪走的理由是「`PROVISIONING_PROFILE_SPECIFIER` 是全局的，
+        #    两个 target 挂不了不同的描述文件」—— **但按 target 写在这里就能分开。**
+        #    描述文件名是我们自己建的、固定的（`asc_appgroup_wire.py` 里同一串）。
+        CODE_SIGNING_ALLOWED: YES
+        CODE_SIGNING_REQUIRED: YES
+        CODE_SIGN_STYLE: Manual
+        PROVISIONING_PROFILE_SPECIFIER: "Transless Keyboard AppStore"
