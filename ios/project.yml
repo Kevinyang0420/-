@@ -42,8 +42,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260828.550"
-        CFBundleVersion: "550"
+        CFBundleShortVersionString: "20260828.554"
+        CFBundleVersion: "554"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -92,8 +92,8 @@ targets:
       path: Probe/App/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260828.550"
-        CFBundleVersion: "550"
+        CFBundleShortVersionString: "20260828.554"
+        CFBundleVersion: "554"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -116,8 +116,8 @@ targets:
       path: Probe/Keyboard/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260828.550"
-        CFBundleVersion: "550"
+        CFBundleShortVersionString: "20260828.554"
+        CFBundleVersion: "554"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -157,8 +157,8 @@ targets:
       path: Keyboard/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260828.550"
-        CFBundleVersion: "550"
+        CFBundleShortVersionString: "20260828.554"
+        CFBundleVersion: "554"
         # 🚨🚨 **键盘扩展自己也要声明麦克风**（2026-08-26 补）。
         #    Kevin 真机反馈：主 App 的「随手翻译」能正常录音，
         #    但同一台机、同一个已授权的麦克风，**键盘里录不了**，

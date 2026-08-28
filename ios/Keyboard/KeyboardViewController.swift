@@ -31,7 +31,15 @@ final class KeyboardViewController: UIInputViewController {
 
     private let hintLabel = UILabel()
     private let heardLabel = UILabel()
+    /// 跑在 App 内的预览页里（不是真扩展）。预览壳会把它设成 true。
+    /// 🚨 只影响「完全访问」那条警告 —— 那是扩展独有的概念，
+    ///    在 App 进程里恒为 false，不屏蔽就永远挂着。
+    var previewMode = false
+
     private let micButton = UIButton(type: .system)
+    /// 麦克风的**偏好**尺寸（priority 999）—— 宽高相等那条才是硬的。
+    /// 见 `micButton` 那段注释：写死两个常量不保证是正圆。
+    private var micSize: NSLayoutConstraint!
     private let toneButton = UIButton(type: .system)
     private let fallbackButton = UIButton(type: .system)
     /// 打字键盘（字母/符号）。**懒建**：没点 Type 之前不占内存 ——
@@ -143,11 +151,26 @@ final class KeyboardViewController: UIInputViewController {
         micButton.tintColor = .white
         micButton.titleLabel?.font = .systemFont(ofSize: 34)
         micButton.backgroundColor = Theme.accent
-        micButton.layer.cornerRadius = 44
         micButton.addTarget(self, action: #selector(tapMic), for: .touchUpInside)
         micButton.translatesAutoresizingMaskIntoConstraints = false
-        micButton.widthAnchor.constraint(equalToConstant: 88).isActive = true
-        micButton.heightAnchor.constraint(equalToConstant: 88).isActive = true
+        // 🚨🚨 **麦克风变成橄榄形**（Kevin 2026-08-28：「麦克风怎么变成了一个
+        //    橄榄形？」）。根因不是我把尺寸写错了 —— 宽高本来都写的 88：
+        //      · `root` 那个竖直 stack 的总高被 `heightC` 卡死；
+        //      · 内容撑不下时 UIKit 会**打断某一条必需约束**，
+        //        实际被打断的是**高度**那条（宽度那条留着）→ 扁了；
+        //      · 而 `cornerRadius` 写死 44 **不会跟着变**，
+        //        于是一个 88×70 的方块套着 44 的圆角 = 橄榄。
+        //    **写死两个常量 ≠ 保证是正圆。**
+        //
+        //    修法三条，缺一不可：
+        //      ① 宽高相等做成**硬约束**（永远成立，压缩时也成立）
+        //      ② 尺寸只是**偏好**（priority 999），撑不下时让它变小而不是变扁
+        //      ③ 圆角在 `viewDidLayoutSubviews` 里按**实际高度**算，不写死
+        micSize = micButton.widthAnchor.constraint(equalToConstant: 88)
+        micSize.priority = .init(999)
+        micSize.isActive = true
+        micButton.heightAnchor.constraint(
+            equalTo: micButton.widthAnchor).isActive = true
 
         let micWrap = UIView()
         micWrap.addSubview(micButton)
@@ -187,10 +210,27 @@ final class KeyboardViewController: UIInputViewController {
         logo.contentMode = .scaleAspectFit
         logo.alpha = 0.55
         logo.translatesAutoresizingMaskIntoConstraints = false
+        // 🚨 只给宽度、不给高度时，`logo` 会被拉成**跟整行一样高的窄条** ——
+        //    Kevin 2026-08-28 看到的那个夹在「英文」和「转写」中间的
+        //    「T 一样的小方块」就是它。26 宽 × 44 高，怎么看怎么怪。
+        //    给它**跟宽度相等的高度并居中**，才是一个正方的小标记。
         logo.widthAnchor.constraint(equalToConstant: 26).isActive = true
+        logo.heightAnchor.constraint(
+            equalTo: logo.widthAnchor).isActive = true
+        // 🚨 **套一个容器**，不是给整排 `alignment = .center`。
+        //    整排居中会让四个按钮**也缩成内容高**（那是把问题换个地方，
+        //    按钮会从饱满的胶囊变成一条细边）。
+        //    容器填满行高、logo 在里面居中 —— 只动 logo 一个。
+        let logoBox = UIView()
+        logoBox.addSubview(logo)
+        logo.centerXAnchor.constraint(
+            equalTo: logoBox.centerXAnchor).isActive = true
+        logo.centerYAnchor.constraint(
+            equalTo: logoBox.centerYAnchor).isActive = true
+        logoBox.widthAnchor.constraint(equalToConstant: 26).isActive = true
 
         let top = UIStackView(arrangedSubviews:
-            [tabTranslate, langButton, logo, tabTranscribe, histButton])
+            [tabTranslate, langButton, logoBox, tabTranscribe, histButton])
         top.axis = .horizontal
         top.spacing = 6
         top.distribution = .fill
@@ -403,6 +443,16 @@ final class KeyboardViewController: UIInputViewController {
     ///    而且用户可能中途去设置里开了 —— 开完回来红字还挂着的话，
     ///    他会以为没生效（Kevin 2026-08-26 真机撞到）。
     private func refreshFullAccessWarning() {
+        // 🚨 预览壳里**永远不显示这条**。预览跑在主 App 进程里，
+        //    `hasFullAccess` 恒为 false（那是**扩展**才有的概念），
+        //    于是这条红条在预览页上永远挂着 —— Kevin 2026-08-28 看到的
+        //    就是这个，而它跟他手机上真键盘的状态毫无关系。
+        //    **一个恒真的警告等于没有警告**，只会让人以为功能坏了。
+        if previewMode {
+            fullAccessWarning?.removeFromSuperview()
+            fullAccessWarning = nil
+            return
+        }
         if hasFullAccess {
             fullAccessWarning?.removeFromSuperview()
             fullAccessWarning = nil
@@ -871,6 +921,9 @@ final class KeyboardViewController: UIInputViewController {
     ///    渐变停在旧尺寸，下半截露出透明底 —— 只在真机上才看得见。
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        // 🚨 圆角按**实际高度**算，不写死 —— 布局压缩时尺寸会变，
+        //    写死的圆角会让它变成橄榄形。
+        micButton.layer.cornerRadius = micButton.bounds.height / 2
         bgLayer?.frame = view.bounds
         bgLayer?.sublayers?.forEach { $0.frame = view.bounds }
     }

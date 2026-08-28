@@ -2104,6 +2104,7 @@ final class KeyboardPreviewController: UIViewController {
         // 🚨 **真的那个类**，不是复刻。改了键盘，这里跟着变；
         //    改漏了，这里也一眼看得出来。
         let kb = KeyboardViewController()
+        kb.previewMode = true
         addChild(kb)
         kb.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(kb.view)
