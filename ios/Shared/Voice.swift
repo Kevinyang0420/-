@@ -268,7 +268,35 @@ final class Voice: NSObject {
                                             sampleRate: Voice.SAMPLE_RATE,
                                             channels: 1, interleaved: true),
               let converter = AVAudioConverter(from: inFormat, to: outFormat) else {
-            return onWav(.failure(Failure(stage: .engine, detail: "建不了音频转换器")))
+            // 🚨🚨 H-4（第 2 轮审查）：**H5 想保住的观测值，在最可能走到的那条路上照样丢了。**
+            //    0Hz 的 `inFormat` 根本走不到 `engine.start()` —— `AVAudioConverter`
+            //    对无效源格式返回 nil，**这条 guard 先命中**，而它原来只有一句
+            //    光秃秃的中文：没有 `badFormat`、没有档位、没有现场。
+            //    比改之前还彻底：改之前那条 return 至少带了"拿不到麦克风"的定性。
+            cleanup()
+            return onWav(.failure(Failure(
+                stage: .engine,
+                detail: "建不了音频转换器\n"
+                    + (badFormat ? "起 engine 前格式已是 0（路由未落定？）\n" : "")
+                    + Voice.context(rung: usedRung))))
+        }
+
+        // 🚨🚨 H-4 的第二条现实路径：**非法格式喂给 `installTap` 会让扩展直接崩。**
+        //    若 converter 侥幸非 nil（比如 `sampleRate>0` 但 `channelCount==0`
+        //    这种半残格式），下一句 `installTap` 抛 ObjC 异常
+        //    `required condition is false: IsFormatSampleRateAndChannelCountValid`，
+        //    **Swift 接不住 → 扩展崩 → 表现是「键盘弹回上一个」，零诊断。**
+        //    这不是回到 H5 之前的"自己判决"：那时是**不让系统裁决**，
+        //    现在是**不把非法格式喂给一个会抛异常的 API**，
+        //    而且诊断里写明**是我们拦的**。
+        if badFormat {
+            cleanup()
+            return onWav(.failure(Failure(
+                stage: .engine,
+                detail: "格式非法，没敢喂给 installTap（会抛异常导致扩展崩）\n"
+                    + "我们拦的，不是系统拒的\n"
+                    + "输入 \(inFormat.sampleRate)Hz/\(inFormat.channelCount)ch\n"
+                    + Voice.context(rung: usedRung))))
         }
 
         node.removeTap(onBus: 0)
@@ -409,11 +437,32 @@ final class Voice: NSObject {
 
     // MARK: - 停止
 
+    /// 只摘 tap + 停引擎，**不动音频会话**。给 `stop()` 在取快照之前用。
+    ///
+    /// 🚨 单独抽出来是因为顺序有意义：先让渲染线程停止写 `pcm`，再读它。
+    ///    `cleanup()` 后面照常调，两者幂等。
+    private func stopTapOnly() {
+        engine.inputNode.removeTap(onBus: 0)
+        if engine.isRunning { engine.stop() }
+    }
+
+    /// 🚨 H-3（第 2 轮审查）：对象被回收时也要把引擎和会话放掉。
+    ///    扩展是随起随停的进程，靠调用方记得调 `stop()` 不可靠。
+    deinit { if running { cleanup() } }
+
     func stop() {
         guard running, !finished else { return }
         finished = true
         capTimer?.invalidate(); capTimer = nil
 
+        // 🚨🚨 M3（交叉审查）：**必须先摘 tap 再取快照。**
+        //    原来是 `let data = pcm` 在主线程先拍快照、之后才 `cleanup()` 摘 tap；
+        //    而 tap 回调在**音频渲染线程**往 `pcm` 里 append。
+        //    Swift 的 `Data` 是 COW 值类型，**并发读+写是未定义行为** ——
+        //    可能崩溃，也可能悄悄拿到撕裂的数据（那就变成"录到了但内容不对"）。
+        //    48kHz / 2048 帧下这个窗口每约 42ms 出现一次，按停止那一瞬正好撞上。
+        //    摘 tap 之后渲染线程不会再写，快照才是安全的。
+        stopTapOnly()
         let data = pcm
         // 🚨 连续模式下末尾这一段**可能只是静音**（刚切完一句才按的停止）。
         //    照发的话后端返回空结果，白花一次调用还闪一条空气泡。
