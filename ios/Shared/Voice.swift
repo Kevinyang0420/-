@@ -144,6 +144,25 @@ final class Voice: NSObject {
     }
 
     static func permissionState() -> Failure? {
+        // 🚨🚨 **扩展里跳过这条预检**（2026-08-28）。
+        //
+        //    `Voice.start()` 第一句就用它同步返回失败，而 665 真机实测
+        //    的现象正是「扩展里同步失败、回退到宿主」——
+        //    **同步失败的出口只有两个：这条预检，和音频会话四档全拒。**
+        //
+        //    `recordPermission` 查的是**调用方 bundle** 的 TCC 状态。
+        //    容器 App 授权过，不代表扩展这边这个 API 一定回 `.granted`；
+        //    而**扩展根本没办法自己去请求权限** ——
+        //    于是它在扩展里可能是一道**永远打不开、也没人打得开的门**。
+        //
+        //    跳过之后：真有权限就录起来（预检本来多余）；真没有的话，
+        //    系统会在 `setActive` / `engine.start()` 拒掉，
+        //    **报出来的是系统的真实原因**，比我们编的这句准。
+        //
+        //    🚨 这不是"绕过权限"——TCC 该拒照样拒，我们只是不再拿一个
+        //       可能失准的预判去代替系统的判断。
+        //    🚨 容器 App 里**保留**：那里它准确，而且用户点得动授权框。
+        if inExtension { return nil }
         if AVAudioSession.sharedInstance().recordPermission != .granted {
             return Failure(stage: .permissionMic, detail: "去 Transless App 里授权一次")
         }
