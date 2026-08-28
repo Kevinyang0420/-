@@ -32,70 +32,6 @@ enum L {
     }
 
     static var ui_lang: String { s("zh", "en", "zh") }
-    static var wb_count: String { s("共 %d 条，今天要复习 %d 条", "%d saved · %d due today", "共 %d 條，今天要複習 %d 條") }
-    static var wb_review_n: String { s("复习（%d）", "Review (%d)", "複習（%d）") }
-    static var wb_back: String { s("返回", "Back", "返回") }
-    static var wb_zh: String { s("你当时说的", "What you said", "你當時說的") }
-    static var wb_en: String { s("英文", "English", "英文") }
-    static var wb_tone: String { s("语气", "Tone", "語氣") }
-    static var wb_on: String { s("收进来的日期", "Saved on", "收進來的日期") }
-    static var wb_added_on: String { s("收于 %@", "Added %@", "收於 %@") }
-    static var wb_progress: String { s("记住 %d 次 · 跨 %d 天", "%d hits · %d days", "記住 %d 次 · 跨 %d 天") }
-    static var wb_progress_label: String { s("复习进度", "Progress", "複習進度") }
-    static var wb_front_fmt: String { s("正面显示：%@", "Card front: %@", "正面顯示：%@") }
-    static var wb_save_failed: String { s("没收成功，再试一次", "Couldn\'t save, try again", "沒收成功，再試一次") }
-    /// 🚨 iOS 独有：App Group 没配好时，键盘收的词主 App 读不到。
-    ///    这条**必须说出来**，不能让它长得像"本子是空的"。
-    static var wb_nogroup: String { s("键盘里收的词现在同步不过来（App Group 没配好）。", "Words saved from the keyboard can't sync yet (App Group not set up).", "鍵盤裡收的詞現在同步不過來（App Group 沒配好）。") }
-    static var home_wordbook: String { s("单词本", "Word book", "單詞本") }
-    static var home_wordbook_soon: String { s("单词本下个版本上线", "Word book is coming next version", "單詞本下個版本上線") }
-    static var account_title: String { s("账户", "Account", "帳戶") }
-    static var account_none: String { s("未登录", "Not signed in", "未登入") }
-    static var account_signout: String { s("退出登录", "Sign out", "登出") }
-    static var account_signout_done: String { s("已退出登录", "Signed out", "已登出") }
-    static var profile_year: String { s("年", "Year", "年") }
-    static var profile_month: String { s("月", "Month", "月") }
-    static var profile_day: String { s("日", "Day", "日") }
-    static var profile_country: String { s("国家/地区", "Country", "國家/地區") }
-    static var profile_region: String { s("省份/州", "State / Province", "省份/州") }
-    static var profile_job: String { s("职业", "Occupation", "職業") }
-    static var profile_email: String { s("邮箱", "Email", "郵箱") }
-    static var account_page: String { s("我的账户", "My account", "我的帳戶") }
-    static var account_edit: String { s("点这里填写", "Tap to fill in", "點這裡填寫") }
-    static var account_signout_ask: String { s("确定要退出登录吗？下次要重新收验证码。", "Sign out? You'll need a new code to sign back in.", "確定要登出嗎？下次要重新收驗證碼。") }
-    static var save: String { s("保存", "Save", "儲存") }
-    static var login_gate_wordbook: String { s("登录后才能用单词本。随手翻译不用登录，一直都能用。", "Sign in to use the word book. Translate as you go never needs an account.", "登入後才能用單詞本。隨手翻譯不用登入，一直都能用。") }
-    static var login_gate_ime: String { s("登录后才能把 Transless 设成输入法。随手翻译不用登录，一直都能用。", "Sign in to set Transless as your keyboard. Translate as you go never needs an account.", "登入後才能把 Transless 設成輸入法。隨手翻譯不用登入，一直都能用。") }
-    static var login_gate_go: String { s("去登录", "Sign in", "去登入") }
-    static var login_gate_later: String { s("以后再说", "Not now", "以後再說") }
-    static var wb_title: String { s("单词本", "Word book", "單詞本") }
-    static var wb_empty: String { s("还没收东西。用随手翻译说一句，出结果后点 ＋ 就收进来了。", "Nothing yet. Say something in Translate as you go, then tap + on the result.", "還沒收東西。用隨手翻譯說一句，出結果後點 ＋ 就收進來了。") }
-    static var wb_review: String { s("开始复习", "Review", "開始複習") }
-    static func wb_review_n(_ a: Any) -> String { s("复习（\(a)）", "Review (\(a))", "複習（\(a)）") }
-    static var wb_review_done: String { s("今天没有要复习的了。", "Nothing due today.", "今天沒有要複習的了。") }
-    static var wb_show: String { s("翻面看答案", "Show answer", "翻面看答案") }
-    static var wb_got: String { s("想起来了", "Got it", "想起來了") }
-    static var wb_missed: String { s("没想起来", "Missed it", "沒想起來") }
-    static var wb_front: String { s("正面显示", "Card front", "正面顯示") }
-    static var wb_front_zh: String { s("中文", "Chinese", "中文") }
-    static var wb_front_en: String { s("英文", "English", "英文") }
-    static func wb_progress(_ a: Any, _ b: Any) -> String { s("记住 \(a) 次 · 跨 \(b) 天", "\(a) hits · \(b) days", "記住 \(a) 次 · 跨 \(b) 天") }
-    static var wb_graduated: String { s("熟了", "Learned", "熟了") }
-    static func wb_added_on(_ a: Any) -> String { s("收于 \(a)", "Added \(a)", "收於 \(a)") }
-    static var wb_delete: String { s("删掉这条", "Delete", "刪掉這條") }
-    static var wb_delete_ask: String { s("删掉之后复习进度也没了，确定吗？", "Deleting also clears its review progress. Sure?", "刪掉之後複習進度也沒了，確定嗎？") }
-    static var kb_rec_failed_tap: String { s("录音失败 · 上面是现场，可长按复制；点一下收起", "Recording failed — details above, tap to dismiss", "錄音失敗 · 上面是現場，可長按複製；點一下收起") }
-    static var kb_keep: String { s("收藏", "Save", "收藏") }
-    static var kb_kept: String { s("已收", "Saved", "已收") }
-    static var wb_saved: String { s("已收进单词本", "Saved to word book", "已收進單詞本") }
-    static var wb_dupe: String { s("已经在单词本里了", "Already in your word book", "已經在單詞本裡了") }
-    static var profile_title: String { s("完善资料", "Set up your profile", "完善資料") }
-    static var profile_sub: String { s("起个昵称，以后界面上就显示它，不用挂着一长串邮箱。", "Pick a nickname — it shows up instead of your full email.", "起個暱稱，以後介面上就顯示它，不用掛著一長串郵箱。") }
-    static var profile_nick: String { s("昵称", "Nickname", "暱稱") }
-    static var profile_nick_ph: String { s("怎么称呼你", "What should we call you", "怎麼稱呼你") }
-    static var profile_birth: String { s("出生日期（选填）", "Date of birth (optional)", "出生日期（選填）") }
-    static var profile_birth_none: String { s("选填", "Optional", "選填") }
-    static var profile_done: String { s("完成", "Done", "完成") }
     static var home_login: String { s("注册 / 登录", "Sign in", "註冊 / 登錄") }
     static var home_set_ime: String { s("设为当前输入法", "Set as keyboard", "設為當前輸入法") }
     static var login_next_ver: String { s("登录功能下一版做", "Sign-in arrives in the next version", "登錄功能下一版做") }
@@ -104,63 +40,6 @@ enum L {
     static var step_default: String { s("设为默认", "Make it default", "設為預設") }
     static var act_allow: String { s("去允许 ›", "Allow ›", "去允許 ›") }
     static var act_enable: String { s("去启用 ›", "Enable ›", "去啟用 ›") }
-    /// 「这一步只能你自己去系统设置里开，App 查不到状态」。
-    /// 🚨 不能用「—」：其他两步写着「去启用 ›」，突然一个破折号，
-    ///    "已完成 / 不可点 / 状态未知"分不出来（Grok 评审指出）。
-    // ---- 登录页 ----
-    static var login_why: String {
-        s("登录之后才能把 Transless 设为输入法，也方便你换手机时找回设置。",
-          "Sign in to set Transless as your keyboard — it also keeps your "
-          + "settings when you switch phones.",
-          "登入之後才能把 Transless 設為輸入法，也方便你換手機時找回設定。")
-    }
-    static var login_tab_email: String { s("邮箱", "Email", "電郵") }
-    static var login_tab_phone: String { s("手机号", "Phone", "手機號") }
-    static var login_email_ph: String { s("邮箱地址", "Email address", "電郵地址") }
-    static var login_need_email: String { s("填一个邮箱地址", "Enter an email address", "填一個電郵地址") }
-    /// 🚨 后端走阿里云短信，**它只发中国内地**。当场说清比让人等一个
-    ///    看不懂的服务端错误强。
-    static var login_mainland_only: String {
-        s("目前手机号登录只支持中国内地号码，海外请用邮箱",
-          "Phone sign-in currently supports mainland China numbers only — "
-          + "please use email",
-          "目前手機號登入只支援中國內地號碼，海外請用電郵")
-    }
-    static var login_sent_mail: String {
-        s("验证码已发到邮箱，注意查收（也看一下垃圾邮件）",
-          "Code sent to your email — check spam too",
-          "驗證碼已發到電郵，注意查收（也看一下垃圾郵件）")
-    }
-
-    static var login_phone_ph: String { s("手机号", "Phone number", "手機號") }
-    static var login_code_ph: String { s("6 位验证码", "6-digit code", "6 位驗證碼") }
-    static var login_send_code: String { s("获取验证码", "Send code", "獲取驗證碼") }
-    static var login_send_again: String { s("重新获取", "Send again", "重新獲取") }
-    static var login_wait: String { s("%d 秒后可重发", "Resend in %ds", "%d 秒後可重發") }
-    static var login_do: String { s("登录", "Sign in", "登入") }
-    static var login_sending: String { s("正在发送…", "Sending…", "正在傳送…") }
-    static var login_sent: String { s("验证码已发出，注意查收短信", "Code sent — check your SMS", "驗證碼已發出，注意查收簡訊") }
-    static var login_checking: String { s("正在验证…", "Checking…", "正在驗證…") }
-    static var login_need_phone: String { s("先填手机号", "Enter your phone number first", "先填手機號") }
-    static var login_need_code: String { s("填一下收到的验证码", "Enter the code you received", "填一下收到的驗證碼") }
-    static var login_too_often: String { s("发得太频繁了，%d 秒后再试", "Too many requests — try again in %ds", "發得太頻繁了，%d 秒後再試") }
-    /// 🚨 说清「没注册过会自动建号」——不然他会去找"注册"按钮找不到。
-    /// 🚨 **跟着 tab 换**：邮箱 tab 下写"手机号"是明显的错话
-    ///    （截图上看到过一次）。
-    static var login_note: String {
-        s("没注册过的手机号会自动创建账号。我们只用它做登录，不会发广告。",
-          "A new number gets an account automatically. We only use it to sign "
-          + "you in — no marketing.",
-          "沒註冊過的手機號會自動建立帳號。我們只用它做登入，不會發廣告。")
-    }
-    static var login_note_mail: String {
-        s("没注册过的邮箱会自动创建账号。我们只用它做登录，不会发广告。",
-          "A new email gets an account automatically. We only use it to sign "
-          + "you in — no marketing.",
-          "沒註冊過的電郵會自動建立帳號。我們只用它做登入，不會發廣告。")
-    }
-
-    static var act_manual: String { s("请手动开启", "Turn on manually", "請手動開啟") }
     static var act_settings: String { s("去设置 ›", "Settings ›", "去設定 ›") }
     static var done_allowed: String { s("已允许", "Allowed", "已允許") }
     static var done_enabled: String { s("已启用", "Enabled", "已啟用") }
@@ -198,6 +77,16 @@ enum L {
     static var kb_tr_before: String { s("译光标前的中文", "Translate the text before the cursor", "譯光標前的中文") }
     static var kb_nothing_before: String { s("光标前没有内容", "Nothing before the cursor", "光標前沒有內容") }
     static var kb_no_pass: String { s("这份包没配口令，重新构建一次", "This build has no backend password — rebuild it", "這份包沒配口令，重新構建一次") }
+    static var kb_type_plain: String { s("打字", "Type", "打字") }
+    static var kb_rec_failed_tap: String { s("录音失败 · 上面是现场，可长按复制；点一下收起", "Recording failed — details above, tap to dismiss", "錄音失敗 · 上面是現場，可長按複製；點一下收起") }
+    static var kb_need_full_short: String { s("设置 › 通用 › 键盘 › Transless 开启「允许完全访问」", "Settings › General › Keyboard › Transless › Allow Full Access", "設定 › 通用 › 鍵盤 › Transless 開啟「允許完全訪問」") }
+    static var kb_history_none: String { s("还没有记录", "Nothing yet", "還沒有記錄") }
+    static var kb_need_standby: String { s("先打开 Transless，点一下「键盘语音」再回来说话", "Open Transless and turn on Keyboard Voice, then come back", "先打開 Transless，點一下「鍵盤語音」再回來說話") }
+    static var kb_host_gone: String { s("Transless 被系统关掉了，打开它再点一次「键盘语音」", "Transless was closed by the system — open it and turn Keyboard Voice on again", "Transless 被系統關掉了，打開它再點一次「鍵盤語音」") }
+    static var kb_host_slow: String { s("等太久了，再说一次", "That took too long — try again", "等太久了，再說一次") }
+    static var kb_standby_on: String { s("键盘语音待机中", "Keyboard Voice on standby", "鍵盤語音待機中") }
+    static var kb_standby_off: String { s("键盘语音", "Keyboard Voice", "鍵盤語音") }
+    static var kb_standby_why: String { s("打开后 Transless 会留在后台待命。没在说话时麦克风是关的，只有你按下键盘上的麦克风才会开。十分钟没用会自动关掉，每次说话都会续期。", "Transless stays ready in the background. The microphone is off unless you press the mic on the keyboard. It turns itself off after ten minutes idle, and every dictation extends it.", "打開後 Transless 會留在後臺待命。沒在說話時麥克風是關的，只有你按下鍵盤上的麥克風才會開。十分鐘沒用會自動關掉，每次說話都會續期。") }
     static var st_listening_ios: String { s("听着呢 %d:%02d　·　说完再按一下红色按钮", "Listening %d:%02d　·　tap the red button when you're done", "聽著呢 %d:%02d　·　說完再按一下紅色按鈕") }
     static var msg_update_unreachable: String { s("连不上更新服务器：%1$s\n新版安装包现在直接发到你的飞书，不再走 GitHub。\n（在家连着自己网时，这里可以自助更新）", "Can't reach the update server: %1$s\nNew builds are sent to your Feishu now, not GitHub.\n(Self-update works at home, on your own network.)", "連不上更新伺服器：%1$s\n新版安裝包現在直接發到你的飛書，不再走 GitHub。\n（在家連著自己網時，這裡可以自助更新）") }
     static var msg_already_latest: String { s("已经是最新版了（%1$s）", "You're already on the latest version (%1$s)", "已經是最新版了（%1$s）") }
@@ -209,7 +98,7 @@ enum L {
     static var msg_speak_failed: String { s("朗读失败：%1$s", "Couldn't read it aloud: %1$s", "朗讀失敗：%1$s") }
     static var msg_mic_open_failed: String { s("打不开麦克风：%1$s", "Can't open the microphone: %1$s", "打不開麥克風：%1$s") }
     static var prefs_title: String { s("设置", "Settings", "設定") }
-    static var home_try_speak: String { s("随手翻译", "Translate as you go", "隨手翻譯") }
+    static var home_try_speak: String { s("说一段试试", "Try speaking", "說一段試試") }
     static var ios_step_add: String { s("在系统设置里添加 Transless 键盘", "Add the Transless keyboard in Settings", "在系統設定裡添加 Transless 鍵盤") }
     static var ios_step_full: String { s("打开「允许完全访问」（联网要用）", "Turn on Allow Full Access (needed for network)", "打開「允許完全訪問」（聯網要用）") }
     static var ios_update_note: String { s("iOS 通过 TestFlight 更新", "Updates arrive through TestFlight", "iOS 通過 TestFlight 更新") }
@@ -224,7 +113,6 @@ enum L {
     static var prefs_ime_off: String { s("还没设为当前输入法", "Not your keyboard yet", "還沒設為當前輸入法") }
     static var prefs_diag_sub: String { s("看最近几次录音为什么没转出来", "Why recent recordings did not come through", "看最近幾次錄音為什麼沒轉出來") }
     static var prefs_about: String { s("关于 Transless", "About Transless", "關於 Transless") }
-    static var prefs_privacy: String { s("隐私政策", "Privacy Policy", "私隱政策") }
     static var prefs_check_update: String { s("检查更新", "Check for updates", "檢查更新") }
     static var prefs_copy: String { s("复制", "Copy", "複製") }
     static var msg_no_input_conn: String { s("输入框没连上，先点一下输入框再试", "Tap the text field once, then try again", "輸入框沒連上，先點一下輸入框再試") }
@@ -255,14 +143,8 @@ enum L {
     static var rec_log_title: String { s("录音诊断", "Recording log", "錄音診斷") }
     static var kb_translate: String { s("翻译", "Translate", "翻譯") }
     static var kb_transcribe: String { s("转写", "Transcribe", "轉寫") }
-    static var kb_history_none: String { s("还没有记录", "Nothing yet", "還沒有記錄") }
     static var kb_history: String { s("历史", "History", "歷史") }
     static var kb_type: String { s("⌨  打字", "⌨  Type", "⌨  打字") }
-    /// 🚨 不带 emoji 的版本 —— 图标改用 SF Symbol setImage()，
-    ///    文案里的 ⌨ 在 iOS 上是彩色 emoji，跟旁边的描边图标打架。
-    static var kb_type_plain: String { s("打字", "Type", "打字") }
-    /// 轻警告条用的短文案（Grok：原文太长、一行放不下）。
-    static var kb_need_full_short: String { s("设置 › 通用 › 键盘 › Transless 开启「允许完全访问」", "Settings › General › Keyboard › Transless › Allow Full Access", "設定 › 一般 › 鍵盤 › Transless 開啟「允許完全存取」") }
     static var kb_speak: String { s("朗读", "Speak", "朗讀") }
     static var kb_send: String { s("发送", "Send", "發送") }
     static var kb_stop: String { s("■ 停", "■ Stop", "■ 停") }
@@ -279,30 +161,6 @@ enum L {
     static var kb_hand_s: String { s("写", "HW", "寫") }
     static var kb_done: String { s("完成", "Done", "完成") }
     static var kb_space: String { s("空格", "Space", "空格") }
-    /// 引导页第 2 项的说明。🚨 iOS 不给容器 App 查「完全访问」的接口，
-    /// 所以这里如实说明，不假装知道状态。
-    static var full_note: String {
-        s("在设置里打开就行。开好之后这一行不会变绿 —— iOS 不让 App 查这个状态，"
-          + "以键盘里的提示为准。",
-          "Just switch it on in Settings. This line won't turn green afterwards — "
-          + "iOS doesn't let the app read that state. The keyboard will tell you.",
-          "在設定裡打開就行。開好之後這一行不會變綠 —— iOS 不讓 App 查這個狀態，"
-          + "以鍵盤裡的提示為準。")
-    }
-    /// 键盘扩展里没有完全访问时挂的提示。
-    static var kb_need_full: String {
-        s("请到 设置 › 通用 › 键盘 › Transless 打开「允许完全访问」，否则联网用不了",
-          "Open Settings › General › Keyboard › Transless and turn on Allow Full "
-          + "Access — networking won't work without it",
-          "請到 設定 › 一般 › 鍵盤 › Transless 打開「允許完全存取」，否則聯網用不了")
-    }
-    static var try_bigtext: String { s("大字", "Big text", "大字") }
-    static var try_dir_me: String { s("⇄ 我说", "⇄ Me", "⇄ 我說") }
-    static var try_dir_them: String { s("⇄ 对方说", "⇄ Them", "⇄ 對方說") }
-    static var try_reverse: String { s("⇄ 对方说", "⇄ Them", "⇄ 對方說") }
-    static var try_reverse_on: String { s("反向：对方说外语，译成你的语言", "Reverse: they speak, you read it in your language", "反向：對方說外語，譯成你的語言") }
-    static var try_continuous: String { s("连续", "Continuous", "連續") }
-    static var try_cont_on: String { s("连续模式：说一句出一句，说完点停止", "Continuous mode: speak, and each sentence comes back. Tap to stop.", "連續模式：說一句出一句，說完點停止") }
     static var kb_polish: String { s("整理", "Clean up", "整理") }
     static var kb_verbatim: String { s("逐字", "Verbatim", "逐字") }
     static var kb_resend: String { s("重新上屏", "Insert again", "重新上屏") }
@@ -312,4 +170,87 @@ enum L {
     static var hist_title: String { s("  历史记录", "  History", "  歷史記錄") }
     static var hist_empty: String { s("还没有记录 · 说一句就会自动存下来", "Nothing yet · Everything you say gets saved here", "還沒有記錄 · 說一句就會自動存下來") }
     static var rec_empty: String { s("还没有录音记录。", "No recordings yet.", "還沒有錄音記錄。") }
+    static var account_edit: String { s("点这里填写", "Tap to fill in", "點這裡填寫") }
+    static var account_none: String { s("未登录", "Not signed in", "未登入") }
+    static var account_page: String { s("我的账户", "My account", "我的帳戶") }
+    static var account_signout: String { s("退出登录", "Sign out", "登出") }
+    static var account_signout_ask: String { s("确定要退出登录吗？下次要重新收验证码。", "Sign out? You\\'ll need a new code to sign back in.", "確定要登出嗎？下次要重新收驗證碼。") }
+    static var account_title: String { s("账户", "Account", "帳戶") }
+    static var act_manual: String { s("请手动开启", "Turn on manually", "請手動開啟") }
+    static var full_note: String { s("在设置里打开就行。开好之后这一行不会变绿 —— iOS 不让 App 查这个状态，以键盘里的提示为准。", "Just switch it on in Settings. This line won't turn green afterwards — iOS doesn't let the app read that state. The keyboard will tell you.", "在設定裡打開就行。開好之後這一行不會變綠 —— iOS 不讓 App 查這個狀態，以鍵盤裡的提示為準。") }
+    static var home_wordbook: String { s("单词本", "Word book", "單詞本") }
+    static var home_wordbook_soon: String { s("单词本下个版本上线", "Word book is coming next version", "單詞本下個版本上線") }
+    static var kb_keep: String { s("收藏", "Save", "收藏") }
+    static var kb_kept: String { s("已收", "Saved", "已收") }
+    static var login_checking: String { s("正在验证…", "Checking…", "正在驗證…") }
+    static var login_code_ph: String { s("6 位验证码", "6-digit code", "6 位驗證碼") }
+    static var login_do: String { s("登录", "Sign in", "登入") }
+    static var login_email_ph: String { s("邮箱地址", "Email address", "電郵地址") }
+    static var login_gate_go: String { s("去登录", "Sign in", "去登入") }
+    static var login_gate_ime: String { s("登录后才能把 Transless 设成输入法。随手翻译不用登录，一直都能用。", "Sign in to set Transless as your keyboard. Translate as you go never needs an account.", "登入後才能把 Transless 設成輸入法。隨手翻譯不用登入，一直都能用。") }
+    static var login_gate_later: String { s("以后再说", "Not now", "以後再說") }
+    static var login_gate_wordbook: String { s("登录后才能用单词本。随手翻译不用登录，一直都能用。", "Sign in to use the word book. Translate as you go never needs an account.", "登入後才能用單詞本。隨手翻譯不用登入，一直都能用。") }
+    static var login_mainland_only: String { s("目前手机号登录只支持中国内地号码，海外请用邮箱", "Phone sign-in currently supports mainland China numbers only — please use email", "目前手機號登入只支援中國內地號碼，海外請用電郵") }
+    static var login_need_code: String { s("填一下收到的验证码", "Enter the code you received", "填一下收到的驗證碼") }
+    static var login_need_email: String { s("填一个邮箱地址", "Enter an email address", "填一個電郵地址") }
+    static var login_note: String { s("没注册过的手机号会自动创建账号。我们只用它做登录，不会发广告。", "A new number gets an account automatically. We only use it to sign you in — no marketing.", "沒註冊過的手機號會自動建立帳號。我們只用它做登入，不會發廣告。") }
+    static var login_note_mail: String { s("没注册过的邮箱会自动创建账号。我们只用它做登录，不会发广告。", "A new email gets an account automatically. We only use it to sign you in — no marketing.", "沒註冊過的電郵會自動建立帳號。我們只用它做登入，不會發廣告。") }
+    static var login_phone_ph: String { s("手机号", "Phone number", "手機號") }
+    static var login_send_again: String { s("重新获取", "Send again", "重新獲取") }
+    static var login_send_code: String { s("获取验证码", "Send code", "獲取驗證碼") }
+    static var login_sending: String { s("正在发送…", "Sending…", "正在傳送…") }
+    static var login_sent: String { s("验证码已发出，注意查收短信", "Code sent — check your SMS", "驗證碼已發出，注意查收簡訊") }
+    static var login_sent_mail: String { s("验证码已发到邮箱，注意查收（也看一下垃圾邮件）", "Code sent to your email — check spam too", "驗證碼已發到電郵，注意查收（也看一下垃圾郵件）") }
+    static var login_tab_email: String { s("邮箱", "Email", "電郵") }
+    static var login_tab_phone: String { s("手机号", "Phone", "手機號") }
+    static var login_too_often: String { s("发得太频繁了，%1$d 秒后再试", "Too many requests — try again in %1$ds", "發得太頻繁了，%1$d 秒後再試") }
+    static var login_wait: String { s("%1$d 秒后可重发", "Resend in %1$ds", "%1$d 秒後可重發") }
+    static var login_why: String { s("登录之后才能把 Transless 设为输入法，也方便你换手机时找回设置。", "Sign in to set Transless as your keyboard — it also keeps your settings when you switch phones.", "登入之後才能把 Transless 設為輸入法，也方便你換手機時找回設定。") }
+    static var prefs_privacy: String { s("隐私政策", "Privacy Policy", "私隱政策") }
+    static var profile_birth: String { s("出生日期（选填）", "Date of birth (optional)", "出生日期（選填）") }
+    static var profile_country: String { s("国家/地区", "Country", "國家/地區") }
+    static var profile_day: String { s("日", "Day", "日") }
+    static var profile_done: String { s("完成", "Done", "完成") }
+    static var profile_email: String { s("邮箱", "Email", "郵箱") }
+    static var profile_job: String { s("职业", "Occupation", "職業") }
+    static var profile_month: String { s("月", "Month", "月") }
+    static var profile_nick: String { s("昵称", "Nickname", "暱稱") }
+    static var profile_nick_ph: String { s("怎么称呼你", "What should we call you", "怎麼稱呼你") }
+    static var profile_region: String { s("省份/州", "State / Province", "省份/州") }
+    static var profile_sub: String { s("起个昵称，以后界面上就显示它，不用挂着一长串邮箱。", "Pick a nickname — it shows up instead of your full email.", "起個暱稱，以後介面上就顯示它，不用掛著一長串郵箱。") }
+    static var profile_title: String { s("完善资料", "Set up your profile", "完善資料") }
+    static var profile_year: String { s("年", "Year", "年") }
+    static var save: String { s("保存", "Save", "儲存") }
+    static var try_bigtext: String { s("大字", "Big text", "大字") }
+    static var try_cont_on: String { s("连续模式：说一句出一句，说完点停止", "Continuous mode: speak, and each sentence comes back. Tap to stop.", "連續模式：說一句出一句，說完點停止") }
+    static var try_continuous: String { s("连续", "Continuous", "連續") }
+    static var try_dir_me: String { s("⇄ 我说", "⇄ Me", "⇄ 我說") }
+    static var try_dir_them: String { s("⇄ 对方说", "⇄ Them", "⇄ 對方說") }
+    static var try_reverse_on: String { s("反向：对方说外语，译成你的语言", "Reverse: they speak, you read it in your language", "反向：對方說外語，譯成你的語言") }
+    static var wb_added_on: String { s("收于 %1$s", "Added %1$s", "收於 %1$s") }
+    static var wb_back: String { s("返回", "Back", "返回") }
+    static var wb_count: String { s("共 %1$d 条，今天要复习 %2$d 条", "%1$d saved · %2$d due today", "共 %1$d 條，今天要複習 %2$d 條") }
+    static var wb_delete: String { s("删掉这条", "Delete", "刪掉這條") }
+    static var wb_delete_ask: String { s("删掉之后复习进度也没了，确定吗？", "Deleting also clears its review progress. Sure?", "刪掉之後複習進度也沒了，確定嗎？") }
+    static var wb_dupe: String { s("已经在单词本里了", "Already in your word book", "已經在單詞本裡了") }
+    static var wb_empty: String { s("还没收东西。用随手翻译说一句，出结果后点 ＋ 就收进来了。", "Nothing yet. Say something in Translate as you go, then tap + on the result.", "還沒收東西。用隨手翻譯說一句，出結果後點 ＋ 就收進來了。") }
+    static var wb_en: String { s("英文", "English", "英文") }
+    static var wb_front_en: String { s("英文", "English", "英文") }
+    static var wb_front_fmt: String { s("正面显示：%1$s", "Card front: %1$s", "正面顯示：%1$s") }
+    static var wb_front_zh: String { s("中文", "Chinese", "中文") }
+    static var wb_got: String { s("想起来了", "Got it", "想起來了") }
+    static var wb_graduated: String { s("熟了", "Learned", "熟了") }
+    static var wb_missed: String { s("没想起来", "Missed it", "沒想起來") }
+    static var wb_nogroup: String { s("键盘里收的词现在同步不过来（App Group 没配好）。", "Words saved from the keyboard can't sync yet (App Group not set up).", "鍵盤裡收的詞現在同步不過來（App Group 沒配好）。") }
+    static var wb_on: String { s("收进来的日期", "Saved on", "收進來的日期") }
+    static var wb_progress: String { s("记住 %1$d 次 · 跨 %2$d 天", "%1$d hits · %2$d days", "記住 %1$d 次 · 跨 %2$d 天") }
+    static var wb_progress_label: String { s("复习进度", "Progress", "複習進度") }
+    static var wb_review_done: String { s("今天没有要复习的了。", "Nothing due today.", "今天沒有要複習的了。") }
+    static var wb_review_n: String { s("复习（%1$d）", "Review (%1$d)", "複習（%1$d）") }
+    static var wb_save_failed: String { s("没收成功，再试一次", "Couldn\\'t save, try again", "沒收成功，再試一次") }
+    static var wb_saved: String { s("已收进单词本", "Saved to word book", "已收進單詞本") }
+    static var wb_show: String { s("翻面看答案", "Show answer", "翻面看答案") }
+    static var wb_title: String { s("单词本", "Word book", "單詞本") }
+    static var wb_tone: String { s("语气", "Tone", "語氣") }
+    static var wb_zh: String { s("你当时说的", "What you said", "你當時說的") }
 }
