@@ -30,6 +30,28 @@ final class KeyboardViewController: UIInputViewController {
     private var tone = Prompts.normalize(UserDefaults.standard.string(forKey: "vime.tone"))
 
     private let hintLabel = UILabel()
+
+    /// 录音失败时的**完整现场**。
+    ///
+    /// 🚨 `hintLabel` 是 `numberOfLines = 1`，塞多行进去**只会显示第一行** ——
+    ///    557 就是这么把唯一的诊断线索弄丢的：我为了"修截断"改成换行排，
+    ///    结果 Kevin 看到的从 `2003329396 输入 4800…` 变成了
+    ///    只剩 `录音引擎：2003329396`。
+    ///    **"信息变少"最常见的原因不是系统状态变了，是我们自己把它吃掉了。**
+    private var diagView: UITextView?
+
+    /// 🚨 **白下巴定性用的一条 2px 亮线**，贴在我们键盘容器的**最底边**。
+    ///
+    /// Kevin 报「紫色键盘到 Send 那行就结束，下面还有一条浅灰带，
+    /// 里面左边地球、右边麦克风」。**那条带子是谁的我们一直不知道**，
+    /// 而这决定了修法完全不同：
+    ///   · 线**在灰带上方** → 我们的容器到此为止 → **灰带不是我们的**
+    ///     （多半是宿主 App 或系统的输入栏）→ 我们改不了也不该改
+    ///   · 线**在灰带下方或看不到** → 灰带在我们容器里 → **是我们的**
+    ///
+    /// **一次真机、一个二元答案**，比反复问"还在不在"强。
+    /// 🚨 临时诊断件，定性之后删掉。
+    private let bottomProbe = UIView()
     private let heardLabel = UILabel()
     /// 跑在 App 内的预览页里（不是真扩展）。预览壳会把它设成 true。
     /// 🚨 只影响「完全访问」那条警告 —— 那是扩展独有的概念，
@@ -403,6 +425,22 @@ final class KeyboardViewController: UIInputViewController {
                                          constant: -6),
             hc,
         ])
+
+        // 🚨 白下巴定性线（**临时诊断件**）。见 `bottomProbe` 的注释：
+        //    这条 2px 荧光绿贴在我们容器的最底边，一次真机就能给出
+        //    "那条灰带是不是我们的"这个二元答案。
+        //    荧光绿是故意的 —— 配色里没有这个颜色，不会跟任何东西混。
+        bottomProbe.backgroundColor = UIColor(red: 0, green: 1, blue: 0.35,
+                                              alpha: 1)
+        bottomProbe.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(bottomProbe)
+        NSLayoutConstraint.activate([
+            bottomProbe.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            bottomProbe.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            bottomProbe.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            bottomProbe.heightAnchor.constraint(equalToConstant: 2),
+        ])
+
         paintMode()
     }
 
@@ -782,6 +820,43 @@ final class KeyboardViewController: UIInputViewController {
 
     @objc private func backspace() { textDocumentProxy.deleteBackward() }
 
+    /// 把录音失败的现场完整摆出来：多行、可选中复制、不截断。
+    ///
+    /// 🚨 用 `UITextView` 而不是 `UILabel`：
+    ///    · 能滚动 —— 内容比键盘高时不会被裁掉
+    ///    · 能选中复制 —— 他不用再截图，直接粘过来
+    ///    `UILabel` 两样都做不到，而这正是前两轮丢信息的原因。
+    private func showDiag(_ text: String) {
+        diagView?.removeFromSuperview()
+        let tv = UITextView()
+        tv.text = text
+        tv.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+        tv.textColor = Theme.text
+        tv.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        tv.isEditable = false
+        tv.isSelectable = true          // 让他能直接复制
+        tv.layer.cornerRadius = 8
+        tv.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(tv)
+        NSLayoutConstraint.activate([
+            tv.leadingAnchor.constraint(equalTo: view.leadingAnchor,
+                                        constant: 8),
+            tv.trailingAnchor.constraint(equalTo: view.trailingAnchor,
+                                         constant: -8),
+            tv.topAnchor.constraint(equalTo: view.topAnchor, constant: 6),
+            tv.bottomAnchor.constraint(equalTo: view.bottomAnchor,
+                                       constant: -34),
+        ])
+        diagView = tv
+        tv.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(hideDiag)))
+    }
+
+    @objc private func hideDiag() {
+        diagView?.removeFromSuperview()
+        diagView = nil
+    }
+
     private func setPhase(_ p: Phase, hint: String) {
         if p == .thinking && phase != .thinking { thinkingSince = Date() }
         phase = p
@@ -832,7 +907,11 @@ final class KeyboardViewController: UIInputViewController {
                 guard let self = self else { return }
                 switch result {
                 case .failure(let f):
-                    self.setPhase(.idle, hint: "\(f)\n可改用系统键盘的 🎤 说完，再点下面「译光标前的中文」")
+                    // 🚨 一行**摘要**留在 hintLabel（它 numberOfLines = 1，
+                    //    塞多行进去只会显示第一行 —— 557 就是这么把唯一的
+                    //    诊断线索弄丢的）。**完整现场走独立面板**。
+                    self.setPhase(.idle, hint: L.kb_rec_failed_tap)
+                    self.showDiag("\(f)\n\n" + Voice.diagnostics())
                 case .success(let wav):
                     self.setPhase(.thinking, hint: "")
                     Backend.transcribe(wav: wav) { [weak self] r in

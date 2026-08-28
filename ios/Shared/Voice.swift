@@ -102,6 +102,47 @@ final class Voice: NSObject {
         return out
     }
 
+    /// 录音失败时的**完整现场**。全部读**当前实际值**，不是我们想设的值。
+    ///
+    /// 🚨 为什么要有这个：`AVAudioSessionErrorCodeUnspecified` 本来就是
+    ///    "未指定错误" —— **苹果自己都不说是什么**。
+    ///    520 → 555 → 557 三轮都是「猜根因 → 改 → 出包 → 他试 → 还是不行」，
+    ///    每一轮消耗他一次真机测试，而我们的信息只增加了一行报错。
+    ///    **不能再盲改了，先让它自己说清楚。**
+    ///
+    /// 🚨 读的是 `session.category` 这些**实际生效的属性**，
+    ///    不是我们传给 `setCategory` 的那些参数 —— 那两者可能不一样，
+    ///    而"我们想设什么"这个信息对定位毫无用处。
+    static func diagnostics() -> String {
+        let s = AVAudioSession.sharedInstance()
+        var out: [String] = []
+        out.append("=== 录音现场 ===")
+        out.append("跑在      \(inExtension ? "键盘扩展" : "主App")")
+        out.append("类别      \(s.category.rawValue)")
+        out.append("模式      \(s.mode.rawValue)")
+        out.append("选项      \(s.categoryOptions.rawValue)")
+        out.append("采样率    \(Int(s.sampleRate))Hz")
+        out.append("输入声道  \(s.inputNumberOfChannels)")
+        out.append("有输入吗  \(s.isInputAvailable)")
+        // 可用输入设备：个数 + 名字。0 个 = 系统层面就没给我们麦克风。
+        let avail = s.availableInputs ?? []
+        out.append("可用输入  \(avail.count) 个\(avail.map { $0.portName }.joined(separator: ","))")
+        let r = s.currentRoute
+        out.append("当前路由  入\(r.inputs.count) 出\(r.outputs.count)")
+        if let i = r.inputs.first {
+            out.append("  输入口  \(i.portType.rawValue) \(i.portName)")
+        }
+        let perm: String
+        switch s.recordPermission {
+        case .granted: perm = "已授权"
+        case .denied: perm = "被拒绝"
+        default: perm = "还没问"
+        }
+        out.append("麦克风权限 \(perm)")
+        out.append("其它App在放音 \(s.isOtherAudioPlaying)")
+        return out.joined(separator: "\n")
+    }
+
     static func permissionState() -> Failure? {
         if AVAudioSession.sharedInstance().recordPermission != .granted {
             return Failure(stage: .permissionMic, detail: "去 Transless App 里授权一次")
