@@ -202,9 +202,29 @@ jobs:
             -archivePath "$RUNNER_TEMP/Transless.xcarchive" \
             -derivedDataPath build \
             DEVELOPMENT_TEAM="$TEAM_ID" \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGN_IDENTITY="iPhone Distribution" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN"
+
+          # 🚨🚨 **归档之后立刻验二进制的 entitlements** —— 判据挂在产物上。
+          #    2026-08-28 实撞：描述文件里有组 ✅、构建成功 ✅、
+          #    装到手机上 `containerURL` 仍返回 nil ❌。
+          #    根因：归档那步原来写 `CODE_SIGNING_ALLOWED=NO`，
+          #    **不签名时 Xcode 根本不处理 `CODE_SIGN_ENTITLEMENTS`**，
+          #    归档里没有 entitlements；`-exportArchive` 再签时只能从描述文件
+          #    派生出那几个默认项，**我们那条 application-groups 被丢掉**。
+          #    Kevin 为此白试了一次（582）。
+          #    **这条要在归档后就查，别等导出、更别等装机。**
+          A="$RUNNER_TEMP/Transless.xcarchive/Products/Applications/Transless.app"
+          for T in "$A" "$A/PlugIns/Keyboard.appex"; do
+            E=$(codesign -d --entitlements - --xml "$T" 2>/dev/null || true)
+            echo "--- $T"
+            echo "$E" | grep -o "group\.com\.kevin\.transless" | head -1 || true
+            echo "$E" | grep -q "group.com.kevin.transless" || {
+              echo "::error::$T 的 entitlements 里没有 group.com.kevin.transless"
+              echo "$E" | head -40
+              exit 1; }
+          done
+          echo "=== 归档里两个二进制都带着 App Group ==="
 
       # ---- 结构闸门：键盘扩展有没有被打进包（这一步不管签名）----
       - name: 结构闸门（键盘扩展在不在包里）
@@ -273,6 +293,27 @@ jobs:
           codesign -dv --verbose=4 "$KB" 2>&1 | tee "$RUNNER_TEMP/sig_kb.txt"
 
           FAIL=0
+          # 🚨🚨 **entitlements 也要查，而且查的是二进制不是描述文件**（2026-08-28 补）。
+          #    这道闸原来只查"用谁的证书签的"，**没查签进去了什么** ——
+          #    于是 582 一路绿地发到他手机上，`containerURL` 返回 nil。
+          #
+          #    🚨 **描述文件 ≠ entitlements**：
+          #      · 描述文件 = 苹果**允许**这个 App 用这个组
+          #      · entitlements = 这个二进制**声明**它要用这个组
+          #      前者有、后者没有 → 签名过、安装过、运行时拿不到共享容器。
+          #    我当时验的是前者，判据挂错了对象。
+          for pair in "主App:$APP" "键盘:$KB"; do
+            NAME="${pair%%:*}"; T="${pair#*:}"
+            E=$(codesign -d --entitlements - --xml "$T" 2>/dev/null || true)
+            if echo "$E" | grep -q "group.com.kevin.transless"; then
+              echo "  $NAME entitlements 带着 App Group   PASS"
+            else
+              echo "::error::$NAME 的 entitlements 里没有 group.com.kevin.transless"
+              echo "$E" | head -40
+              FAIL=1
+            fi
+          done
+
           for f in app kb; do
             # 🚨 两种命名都算数：新证书叫 Apple Distribution，旧的叫 iPhone Distribution，
             #    Kevin 这张是后者。只认一种会把对的判成错的（run #1 就栽在这）。
