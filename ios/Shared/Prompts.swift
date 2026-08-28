@@ -30,8 +30,12 @@ enum Prompts {
     static func tone(_ t: String) -> String {
         switch t {
         case "email":
-            return "a business email body. Slightly more formal, complete sentences, "
-                 + "no greeting line and no sign-off unless the speaker said one."
+            return "a real business email, also used for formal written communication to a "
+                 + "client, regulator or auditor. It must be laid out as an email (salutation "
+                 + "line, blank line, short paragraphs, closing, sign-off) and worded as a "
+                 + "formal request, not as a spoken instruction. Complete sentences, no "
+                 + "contractions, hedged where the speaker hedged, no slang. See EMAIL SHAPE "
+                 + "below - it is mandatory for this register."
         case "casual":
             return "a casual message to someone you know well. Relaxed, short, contractions."
         default:
