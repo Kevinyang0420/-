@@ -10,8 +10,11 @@
 #        · 新：Apple Distribution: 姓名 (TEAMID)    ← DISTRIBUTION
 #        2026-08-25 run #1 就是死抠 "Apple Distribution" 把一个对的证书判成了错的。
 #   IOS_CERT_PASSWORD       .p12 的密码
-#   IOS_PROFILE_APP_BASE64  主 App 的 .mobileprovision base64
-#   IOS_PROFILE_KB_BASE64   键盘扩展的 .mobileprovision base64
+#   🚨 IOS_PROFILE_APP_BASE64 / IOS_PROFILE_KB_BASE64 **已废弃，别再用**：
+#      描述文件现在由 `ios/ci_fetch_profiles.py` 构建时从 App Store Connect 现取。
+#      它们曾经是描述文件的**第二个配置点** —— 2026-08-28 在苹果那边重签之后
+#      secret 里还是旧的，CI 照样 success，而导出的 IPA 里没有 App Group，
+#      装到手机上键盘语音静默失效。全程没有任何红色。
 #   IOS_TEAM_ID             10 位 Team ID
 #   ASC_API_KEY_ID          App Store Connect API Key ID（上传用）
 #   ASC_API_ISSUER_ID       Issuer ID
@@ -121,8 +124,11 @@ jobs:
         env:
           CERT_B64: ${{ secrets.IOS_CERT_P12_BASE64 }}
           CERT_PW: ${{ secrets.IOS_CERT_PASSWORD }}
-          PROF_APP_B64: ${{ secrets.IOS_PROFILE_APP_BASE64 }}
-          PROF_KB_B64: ${{ secrets.IOS_PROFILE_KB_BASE64 }}
+          # 🚨 那两个 IOS_PROFILE_*_BASE64 secret 已经**不再使用** ——
+          #    见下面那段说明。别再加回来：它们是描述文件的第二个配置点。
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          ASC_KEY_B64: ${{ secrets.ASC_API_KEY_BASE64 }}
         run: |
           set -euo pipefail
           KEYCHAIN="$RUNNER_TEMP/build.keychain"
@@ -146,28 +152,28 @@ jobs:
           echo "找到 $N 个发布证书身份（Apple/iPhone Distribution 都算）"
           test "$N" -ge 1 || { echo "::error::证书没导入成功"; exit 1; }
 
+          # 🚨🚨 **描述文件从 App Store Connect 现取，不再走 secret**（2026-08-28 改）。
+          #
+          #    原来它们存在 `IOS_PROFILE_APP_BASE64` / `IOS_PROFILE_KB_BASE64` 里。
+          #    那天在苹果那边给两个 App ID 挂上 App Group、重签了描述文件 ——
+          #    **secret 里还是旧的**。结果：
+          #      · CI 构建 **success**
+          #      · 导出的 IPA 内嵌的描述文件**没有** application-groups
+          #      · 装到手机上 `containerURL(...)` 返回 nil → 键盘语音**静默失效**
+          #    **同一个东西两个配置点，只改了一个，而且全程没有任何红色。**
+          #    （是人去拆 IPA 才发现的 —— 那不该是发现方式。）
+          #
+          #    现在只剩一个来源：苹果那边。顺带把那条判据做成闸门，每次构建都查。
           PROF_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$PROF_DIR"
-          echo "$PROF_APP_B64" | base64 --decode > "$PROF_DIR/app.mobileprovision"
-          echo "$PROF_KB_B64"  | base64 --decode > "$PROF_DIR/kb.mobileprovision"
-
-          # 读出两个描述文件的 bundle id 和名字。
-          # 🚨 名字要传给导出那步：两个 target 各挂各的描述文件，只能靠名字点名。
-          #    bundle id 也在这儿核一遍 —— 两份装反了的话，错误会推迟到导出时才炸，
-          #    而那时的报错跟「描述文件装反了」完全看不出关系。
-          for f in app kb; do
-            security cms -D -i "$PROF_DIR/$f.mobileprovision" > "$RUNNER_TEMP/$f.plist"
-            AID=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" \
-                  "$RUNNER_TEMP/$f.plist")
-            NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" "$RUNNER_TEMP/$f.plist")
-            BID=${AID#*.}          # 去掉前面的 TEAMID.
-            echo "  $f: bundle=${BID}  profile=[${NAME}]"
-            if [ "$f" = app ]; then WANT=com.kevin.transless; VAR=PROF_APP_NAME
-            else                    WANT=com.kevin.transless.keyboard; VAR=PROF_KB_NAME; fi
-            test "$BID" = "$WANT" || {
-              echo "::error::${f} 的描述文件对应 ${BID}，应为 ${WANT}（两份装反了？）"; exit 1; }
-            echo "$VAR=$NAME" >> "$GITHUB_ENV"
-          done
+          # 🚨 runner 上的 python3 是 Homebrew 管的，直接 pip 会被 PEP 668 拒：
+          #    `externally-managed-environment`（2026-08-28 实撞，构建当场挂）。
+          #    **不要用 `--break-system-packages` 绕** —— 那会动 runner 的系统环境。
+          #    建个临时 venv，用完就没了。
+          python3 -m venv "$RUNNER_TEMP/pvenv"
+          "$RUNNER_TEMP/pvenv/bin/pip" install --quiet --disable-pip-version-check \
+            pyjwt cryptography
+          "$RUNNER_TEMP/pvenv/bin/python" ios/ci_fetch_profiles.py "$PROF_DIR"
 
           echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
           echo "KEYCHAIN_PW=$KEYCHAIN_PW" >> "$GITHUB_ENV"
@@ -196,9 +202,29 @@ jobs:
             -archivePath "$RUNNER_TEMP/Transless.xcarchive" \
             -derivedDataPath build \
             DEVELOPMENT_TEAM="$TEAM_ID" \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGN_IDENTITY="iPhone Distribution" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN"
+
+          # 🚨🚨 **归档之后立刻验二进制的 entitlements** —— 判据挂在产物上。
+          #    2026-08-28 实撞：描述文件里有组 ✅、构建成功 ✅、
+          #    装到手机上 `containerURL` 仍返回 nil ❌。
+          #    根因：归档那步原来写 `CODE_SIGNING_ALLOWED=NO`，
+          #    **不签名时 Xcode 根本不处理 `CODE_SIGN_ENTITLEMENTS`**，
+          #    归档里没有 entitlements；`-exportArchive` 再签时只能从描述文件
+          #    派生出那几个默认项，**我们那条 application-groups 被丢掉**。
+          #    Kevin 为此白试了一次（582）。
+          #    **这条要在归档后就查，别等导出、更别等装机。**
+          A="$RUNNER_TEMP/Transless.xcarchive/Products/Applications/Transless.app"
+          for T in "$A" "$A/PlugIns/Keyboard.appex"; do
+            E=$(codesign -d --entitlements - --xml "$T" 2>/dev/null || true)
+            echo "--- $T"
+            echo "$E" | grep -o "group\.com\.kevin\.transless" | head -1 || true
+            echo "$E" | grep -q "group.com.kevin.transless" || {
+              echo "::error::$T 的 entitlements 里没有 group.com.kevin.transless"
+              echo "$E" | head -40
+              exit 1; }
+          done
+          echo "=== 归档里两个二进制都带着 App Group ==="
 
       # ---- 结构闸门：键盘扩展有没有被打进包（这一步不管签名）----
       - name: 结构闸门（键盘扩展在不在包里）
@@ -267,6 +293,27 @@ jobs:
           codesign -dv --verbose=4 "$KB" 2>&1 | tee "$RUNNER_TEMP/sig_kb.txt"
 
           FAIL=0
+          # 🚨🚨 **entitlements 也要查，而且查的是二进制不是描述文件**（2026-08-28 补）。
+          #    这道闸原来只查"用谁的证书签的"，**没查签进去了什么** ——
+          #    于是 582 一路绿地发到他手机上，`containerURL` 返回 nil。
+          #
+          #    🚨 **描述文件 ≠ entitlements**：
+          #      · 描述文件 = 苹果**允许**这个 App 用这个组
+          #      · entitlements = 这个二进制**声明**它要用这个组
+          #      前者有、后者没有 → 签名过、安装过、运行时拿不到共享容器。
+          #    我当时验的是前者，判据挂错了对象。
+          for pair in "主App:$APP" "键盘:$KB"; do
+            NAME="${pair%%:*}"; T="${pair#*:}"
+            E=$(codesign -d --entitlements - --xml "$T" 2>/dev/null || true)
+            if echo "$E" | grep -q "group.com.kevin.transless"; then
+              echo "  $NAME entitlements 带着 App Group   PASS"
+            else
+              echo "::error::$NAME 的 entitlements 里没有 group.com.kevin.transless"
+              echo "$E" | head -40
+              FAIL=1
+            fi
+          done
+
           for f in app kb; do
             # 🚨 两种命名都算数：新证书叫 Apple Distribution，旧的叫 iPhone Distribution，
             #    Kevin 这张是后者。只认一种会把对的判成错的（run #1 就栽在这）。
@@ -303,8 +350,34 @@ jobs:
           set -euo pipefail
           mkdir -p ~/private_keys
           echo "$KEY_B64" | base64 --decode > ~/private_keys/AuthKey_${KEY_ID}.p8
+          # 🚨🚨 **不许只信 altool 的退出码**（2026-08-28 实撞）。
+          #    它打了
+          #      ERROR: Failed to upload package.
+          #      The bundle version must be higher than the previously uploaded version: '585'
+          #    **却返回 0** —— 于是整个 CI 报 success，而 TestFlight 上一个新构建都没有。
+          #    `set -euo pipefail` 拦不住"命令自己说成功"。
+          set +e
           xcrun altool --upload-app -f "$RUNNER_TEMP/export/Transless.ipa" \
-            -t ios --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID"
+            -t ios --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID" \
+            2>&1 | tee "$RUNNER_TEMP/altool.log"
+          RC=${PIPESTATUS[0]}
+          set -e
+          echo "altool 退出码 = $RC"
+          if grep -qE "ERROR:|Failed to upload" "$RUNNER_TEMP/altool.log"; then
+            echo "::error::altool 输出里有 ERROR（退出码是 ${RC}，别信它）"
+            tail -30 "$RUNNER_TEMP/altool.log"
+            exit 1
+          fi
+          test "$RC" -eq 0 || { echo "::error::altool 退出码 $RC"; exit 1; }
+
+          # 🚨 最后一道：**回 ASC 确认真的多了一个构建**，判据挂在上传时间上，
+          #    不是"版本号最大的那个"（那会把几小时前的旧包当成新包）。
+          WANT_BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" \
+            "$RUNNER_TEMP/ipacheck/Payload/Transless.app/Info.plist")
+          echo "本次构建号 = $WANT_BUILD"
+          ASC_KEY_ID="$KEY_ID" ASC_ISSUER_ID="$ISSUER_ID" ASC_KEY_B64="$KEY_B64" \
+            WANT_BUILD="$WANT_BUILD" \
+            "$RUNNER_TEMP/pvenv/bin/python" ios/ci_verify_upload.py
 
       - uses: actions/upload-artifact@v4
         with:

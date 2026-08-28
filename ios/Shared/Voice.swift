@@ -158,6 +158,9 @@ final class Voice: NSObject {
     ///
     /// 🚨 两种模式共用同一段 tap，差别只在"切不切" ——
     ///    复制一份出来做连续模式的话，以后改采样率/WAV 头就有两处要改。
+    /// 每帧音量（0…1）。键盘那条波形靠它。**单句模式也会给**。
+    var onLevel: ((Float) -> Void)?
+
     func start(onPartial: @escaping (String) -> Void,
                onUtterance: ((Data) -> Void)? = nil,
                onWav: @escaping (Result<Data, Failure>) -> Void) {
@@ -241,6 +244,16 @@ final class Voice: NSObject {
             let n = Int(out.frameLength)
             self.pcm.append(UnsafeBufferPointer(start: ch[0], count: n)
                 .withMemoryRebound(to: UInt8.self) { Data($0) })
+
+            // 🚨 音量**要在这道 guard 之前**算完抛出去。
+            //    原来 level 是在下面算的，而单句模式在这一行就 return 了
+            //    —— 键盘走的正是单句模式，等于**一个音量值都拿不到**。
+            //    「代码里有这个变量」和「这条路上会算它」是两回事。
+            var s0: Double = 0
+            for i in 0..<n { let v = Double(ch[0][i]); s0 += v * v }
+            let lv = Float(min(1.0,
+                ((s0 / Double(n)).squareRoot() / 32768.0).squareRoot() * 1.9))
+            self.onLevel?(lv)
 
             guard let sp = self.splitter else { return }   // 单句模式，到此为止
 

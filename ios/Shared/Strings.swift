@@ -81,11 +81,11 @@ enum L {
     static var kb_rec_failed_tap: String { s("录音失败 · 上面是现场，可长按复制；点一下收起", "Recording failed — details above, tap to dismiss", "錄音失敗 · 上面是現場，可長按複製；點一下收起") }
     static var kb_need_full_short: String { s("设置 › 通用 › 键盘 › Transless 开启「允许完全访问」", "Settings › General › Keyboard › Transless › Allow Full Access", "設定 › 通用 › 鍵盤 › Transless 開啟「允許完全訪問」") }
     static var kb_history_none: String { s("还没有记录", "Nothing yet", "還沒有記錄") }
-    static var kb_need_standby: String { s("先打开 Transless，点一下「键盘语音」再回来说话", "Open Transless and turn on Keyboard Voice, then come back", "先打開 Transless，點一下「鍵盤語音」再回來說話") }
+    static var kb_need_standby: String { s("Transless 没在后台了。打开一次 Transless 就好，不用再点任何开关。", "Transless isn't running. Just open Transless once — no switch to flip.", "Transless 沒在後臺了。打開一次 Transless 就好，不用再點任何開關。") }
     static var kb_host_gone: String { s("Transless 被系统关掉了，打开它再点一次「键盘语音」", "Transless was closed by the system — open it and turn Keyboard Voice on again", "Transless 被系統關掉了，打開它再點一次「鍵盤語音」") }
     static var kb_host_slow: String { s("等太久了，再说一次", "That took too long — try again", "等太久了，再說一次") }
-    static var kb_standby_on: String { s("键盘语音待机中", "Keyboard Voice on standby", "鍵盤語音待機中") }
-    static var kb_standby_off: String { s("键盘语音", "Keyboard Voice", "鍵盤語音") }
+    static var kb_standby_on: String { s("键盘语音 · 已开", "Keyboard Voice · On", "鍵盤語音 · 已開") }
+    static var kb_standby_off: String { s("键盘语音 · 未开", "Keyboard Voice · Off", "鍵盤語音 · 未開") }
     static var kb_standby_why: String { s("打开后 Transless 会留在后台待命。没在说话时麦克风是关的，只有你按下键盘上的麦克风才会开。十分钟没用会自动关掉，每次说话都会续期。", "Transless stays ready in the background. The microphone is off unless you press the mic on the keyboard. It turns itself off after ten minutes idle, and every dictation extends it.", "打開後 Transless 會留在後臺待命。沒在說話時麥克風是關的，只有你按下鍵盤上的麥克風才會開。十分鐘沒用會自動關掉，每次說話都會續期。") }
     static var st_listening_ios: String { s("听着呢 %d:%02d　·　说完再按一下红色按钮", "Listening %d:%02d　·　tap the red button when you're done", "聽著呢 %d:%02d　·　說完再按一下紅色按鈕") }
     static var msg_update_unreachable: String { s("连不上更新服务器：%1$s\n新版安装包现在直接发到你的飞书，不再走 GitHub。\n（在家连着自己网时，这里可以自助更新）", "Can't reach the update server: %1$s\nNew builds are sent to your Feishu now, not GitHub.\n(Self-update works at home, on your own network.)", "連不上更新伺服器：%1$s\n新版安裝包現在直接發到你的飛書，不再走 GitHub。\n（在家連著自己網時，這裡可以自助更新）") }

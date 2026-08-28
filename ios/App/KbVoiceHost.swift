@@ -43,6 +43,8 @@ final class KbVoiceHost {
 
     /// 待机开着没有。用户在 App 里显式打开，关掉就立刻放开麦克风。
     private(set) var standby = false
+    /// 这一轮结果要不要顺手写进 selftest.txt（Mac 自检在等）。
+    private var selfTestFull = false
 
     /// 待机多久自动关。
     /// 🚨 必须有上限：常驻后台会耗电。产品经理的 E1/E2 就是量这笔账
@@ -148,6 +150,101 @@ final class KbVoiceHost {
             _, _, _, _, _ in
             DispatchQueue.main.async { KbVoiceHost.shared.drain() }
         }
+        // 🚨 自检那条**必须在这里注册** —— 2026-08-28 我写完 KbBridge 里的
+        //    `writeSelfTest` / `observeSelfTest` 就去汇报"自检通道已加"，
+        //    而**这两个函数零调用点**，post 过去根本没人接。
+        //    跟记忆 `feedback_diagnostic_log_without_exit` 同型：
+        //    **写了记录的代码 != 记录会产生**。
+        KbBridge.observeSelfTest(Unmanaged.passUnretained(self).toOpaque()) {
+            _, _, _, _, _ in
+            DispatchQueue.main.async { KbVoiceHost.shared.runSelfTest() }
+        }
+    }
+
+    // ------------------------------------------------------------ Mac 触发的自检
+
+    /// Mac 侧：
+    /// ```
+    /// xcrun devicectl device notification post --device <id> \
+///       --name com.kevin.transless.selftest
+    /// xcrun devicectl device copy from --device <id> \
+///       --domain-type appGroupDataContainer \
+    ///       --domain-identifier group.com.kevin.transless \
+    ///       --source selftest.txt --destination ./selftest.txt
+    /// ```
+    /// 🚨 **覆盖范围**：从这里往下跟按麦克风走同一条路（同一个 `voice`、
+    ///    同一次 `yieldMic`），但**跳过了「键盘 -> App Group -> 宿主」那一跳**。
+    ///    别把它的绿当成整条链的绿。
+    func runSelfTest() {
+        if voice.running {
+            KbBridge.writeSelfTest("SKIP 正在录音中，没跑自检")
+            return
+        }
+        // ---- 完整档：走跟键盘一模一样的那条路（send -> takeCommand -> begin）
+        if KbBridge.readSelfTestCmd()["full"] == "1" {
+            let c = KbBridge.readSelfTestCmd()
+            guard standby else {
+                // 🚨 这条必须单独报。不待机时 `drain()` 什么都不做，
+                //    文件会停在"已下发"，读起来像"卡住了"，
+                //    而真相是**宿主压根没在接活**。两种要分得开。
+                KbBridge.writeSelfTest("FAIL 宿主没在待机（standby=false），命令不会被取走")
+                return
+            }
+            selfTestFull = true
+            _ = KbBridge.send("start", args: ["tone": c["tone"] ?? "",
+                                              "mode": c["mode"] ?? "en",
+                                              "lang": c["lang"] ?? "en"])
+            drain()
+            let sec = Double(c["sec"] ?? "4") ?? 4
+            DispatchQueue.main.asyncAfter(deadline: .now() + sec) { [weak self] in
+                self?.finish()
+            }
+            // 🚨 兜底：整条链**没有任何回调**时也要留下痕迹。
+            DispatchQueue.main.asyncAfter(deadline: .now() + sec + 40) {
+                [weak self] in
+                guard let self = self, self.selfTestFull else { return }
+                self.selfTestFull = false
+                KbBridge.writeSelfTest("HANG 完整链路 \(Int(sec) + 40) 秒无结果")
+            }
+            return
+        }
+        let st = Self.where_()
+        yieldMic()
+        var settled = false
+        voice.start(onPartial: { _ in }) { [weak self] r in
+            DispatchQueue.main.async {
+                guard let self = self, !settled else { return }
+                settled = true
+                switch r {
+                case .success:
+                    KbBridge.writeSelfTest("OK 起录成功\n" + st)
+                case .failure(let f):
+                    // 🚨 「没听清，再说一次」= 录成功了但太短 —— 那正是我要的
+                    //    「起得来」，别记成失败（探针那边同一个坑）。
+                    let s = "\(f)"
+                    if s.contains("没听清") {
+                        KbBridge.writeSelfTest("OK 起录成功（内容太短，符合预期）\n" + st)
+                    } else {
+                        KbBridge.writeSelfTest("FAIL " + s + "\n" + st + "\n"
+                                               + Voice.diagnostics())
+                    }
+                }
+                self.reclaimMic()
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+            guard let self = self else { return }
+            if self.voice.running { self.voice.stop() }
+        }
+        // 🚨 起录**根本没回调**也要留下痕迹 —— 否则"文件没变"会被读成
+        //    "通知没送到"，而真相可能是"送到了但卡死了"。两种要分得开。
+        DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+            if !settled {
+                settled = true
+                KbBridge.writeSelfTest("HANG 起录 6 秒无回调\n" + st + "\n"
+                                       + Voice.diagnostics())
+            }
+        }
     }
 
     // ------------------------------------------------------------ 处理命令
@@ -170,6 +267,9 @@ final class KbVoiceHost {
     private func begin(seq: Int, args: [String: String]) {
         if voice.running { voice.stop() }
         busySeq = seq
+        // 键盘那条波形的数据源。清一次再接，别把上一轮的尾巴带进来。
+        KbBridge.clearLevels()
+        voice.onLevel = { KbBridge.pushLevel($0) }
         // 🚨 让开麦克风再交给 Voice —— 两个引擎抢同一个输入节点会打架。
         hold.stop()
         let tone = Prompts.normalize(args["tone"])
@@ -260,7 +360,14 @@ final class KbVoiceHost {
     }
 
     private func done(seq: Int, kind: String, body: String) {
+        voice.onLevel = nil
+        KbBridge.clearLevels()
         KbBridge.reply(seq: seq, kind: kind, body: body)
+        if selfTestFull {
+            selfTestFull = false
+            KbBridge.writeSelfTest((kind == "text" ? "OK 完整链路通了" : "FAIL ")
+                                   + body + "\n" + Self.where_())
+        }
         busySeq = -1
         if standby { hold.start() }           // 交完货重新待机
     }

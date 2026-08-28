@@ -59,6 +59,14 @@ final class KeyboardViewController: UIInputViewController {
     var previewMode = false
 
     private let micButton = UIButton(type: .system)
+    /// 录音中的波形，画在圆圈**里面**（安卓 2026-08-22 已定案，照抄）。
+    private let waveView = WaveView(frame: .zero)
+    /// 波形刷新 + 处理中秒数，都挂在它上面。
+    private var uiTick: Timer?
+    /// 进入 .thinking 的时刻，用来写「3s」。
+    private var busySince = Date()
+    /// 按下麦克风的时刻，末尾倒计时用。
+    private var listenSince = Date()
     /// 麦克风的**偏好**尺寸（priority 999）—— 宽高相等那条才是硬的。
     /// 见 `micButton` 那段注释：写死两个常量不保证是正圆。
     private var micSize: NSLayoutConstraint!
@@ -209,6 +217,18 @@ final class KeyboardViewController: UIInputViewController {
             equalTo: micButton.widthAnchor).isActive = true
 
         let micWrap = UIView()
+        // 🚨 尺寸 66% x 46% 照抄安卓 `ws = MIC_CIRCLE_DP*0.66f` / 高 `*0.46f`。
+        //    圆的直径这边是 88（见下面那条 widthAnchor）。
+        waveView.translatesAutoresizingMaskIntoConstraints = false
+        micButton.addSubview(waveView)
+        NSLayoutConstraint.activate([
+            waveView.centerXAnchor.constraint(equalTo: micButton.centerXAnchor),
+            waveView.centerYAnchor.constraint(equalTo: micButton.centerYAnchor),
+            waveView.widthAnchor.constraint(
+                equalTo: micButton.widthAnchor, multiplier: 0.66),
+            waveView.heightAnchor.constraint(
+                equalTo: micButton.widthAnchor, multiplier: 0.46),
+        ])
         micWrap.addSubview(micButton)
         micButton.centerXAnchor.constraint(equalTo: micWrap.centerXAnchor).isActive = true
         micButton.topAnchor.constraint(equalTo: micWrap.topAnchor).isActive = true
@@ -973,16 +993,73 @@ final class KeyboardViewController: UIInputViewController {
             micButton.backgroundColor = Theme.accent
             micButton.isEnabled = true
         case .listening:
+            // 🚨🚨 **不再画停止方块。** Kevin 2026-08-28：
+            //    「停止符号怎么这么大，像个肚脐眼一样…你抄一下安卓的，不要自己弄。」
+            //    安卓 `paintMic(1)` 的原话：「圆圈里放**波形**，不再放停止方块 ——
+            //    两个一起显示会挤在一起，而波形才是他要的那个信号」。
+            //    停止靠"再点一下"，不靠圆里画个方块。
             micButton.setTitle("", for: .normal)
-            micButton.setImage(Theme.stopGlyph(88), for: .normal)
+            micButton.setImage(nil, for: .normal)
             micButton.backgroundColor = Theme.danger
             micButton.isEnabled = true
+            listenSince = Date()
         case .thinking:
             micButton.setImage(nil, for: .normal)
             micButton.setTitle("…", for: .normal)
             micButton.setTitleColor(.white, for: .normal)
             micButton.backgroundColor = Theme.keyDown
-            micButton.isEnabled = false
+            // 🚨🚨 **不再 setEnabled(false)** —— 照抄安卓那条注释的理由：
+            //    卡住时他连"重录一次"这个唯一出口都没有，只能盯着一个灰圈。
+            //    现在处理中点一下 = 取消这一轮（`tapMic` 里已有这条分支）。
+            micButton.isEnabled = true
+            busySince = Date()
+        }
+        // 波形只在 .listening 出现，其余整个隐藏（不是变淡）——
+        // 他明确说过没点录音前不该有波形。
+        waveView.setActive(p == .listening)
+        retickUI()
+    }
+
+    /// 波形刷新（.listening）+ 处理中秒数（.thinking）。
+    ///
+    /// 🚨 **0.12 秒**：安卓的波形是录音线程直接 push 的（约 8 次/秒）。
+    ///    iOS 隔着 App Group，只能轮询 —— 频率对不上的话，同一段话
+    ///    在两端长得不一样，而"两端看起来不一致"正是他反复点名的毛病。
+    ///    结果轮询那条是 0.4 秒，**不能共用**：0.4 秒的波形是一顿一顿的。
+    private func retickUI() {
+        uiTick?.invalidate(); uiTick = nil
+        if phase == .idle { return }
+        uiTick = Timer.scheduledTimer(withTimeInterval: 0.12, repeats: true) {
+            [weak self] t in
+            guard let self = self else { t.invalidate(); return }
+            switch self.phase {
+            case .listening:
+                self.waveView.replace(KbBridge.levels())
+                // 录音末尾倒计时 —— 照抄安卓 `startTailCountdown`：
+                // 平时什么都不显示，只在最后 20 秒把剩余秒数写进圆圈，
+                // 免得他在毫不知情的情况下被自动停（安卓 2026-08-22 的原因）。
+                //
+                // 🚨 **两端的上限不一样，这条要报给 2.1**：
+                //    安卓键盘 `MAX_SECONDS = 900`，iOS 单句 `Voice.MAX_DURATION = 60`。
+                //    差 15 倍。倒计时的**规则**照抄了（最后 20 秒），
+                //    但上限本身对不齐 —— 那是产品口径，不归我改。
+                let left = Int(Voice.MAX_DURATION
+                               - Date().timeIntervalSince(self.listenSince))
+                if left <= 20 {
+                    self.micButton.setTitle("\(max(0, left))", for: .normal)
+                    self.waveView.isHidden = true
+                } else {
+                    self.micButton.setTitle("", for: .normal)
+                    self.waveView.isHidden = false
+                }
+            case .thinking:
+                // 🚨 照抄安卓 `startBusyTick`：一个静止的「…」跟死了没区别。
+                //    会动 = 活着，停住 = 真挂了。不占任何版面。
+                let sec = Int(Date().timeIntervalSince(self.busySince))
+                self.micButton.setTitle(sec <= 0 ? "…" : "\(sec)s", for: .normal)
+            case .idle:
+                t.invalidate(); self.uiTick = nil
+            }
         }
     }
 

@@ -152,6 +152,26 @@ def ensure_cert(c):
     return None
 
 
+def dist_cert_ids(c):
+    """Distribution 证书的 **id** 列表（描述文件的关系里要的是 id）。
+
+    🚨🚨 别拿 `ensure_cert()` 的返回值当 id —— 它返回的是
+       `certificateContent`（证书本体的 base64）。传错的表现是苹果回一条
+       **指着别处的** 409：
+       `There are no current certificates on this team matching the provided
+        certificate IDs compatible with IOS_APP_STORE profiles.`
+       —— 读起来像"证书过期了/类型不对"，去查证书会白查（证书好好的）。
+       2026-08-28 我在 `asc_appgroup_wire.py` 里就这么传的，
+       **而且旧描述文件已经先被删掉了**，等于把发布链路留在半坏状态。
+       所以把取 id 这件事收成一个函数，别让下一个人再拼一次。
+    """
+    code, res = api(c, "GET",
+                    "/certificates?filter[certificateType]=IOS_DISTRIBUTION")
+    if code != 200:
+        return []
+    return [d["id"] for d in res.get("data", [])][:1]
+
+
 def ensure_profile(c, name, bid_id, cert_ids):
     """🚨 跟 ensure_bundle_id 同型的坑：`filter[name]` 也不保证精确匹配，
     而且**光看 profileState=ACTIVE 不够** —— 一个活得好好的描述文件完全可能
@@ -223,8 +243,7 @@ def main():
     cert_content = ensure_cert(c)
     if not cert_content:
         return 1
-    code, res = api(c, "GET", "/certificates?filter[certificateType]=IOS_DISTRIBUTION")
-    cert_ids = [d["id"] for d in res.get("data", [])][:1]
+    cert_ids = dist_cert_ids(c)
 
     print("\n③ 描述文件")
     prof_app = ensure_profile(c, "Transless AppStore", app_id, cert_ids)

@@ -34,6 +34,12 @@ def one(c, path, want_key=None):
     return res.get("data", [])
 
 
+def A_api_get(c, path):
+    """直接返回 `(状态码, 整个 json)` —— `one()` 只回 data 列表，
+    单个资源取不到。"""
+    return A.api(c, "GET", path)
+
+
 def main():
     c, err = A.load_creds()
     if not c:
@@ -84,11 +90,18 @@ def main():
         # 🚨 按**版本号数值**挑，不按"不等于上一次"。
         #    版本号是我们自己单调递增发的，数值最大的就是最新的；
         #    上传时间只在数值并列时当次序。
-        b = sorted(builds, key=lambda x: (_vnum(x), _up(x)), reverse=True)[0]
-        print("  （%d 个构建，按版本号挑了 %s；最近几个：%s）"
+        # 🚨🚨 **按上传时间挑，不按版本号**（2026-08-28 实撞）。
+        #    构建号引入重传序号之后是 `595.2` 这种，`_vnum` 的 `isdigit()`
+        #    不认小数点 → 返回 -1 → **它被排到了 592 后面**，
+        #    于是脚本把"最新构建"认成了半小时前那个旧包，
+        #    还照样打印「构建已在组里 ✓」。**又一次对象被换掉。**
+        #    上传时间不受编号方案影响，是这里唯一站得住的判据。
+        b = sorted(builds, key=_up, reverse=True)[0]
+        recent = [(x.get("attributes") or {}).get("version", "?")
+                  for x in sorted(builds, key=_up, reverse=True)[:5]]
+        print("  （%d 个构建，按**上传时间**挑了 %s；最近几个：%s）"
               % (len(builds), (b.get("attributes") or {}).get("version", "?"),
-                 "/".join(str(v) for v in sorted(
-                     (_vnum(x) for x in builds), reverse=True)[:5])))
+                 "/".join(recent)))
     st = b["attributes"].get("processingState")
     # 🚨 `usesNonExemptEncryption` 是**布尔**：
     #      None  = 没答  -> TestFlight 显示 Missing Compliance，谁都测不了
@@ -108,10 +121,29 @@ def main():
 
     if ENSURE and st == "PROCESSING":
         print("  等苹果处理完……")
+        want_v = (b.get("attributes") or {}).get("version")
+        bid = b["id"]
         for _ in range(40):
             time.sleep(60)
-            b = one(c, "/apps/%s/builds?limit=1" % app["id"])[0]
+            # 🚨🚨 **按 id 重取那一个构建**，不是 `builds?limit=1`。
+            #    原来这里写的是 `one(c, "/apps/{id}/builds?limit=1")[0]` ——
+            #    那个查询**没有排序保证**，回来的是**任意一个**构建，
+            #    于是等待结束后 `b` 已经不是我们要的那个了，
+            #    后面"加进测试组""填合规"全作用在**别的包**上，
+            #    而屏幕上照样打印 `构建已加进组 ✓`。
+            #    2026-08-28 实测后果：`--ensure --build 561` 跑完打了成功，
+            #    但从**组那边**独立查，组里只有 557 —— 561/558 根本没进去。
+            #    我上一轮修好了"初始挑选"，**漏了这个重取** ——
+            #    同一个 bug 的第二个出口。
+            st2, r2 = A_api_get(c, "/builds/" + bid)
+            if st2 != 200:
+                print("   重取失败 HTTP %s" % st2)
+                continue
+            b = r2["data"]
             st = b["attributes"].get("processingState")
+            got_v = b["attributes"].get("version")
+            assert got_v == want_v, (
+                "重取回来的是构建 %s，不是 %s —— 对象被换了" % (got_v, want_v))
             print("   状态 =", st)
             if st != "PROCESSING":
                 break

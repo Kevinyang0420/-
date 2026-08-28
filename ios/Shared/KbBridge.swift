@@ -95,7 +95,81 @@ enum KbBridge {
         static let resKind = "kb.res.kind"        // "partial" / "text" / "error"
         static let resBody = "kb.res.body"        // 正文
         static let resAt = "kb.res.at"            // 结果时间（Double）
+        static let levels = "kb.levels"           // 最近 13 个音量（[Double]）
     }
+
+    /// 🚨🚨 **从 Mac 触发一次录音自检**（给真机闭环用）。
+    ///
+    /// `xcrun devicectl device notification post --device <id> --name <这个名字>`
+    ///
+    /// 为什么不能直接 post `noteCmd`：那条只是「去共享区看一眼」，
+    /// **真正的命令内容（序号/动作/语气语言）躺在 App Group 的 `UserDefaults` 里，
+    /// 而 Mac 写不进去** —— post 过去宿主 `drain()` 一看没有新命令，什么都不会发生。
+    /// **「发了通知」不等于「模拟了按麦克风」，中间差一个载荷。**
+    ///
+    /// 🚨 **覆盖范围**：这条从 `KbVoiceHost.begin()` 往后跟键盘按麦克风
+    /// **是同一条路**（同一个 `Voice.start`、同一套音频会话切换），
+    /// 但它**跳过了「键盘 → App Group → 宿主」那一跳**。
+    /// 那一跳仍然只能真按一下键盘。**别把这条的绿当成整条链的绿。**
+    static let noteSelfTest = "com.kevin.transless.selftest" as CFString
+
+    /// 自检结果落在 App Group 容器里的文件名 ——
+    /// `devicectl device copy from --domain-type appGroupDataContainer` 拉它。
+    static let selfTestFile = "selftest.txt"
+
+    /// 往共享容器写一行结果。**写文件不是写 UserDefaults** ——
+    /// `copy from` 拉的是文件，拉不到偏好。
+    static func writeSelfTest(_ text: String) {
+        guard let dir = FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: group) else { return }
+        let stamp = ISO8601DateFormatter().string(from: Date())
+        try? (stamp + "  " + text + "\n")
+            .write(to: dir.appendingPathComponent(selfTestFile),
+                   atomically: true, encoding: .utf8)
+    }
+
+    /// Mac 用 `copy to` 放进共享容器的自检参数（可以没有）。
+    ///
+    /// 🚨 **为什么是文件不是 UserDefaults**：`copy to` 送的是文件；
+    ///    偏好由 `cfprefsd` 缓存着，从底下改文件跑着的 App 不一定看得见。
+    static func readSelfTestCmd() -> [String: String] {
+        guard let dir = FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: group),
+              let d = try? Data(contentsOf:
+                dir.appendingPathComponent("selftest_cmd.json")),
+              let o = (try? JSONSerialization.jsonObject(with: d))
+                as? [String: Any] else { return [:] }
+        var r: [String: String] = [:]
+        for (k, v) in o { r[k] = "\(v)" }
+        return r
+    }
+
+    static func observeSelfTest(_ token: UnsafeRawPointer,
+                                _ cb: @escaping CFNotificationCallback) {
+        observe(token, noteSelfTest, cb)
+    }
+
+    // ------------------------------------------------------------ 音量（波形）
+
+    /// 🚨 为什么要过 App Group：录音在**主 App**，波形画在**键盘扩展**里。
+    ///    安卓那边两者同进程，直接 `push()` 就行；iOS 隔着进程，只能铺一条通道。
+    ///    条数跟安卓一样是 13（`WaveView.BARS`），多了没意义、少了画不满。
+    static func pushLevel(_ v: Float) {
+        guard let s = store else { return }
+        var a = s.array(forKey: K.levels) as? [Double] ?? []
+        a.append(Double(max(0, min(1, v))))
+        if a.count > 13 { a.removeFirst(a.count - 13) }
+        s.set(a, forKey: K.levels)
+    }
+
+    static func levels() -> [Float] {
+        guard let s = store else { return [] }
+        return (s.array(forKey: K.levels) as? [Double] ?? []).map { Float($0) }
+    }
+
+    /// 🚨 收工必须清。不清的话下次一按麦克风，波形会**先闪一下上一轮的形状**
+    ///    —— 那正好是「看起来在听」的假象，跟这条波形要解决的问题反着来。
+    static func clearLevels() { store?.removeObject(forKey: K.levels) }
 
     private static let noteCmd = "com.kevin.transless.kb.cmd" as CFString
     private static let noteRes = "com.kevin.transless.kb.res" as CFString

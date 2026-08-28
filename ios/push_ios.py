@@ -51,12 +51,45 @@ def _asset_dirs():
 
 
 ASSET_DIRS = _asset_dirs()
+
+
+def _res_dirs():
+    """普通资源目录（码表等）—— 同样**从 project.yml 推导**，不手写。
+
+    🚨 2026-08-28 实撞：`Resources`（拼音 dict.txt / 五笔 wubi.txt）
+       在 project.yml 里被两个 target 收进来编，**却不在推送范围里**。
+       表现是「本地改了码表、CI 编的还是旧的，而且推送不报错」——
+       跟 2026-08-25 那次 SharedAssets 落在范围外是同一个错。
+       （那次也是被 main() 里那道覆盖闸门抓出来的，不是靠我记得。）
+
+    🚨 判据是"project.yml 里列到的、既不是 .xcassets 也不是 .swift 文件的
+       那些 path"，所以以后再加一个资源目录只改 project.yml 一处。
+    """
+    proj = io.open(os.path.join(HERE, "project.yml"), encoding="utf-8").read()
+    out = []
+    for m in re.finditer(r"-\s+path:\s*(\S+)", proj):
+        v = m.group(1).strip().strip("\"'")
+        if v.endswith(".xcassets") or v.endswith(".swift"):
+            continue
+        if os.path.isdir(os.path.join(HERE, v)) and v not in SWIFT_DIRS:
+            out.append(v)
+    return sorted(set(out))
+
+
+RES_DIRS = _res_dirs()
+#: 码表这类纯文本资源放行的扩展名。**白名单**，不是黑名单 ——
+#: 黑名单挡不住下一个没想到的垃圾文件。
+RES_EXT = {".txt", ".json", ".dat"}
 EXTRA = [
     ("project.yml",       "ios/project.yml"),
     ("prompt.txt",        "ios/prompt.txt"),
     ("prompt_zh.txt",     "ios/prompt_zh.txt"),
     ("contract_test.py",  "ios/contract_test.py"),
     ("sync_prompts.py",   "ios/sync_prompts.py"),
+    # 🚨 CI 构建时用它从 ASC 现取描述文件（取代那两个 IOS_PROFILE_* secret）
+    ("ci_fetch_profiles.py", "ios/ci_fetch_profiles.py"),
+    # 🚨 上传后回 ASC 确认真的多了一个构建（altool 会打 ERROR 却返回 0）
+    ("ci_verify_upload.py", "ios/ci_verify_upload.py"),
     ("ci-workflow.yml",   ".github/workflows/ios-keyboard.yml"),
     # 🚨 2026-08-25 补：这份**一直没在清单里**，全靠我手推 —— 也就是说它随时可能
     #    本地改了、远端还是旧的，而且不报错。加进来之后只有一个推送入口。
@@ -96,6 +129,19 @@ def collect():
                 if f.lower() in JUNK:
                     continue
                 if os.path.splitext(f)[1].lower() not in ASSET_EXT:
+                    continue
+                full = os.path.join(root, f)
+                rel = os.path.relpath(full, HERE).replace("\\", "/")
+                out.append((rel, "ios/" + rel))
+    for d in RES_DIRS:
+        base = os.path.join(HERE, d)
+        if not os.path.isdir(base):
+            continue
+        for root, _, files in os.walk(base):
+            for f in sorted(files):
+                if f.lower() in JUNK:
+                    continue
+                if os.path.splitext(f)[1].lower() not in RES_EXT:
                     continue
                 full = os.path.join(root, f)
                 rel = os.path.relpath(full, HERE).replace("\\", "/")
@@ -174,7 +220,8 @@ def main():
             declared.add(top)
     if not declared:
         sys.exit("FAIL: 从 project.yml 解析不出任何 source 目录，闸门自己失效了")
-    covered = set(SWIFT_DIRS) | set(ASSET_DIRS) | {l.split("/")[0] for l in listed}
+    covered = (set(SWIFT_DIRS) | set(ASSET_DIRS) | set(RES_DIRS)
+               | {l.split("/")[0] for l in listed})
     uncovered = sorted(declared - covered)
     if uncovered:
         sys.exit("FAIL: project.yml 里这些目录 Xcode 会编，但推送范围没覆盖，"

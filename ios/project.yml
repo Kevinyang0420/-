@@ -32,6 +32,9 @@ targets:
       #    —— 每一次"验过"都是白验（Kevin 2026-08-26 真机截图打脸）。
       #    代价：主 App 体积多几十 KB。换"看到的就是用户看到的"，值。
       - path: Keyboard/KeyboardViewController.swift
+      # 🚨 主 App 只单挑文件、不整目录，所以键盘新增的每个文件都要在这里补一行。
+      #    漏了的表现是**主 App 编译失败**（预览页里引用不到），CI 才发现。
+      - path: Keyboard/WaveView.swift
       # 只给主 App：AppIcon + logo。🚨 AppIcon 绝不能进 appex，见下面 Keyboard 的说明。
       - path: Assets.xcassets
       - path: SharedAssets.xcassets
@@ -42,8 +45,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260828.595"
-        CFBundleVersion: "595.2"
+        CFBundleShortVersionString: "20260828.605"
+        CFBundleVersion: "605.1"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -128,8 +131,8 @@ targets:
       path: Probe/App/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260828.595"
-        CFBundleVersion: "595.2"
+        CFBundleShortVersionString: "20260828.605"
+        CFBundleVersion: "605.1"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -152,8 +155,8 @@ targets:
       path: Probe/Keyboard/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260828.595"
-        CFBundleVersion: "595.2"
+        CFBundleShortVersionString: "20260828.605"
+        CFBundleVersion: "605.1"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -193,8 +196,8 @@ targets:
       path: Keyboard/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260828.595"
-        CFBundleVersion: "595.2"
+        CFBundleShortVersionString: "20260828.605"
+        CFBundleVersion: "605.1"
         # 🚨🚨 **键盘扩展自己也要声明支持哪些语言**（2026-08-28 补）。
         #    Kevin 真机截图：主 App 是中文，**键盘里全是英文**
         #    （Translate / Transcribe / History / Casual / Work / Email…）。
