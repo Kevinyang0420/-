@@ -42,8 +42,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260828.561"
-        CFBundleVersion: "561"
+        CFBundleShortVersionString: "20260828.582"
+        CFBundleVersion: "582"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -65,6 +65,14 @@ targets:
         #    CommonCrypto / 自实现的 AES 或 HMAC，设备令牌是个不透明字符串、只用于认证
         #    —— 属于标准豁免情形，所以是 false。哪天真加了自研加密，回来改这里。
         ITSAppUsesNonExemptEncryption: false
+        # 🚨🚨 **后台音频。键盘语音全靠它。**
+        #    iOS 禁止扩展进程录音（苹果 QA1872，系统查的是「调用方是不是扩展」），
+        #    所以键盘按麦克风时，真正在录的是**这个 App 在后台**。
+        #    而 iOS 只让「正在播放或录制音频」的 App 留在后台 ——
+        #    没有这一条，App 一切到后台就被挂起，键盘立刻变成对着一个死宿主干等。
+        #    见 `Shared/KbBridge.swift` 和 `App/KbVoiceHost.swift`。
+        UIBackgroundModes:
+          - audio
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UISupportedInterfaceOrientations~ipad:
@@ -72,6 +80,18 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+    # 🚨🚨 App Group：主 App ⇄ 键盘扩展递话的唯一通道（命令 / 结果 / 心跳）。
+    #    组名的**唯一配置点**是 `Shared/KbBridge.swift` 的 `group`；这里必须跟它一致。
+    #    ⚠️ 这个组要先在苹果开发者门户里建出来 —— App Store Connect API
+    #       **没有** App Group 这个资源（`/v1/appGroups` 返回 404，
+    #       而同一把密钥同一次请求 `/v1/bundleIds` 返回 200，有正控）。
+    #    ⚠️ **组建出来之前，签名的发布构建会失败**（描述文件里没有这个 entitlement）。
+    #       这是故意的：一个响亮的构建失败，好过一个装到手机上才发现的静默失效。
+    entitlements:
+      path: App/Transless.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.kevin.transless
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kevin.transless
@@ -92,8 +112,8 @@ targets:
       path: Probe/App/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260828.561"
-        CFBundleVersion: "561"
+        CFBundleShortVersionString: "20260828.582"
+        CFBundleVersion: "582"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -116,8 +136,8 @@ targets:
       path: Probe/Keyboard/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260828.561"
-        CFBundleVersion: "561"
+        CFBundleShortVersionString: "20260828.582"
+        CFBundleVersion: "582"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -157,8 +177,8 @@ targets:
       path: Keyboard/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260828.561"
-        CFBundleVersion: "561"
+        CFBundleShortVersionString: "20260828.582"
+        CFBundleVersion: "582"
         # 🚨🚨 **键盘扩展自己也要声明支持哪些语言**（2026-08-28 补）。
         #    Kevin 真机截图：主 App 是中文，**键盘里全是英文**
         #    （Translate / Transcribe / History / Casual / Work / Email…）。
@@ -196,6 +216,14 @@ targets:
             # 🚨 必须 true，否则键盘扩展发不出任何网络请求。
             #    他还要在 设置>键盘>Transless 里手动打开「允许完全访问」。
             RequestsOpenAccess: true
+    # 🚨 跟主 App **同一个组**，否则两边各自读自己的容器，
+    #    命令发得出去、结果永远收不到 —— 而且两边都不报错。
+    #    组名唯一配置点在 `Shared/KbBridge.swift`。
+    entitlements:
+      path: Keyboard/Keyboard.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.kevin.transless
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kevin.transless.keyboard
