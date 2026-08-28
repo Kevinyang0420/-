@@ -50,11 +50,27 @@ enum KbSelfRecord {
     static let voiced: Float = 0.08
 
     /// 一次直录的结果，写成一行给电脑拉。
+    /// 🚨🚨 **判词由 `frames`/`peak`/`ok` 三者共同推出，不能只看 `ok`**（交叉审查 H3）。
+    ///
+    /// 原来 `ok:false` 一律打成「起不来」，而 `.failure` 有三种含义：
+    /// ① 会话/引擎真起不来 ② **「没听清」= 录了但不到 0.5 秒，引擎其实起来了**
+    /// ③ 拿不到麦克风格式。于是「说半个字就点停」会打出
+    /// **`FAIL 起不来`，而同一份报告的帧数是非零** —— 判词和数据自相矛盾，
+    /// 而我读的是判词。
+    ///
+    /// 🚨 `foreground` 这个参数原来四个调用点**全硬编码 `true`** ——
+    ///    报告里那句「当时键盘在前台」是**恒真的话**（M7）。
+    ///    现在它只在调用方真的测得出来时才有意义，报文里明确标注来源。
     static func report(ok: Bool, frames: Int, peak: Float,
                        note: String, foreground: Bool) -> String {
         let verdict: String
-        if !ok {
-            verdict = "FAIL 扩展直录起不来"
+        if !ok && frames > 0 {
+            // 引擎起来了、也真的收到过帧，那就不是"起不来"
+            verdict = peak < voiced
+                ? "SILENT 起来了、收到帧、但全程静音（失败于后续环节）"
+                : "PARTIAL 起来了也听到声音，但这一轮没走完"
+        } else if !ok {
+            verdict = "FAIL 扩展直录起不来（零帧）"
         } else if peak < voiced {
             // 🚨 这一档必须单独存在：引擎起来了、也拿到帧了，**但全是静音**。
             //    如果把它算成成功，我们会得出"扩展能录"的错误结论，
@@ -63,8 +79,11 @@ enum KbSelfRecord {
         } else {
             verdict = "OK 扩展直录拿到非静音音频"
         }
-        return String(format: "%@\n帧数 %d  峰值 %.3f（阈值 %.2f）\n当时键盘在%@\n%@",
+        // 🚨 `%d` 对应 `Int32`，这里传的是 64 位 `Int` —— 用 `%ld`（L1）。
+        // 🚨 「峰值」其实是**每帧 RMS 的最大值**，不是采样峰值 ——
+        //    量的对象和说的对象要一致（L3），所以改叫「最大帧音量」。
+        return String(format: "%@\n帧数 %ld  最大帧音量 %.3f（静音阈值 %.2f）\n%@\n%@",
                       verdict, frames, peak, voiced,
-                      foreground ? "前台" : "非前台", note)
+                      foreground ? "键盘可见" : "键盘状态未知", note)
     }
 }
