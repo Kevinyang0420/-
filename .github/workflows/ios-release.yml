@@ -350,8 +350,34 @@ jobs:
           set -euo pipefail
           mkdir -p ~/private_keys
           echo "$KEY_B64" | base64 --decode > ~/private_keys/AuthKey_${KEY_ID}.p8
+          # 🚨🚨 **不许只信 altool 的退出码**（2026-08-28 实撞）。
+          #    它打了
+          #      ERROR: Failed to upload package.
+          #      The bundle version must be higher than the previously uploaded version: '585'
+          #    **却返回 0** —— 于是整个 CI 报 success，而 TestFlight 上一个新构建都没有。
+          #    `set -euo pipefail` 拦不住"命令自己说成功"。
+          set +e
           xcrun altool --upload-app -f "$RUNNER_TEMP/export/Transless.ipa" \
-            -t ios --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID"
+            -t ios --apiKey "$KEY_ID" --apiIssuer "$ISSUER_ID" \
+            2>&1 | tee "$RUNNER_TEMP/altool.log"
+          RC=${PIPESTATUS[0]}
+          set -e
+          echo "altool 退出码 = $RC"
+          if grep -qE "ERROR:|Failed to upload" "$RUNNER_TEMP/altool.log"; then
+            echo "::error::altool 输出里有 ERROR（退出码是 ${RC}，别信它）"
+            tail -30 "$RUNNER_TEMP/altool.log"
+            exit 1
+          fi
+          test "$RC" -eq 0 || { echo "::error::altool 退出码 $RC"; exit 1; }
+
+          # 🚨 最后一道：**回 ASC 确认真的多了一个构建**，判据挂在上传时间上，
+          #    不是"版本号最大的那个"（那会把几小时前的旧包当成新包）。
+          WANT_BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" \
+            "$RUNNER_TEMP/ipacheck/Payload/Transless.app/Info.plist")
+          echo "本次构建号 = $WANT_BUILD"
+          ASC_KEY_ID="$KEY_ID" ASC_ISSUER_ID="$ISSUER_ID" ASC_KEY_B64="$KEY_B64" \
+            WANT_BUILD="$WANT_BUILD" \
+            "$RUNNER_TEMP/pvenv/bin/python" ios/ci_verify_upload.py
 
       - uses: actions/upload-artifact@v4
         with:
