@@ -1,4 +1,5 @@
 import UIKit
+import os   // os_unfair_lock（M3：渲染线程写、主线程读的两个计数）
 
 // Transless 同传输入法 · iOS 键盘扩展
 //
@@ -967,7 +968,15 @@ final class KeyboardViewController: UIInputViewController {
     ///    · 能选中复制 —— 他不用再截图，直接粘过来
     ///    `UILabel` 两样都做不到，而这正是前两轮丢信息的原因。
     private func showDiag(_ text: String) {
-        diagView?.removeFromSuperview()
+        // 🚨🚨 H-1（第 2 轮审查）：**必须先 `hideDiag()`，不能只删 `diagView`。**
+        //    上一轮加的 ✕ 是**另一个 subview**；开头只移除旧面板的话，
+        //    每弹一次就往 view 上多留一个 44×44 的孤儿 ✕，
+        //    `hideDiag` 只删得掉最后一个 —— 先前的永远压在右上角、
+        //    点了没反应，还挡住历史那一格。
+        //    最短复现就在本轮新加的路径上：直录失败弹面板 → 不关 → 再点麦克风
+        //    → 走 `hostAlive` 分支的 `showDiag("")`。
+        //    **修复引入的新问题，正好被同一轮的另一处修复触发。**
+        hideDiag()
         let tv = UITextView()
         // 🚨🚨 **直录的结果永远排第一行，不管这一屏是谁弹的。**
         //    665 那次就是败在顺序上：直录失败 -> 回退 -> 宿主也失败 ->
@@ -1148,6 +1157,15 @@ final class KeyboardViewController: UIInputViewController {
     private var localArmed = false
     private var localPeak: Float = 0
     private var localFrames = 0
+    /// 保护上面那两个数 —— 它们**在渲染线程写、在主线程读**（审查 M3）。
+    private var localLock = os_unfair_lock_s()
+
+    /// 取一份快照再用。**别在主线程直接读那两个字段。**
+    private func localSnapshot() -> (frames: Int, peak: Float) {
+        os_unfair_lock_lock(&localLock)
+        defer { os_unfair_lock_unlock(&localLock) }
+        return (localFrames, localPeak)
+    }
     /// 直录起不来时给他看的一行。**没有它的话回退是完全静默的**，
     /// 而静默地退回老路正好等于实验没做，两者在界面上分不开。
     private var localFallbackNote: String?
@@ -1272,9 +1290,21 @@ final class KeyboardViewController: UIInputViewController {
         localMode = true
         localVoice.onLevel = { [weak self] v in
             guard let self = self else { return }
+            // 🚨🚨 M3（交叉审查）：**这个闭包跑在音频渲染线程上**，
+            //    而 `localFrames`/`localPeak` 在主线程被读去出判词。
+            //    无锁地并发读写 = 计数可能少、峰值可能丢 ——
+            //    **而这两个数正是这次实验的全部结论**（帧数决定"起没起来"，
+            //    峰值决定 OK/SILENT）。读串了就是把错的结论当成答案。
+            //    用 `os_unfair_lock` 而不是队列：渲染线程上不许做会阻塞/分配的事。
+            os_unfair_lock_lock(&self.localLock)
             self.localFrames += 1
             self.localPeak = max(self.localPeak, v)
+            os_unfair_lock_unlock(&self.localLock)
             // 波形照样能画 —— 直录时数据就在本进程，不用过 App Group
+            // 🚨 `DispatchQueue.main.async` 在实时线程上是会分配内存的，
+            //    严格说属于实时线程违规；压力下可能掉帧（审查 M3 同段点名）。
+            //    这里保留是因为波形只是显示、掉几帧不影响结论，
+            //    **而结论那两个数已经被上面的锁保住了**。
             DispatchQueue.main.async { self.waveView.push(v) }
         }
         heardLabel.text = ""
@@ -1299,12 +1329,17 @@ final class KeyboardViewController: UIInputViewController {
             localFallbackNote = "直录起不来，已回退：" + String(f.prefix(40))
             localFallbackDiag = "=== 扩展直录 ===\n起不来：" + f + "\n"
                 + Voice.diagnostics()
-            // 电脑够得着时直接拉这份，不用等他截图
-            KbBridge.writeSelfTest(KbSelfRecord.report(
-                ok: false, frames: 0, peak: 0, note: f, foreground: true))
+            // 电脑够得着时直接拉这份，不用等他截图。
             // 🚨 实验结果**无论成败都要落地**，不然又是一次"测了但不知道结果"。
+            // 🚨🚨 `started: false` —— **只有这条分支才是真的"引擎没起来"**
+            //    （`Voice.start()` 同步就失败了）。`finishLocal` 那几个调用点
+            //    走到那里就意味着引擎已经起来过，必须用默认的 `true`，
+            //    否则「哑麦克风」会被打成「起不来」，**结论正好反过来**（H-5）。
+            // 🚨 上面原来有**两条一模一样的调用**（复制粘贴残留，第 1 轮 M8），
+            //    而 `writeSelfTest` 是覆盖写 —— 写两遍只是白写一次。已删一条。
             KbBridge.writeSelfTest(KbSelfRecord.report(
-                ok: false, frames: 0, peak: 0, note: f, foreground: true))
+                ok: false, frames: 0, peak: 0, note: f,
+                foreground: true, started: false))
             return false
         }
         setPhase(.listening, hint: "")
@@ -1314,31 +1349,35 @@ final class KeyboardViewController: UIInputViewController {
     private func finishLocal(_ r: Result<Data, Voice.Failure>) {
         localMode = false
         waveView.setActive(false)
+        // 🚨 **一次快照，整段用它** —— 别在几处分别读那两个字段，
+        //    那样同一份报告里的帧数和峰值可能来自不同时刻。
+        let snap = localSnapshot()
+
         switch r {
         case .failure(let f):
             KbBridge.writeSelfTest(KbSelfRecord.report(
-                ok: false, frames: localFrames, peak: localPeak,
+                ok: false, frames: snap.frames, peak: snap.peak,
                 note: "\(f)\n" + localVoice.frameHealth, foreground: true))
             setPhase(.idle, hint: L.kb_rec_failed_tap)
-            showDiag(KbSelfRecord.report(ok: false, frames: localFrames,
-                                         peak: localPeak, note: "\(f)",
+            showDiag(KbSelfRecord.report(ok: false, frames: snap.frames,
+                                         peak: snap.peak, note: "\(f)",
                                          foreground: true))
         case .success(let wav):
-            let voiced = localPeak >= KbSelfRecord.voiced
+            let voiced = snap.peak >= KbSelfRecord.voiced
             // 🚨 M1：把取数健康度带上。**没有它，「转换全失败」和
             //    「系统给了哑麦克风」在报告里长得一模一样**，而这个实验的
             //    判据恰好就是"有没有声音" —— 分不开就会把假 SILENT 当结论。
             let note = "wav \(wav.count) 字节\n" + localVoice.frameHealth
             KbBridge.writeSelfTest(KbSelfRecord.report(
-                ok: true, frames: localFrames, peak: localPeak,
+                ok: true, frames: snap.frames, peak: snap.peak,
                 note: note, foreground: true))
             // 🚨 **全程静音也要说出来**，别把一段空气送去后端然后报"没听清"。
             //    那样他看到的是"又失败了"，而真正的信息（引擎起来了、
             //    但一帧声音都没进来）就丢了。
             if !voiced {
                 setPhase(.idle, hint: L.kb_rec_failed_tap)
-                showDiag(KbSelfRecord.report(ok: true, frames: localFrames,
-                                             peak: localPeak, note: note,
+                showDiag(KbSelfRecord.report(ok: true, frames: snap.frames,
+                                             peak: snap.peak, note: note,
                                              foreground: true))
                 return
             }
@@ -1377,6 +1416,17 @@ final class KeyboardViewController: UIInputViewController {
     /// 直录这条路的落地。**跟 `deliver()` 干的是同一件事** ——
     /// 🚨 两处要一起改（历史、朗读按钮、插字、回到待命，一条都不能少）。
     private func deliverLocal(zh: String, out: String) {
+        // 🚨🚨 H-2（第 2 轮审查）：**宿主路径有这道 guard，直录路径漏了。**
+        //    后端 200 但 `out` 为空串（只录到语气词/静音时的常见返回）时：
+        //    插入空字符串、提示被清空、`heardLabel` 也清空 ——
+        //    他看到的是麦克风转回紫色，**一个字、一行提示、一个面板都没有**。
+        //    这就是今晚最贵的那种失败「什么都没发生」的第一条现实路径。
+        //    🚨 空结果时**保留 `heardLabel` 上的中文**，至少证明"听到了"。
+        guard !out.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            heardLabel.text = zh
+            setPhase(.idle, hint: L.kb_host_slow)
+            return
+        }
         let mode = UserDefaults.standard.string(forKey: "vime.mode") ?? "en"
         History.add(mode: mode, tone: tone, zh: zh, out: out)
         lastOut = out
@@ -1538,6 +1588,21 @@ final class KeyboardViewController: UIInputViewController {
         //    录音，麦克风指示灯一直亮着，而没有任何人会来收结果。
         pollTimer?.invalidate()
         if remoteSeq >= 0 { KbBridge.send("cancel") }
+        // 🚨🚨 H-3（第 2 轮审查）：**直录那条路一个字都没接进来。**
+        //    这段注释自己写着「否则麦克风指示灯一直亮着」，
+        //    而本轮新加的直录在扩展**自己**进程里开引擎 ——
+        //    切回系统键盘 / 收起键盘 / 切 App 时它不会停，
+        //    橙点继续亮、`.duckOthers` 一直压着别人的音频。
+        //    直接违反产品经理的 P1「没在说话时麦克风必须真的是关的」。
+        //    🚨 用 `localMode` 判，**别无条件碰 `localVoice`** ——
+        //       那会把 lazy 属性在 deinit 里实例化出来。
+        if localMode { localVoice.stop() }
+    }
+
+    /// 🚨 扩展里 `deinit` 不保证及时 —— 键盘被收起/切走时先在这里停一次。
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if localMode { localVoice.stop() }
     }
 
     /// 🚨 渐变底的 frame 必须跟着 bounds 走。
