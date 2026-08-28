@@ -256,12 +256,6 @@ final class KbVoiceHost {
         switch cmd.action {
         case "start": begin(seq: cmd.seq, args: cmd.args)
         case "stop": finish()
-        case "yield":
-            // 🚨 键盘要自己录了，把音频会话整个让开。
-            //    `AudioHold.stop()` 里会 setActive(false, .notifyOthersOnDeactivation)
-            //    —— 那一句是今晚修 `!int` 时加的，正好是这里需要的。
-            if voice.running { voice.stop() }
-            hold.stop()
         case "cancel":
             if voice.running { voice.stop() }
             busySeq = -1
