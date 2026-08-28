@@ -46,8 +46,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260828.707"
-        CFBundleVersion: "707"
+        CFBundleShortVersionString: "20260828.718"
+        CFBundleVersion: "718"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -132,8 +132,8 @@ targets:
       path: Probe/App/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260828.707"
-        CFBundleVersion: "707"
+        CFBundleShortVersionString: "20260828.718"
+        CFBundleVersion: "718"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -156,8 +156,8 @@ targets:
       path: Probe/Keyboard/Info.plist
       properties:
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260828.707"
-        CFBundleVersion: "707"
+        CFBundleShortVersionString: "20260828.718"
+        CFBundleVersion: "718"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -197,8 +197,8 @@ targets:
       path: Keyboard/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260828.707"
-        CFBundleVersion: "707"
+        CFBundleShortVersionString: "20260828.718"
+        CFBundleVersion: "718"
         # 🚨🚨 **键盘扩展自己也要声明支持哪些语言**（2026-08-28 补）。
         #    Kevin 真机截图：主 App 是中文，**键盘里全是英文**
         #    （Translate / Transcribe / History / Casual / Work / Email…）。
@@ -214,6 +214,14 @@ targets:
         #    他手机上的键盘**一直**是英文，只是今天才第一次有真机截图。
         #    拿模拟器截图当基线去判"回归"会得出错的结论。
         CFBundleLocalizations: [zh-Hans, zh-Hant, en]
+        # 🚨🚨 **白下巴：两个手段必须一起上**（2.1 2026-08-28 核出来的实物差异）。
+        #    `overrideUserInterfaceStyle = .dark` 改的是**我们这个 view controller**
+        #    的外观特征，而那条浅灰带**不是我们画的**（系统的 UIKeyboardDockView）。
+        #    这一条声明的是**整个扩展是深色的** —— 对"系统在我们周围怎么画"，
+        #    这两者很可能不是一回事。
+        #    🚨 **只上一个就报"没用"，等于测了半件事** —— 那正是今天反复栽的那一族。
+        #    判据：要报「仍然浅」，前提是这两样都在。
+        UIUserInterfaceStyle: Dark
         # 🚨🚨 **键盘扩展自己也要声明麦克风**（2026-08-26 补）。
         #    Kevin 真机反馈：主 App 的「随手翻译」能正常录音，
         #    但同一台机、同一个已授权的麦克风，**键盘里录不了**，
