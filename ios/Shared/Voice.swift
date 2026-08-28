@@ -35,7 +35,14 @@ final class Voice: NSObject {
         var description: String { stage == .none ? detail : "\(stage.rawValue)：\(detail)" }
     }
 
-    private let engine = AVAudioEngine()
+    /// 🚨🚨 **必须在音频会话激活之后再建**，不能在对象初始化时就建。
+    ///    `AVAudioEngine` 一建出来就会去拿当前的输入路由；会话还没配的时候
+    ///    拿到的是个无效路由，之后 `start()` 抛
+    ///    `AVAudioSessionErrorCodeUnspecified`（'what' / 2003329396）。
+    ///    容器 App 里不容易碰到 —— App 活得久、路由早就稳了；
+    ///    **键盘扩展是随起随停的**，每次都撞在这上面。
+    ///    （Kevin 2026-08-28 真机 build 554 的报错就是这个码。）
+    private var engine = AVAudioEngine()
     private var pcm = Data()                    // 累积的 16bit 单声道 PCM
     private var startedAt = Date()
     private var capTimer: Timer?
@@ -86,13 +93,13 @@ final class Voice: NSObject {
         case .denied: perm = "被拒绝"
         default: perm = "还没问"
         }
-        var out = " [" + (inExtension ? "键盘扩展" : "主App")
-        out += " 权限\(perm)"
-        if rung >= 0 { out += " 配置档\(rung + 1)" }
+        // 🚨 换行排版：真机上这段被截断过，横着排一行读不完。
+        var out = (inExtension ? "键盘扩展" : "主App") + " · 权限\(perm)"
+        if rung >= 0 { out += " · 配置档\(rung + 1)" }
         let r = AVAudioSession.sharedInstance().currentRoute
-        out += " 输入源\(r.inputs.count)个"
-        if let first = r.inputs.first { out += "(\(first.portType.rawValue))" }
-        return out + "]"
+        out += "\n输入源 \(r.inputs.count) 个"
+        if let first = r.inputs.first { out += "（\(first.portType.rawValue)）" }
+        return out
     }
 
     static func permissionState() -> Failure? {
@@ -148,6 +155,11 @@ final class Voice: NSObject {
                 detail: "四档配置全被拒（最后一次 code \(ns?.code ?? -1)）"
                     + Voice.context())))
         }
+
+        // 🚨 会话配好之后**重建引擎** —— 见 `engine` 那段注释。
+        //    旧引擎可能缓存着会话激活前的无效路由。
+        engine.stop()
+        engine = AVAudioEngine()
 
         let node = engine.inputNode
         let inFormat = node.outputFormat(forBus: 0)
@@ -231,8 +243,12 @@ final class Voice: NSObject {
             let ns = error as NSError
             return onWav(.failure(Failure(
                 stage: .engine,
-                detail: "\(ns.domain) \(ns.code)"
-                    + " 输入 \(Int(inFormat.sampleRate))Hz/\(inFormat.channelCount)ch"
+                // 🚨 **换行**：这段在真机上被截断过（Kevin 的截图只看得到
+                //    「… 输入 4800…」，后面全没了）。一个看不完的诊断
+                //    等于没有诊断 —— 最关键的那半永远读不到。
+                detail: "\(ns.code)\n\(ns.domain)\n"
+                    + "输入 \(Int(inFormat.sampleRate))Hz/"
+                    + "\(inFormat.channelCount)ch\n"
                     + Voice.context(rung: usedRung))))
         }
 

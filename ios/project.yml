@@ -159,6 +159,21 @@ targets:
         CFBundleDisplayName: Transless
         CFBundleShortVersionString: "20260828.555"
         CFBundleVersion: "555"
+        # 🚨🚨 **键盘扩展自己也要声明支持哪些语言**（2026-08-28 补）。
+        #    Kevin 真机截图：主 App 是中文，**键盘里全是英文**
+        #    （Translate / Transcribe / History / Casual / Work / Email…）。
+        #    根因：`Locale.preferredLanguages` 返回的是
+        #    **「用户偏好 ∩ 这个 bundle 声明支持的语言」**。
+        #    这一条只写在主 App 和 Probe 的 Info 里，**真正的键盘扩展一条都没有**
+        #    → 交集为空 → 退回 `en` → `Lang.effective` 判成英文。
+        #    跟"资源和码表只给容器 App 就等于扩展里没有"完全同型 ——
+        #    **扩展是独立 bundle，容器 App 声明过不算它声明过。**
+        # 🚨 这**不是这两天的回归**：8-26 那批中文截图是**模拟器**出的
+        #    （模拟器语言是中文，而模拟器上跑的是同一个 bundle……
+        #     那批是预览壳，走的是主 App 的 bundle，所以中文）。
+        #    他手机上的键盘**一直**是英文，只是今天才第一次有真机截图。
+        #    拿模拟器截图当基线去判"回归"会得出错的结论。
+        CFBundleLocalizations: [zh-Hans, zh-Hant, en]
         # 🚨🚨 **键盘扩展自己也要声明麦克风**（2026-08-26 补）。
         #    Kevin 真机反馈：主 App 的「随手翻译」能正常录音，
         #    但同一台机、同一个已授权的麦克风，**键盘里录不了**，
