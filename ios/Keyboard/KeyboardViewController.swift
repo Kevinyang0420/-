@@ -1318,24 +1318,27 @@ final class KeyboardViewController: UIInputViewController {
         case .failure(let f):
             KbBridge.writeSelfTest(KbSelfRecord.report(
                 ok: false, frames: localFrames, peak: localPeak,
-                note: "\(f)", foreground: true))
+                note: "\(f)\n" + localVoice.frameHealth, foreground: true))
             setPhase(.idle, hint: L.kb_rec_failed_tap)
             showDiag(KbSelfRecord.report(ok: false, frames: localFrames,
                                          peak: localPeak, note: "\(f)",
                                          foreground: true))
         case .success(let wav):
             let voiced = localPeak >= KbSelfRecord.voiced
+            // 🚨 M1：把取数健康度带上。**没有它，「转换全失败」和
+            //    「系统给了哑麦克风」在报告里长得一模一样**，而这个实验的
+            //    判据恰好就是"有没有声音" —— 分不开就会把假 SILENT 当结论。
+            let note = "wav \(wav.count) 字节\n" + localVoice.frameHealth
             KbBridge.writeSelfTest(KbSelfRecord.report(
                 ok: true, frames: localFrames, peak: localPeak,
-                note: "wav \(wav.count) 字节", foreground: true))
+                note: note, foreground: true))
             // 🚨 **全程静音也要说出来**，别把一段空气送去后端然后报"没听清"。
             //    那样他看到的是"又失败了"，而真正的信息（引擎起来了、
             //    但一帧声音都没进来）就丢了。
             if !voiced {
                 setPhase(.idle, hint: L.kb_rec_failed_tap)
                 showDiag(KbSelfRecord.report(ok: true, frames: localFrames,
-                                             peak: localPeak,
-                                             note: "wav \(wav.count) 字节",
+                                             peak: localPeak, note: note,
                                              foreground: true))
                 return
             }
