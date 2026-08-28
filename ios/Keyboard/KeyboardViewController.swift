@@ -1071,6 +1071,19 @@ final class KeyboardViewController: UIInputViewController {
     private var lastResAt: TimeInterval = 0
     private var pollTimer: Timer?
 
+    // MARK: - 扩展直录（最小实验，见 KbSelfRecord.swift）
+
+    private let localVoice = Voice()
+    /// 这一轮走的是扩展直录吗。
+    private var localMode = false
+    /// `Voice.start()` **同步阶段**就失败了的话，错误落在这 —— 用来判断要不要回退。
+    private var localSyncFail: String?
+    /// `start()` 已经返回了吗。用来区分「同步失败」和「录完回调」，
+    /// 两者走的是同一个 `onWav`。
+    private var localArmed = false
+    private var localPeak: Float = 0
+    private var localFrames = 0
+
     @objc private func tapMic() {
         if phase == .listening { stopListening(); return }
         // 🚨🚨 thinking 必须有出口（交叉审查 H4，安卓修过同型的）。
@@ -1085,6 +1098,15 @@ final class KeyboardViewController: UIInputViewController {
             }
         }
 
+        // 🚨🚨 **先试「键盘扩展自己录」** —— 2026-08-28 起。
+        //    下面那一大段"扩展绝对不能录音"的论证**已被 Kevin 的实拍反证**
+        //    （Typeless 录音时橙点亮着、键盘面板在显示波形、主 App 不在前台），
+        //    而它引的 QA1872 是 **2014-09-17 / iOS 8 / 通篇没提 keyboard**，
+        //    他手机是 iOS 26.6。**那段论证保留在下面只作历史，别再拿它推导。**
+        //    直录起不来就自动回退到宿主那条，所以最坏等于原样。
+        if tryLocalRecord() { return }
+
+        // ↓↓↓ 以下为**存疑**的旧论证（2026-08-28 起不再作为依据）↓↓↓
         // 🚨🚨 **键盘扩展自己录不了音，这是 iOS 的硬限制，不是我们的 bug。**
         //    苹果技术问答 QA1872：「App extensions in iOS 8 are not allowed to
         //    record audio」，并点名 `AVAudioEngine startAndReturnError:`（用了
@@ -1128,7 +1150,128 @@ final class KeyboardViewController: UIInputViewController {
 
     private func stopListening() {
         setPhase(.thinking, hint: "")
+        if localMode { localVoice.stop(); return }
         KbBridge.send("stop")
+    }
+
+    // MARK: - 扩展直录
+
+    /// 试着**在键盘扩展里直接录**。起得来返回 true（这一轮就走这条），
+    /// 起不来返回 false（调用方接着走宿主代录那条）。
+    ///
+    /// 🚨 判据在 `KbSelfRecord`：**拿到非静音 PCM** 才算成功。
+    ///    「引擎没报错」不算 —— 后台那次就是没报错但 `入0`，一帧声音都没有。
+    private func tryLocalRecord() -> Bool {
+        if KbSelfRecord.disabled { return false }
+        localPeak = 0
+        localFrames = 0
+        localSyncFail = nil
+        localArmed = false
+        localMode = true
+        localVoice.onLevel = { [weak self] v in
+            guard let self = self else { return }
+            self.localFrames += 1
+            self.localPeak = max(self.localPeak, v)
+            // 波形照样能画 —— 直录时数据就在本进程，不用过 App Group
+            DispatchQueue.main.async { self.waveView.push(v) }
+        }
+        heardLabel.text = ""
+        localVoice.start(onPartial: { _ in }) { [weak self] r in
+            guard let self = self else { return }
+            // 🚨 `Voice.start()` 的失败是**在 start() 里面同步回调**的
+            //    （权限不对、引擎起不来都是）。`localArmed` 就是用来分这两种：
+            //    还没 armed = 还在 start() 里 = 同步失败 = 该回退；
+            //    已经 armed = 真的录完了。
+            //    分不开的话，一次起不来会被当成"录了个空的"，
+            //    然后既不回退、也不报错，界面卡在录音中。
+            guard self.localArmed else {
+                self.localSyncFail = "\(r)"
+                return
+            }
+            DispatchQueue.main.async { self.finishLocal(r) }
+        }
+        localArmed = true
+        if let f = localSyncFail {
+            localMode = false
+            // 🚨 实验结果**无论成败都要落地**，不然又是一次"测了但不知道结果"。
+            KbBridge.writeSelfTest(KbSelfRecord.report(
+                ok: false, frames: 0, peak: 0, note: f, foreground: true))
+            return false
+        }
+        setPhase(.listening, hint: "")
+        return true
+    }
+
+    private func finishLocal(_ r: Result<Data, Voice.Failure>) {
+        localMode = false
+        waveView.setActive(false)
+        switch r {
+        case .failure(let f):
+            KbBridge.writeSelfTest(KbSelfRecord.report(
+                ok: false, frames: localFrames, peak: localPeak,
+                note: "\(f)", foreground: true))
+            setPhase(.idle, hint: L.kb_rec_failed_tap)
+            showDiag(KbSelfRecord.report(ok: false, frames: localFrames,
+                                         peak: localPeak, note: "\(f)",
+                                         foreground: true))
+        case .success(let wav):
+            let voiced = localPeak >= KbSelfRecord.voiced
+            KbBridge.writeSelfTest(KbSelfRecord.report(
+                ok: true, frames: localFrames, peak: localPeak,
+                note: "wav \(wav.count) 字节", foreground: true))
+            // 🚨 **全程静音也要说出来**，别把一段空气送去后端然后报"没听清"。
+            //    那样他看到的是"又失败了"，而真正的信息（引擎起来了、
+            //    但一帧声音都没进来）就丢了。
+            if !voiced {
+                setPhase(.idle, hint: L.kb_rec_failed_tap)
+                showDiag(KbSelfRecord.report(ok: true, frames: localFrames,
+                                             peak: localPeak,
+                                             note: "wav \(wav.count) 字节",
+                                             foreground: true))
+                return
+            }
+            let mode = Backend.Mode(
+                rawValue: UserDefaults.standard.string(forKey: "vime.mode")
+                    ?? "en") ?? .en
+            let lang = UserDefaults.standard.string(forKey: "vime.lang") ?? "en"
+            Backend.transcribe(wav: wav) { [weak self] t in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    switch t {
+                    case .failure(let e):
+                        self.setPhase(.idle, hint: "")
+                        self.showDiag("\(e)")
+                    case .success(let zh):
+                        self.heardLabel.text = zh
+                        Backend.polish(text: zh, tone: self.tone, mode: mode,
+                                       lang: lang) { [weak self] p in
+                            DispatchQueue.main.async {
+                                guard let self = self else { return }
+                                switch p {
+                                case .failure(let e):
+                                    self.setPhase(.idle, hint: "")
+                                    self.showDiag("\(e)")
+                                case .success(let en):
+                                    self.deliverLocal(zh: zh, out: en)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// 直录这条路的落地。**跟 `deliver()` 干的是同一件事** ——
+    /// 🚨 两处要一起改（历史、朗读按钮、插字、回到待命，一条都不能少）。
+    private func deliverLocal(zh: String, out: String) {
+        let mode = UserDefaults.standard.string(forKey: "vime.mode") ?? "en"
+        History.add(mode: mode, tone: tone, zh: zh, out: out)
+        lastOut = out
+        speakButton.isEnabled = true
+        heardLabel.text = ""
+        textDocumentProxy.insertText(out)
+        setPhase(.idle, hint: "")
     }
 
     // MARK: - 遥控：等主 App 把结果递回来
