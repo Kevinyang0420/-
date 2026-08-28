@@ -251,6 +251,131 @@ enum Backend {
         }
     }
 
+    // MARK: - 一次做完：录音 → 转写 → 整理/翻译（+ 自动判方向）
+
+    /// `/api/voice` 一趟做完，并让后端顺带判"这句是谁说的"。
+    ///
+    /// 🚨🚨 **判方向的规则不在客户端**。唯一真值是后端 `backend/mylang.py`
+    ///    的 `classify(text, ui_lang)`。**iOS 不许再抄一份判语种的逻辑** ——
+    ///    三端各写一份必然漂，而且这条特别容易写成 `isChinese(text)`：
+    ///    那样"界面=英文"的用户说英文会被判成「对方」、方向整个反过来，
+    ///    **而它在中文界面下全绿**。
+    ///
+    /// 🚨 请求体**逐字对齐安卓 `Api.voice()`** —— 同一个后端，两端不该发不同的东西。
+    ///    只在**翻译档**带 `__TARGET__`：逐字/只转写这两档没有"译成哪种语言"
+    ///    这个概念，传了只会让后端去填一个用不上的占位符。
+    ///
+    /// 返回 `(out: 上屏内容, zh: ASR 原文, dir: MINE/THEIRS/UNKNOWN 或空)`。
+    /// 🚨 `dir` 为 `UNKNOWN` 时**界面必须显式显示当前按哪个方向走、且一键可翻转**
+    ///    （产品经理 T2-e）。后端兜底走"我说话"那侧但把 UNKNOWN 原样透出 ——
+    ///    **不许静默按兜底走**：用户不知道它猜了，出错时会以为是翻译质量差。
+    static func voice(wav: Data, tone: String, mode: Mode, lang: String,
+                      uiLang: String?, mineTarget: String?, theirsTarget: String?,
+                      done: @escaping (Result<(out: String, zh: String,
+                                               dir: String), Failure>) -> Void) {
+        guard let url = URL(string: base + "/api/voice") else {
+            return done(.failure(.message("地址不对")))
+        }
+        let zhOnly = (mode == .zh)
+        let rawOnly = (mode == .raw)
+        // 🚨 逐字档也要过模型（只加标点），所以 mode 一律发 "en"。
+        //    发 "raw" 后端会跳过模型，回来的是没标点的 ASR 原文。
+        let autoDir = uiLang != nil && mineTarget != nil && theirsTarget != nil
+            && !(zhOnly || rawOnly)
+        let user = (zhOnly || rawOnly)
+            ? "Raw transcript:\n\"\"\"\n__TEXT__\n\"\"\"\n"
+            : "Target language: \(autoDir ? "__TARGET__" : langName(lang))\n"
+              + "Register: \(Prompts.tone(tone))\n\n"
+              + "Raw transcript:\n\"\"\"\n__TEXT__\n\"\"\"\n"
+        var body: [String: Any] = [
+            "audio": wav.base64EncodedString(),
+            "format": "wav",
+            "mode": "en",
+            "max_tokens": 4000,
+            "sys": zhOnly ? Secrets.promptZh : Secrets.prompt,
+            "user": user,
+        ]
+        if autoDir {
+            body["ui_lang"] = uiLang
+            body["mine_target"] = mineTarget
+            body["theirs_target"] = theirsTarget
+        }
+        guard let data = try? JSONSerialization.data(withJSONObject: body) else {
+            return done(.failure(.message("请求组装失败")))
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.timeoutInterval = 60
+        req.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+        req.setValue(DeviceId.pass, forHTTPHeaderField: "X-Alex-Pass")
+        req.httpBody = data
+        URLSession.shared.dataTask(with: req) { d, resp, err in
+            if let err = err { return done(.failure(.message(err.localizedDescription))) }
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            if code == 401 { return done(.failure(.unauthorized)) }
+            let obj = d.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
+            if code == 429 {
+                return done(.failure(.quota((obj?["error"] as? String) ?? "额度用完了")))
+            }
+            guard code == 200 || code == 202, let job = obj?["job"] as? String else {
+                return done(.failure(.http(code)))
+            }
+            pollVoice(job: job, tries: 0, zhOnly: zhOnly, rawOnly: rawOnly, done: done)
+        }.resume()
+    }
+
+    private static func pollVoice(
+        job: String, tries: Int, zhOnly: Bool, rawOnly: Bool,
+        done: @escaping (Result<(out: String, zh: String, dir: String), Failure>) -> Void) {
+        if tries > 90 { return done(.failure(.timeout)) }
+        guard let url = URL(string: base + "/api/job?id=" + job) else {
+            return done(.failure(.message("job 地址不对")))
+        }
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 20
+        req.setValue(DeviceId.pass, forHTTPHeaderField: "X-Alex-Pass")
+        URLSession.shared.dataTask(with: req) { d, resp, _ in
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            if code == 401 { return done(.failure(.unauthorized)) }
+            let obj = d.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
+            if code == 502, let e = obj?["error"] as? String {
+                return done(.failure(.message(e)))
+            }
+            if (obj?["done"] as? Bool) != true {
+                DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
+                    pollVoice(job: job, tries: tries + 1, zhOnly: zhOnly,
+                              rawOnly: rawOnly, done: done)
+                }
+                return
+            }
+            let raw = (obj?["text"] as? String) ?? ""
+            let zh = (obj?["zh"] as? String) ?? ""
+            let dir = (obj?["dir"] as? String) ?? ""
+            var out = (zhOnly || rawOnly)
+                ? raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                : Prompts.postprocess(Prompts.splitEn(raw))
+            if out.isEmpty { return done(.failure(.message("返回了空结果"))) }
+            // 🚨 逐字档的硬闸，跟安卓同一条判据：去掉标点空白后必须跟 ASR 原文
+            //    一模一样，否则丢掉模型结果、用原文。
+            if rawOnly && !zh.isEmpty && !sameWords(zh, out) {
+                out = zh.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            done(.success((out: out, zh: zh.isEmpty ? out : zh, dir: dir)))
+        }.resume()
+    }
+
+    /// 去掉标点空白后是不是同一串字（逐字档的硬闸用）。跟安卓 `sameWords` 同口径。
+    private static func sameWords(_ a: String, _ b: String) -> Bool {
+        func norm(_ s: String) -> String {
+            String(s.unicodeScalars.filter {
+                !CharacterSet.whitespacesAndNewlines.contains($0)
+                    && !CharacterSet.punctuationCharacters.contains($0)
+                    && !CharacterSet.symbols.contains($0)
+            })
+        }
+        return norm(a) == norm(b)
+    }
+
     // MARK: - 语音转写（跟安卓同一条链：录 WAV → /api/audio → 火山 ASR）
 
     /// 把录好的 WAV 传火山 `/api/audio` 转写成中文。
