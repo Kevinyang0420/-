@@ -166,8 +166,14 @@ jobs:
           #    现在只剩一个来源：苹果那边。顺带把那条判据做成闸门，每次构建都查。
           PROF_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$PROF_DIR"
-          python3 -m pip install --quiet --disable-pip-version-check pyjwt cryptography
-          python3 ios/ci_fetch_profiles.py "$PROF_DIR"
+          # 🚨 runner 上的 python3 是 Homebrew 管的，直接 pip 会被 PEP 668 拒：
+          #    `externally-managed-environment`（2026-08-28 实撞，构建当场挂）。
+          #    **不要用 `--break-system-packages` 绕** —— 那会动 runner 的系统环境。
+          #    建个临时 venv，用完就没了。
+          python3 -m venv "$RUNNER_TEMP/pvenv"
+          "$RUNNER_TEMP/pvenv/bin/pip" install --quiet --disable-pip-version-check \
+            pyjwt cryptography
+          "$RUNNER_TEMP/pvenv/bin/python" ios/ci_fetch_profiles.py "$PROF_DIR"
 
           echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
           echo "KEYCHAIN_PW=$KEYCHAIN_PW" >> "$GITHUB_ENV"
