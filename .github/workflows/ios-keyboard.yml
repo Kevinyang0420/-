@@ -115,9 +115,18 @@ jobs:
           # 闸门：提示词必须真的编进键盘二进制。
           # 用它而不是口令 —— 提示词 3588 字节，一定落在 __cstring 里，strings 找得到；
           # 口令只有 14 字符，被 Swift 小字符串优化编成立即数，strings 永远找不到（踩过）。
-          strings "$EXT/Keyboard" | grep -q "PASS 2 - STRUCTURE"             || { echo "::error::提示词没编进键盘二进制"; exit 1; }
+          # 🚨🚨 **不许写成 `strings ... | grep -q`**（2026-08-28 实撞）。
+          #    `grep -q` 一匹配就退出 -> 管道读端关闭 -> `strings` 吃 SIGPIPE 非零退出
+          #    -> `set -euo pipefail` 判整条管道失败 -> 走 `||` 报「没编进去」。
+          #    **字符串越是真的在里面，它越早退出，这条闸门越容易红** ——
+          #    它是在"通过"的时候失败，而且报出来的话指向相反的结论。
+          #    日志里的原文：`strings: failed to flush output`。
+          #    → 先落盘，再对文件 grep。顺带让正判据和阴性对照读**同一份快照**。
+          strings "$EXT/Keyboard" > "$RUNNER_TEMP/kbstr.txt"
+          grep -q "PASS 2 - STRUCTURE" "$RUNNER_TEMP/kbstr.txt" \
+            || { echo "::error::提示词没编进键盘二进制"; exit 1; }
           # 阴性对照：一个绝不该出现的串必须查不到，否则说明这条 grep 是恒真的
-          if strings "$EXT/Keyboard" | grep -q "ZZ-THIS-MUST-NOT-EXIST-ZZ"; then
+          if grep -q "ZZ-THIS-MUST-NOT-EXIST-ZZ" "$RUNNER_TEMP/kbstr.txt"; then
             echo "::error::阴性对照命中了，这道闸是假的"; exit 1
           fi
           echo "二进制含提示词 ✓（阴性对照未命中 ✓）"
