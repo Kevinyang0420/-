@@ -1100,6 +1100,9 @@ final class KeyboardViewController: UIInputViewController {
     private var localArmed = false
     private var localPeak: Float = 0
     private var localFrames = 0
+    /// 直录起不来时给他看的一行。**没有它的话回退是完全静默的**，
+    /// 而静默地退回老路正好等于实验没做，两者在界面上分不开。
+    private var localFallbackNote: String?
 
     @objc private func tapMic() {
         if phase == .listening { stopListening(); return }
@@ -1149,7 +1152,12 @@ final class KeyboardViewController: UIInputViewController {
         }
 
         heardLabel.text = ""
-        setPhase(.listening, hint: "")
+        // 🚨 **回退这件事必须让他看得见。**
+        //    直录起不来时我们悄悄走宿主那条 —— 界面跟以前一模一样，
+        //    于是「实验做了、结论是什么」他答不上来，我也拿不到
+        //    （他手机现在电脑够不着，selftest.txt 拉不回来）。
+        //    一行短提示，不挡流程，但他一眼能报给我。
+        setPhase(.listening, hint: localFallbackNote ?? "")
         lastResAt = 0
         // 🚨 语气/模式/语言必须**跟着命令送过去**。
         //    原来这里的注释写着「模式跟 App 共用同一个 UserDefaults 键，
@@ -1210,6 +1218,8 @@ final class KeyboardViewController: UIInputViewController {
         localArmed = true
         if let f = localSyncFail {
             localMode = false
+            // 只留前 40 个字，提示条是一行的东西，塞长了会被挤成看不清的一条
+            localFallbackNote = "直录起不来，已回退：" + String(f.prefix(40))
             // 🚨 实验结果**无论成败都要落地**，不然又是一次"测了但不知道结果"。
             KbBridge.writeSelfTest(KbSelfRecord.report(
                 ok: false, frames: 0, peak: 0, note: f, foreground: true))
