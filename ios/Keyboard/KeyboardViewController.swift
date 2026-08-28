@@ -440,20 +440,32 @@ final class KeyboardViewController: UIInputViewController {
             hc,
         ])
 
-        // 🚨 白下巴定性线（**临时诊断件**）。见 `bottomProbe` 的注释：
-        //    这条 2px 荧光绿贴在我们容器的最底边，一次真机就能给出
-        //    "那条灰带是不是我们的"这个二元答案。
-        //    荧光绿是故意的 —— 配色里没有这个颜色，不会跟任何东西混。
-        bottomProbe.backgroundColor = UIColor(red: 0, green: 1, blue: 0.35,
-                                              alpha: 1)
-        bottomProbe.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(bottomProbe)
-        NSLayoutConstraint.activate([
-            bottomProbe.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            bottomProbe.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            bottomProbe.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            bottomProbe.heightAnchor.constraint(equalToConstant: 2),
-        ])
+        // 🚨🚨 白下巴定性线（**临时诊断件**）。
+        //    **默认不出现** —— 只有 `TRANSLESS_KB_DIAG=1` 时才画。
+        //
+        //    2026-08-28：它原来是**无条件**加进视图的，也就是说
+        //    **Kevin 装的每一个包，键盘底部都会有一条 2pt 亮绿线**。
+        //    他今天已经因为白下巴问过「我怎么才能让你聪明点」——
+        //    再看到底部多一条绿线，他不会认为那是把尺，
+        //    **他会认为我们又加了个毛病**。
+        //
+        //    🚨 还有第二个害处：它让 `gate_keyboard_chin` **永远处在假阳性状态**
+        //    （量到 6px 非键盘色 = 3 倍屏上的这条线），那道闸门再也说不出真话。
+        //    **一个临时诊断件长期挡在闸门前面，等于又造了一道永远失真的检查。**
+        //
+        //    🚨 这是「测量干扰被测对象」那一族 —— 今天第五次。
+        if ProcessInfo.processInfo.environment["TRANSLESS_KB_DIAG"] == "1" {
+            bottomProbe.backgroundColor = UIColor(red: 0, green: 1, blue: 0.35,
+                                                  alpha: 1)
+            bottomProbe.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(bottomProbe)
+            NSLayoutConstraint.activate([
+                bottomProbe.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                bottomProbe.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                bottomProbe.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+                bottomProbe.heightAnchor.constraint(equalToConstant: 2),
+            ])
+        }
 
         paintMode()
 
