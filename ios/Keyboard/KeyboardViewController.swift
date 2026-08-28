@@ -39,6 +39,8 @@ final class KeyboardViewController: UIInputViewController {
     ///    只剩 `录音引擎：2003329396`。
     ///    **"信息变少"最常见的原因不是系统状态变了，是我们自己把它吃掉了。**
     private var diagView: UITextView?
+    /// 诊断面板的关闭按钮。**跟面板分开存**，见 `hideDiag`。
+    private var diagClose: UIButton?
 
     /// 🚨 **白下巴定性用的一条 2px 亮线**，贴在我们键盘容器的**最底边**。
     ///
@@ -451,8 +453,12 @@ final class KeyboardViewController: UIInputViewController {
             equalTo: typeButton.widthAnchor).isActive = true
         bottom.heightAnchor.constraint(equalToConstant: 44).isActive = true
 
+        // 🚨🚨 H4：`heardLabel` 原来**从来没被加进视图树** ——
+        //    声明了、配置了、三处往里写字，但十处 addSubview 一处都不是它。
+        //    表现：识别出来的中文、宿主回来的 partial，**全程不可见**。
+        //    主 App 那边（`AppDelegate`）是加进去的，只有键盘漏了。
         let root = UIStackView(arrangedSubviews:
-            [top, subWrap, hintLabel, micWrap, bottom])
+            [top, subWrap, hintLabel, heardLabel, micWrap, bottom])
         root.axis = .vertical
         root.spacing = 8
         root.translatesAutoresizingMaskIntoConstraints = false
@@ -996,11 +1002,40 @@ final class KeyboardViewController: UIInputViewController {
         diagView = tv
         tv.addGestureRecognizer(
             UITapGestureRecognizer(target: self, action: #selector(hideDiag)))
+
+        // 🚨🚨 H7：**必须有一个真按钮**，tap 手势只能当辅助。
+        //    这个面板四边贴满、还 `bringSubviewToFront`，**把 🌐 地球键也盖住了**；
+        //    而 `isSelectable = true` 的 UITextView 自带整套手势识别器，
+        //    单击有被吞的现实风险（我们没设 `shouldRecognizeSimultaneously`）。
+        //    一旦被吞：**面板关不掉、地球键点不到，他只能去杀宿主 App。**
+        //    44×44 是苹果自己的最小可点尺寸，别改小。
+        let close = UIButton(type: .system)
+        close.setTitle("✕", for: .normal)
+        close.titleLabel?.font = .systemFont(ofSize: 22, weight: .medium)
+        close.setTitleColor(.white, for: .normal)
+        close.backgroundColor = UIColor(white: 1, alpha: 0.16)
+        close.layer.cornerRadius = 22
+        close.translatesAutoresizingMaskIntoConstraints = false
+        close.addTarget(self, action: #selector(hideDiag), for: .touchUpInside)
+        view.addSubview(close)
+        view.bringSubviewToFront(close)
+        NSLayoutConstraint.activate([
+            close.widthAnchor.constraint(equalToConstant: 44),
+            close.heightAnchor.constraint(equalToConstant: 44),
+            close.topAnchor.constraint(equalTo: view.topAnchor, constant: 6),
+            close.trailingAnchor.constraint(equalTo: view.trailingAnchor,
+                                            constant: -8),
+        ])
+        diagClose = close
     }
 
     @objc private func hideDiag() {
         diagView?.removeFromSuperview()
         diagView = nil
+        // 🚨 关闭按钮是**另一个 subview**，不跟着 tv 一起走 ——
+        //    忘了它的话屏幕上会留一个点不动的 ✕，比没有还糟。
+        diagClose?.removeFromSuperview()
+        diagClose = nil
     }
 
     private func setPhase(_ p: Phase, hint: String) {
@@ -1056,7 +1091,12 @@ final class KeyboardViewController: UIInputViewController {
             guard let self = self else { t.invalidate(); return }
             switch self.phase {
             case .listening:
-                self.waveView.replace(KbBridge.levels())
+                // 🚨 M10：**直录时波形的数据源在本进程**（`localVoice.onLevel`
+                //    直接 `waveView.push`）。这里再无条件 `replace(KbBridge.levels())`
+                //    会把它整个盖掉，而 `clearLevels()` 只在宿主 `begin()` 里调 ——
+                //    于是直录成功、真有声音时，他看到的波形不动、或者在重放
+                //    **上一次宿主录音的形状** → 他报「没录到」，其实录到了。
+                if !self.localMode { self.waveView.replace(KbBridge.levels()) }
                 // 录音末尾倒计时 —— 照抄安卓 `startTailCountdown`：
                 // 平时什么都不显示，只在最后 20 秒把剩余秒数写进圆圈，
                 // 免得他在毫不知情的情况下被自动停（安卓 2026-08-22 的原因）。
@@ -1095,7 +1135,10 @@ final class KeyboardViewController: UIInputViewController {
 
     // MARK: - 扩展直录（最小实验，见 KbSelfRecord.swift）
 
-    private let localVoice = Voice()
+    /// 🚨 M12：**必须 `lazy`**。存储属性会让键盘一启动就构造 `AVAudioEngine`，
+    ///    而本文件别处早写过这条铁规（「不在扩展启动瞬间创建，否则表现就是
+    ///    『选了键盘却弹回上一个』且没有明显报错」）—— 我自己违反了自己的规矩。
+    private lazy var localVoice = Voice()
     /// 这一轮走的是扩展直录吗。
     private var localMode = false
     /// `Voice.start()` **同步阶段**就失败了的话，错误落在这 —— 用来判断要不要回退。
@@ -1159,6 +1202,12 @@ final class KeyboardViewController: UIInputViewController {
         }
         guard KbBridge.hostAlive else {
             setPhase(.idle, hint: L.kb_need_standby)
+            // 🚨🚨 H6：**这条路原来不弹面板** —— 而 `localFallbackDiag`
+            //    只在 `showDiag()` 里被拼进去。于是「直录失败 + 待机没开」时，
+            //    他只看到「先打开 Transless…」，**直录为什么起不来一个字都传不回来**。
+            //    这就是 665 那次的重演，只是换了触发条件。
+            //    硬规则：**`localFallbackDiag` 非 nil 时，`tapMic` 的任何出口都不许不弹。**
+            if localFallbackDiag != nil { showDiag("") }
             return
         }
 
@@ -1199,19 +1248,27 @@ final class KeyboardViewController: UIInputViewController {
     ///    「引擎没报错」不算 —— 后台那次就是没报错但 `入0`，一帧声音都没有。
     private func tryLocalRecord() -> Bool {
         if KbSelfRecord.disabled { return false }
-        // 🚨🚨 **先让宿主松手。** 待机保活时主 App 拿着一个 active 的
-        //    `.playback` 会话；音频会话是系统级仲裁的，两个进程抢同一个，
-        //    扩展这边 `setActive(.record)` 会被拒（今晚 `!int` 就是这个含义，
-        //    当时占着音频的就是我们自己）。
-        //    🚨 这**不证明**"扩展能录"，它只是把一个已知会挡路的东西挪开；
-        //       结论仍然只看拿没拿到非静音 PCM。
-        //    🚨 宿主没在跑也没关系 —— 命令没人取，250ms 后照样试。
-        _ = KbBridge.send("yield")
-        Thread.sleep(forTimeInterval: 0.25)
+        // 🚨🚨 **这里曾经有一段 `send("yield")` + `Thread.sleep(0.25)`，已删。**
+        //    交叉审查（20260828_1933）把它判成必修，两条理由我都接受：
+        //    · 宿主 `hold.stop()` 之后**没有任何地方恢复** —— 键盘这条路
+        //      一次都碰不到 `reclaimMic()`，等于我们自己把他的待机打死，
+        //      **最坏情况比原样更差**，直接推翻我写的「最坏等于原样」。
+        //    · 那 250ms 是纯猜的：待机没开时 `drain()` 第一句 `guard standby`
+        //      就返回，yield 是空操作；待机开着但宿主刚醒时退化成 2 秒轮询，
+        //      250ms 等不到 —— 于是"四档全拒"会被我读成"扩展不能录音"，
+        //      **而真相只是宿主还没松手**。这是这个实验最贵的一种错。
+        //    · 主线程 sleep 叠加四档会话切换，扩展看门狗比 App 严，
+        //      被杀的表现就是「键盘弹回上一个」，**零诊断**。
+        //    → 会话真被宿主占着的话，让**系统**去拒，把 stage 和四档 code
+        //      原样报出来 —— 那是证据，比我盲等 250ms 强。
         localPeak = 0
         localFrames = 0
         localSyncFail = nil
         localArmed = false
+        // 🚨 M5：这两个**必须跟着清**。不清的话第 2 次任何一屏诊断
+        //    都会在最上面拼上**第 1 次**的错误 —— 我会照着过期报错去改。
+        localFallbackNote = nil
+        localFallbackDiag = nil
         localMode = true
         localVoice.onLevel = { [weak self] v in
             guard let self = self else { return }
