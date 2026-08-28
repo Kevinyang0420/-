@@ -43,7 +43,7 @@ targets:
       properties:
         CFBundleDisplayName: Transless
         CFBundleShortVersionString: "20260828.595"
-        CFBundleVersion: "595.1"
+        CFBundleVersion: "595.2"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -129,7 +129,7 @@ targets:
       properties:
         CFBundleDisplayName: TransProbe
         CFBundleShortVersionString: "20260828.595"
-        CFBundleVersion: "595.1"
+        CFBundleVersion: "595.2"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -153,7 +153,7 @@ targets:
       properties:
         CFBundleDisplayName: TransProbe
         CFBundleShortVersionString: "20260828.595"
-        CFBundleVersion: "595.1"
+        CFBundleVersion: "595.2"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -194,7 +194,7 @@ targets:
       properties:
         CFBundleDisplayName: Transless
         CFBundleShortVersionString: "20260828.595"
-        CFBundleVersion: "595.1"
+        CFBundleVersion: "595.2"
         # 🚨🚨 **键盘扩展自己也要声明支持哪些语言**（2026-08-28 补）。
         #    Kevin 真机截图：主 App 是中文，**键盘里全是英文**
         #    （Translate / Transcribe / History / Casual / Work / Email…）。
