@@ -61,16 +61,39 @@ enum KbSelfRecord {
     /// 🚨 `foreground` 这个参数原来四个调用点**全硬编码 `true`** ——
     ///    报告里那句「当时键盘在前台」是**恒真的话**（M7）。
     ///    现在它只在调用方真的测得出来时才有意义，报文里明确标注来源。
+    /// 🚨🚨 H-5（第 2 轮审查）：**`started` 必须由调用方传，不能用 `frames == 0` 反推。**
+    ///
+    /// `frames == 0` **同时**是两件完全相反的事的签名：
+    ///   ① 引擎压根没起来
+    ///   ② **引擎起来了、系统给了哑麦克风、tap 一次都没回调**
+    /// 而 ② 正是这次实验最想识别的那个失败形态
+    /// （后台那次就是「没报错但 `入0`」）。
+    ///
+    /// 上一版把 `!ok && frames == 0` 打成「FAIL 起不来（零帧）」——
+    /// **我们会据此得出「iOS 扩展不能录音」，而真相是能起来、只是没有数据。**
+    /// 这恰好是整个实验唯一要回答的问题，判错方向的代价是又一轮真机测试。
+    ///
+    /// 能分辨的信息**一直在调用方手里**：`finishLocal` 被调用本身就意味着
+    /// `Voice.start()` 已经成功返回；只有 `tryLocalRecord` 的同步失败分支
+    /// 才是真的"起不来"。所以这里要它明说，不许我猜。
     static func report(ok: Bool, frames: Int, peak: Float,
-                       note: String, foreground: Bool) -> String {
+                       note: String, foreground: Bool,
+                       started: Bool = true) -> String {
         let verdict: String
-        if !ok && frames > 0 {
+        if !ok && frames == 0 && started {
+            // 🚨 这一档最值钱：**引擎起来了，但一帧都没收到。**
+            //    它跟「起不来」是相反的结论 —— 前者说明扩展能录，
+            //    只是系统没给数据（路由/权限/哑麦克风）；
+            //    后者才说明 QA1872 那条成立。
+            verdict = "DEAD 引擎起来了但一帧都没收到（哑麦克风/系统没给数据）"
+        } else if !ok && frames > 0 {
             // 引擎起来了、也真的收到过帧，那就不是"起不来"
             verdict = peak < voiced
                 ? "SILENT 起来了、收到帧、但全程静音（失败于后续环节）"
                 : "PARTIAL 起来了也听到声音，但这一轮没走完"
         } else if !ok {
-            verdict = "FAIL 扩展直录起不来（零帧）"
+            // 走到这里 = `started == false`，即 `Voice.start()` 同步就失败了。
+            verdict = "FAIL 扩展直录起不来（引擎没起来）"
         } else if peak < voiced {
             // 🚨 这一档必须单独存在：引擎起来了、也拿到帧了，**但全是静音**。
             //    如果把它算成成功，我们会得出"扩展能录"的错误结论，
