@@ -15,8 +15,10 @@ enum WordBook {
 
     private static let key = "wordbook_json"
 
-    /// App Group 标识。**两个 target 的 entitlements 都要有它**。
-    static let appGroup = "group.com.kevin.transless"
+    /// App Group 标识。
+    /// 🚨 **唯一配置点在 `KbBridge.group`** —— 这里原来自己硬编码了一份同样的串，
+    ///    等于第二个配置点。`gate_app_group.py` 守着「除了那一处，别处不许再写」。
+    static var appGroup: String { KbBridge.group }
 
     typealias Item = WordBookCore.Item
 
@@ -38,22 +40,23 @@ enum WordBook {
     ///    单词本列表顶部用危险色写明「键盘里收的词现在同步不过来」。
     ///    退回本身不是问题，**退回而不说**才是。
     private static var store: UserDefaults? {
-        UserDefaults(suiteName: appGroup) ?? .standard
+        groupReady ? UserDefaults(suiteName: appGroup) : .standard
     }
 
     /// App Group 真的能用吗。
     ///
-    /// 🚨 判据是**真写进去再读出来**，不是"`UserDefaults(suiteName:)` 不为 nil"
-    ///    —— 没在 entitlements 里声明那个 group 时，这个构造器**照样给对象**，
-    ///    只是读写落不到共享容器。拿"不为 nil"当判据是典型的假检查。
-    static var groupReady: Bool {
-        guard let s = store else { return false }
-        let probe = "__wb_probe__"
-        s.set(1, forKey: probe)
-        let ok = s.integer(forKey: probe) == 1
-        s.removeObject(forKey: probe)
-        return ok
-    }
+    /// 🚨🚨 **上一版这个判据恒为真**（2026-08-28 抓出来）：它是「往 `store` 里
+    ///    写个探针再读出来」，而 `store` 在 App Group 不可用时**会退回
+    ///    `.standard`** —— 往 `.standard` 写再读当然成功。
+    ///    于是「键盘里收的词同步不过来」那条警告**一次都不会出现**，
+    ///    而它存在的全部意义就是在这种时候出现。
+    ///    注释还专门写了「不许拿『不为 nil』当判据，那是典型的假检查」——
+    ///    **换了个更像样的假检查，仍然是假检查。**
+    ///
+    /// 🚨 正解：`containerURL(forSecurityApplicationGroupIdentifier:)`
+    ///    在缺 entitlement 时返回 **nil**，这是系统给的真答案。
+    ///    唯一实现在 `KbBridge.available`，别在这儿再写一遍。
+    static var groupReady: Bool { KbBridge.available }
 
     /// 收一条。返回 `added` / `added_evicted` / `same` / `empty`。
     /// 🚨 不再有 `nogroup` —— App Group 没配好时退回本进程存，
