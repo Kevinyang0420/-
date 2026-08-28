@@ -442,6 +442,25 @@ final class KeyboardViewController: UIInputViewController {
         ])
 
         paintMode()
+
+        // 🚨 `TRANSLESS_KB_DIAG=1` 时**直接造一次录音失败**，把诊断面板摆出来。
+        //    这是为了在**模拟器上验"诊断能不能完整显示"** —— 那一条不需要
+        //    真麦克风，而我们已经因为"没先验可见性"浪费了 Kevin 一次真机测试
+        //    （557 那版我为了修截断改成换行排，而 `hintLabel.numberOfLines = 1`
+        //     把后面几段全吃掉，他只看到 `录音引擎：2003329396`）。
+        //    **先验通诊断本身，再让他试。**
+        if ProcessInfo.processInfo.environment["TRANSLESS_KB_DIAG"] == "1" {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+                guard let self = self else { return }
+                let fake = Voice.Failure(
+                    stage: .engine,
+                    detail: "2003329396\ncom.apple.coreaudio.avfaudio\n"
+                        + "输入 48000Hz/1ch\n"
+                        + Voice.context(rung: 0))
+                self.setPhase(.idle, hint: L.kb_rec_failed_tap)
+                self.showDiag("\(fake)\n\n" + Voice.diagnostics())
+            }
+        }
     }
 
     // MARK: - 每次弹出键盘都重判「完全访问」
@@ -832,21 +851,28 @@ final class KeyboardViewController: UIInputViewController {
         tv.text = text
         tv.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         tv.textColor = Theme.text
-        tv.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        // 🚨🚨 **不透明 + 铺满 + 置顶**，三样缺一不可。
+        //    第一版我用了 `black.withAlphaComponent(0.4)` 并留了边距，
+        //    在模拟器上一看：**键盘按钮从半透明底下透上来跟文字叠在一起**，
+        //    而且最后几行被底排按钮盖住 —— 「当前路由」那行根本读不到。
+        //    这跟 557 那次是同一个毛病的第二种形态：
+        //    **诊断"生成了"不等于"读得到"。**
+        //    幸好这次先在模拟器上验了，没再浪费他一次真机。
+        tv.backgroundColor = UIColor(red: 0.04, green: 0.03, blue: 0.09,
+                                     alpha: 1)          // 不透明
         tv.isEditable = false
         tv.isSelectable = true          // 让他能直接复制
-        tv.layer.cornerRadius = 8
         tv.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tv)
         NSLayoutConstraint.activate([
-            tv.leadingAnchor.constraint(equalTo: view.leadingAnchor,
-                                        constant: 8),
-            tv.trailingAnchor.constraint(equalTo: view.trailingAnchor,
-                                         constant: -8),
-            tv.topAnchor.constraint(equalTo: view.topAnchor, constant: 6),
-            tv.bottomAnchor.constraint(equalTo: view.bottomAnchor,
-                                       constant: -34),
+            tv.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tv.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tv.topAnchor.constraint(equalTo: view.topAnchor),
+            tv.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+        // 🚨 **置顶**：`addSubview` 只保证加在当前最上层，
+        //    而底排按钮是更晚才布局的，不显式提到最前会被它们盖住。
+        view.bringSubviewToFront(tv)
         diagView = tv
         tv.addGestureRecognizer(
             UITapGestureRecognizer(target: self, action: #selector(hideDiag)))
