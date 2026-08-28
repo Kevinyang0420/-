@@ -1076,7 +1076,17 @@ final class KeyboardViewController: UIInputViewController {
             case "error":
                 t.invalidate()
                 self.remoteSeq = -1
-                self.setPhase(.idle, hint: r.body)
+                // 🚨🚨 **长的现场走全屏面板，别塞进 hintLabel**（2026-08-28 第二次栽）。
+                //    `hintLabel` 是 `numberOfLines = 2`，主 App 回来的诊断是十几行 ——
+                //    塞进去只显示前两行，Kevin 报的就是「什么什么看不见了」。
+                //    557 那次一模一样（当时是 numberOfLines = 1）。
+                //    **诊断自己瞎掉，会让下一轮又白费他一次。**
+                if r.body.contains("\n") || r.body.count > 24 {
+                    self.setPhase(.idle, hint: L.kb_rec_failed_tap)
+                    self.showDiag(r.body)
+                } else {
+                    self.setPhase(.idle, hint: r.body)
+                }
             case "text":
                 t.invalidate()
                 self.remoteSeq = -1
