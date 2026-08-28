@@ -52,6 +52,21 @@ final class Voice: NSObject {
     private var onWav: ((Result<Data, Failure>) -> Void)?
     private var finished = false
 
+    // 🚨 M1（交叉审查）：转换失败/空帧的计数。**必须能被读到** ——
+    //    不然「转换全失败」和「系统给了哑麦克风」在报告里长得一模一样，
+    //    而这个实验的判据恰好就是"有没有声音"。
+    /// 转换器报错的帧数。
+    private(set) var convErrCount = 0
+    /// 最后一次转换错误的 code。
+    private(set) var convErrCode = 0
+    /// 转换后长度为 0、被丢掉的帧数。
+    private(set) var emptyFrames = 0
+
+    /// 这一轮的取数健康度，拼进诊断。
+    var frameHealth: String {
+        "转换失败 \(convErrCount) 帧（code \(convErrCode)）· 空帧 \(emptyFrames) 帧"
+    }
+
     // MARK: - 连续模式（Kevin 2026-08-26 要的"随手翻译"同传场景）
 
     /// 非 nil = 连续模式。每断出一句回调一次，**在主线程**。
@@ -188,6 +203,10 @@ final class Voice: NSObject {
         self.onWav = onWav
         pcm = Data()
         finished = false
+        // 🚨 跨轮必须清零，否则第二轮读到的是两轮之和 —— 旧数据冒充新数据。
+        convErrCount = 0
+        convErrCode = 0
+        emptyFrames = 0
         startedAt = Date()
 
         // 🚨🚨 **按阶梯试配置**，不是只试一档（2026-08-26 加）。
@@ -266,7 +285,22 @@ final class Voice: NSObject {
                 status.pointee = .haveData
                 return buf
             }
-            guard let ch = out.int16ChannelData, out.frameLength > 0 else { return }
+            // 🚨🚨 M1（交叉审查）：**转换失败原来被整个丢掉。**
+            //    `err` 声明了却从不检查，失败时 `out.frameLength == 0`
+            //    被下面这道 guard 静默吞掉 → `frames=0, peak=0` →
+            //    报告打出 **`SILENT 全程静音`**。
+            //    **而这个错误结论跟「系统给了哑麦克风」长得一模一样** ——
+            //    这个实验的判据就是"有没有声音"，让它被转换失败伪装成静音，
+            //    整轮结论就是错的。
+            //    → 计数 + 记最后一次 code，进诊断；判据看得见它才不会误判。
+            if let e = err {
+                self.convErrCount += 1
+                self.convErrCode = e.code
+            }
+            guard let ch = out.int16ChannelData, out.frameLength > 0 else {
+                self.emptyFrames += 1
+                return
+            }
             let n = Int(out.frameLength)
             self.pcm.append(UnsafeBufferPointer(start: ch[0], count: n)
                 .withMemoryRebound(to: UInt8.self) { Data($0) })
