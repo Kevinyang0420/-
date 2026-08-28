@@ -160,7 +160,11 @@ final class BgRecProbe {
         @unknown default: where_ = "未知"
         }
         var rows = raw()
-        rows.append(["at": Date().timeIntervalSince1970, "ok": ok,
+        // 🚨 自增序号：防"同一条被重复读进来"把分母撑虚，而它看起来完全正常。
+        //    （产品经理提醒；跟 Y2 那次读到上一轮结果是同一族。）
+        let seq = (UserDefaults.standard.integer(forKey: "bgprobe.seq")) + 1
+        UserDefaults.standard.set(seq, forKey: "bgprobe.seq")
+        rows.append(["seq": seq, "at": Date().timeIntervalSince1970, "ok": ok,
                      "where": where_, "bgMin": bgMin, "note": note,
                      // 电量每条都记 —— 只记首尾的话，中途被杀过就什么都没有了
                      "batt": Double(UIDevice.current.batteryLevel)])
@@ -216,15 +220,43 @@ final class BgRecProbe {
             ("保活持续开启 30 分钟–2 小时", 31...120),
             ("保活持续开启 2 小时以上", 121...100000),
         ]
+        // 🚨🚨 **一个后台样本都没有时，不许打印那三行 `0/0` 和「没有失败」。**
+        //    产品经理 2026-08-28 指出：那样出来的是一份
+        //    「三档 0/0、对照组全绿、没有失败」的报告 ——
+        //    **读起来像"跑完了没问题"，而它一个后台样本都没采到。**
+        //    「没有失败」是因为「没有测试」，这两件事在报告里长得一模一样。
+        //    （同族第三次：朗读报"没播出声"其实是没点中；
+        //     等高报"全部相等"其实是没切档。）
+        let bgTotal = buckets.reduce(0) { acc, b in
+            acc + rows.filter { b.1.contains(($0["bgMin"] as? Int) ?? -1) }.count
+        }
+        if bgTotal == 0 {
+            out.insert("🚨🚨 本轮无效：**一个后台样本都没采到**。", at: 2)
+            out.insert("   别把它读成「没问题」—— 它是「没测到」。", at: 3)
+            out.insert("   多半是 App 没真正进后台，或自测中途被停了。", at: 4)
+            return out.joined(separator: "\n")
+        }
         for (name, r) in buckets {
             let sub = rows.filter { r.contains(($0["bgMin"] as? Int) ?? -1) }
             let ok = sub.filter { ($0["ok"] as? Bool) ?? false }.count
-            out.append("\(name)：\(ok)/\(sub.count)")
+            // 🚨 样本不足时**不许换算成成功率**：3/3 不是 100%，是"样本不足"。
+            let tag = sub.count < 10 ? "  ← 样本不足 10，不作数" : ""
+            out.append("\(name)：\(ok)/\(sub.count)\(tag)")
         }
         out.append("🚨 后两档写的是「保活一直开着」的情形 —— **生产版本 10 分钟就停保活**，")
         out.append("   所以那两档对应的状态今天的生产版到不了。它回答的是：")
         out.append("   「保活一直开着的话还灵不灵」＝「能不能把 10 分钟调大而不上 PiP」。")
         out.append("")
+        // 序号连续性：有断号或重号就说出来，别让分母虚高而无人知道
+        let seqs = rows.compactMap { $0["seq"] as? Int }
+        if seqs.count == rows.count && !seqs.isEmpty {
+            let uniq = Set(seqs).count
+            let span = (seqs.max() ?? 0) - (seqs.min() ?? 0) + 1
+            if uniq != rows.count || span != rows.count {
+                out.append("🚨 样本序号不连续（\(rows.count) 条 / 去重 \(uniq) / "
+                           + "跨度 \(span)）—— 分母可能虚高或丢过样本")
+            }
+        }
         let fg = rows.filter { ($0["where"] as? String) == "前台" }
         let fgOK = fg.filter { ($0["ok"] as? Bool) ?? false }.count
         // 🚨 前台那组是**对照组**：如果前台也起不来，
