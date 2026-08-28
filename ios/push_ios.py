@@ -198,8 +198,32 @@ def gate_swift_sanity():
     print("  Swift 本地体检                    PASS")
 
 
+def gate_no_diag():
+    """闸门⓪·b：发版包里不许有裸奔的临时诊断件。
+
+    🚨 2026-08-28：592 那版键盘底边带着一条**亮绿荧光探针**发到了 Kevin 手机上。
+       那是我贴的一把尺，不该出现在给他的包里，而当时没有任何东西会拦它。
+       总协调点名要这条。
+
+    🚨 **挂在这里才算数。** 记忆 `feedback_gate_never_ran`：
+       「检查写对了 != 检查在跑」—— 写完不接进推送链，等于没写。
+    """
+    import subprocess as _sp
+    g = r"D:\_build\gate_no_diag_in_release.py"
+    if not os.path.exists(g):
+        print("⚠ 找不到 %s，跳过诊断件检查" % g)
+        return
+    r = _sp.run([sys.executable, g], capture_output=True, timeout=120)
+    out = (r.stdout + r.stderr).decode("utf-8", "replace")
+    if r.returncode != 0:
+        print(out.strip())
+        sys.exit("FAIL: 有诊断件没被 env 闸门罩住 —— 那会发到他手机上")
+    print("  发版无裸奔诊断件                  PASS")
+
+
 def main():
     gate_swift_sanity()
+    gate_no_diag()
     # 闸门①：**Xcode 实际会编的每个目录**都必须在推送范围里。
     #
     # 🚨🚨 上一版这条是**同源自比的假检查**（cross review 2026-08-21 H2）：
