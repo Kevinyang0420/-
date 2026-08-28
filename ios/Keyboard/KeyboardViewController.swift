@@ -963,7 +963,12 @@ final class KeyboardViewController: UIInputViewController {
     private func showDiag(_ text: String) {
         diagView?.removeFromSuperview()
         let tv = UITextView()
-        tv.text = text
+        // 🚨🚨 **直录的结果永远排第一行，不管这一屏是谁弹的。**
+        //    665 那次就是败在顺序上：直录失败 -> 回退 -> 宿主也失败 ->
+        //    宿主的诊断把回退提示整个盖掉，于是我们今晚最想要的那个答案
+        //    （扩展里为什么起不来）**一个字都没传回来**。
+        //    「写了」和「他看得到」是两回事，这已经是今天第三次同型。
+        tv.text = (localFallbackDiag.map { $0 + "\n\n" } ?? "") + text
         tv.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
         tv.textColor = Theme.text
         // 🚨🚨 **不透明 + 铺满 + 置顶**，三样缺一不可。
@@ -1103,6 +1108,12 @@ final class KeyboardViewController: UIInputViewController {
     /// 直录起不来时给他看的一行。**没有它的话回退是完全静默的**，
     /// 而静默地退回老路正好等于实验没做，两者在界面上分不开。
     private var localFallbackNote: String?
+    /// 直录那一次的**完整**现场（含 `Voice.diagnostics()`）。
+    ///
+    /// 🚨 单有那行短提示不够 —— 665 实测：短提示写进了 hintLabel，
+    ///    紧接着宿主也失败、`showDiag` 把整屏盖掉，**他一个字没看到**。
+    ///    所以这份要**拼进每一屏诊断的最前面**，谁弹的都一样。
+    private var localFallbackDiag: String?
 
     @objc private func tapMic() {
         if phase == .listening { stopListening(); return }
@@ -1188,6 +1199,15 @@ final class KeyboardViewController: UIInputViewController {
     ///    「引擎没报错」不算 —— 后台那次就是没报错但 `入0`，一帧声音都没有。
     private func tryLocalRecord() -> Bool {
         if KbSelfRecord.disabled { return false }
+        // 🚨🚨 **先让宿主松手。** 待机保活时主 App 拿着一个 active 的
+        //    `.playback` 会话；音频会话是系统级仲裁的，两个进程抢同一个，
+        //    扩展这边 `setActive(.record)` 会被拒（今晚 `!int` 就是这个含义，
+        //    当时占着音频的就是我们自己）。
+        //    🚨 这**不证明**"扩展能录"，它只是把一个已知会挡路的东西挪开；
+        //       结论仍然只看拿没拿到非静音 PCM。
+        //    🚨 宿主没在跑也没关系 —— 命令没人取，250ms 后照样试。
+        _ = KbBridge.send("yield")
+        Thread.sleep(forTimeInterval: 0.25)
         localPeak = 0
         localFrames = 0
         localSyncFail = nil
@@ -1220,6 +1240,11 @@ final class KeyboardViewController: UIInputViewController {
             localMode = false
             // 只留前 40 个字，提示条是一行的东西，塞长了会被挤成看不清的一条
             localFallbackNote = "直录起不来，已回退：" + String(f.prefix(40))
+            localFallbackDiag = "=== 扩展直录 ===\n起不来：" + f + "\n"
+                + Voice.diagnostics()
+            // 电脑够得着时直接拉这份，不用等他截图
+            KbBridge.writeSelfTest(KbSelfRecord.report(
+                ok: false, frames: 0, peak: 0, note: f, foreground: true))
             // 🚨 实验结果**无论成败都要落地**，不然又是一次"测了但不知道结果"。
             KbBridge.writeSelfTest(KbSelfRecord.report(
                 ok: false, frames: 0, peak: 0, note: f, foreground: true))
