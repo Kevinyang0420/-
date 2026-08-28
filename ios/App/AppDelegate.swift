@@ -63,6 +63,47 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //    （实测：传了 speak 却进了 setup —— 我一度以为是 switch 写错）。
         //    环境变量走 `SIMCTL_CHILD_` 前缀，simctl 会原样传进来。
         let env = ProcessInfo.processInfo.environment
+        // 🚨 只给模拟器验收：让后台起录自测自己开跑，好在几十秒内确认
+        //    "它真的会记账、报告真的渲染得出来"。**没验过的诊断件不许发** ——
+        //    557 就是发了一版诊断，而那版诊断自己瞎了。
+        if BgRecProbe.autoStart {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                BgRecProbe.shared.start()
+            }
+        }
+        // 🚨 验收钩子：走**iOS 真实那条链**跑一句 —— 真的 `Prompts.tone()`、
+        //    真的 `langName()`、真的 `Secrets.prompt`、真的 `Backend.submit`。
+        //    在 Python 里重拼一遍请求是**测错对象**：那样测的是我抄得对不对，
+        //    不是 App 发出去的是什么。
+        //    结果落进 UserDefaults，外面读磁盘取 —— 不靠界面。
+        if let probe = env["TRANSLESS_POLISH_TEXT"], !probe.isEmpty {
+            let lang = env["TRANSLESS_POLISH_LANG"] ?? "en"
+            let tone = Prompts.normalize(env["TRANSLESS_POLISH_TONE"])
+            let mode = Backend.Mode(
+                rawValue: env["TRANSLESS_POLISH_MODE"] ?? "en") ?? .en
+            // 🚨🚨 **一次性标记**：外面按 `nonce` 认这一轮的结果。
+            //    没有它的话，下一轮启动后、结果还没回来那段时间里，
+            //    读到的是**上一轮留在 plist 里的输出** —— 而它看起来完全正常。
+            //    2026-08-28 真撞到：Y2 那一栏打出来的是 Y1 的邮件。
+            //    跟 `uiautomator dump` 失败时返回上一次的树是同一族。
+            let nonce = env["TRANSLESS_POLISH_NONCE"] ?? ""
+            UserDefaults.standard.removeObject(forKey: "polishProbe.out")
+            UserDefaults.standard.removeObject(forKey: "polishProbe.nonce")
+            // 设备令牌要先注册出来，所以延后一点再发
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                Backend.polish(text: probe, tone: tone, mode: mode, lang: lang) { r in
+                    let out: String
+                    switch r {
+                    case .success(let s): out = s
+                    case .failure(let f): out = "FAIL: \(f)"
+                    }
+                    // 🚨 先写正文再写 nonce —— 顺序不许倒。
+                    //    倒过来的话外面可能读到"nonce 已更新、正文还是旧的"。
+                    UserDefaults.standard.set(out, forKey: "polishProbe.out")
+                    UserDefaults.standard.set(nonce, forKey: "polishProbe.nonce")
+                }
+            }
+        }
         if let page = env["TRANSLESS_PAGE"], !page.isEmpty {
             let nav = UINavigationController(rootViewController: HomeViewController())
             nav.setNavigationBarHidden(true, animated: false)
@@ -434,6 +475,28 @@ final class HomeViewController: UIViewController {
                                                   primary: false,
                                                   target: self,
                                                   action: #selector(openSetup)))
+            } else {
+                // 🚨🚨 **键盘语音待机**。反过来，只在**已经设好输入法**时出现 ——
+                //    还没装键盘的人看到这一条只会一头雾水。
+                //
+                //    为什么需要这个开关：iOS 禁止扩展进程录音（苹果 QA1872），
+                //    键盘按麦克风时真正在录的是**这个 App 在后台**。
+                //    而 iOS 只让「正在播放或录制音频」的 App 留在后台，
+                //    所以必须由用户显式打开、也随时能关掉。
+                //    见 `App/KbVoiceHost.swift`。
+                let b = Bars.make(L.kb_standby_off, primary: false,
+                                  target: self, action: #selector(toggleStandby))
+                standbyBar = b
+                bars.addArrangedSubview(b)
+                // 🚨 后台起录自测藏在**长按**里：它是诊断件，不是功能，
+                //    不该占首页一条。见 `App/BgRecProbe.swift`。
+                b.addGestureRecognizer(UILongPressGestureRecognizer(
+                    target: self, action: #selector(longPressStandby(_:))))
+                paintStandby()
+                // 待机自己超时关掉时，这条要跟着变回去
+                KbVoiceHost.shared.onChange = { [weak self] in
+                    self?.paintStandby()
+                }
             }
         }
         root.addArrangedSubview(bars)
@@ -531,6 +594,99 @@ final class HomeViewController: UIViewController {
         guard loginGate(L.login_gate_ime) else { return }
         navigationController?.pushViewController(SetupViewController(),
                                                  animated: true)
+    }
+
+    // MARK: - 键盘语音待机
+
+    /// 首页那条开关。**只有装了键盘才建**，所以是 optional。
+    private var standbyBar: UIButton?
+
+    private func paintStandby() {
+        guard let b = standbyBar else { return }
+        let on = KbVoiceHost.shared.standby
+        b.setTitle(on ? L.kb_standby_on : L.kb_standby_off, for: .normal)
+        // 🚨 开着的时候要**看得出来**。待机本身不占麦克风（见 AudioHold），
+        //    但它会让 App 常驻后台、耗电，用户有权一眼看出它开着没有。
+        b.backgroundColor = on ? Skin.accent
+                               : UIColor.white.withAlphaComponent(0.09)
+        b.setTitleColor(on ? .white : Skin.text, for: .normal)
+    }
+
+    /// 长按「键盘语音」→ 后台起录自测。
+    ///
+    /// 🚨 这是**诊断件**，用完要能一键关掉 —— 它开着会让 App 整夜不休眠。
+    ///    所以每一屏都写清楚它现在是开是关、收了多少条。
+    @objc private func longPressStandby(_ g: UILongPressGestureRecognizer) {
+        guard g.state == .began else { return }
+        let p = BgRecProbe.shared
+        let a = UIAlertController(
+            title: "后台起录自测",
+            message: p.running
+                ? "正在跑，已收 \(p.count) 条。把手机放着别管，过几小时回来看。"
+                // 🚨🚨 **隐私报告那条必须提前说**（产品经理 2026-08-28 提的，
+                //    我没想到）：跑一夜 ≈ 140 次起录，iOS 的「App 隐私报告」里
+                //    会出现 140 条麦克风访问记录。他第二天要是自己翻到那一页，
+                //    看到的是"Transless 整夜反复开麦克风" ——
+                //    **而原因是我们自己设的测试。**
+                //    事后解释挽不回信任，只能事前说。
+                : "打开后每 5 分钟自动试一次「在后台能不能起录」，"
+                  + "每次开麦一秒就关，**录到的声音一个字节都不留**。\n\n"
+                  + "⚠️ 跑一夜大约 140 次，所以 iOS 的「设置 → 隐私与安全性 → "
+                  + "App 隐私报告」里会看到 140 条 Transless 访问麦克风的记录 —— "
+                  + "那是这个自测，不是它在偷听。\n\n"
+                  + "它会让 App 一直待机（不再 10 分钟自动关），所以会耗电。\n"
+                  + "已收 \(p.count) 条。",
+            preferredStyle: .actionSheet)
+        a.addAction(UIAlertAction(
+            title: p.running ? "停止自测" : "开始自测",
+            style: p.running ? .destructive : .default) { [weak self] _ in
+                p.running ? p.stop() : p.start()
+                self?.paintStandby()
+            })
+        a.addAction(UIAlertAction(title: "看结果并复制", style: .default) { _ in
+            let text = p.report()
+            UIPasteboard.general.string = text
+            let b = UIAlertController(title: "已复制", message: text,
+                                      preferredStyle: .alert)
+            b.addAction(UIAlertAction(title: L.btn_got_it, style: .default))
+            self.present(b, animated: true)
+        })
+        a.addAction(UIAlertAction(title: "清空样本", style: .destructive) { _ in
+            p.clear()
+        })
+        a.addAction(UIAlertAction(title: L.login_gate_later, style: .cancel))
+        // iPad 上 actionSheet 必须给锚点，否则直接崩
+        a.popoverPresentationController?.sourceView = standbyBar
+        a.popoverPresentationController?.sourceRect =
+            standbyBar?.bounds ?? .zero
+        present(a, animated: true)
+    }
+
+    @objc private func toggleStandby() {
+        if KbVoiceHost.shared.standby {
+            KbVoiceHost.shared.setStandby(false)
+            paintStandby()
+            return
+        }
+        // 🚨 麦克风没授权就别打开 —— 打开了也只是占着一个起不来的引擎，
+        //    而开关亮着，用户会以为好了。
+        if Voice.permissionState() != nil {
+            navigationController?.pushViewController(SetupViewController(),
+                                                     animated: true)
+            return
+        }
+        // 🚨 **代价先说清楚再打开**：麦克风指示灯会一直亮、会耗电。
+        //    不说就打开，等于背着他占了麦克风。
+        let a = UIAlertController(title: L.kb_standby_off,
+                                  message: L.kb_standby_why,
+                                  preferredStyle: .alert)
+        a.addAction(UIAlertAction(title: L.btn_got_it, style: .default) {
+            [weak self] _ in
+            KbVoiceHost.shared.setStandby(true)
+            self?.paintStandby()
+        })
+        a.addAction(UIAlertAction(title: L.login_gate_later, style: .cancel))
+        present(a, animated: true)
     }
 
     @objc private func openPrefs() {
@@ -1872,6 +2028,11 @@ final class MainViewController: UIViewController {
         // 录音 → 停止后拿到 WAV → 传后端转写 → 再润色（跟安卓同一条链）
         // 🚨 连续模式才传 `onUtterance`。不传 = 老的单句行为，
         //    一个字节的行为差别都没有（同一段 tap，只是不切）。
+        // 🚨 待机（替键盘代录）占着麦克风，先让开 —— 两个 AVAudioEngine
+        //    抢同一个输入节点会打架，表现是「待机开着时随手翻译录不了音」，
+        //    等于新功能把 iOS 上唯一能用的那个录音入口弄坏了。
+        KbVoiceHost.shared.yieldMic()
+
         voice.start(onPartial: { _ in },
                     onUtterance: continuous ? { [weak self] wav in
                         self?.sendUtterance(wav)
@@ -1880,6 +2041,10 @@ final class MainViewController: UIViewController {
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.elapsedTimer?.invalidate(); self.elapsedTimer = nil
+                // 🚨 成功失败**两条路都要**把待机的占位拿回来。
+                //    只写在成功那条的话，录音一失败待机就静默失效，
+                //    而 App 里那个开关还亮着 —— 又一个「看起来生效了」。
+                KbVoiceHost.shared.reclaimMic()
                 switch result {
                 case .failure(let f):
                     self.setPhase(.idle, hint: "\(f)")
