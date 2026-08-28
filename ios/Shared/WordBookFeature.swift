@@ -26,5 +26,9 @@ enum WordBookFeature {
     ///
     /// 判据 = **键盘扩展里有没有"收进单词本"的调用**（`WordBook.add`）。
     /// 闸门会拿源码里的事实来核这个常量，不核就不许改。
-    static let isLive = false
+    /// 🚨 2026-08-28 改成 true：**随手翻译的结果上加了「收藏」**，
+    ///    iOS 终于有办法把词收进单词本了（在主 App 进程里，不用 App Group）。
+    ///    键盘里也能收要等 App Group —— 那是"更多入口"，不是"能不能用"。
+    ///    改这一行之后 `gate_wordbook_copy.py` 会**要求把登录门挂回来**。
+    static let isLive = true
 }

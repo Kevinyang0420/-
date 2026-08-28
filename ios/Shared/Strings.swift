@@ -84,6 +84,8 @@ enum L {
     static func wb_added_on(_ a: Any) -> String { s("收于 \(a)", "Added \(a)", "收於 \(a)") }
     static var wb_delete: String { s("删掉这条", "Delete", "刪掉這條") }
     static var wb_delete_ask: String { s("删掉之后复习进度也没了，确定吗？", "Deleting also clears its review progress. Sure?", "刪掉之後複習進度也沒了，確定嗎？") }
+    static var kb_keep: String { s("收藏", "Save", "收藏") }
+    static var kb_kept: String { s("已收", "Saved", "已收") }
     static var wb_saved: String { s("已收进单词本", "Saved to word book", "已收進單詞本") }
     static var wb_dupe: String { s("已经在单词本里了", "Already in your word book", "已經在單詞本裡了") }
     static var profile_title: String { s("完善资料", "Set up your profile", "完善資料") }

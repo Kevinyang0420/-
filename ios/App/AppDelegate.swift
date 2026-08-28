@@ -522,7 +522,7 @@ final class HomeViewController: UIViewController {
         //    哪怕前面有个 `guard` 拦着，源码层面这一端仍然挂着一扇
         //    门后是空的门。
         //    `isLive` 改成 true 时，把下面这行取消注释，闸门会要求它必须在。
-        // guard loginGate(L.login_gate_wordbook) else { return }
+        guard loginGate(L.login_gate_wordbook) else { return }
         navigationController?.pushViewController(
             WordBookViewController(), animated: true)
     }
@@ -1244,6 +1244,10 @@ final class MainViewController: UIViewController {
     private var seq = 0
     /// 大字展示。旅游时把译文铺满屏幕，手机一转给对方看。
     private let bigButton = UIButton(type: .system)
+    /// 收进单词本（Kevin 2026-08-28：「单词本那个功能我是要用的」）。
+    private let keepButton = UIButton(type: .system)
+    /// 这一句的**中文原话**。收藏要拿它当复习卡正面。
+    private var lastZh = ""
     /// 反向翻译：**对方**说外语 → 译成我的语言（界面语言那一档）。
     /// 正向是我说话 → 译成 `lang`（给对方看）。
     private let revButton = UIButton(type: .system)
@@ -1434,6 +1438,14 @@ final class MainViewController: UIViewController {
         bigButton.backgroundColor = Theme.key
         bigButton.layer.cornerRadius = 16
         paintOutputButtons()
+        keepButton.setTitle(L.kb_keep, for: .normal)
+        keepButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        keepButton.setTitleColor(Theme.text, for: .normal)
+        keepButton.backgroundColor = Theme.key
+        keepButton.layer.cornerRadius = 16
+        keepButton.addTarget(self, action: #selector(tapKeep),
+                             for: .touchUpInside)
+
         bigButton.addTarget(self, action: #selector(tapBig),
                             for: .touchUpInside)
 
@@ -1451,11 +1463,18 @@ final class MainViewController: UIViewController {
                             for: .touchUpInside)
 
         [modeStack, subStack, hintLabel, heardLabel, resultView, micButton,
-         toneButton, langButton, speakButton, bigButton,
+         toneButton, langButton, speakButton, bigButton, keepButton,
          revButton, contButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
         }
+        let actionRow = UIStackView(arrangedSubviews:
+            [speakButton, bigButton, keepButton])
+        actionRow.axis = .horizontal
+        actionRow.spacing = 8
+        actionRow.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(actionRow)
+
         NSLayoutConstraint.activate([
             modeStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: Theme.gap),
             modeStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Theme.pad * 1.6),
@@ -1503,21 +1522,20 @@ final class MainViewController: UIViewController {
             langButton.widthAnchor.constraint(equalToConstant: 110),
             langButton.heightAnchor.constraint(equalToConstant: 34),
 
-            // 🚨 朗读 + 大字**并排居中**：总宽 140+8+100=248，
-            //    所以朗读的中心要落在 centerX-54（= -124+70）。
-            speakButton.centerXAnchor.constraint(
-                equalTo: view.centerXAnchor, constant: -54),
-            bigButton.leadingAnchor.constraint(
-                equalTo: speakButton.trailingAnchor, constant: 8),
-            bigButton.centerYAnchor.constraint(
-                equalTo: speakButton.centerYAnchor),
-            bigButton.widthAnchor.constraint(equalToConstant: 100),
-            bigButton.heightAnchor.constraint(equalToConstant: 36),
-            speakButton.topAnchor.constraint(equalTo: toneButton.bottomAnchor, constant: 10),
-            speakButton.widthAnchor.constraint(equalToConstant: 140),
-            speakButton.heightAnchor.constraint(equalToConstant: 36),
+            // 🚨 朗读 / 大字 / 收藏三个并排。
+            //    原来是**硬坐标**算的（"总宽 140+8+100=248，所以朗读中心
+            //    落在 centerX-54"）—— 加第三个就得重算那个 -54，
+            //    而且任何一个宽度变了都要再算一遍。
+            //    改成 `actionRow` 这个 stack 居中，**加减按钮不用再算坐标**。
+            actionRow.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            actionRow.topAnchor.constraint(
+                equalTo: toneButton.bottomAnchor, constant: 10),
+            actionRow.heightAnchor.constraint(equalToConstant: 36),
+            speakButton.widthAnchor.constraint(equalToConstant: 130),
+            bigButton.widthAnchor.constraint(equalToConstant: 92),
+            keepButton.widthAnchor.constraint(equalToConstant: 92),
 
-            heardLabel.topAnchor.constraint(equalTo: speakButton.bottomAnchor, constant: Theme.gap),
+            heardLabel.topAnchor.constraint(equalTo: actionRow.bottomAnchor, constant: Theme.gap),
             heardLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             heardLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
 
@@ -1944,6 +1962,7 @@ final class MainViewController: UIViewController {
                             switch r2 {
                             case .success(let en):
                                 self.lastOut = en
+                                self.lastZh = zh
                                 self.paintOutputButtons()
                                 self.setLine(idx, en)
                                 // 🚨 连续模式也要算 —— 少接一处的话，
@@ -2002,6 +2021,10 @@ final class MainViewController: UIViewController {
         let canBig = !bigTextNow().isEmpty
         speakButton.isHidden = !canSpeak
         speakButton.isEnabled = canSpeak
+        // 🚨 收藏跟朗读同一个判据（**有这一句**才出现），
+        //    不跟大字（那个看的是整段）。收过的置灰写「已收」。
+        keepButton.isHidden = !canSpeak
+        paintKeepButton()
         bigButton.isHidden = !canBig
         bigButton.isEnabled = canBig
     }
@@ -2013,6 +2036,40 @@ final class MainViewController: UIViewController {
     }
 
     /// 大字展示：译文铺满屏幕，点一下关掉。
+    /// 这一句收过没有。用**同一个 id 算法**，不另写判断。
+    private func inBook() -> Bool {
+        if lastOut.isEmpty { return false }
+        let id = WordBookCore.idOf(lastZh, lastOut)
+        return WordBook.list().contains { $0.id == id }
+    }
+
+    private func paintKeepButton() {
+        let got = inBook()
+        keepButton.setTitle(got ? L.kb_kept : L.kb_keep, for: .normal)
+        keepButton.isEnabled = !got
+        keepButton.alpha = got ? 0.45 : 1
+    }
+
+    /// 收进单词本。
+    ///
+    /// 🚨 **按真实结果显示**，不是先宣布成功 —— 安卓键盘那边我犯过这个错：
+    ///    无条件把按钮改成「已收」，而 `add` 可能返回 error/empty/nogroup，
+    ///    用户以为收了、本子里没有。
+    @objc private func tapKeep() {
+        guard !lastOut.isEmpty else { return }
+        let r = WordBook.add(zh: lastZh, en: lastOut, span: "full",
+                             tone: tone, today: Srs.todayString())
+        let ok = (r == "added" || r == "added_evicted" || r == "same")
+        paintKeepButton()
+        let msg = (r == "same") ? L.wb_dupe : (ok ? L.wb_saved : L.wb_save_failed)
+        let a = UIAlertController(title: nil, message: msg,
+                                  preferredStyle: .alert)
+        present(a, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            a.dismiss(animated: true)
+        }
+    }
+
     @objc private func tapBig() {
         let text = bigTextNow()
         guard !text.isEmpty else { return }

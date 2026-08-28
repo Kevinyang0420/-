@@ -20,11 +20,25 @@ enum WordBook {
 
     typealias Item = WordBookCore.Item
 
-    /// 🚨 拿不到 App Group 就返回 nil，**不悄悄退回 `.standard`**。
-    ///    退回去的话键盘写扩展本地、主 App 读自己那份，两边各存各的，
-    ///    界面上只表现为"本子是空的" —— 那是最贵的一类错。
+    /// 存哪儿：**App Group 能用就用它，不能用就退回本进程的 `.standard`**。
+    ///
+    /// 🚨🚨 这里的取舍变过一次，两个版本都对，但对的是不同的问题：
+    ///
+    ///    · 旧版：拿不到 App Group 就返回 `nil`、**一条都不存**。
+    ///      那时候 iOS 唯一的收词入口设想在**键盘扩展**里，
+    ///      退回 `.standard` 会变成"键盘写扩展本地、主 App 读自己那份"，
+    ///      两边各存各的，界面上只表现为"本子是空的" —— 最贵的一类错。
+    ///
+    ///    · 现在：收词入口在**主 App 的随手翻译**里，读和写都在同一个进程。
+    ///      这时候不退回就成了"App Group 没配好 → 一条都存不进去"，
+    ///      而 Kevin 2026-08-28 明确说「**单词本那个功能我是要用的**」。
+    ///      **拒绝存**比"暂时不能跨进程"糟得多。
+    ///
+    /// 🚨 但退回**必须是看得见的**，不许静默：`groupReady` 为假时
+    ///    单词本列表顶部用危险色写明「键盘里收的词现在同步不过来」。
+    ///    退回本身不是问题，**退回而不说**才是。
     private static var store: UserDefaults? {
-        UserDefaults(suiteName: appGroup)
+        UserDefaults(suiteName: appGroup) ?? .standard
     }
 
     /// App Group 真的能用吗。
@@ -41,7 +55,9 @@ enum WordBook {
         return ok
     }
 
-    /// 收一条。返回 `added` / `added_evicted` / `same` / `empty` / `nogroup`。
+    /// 收一条。返回 `added` / `added_evicted` / `same` / `empty`。
+    /// 🚨 不再有 `nogroup` —— App Group 没配好时退回本进程存，
+    ///    而不是拒绝。见 `store` 的注释。
     @discardableResult
     static func add(zh: String, en: String, span: String = "full",
                     tone: String = "", today: String) -> String {
@@ -50,7 +66,6 @@ enum WordBook {
         //    原来那句 `id.isEmpty` 恒为假，空句子会被收进本子。
         if !WordBookCore.usable(en) { return "empty" }
         let id = WordBookCore.idOf(zh, en)
-        guard store != nil else { return "nogroup" }
         let cur = list()
         if cur.contains(where: { $0.id == id }) { return "same" }
         let it = Item(id: id, zh: zh,
