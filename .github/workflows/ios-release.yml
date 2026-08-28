@@ -10,8 +10,11 @@
 #        · 新：Apple Distribution: 姓名 (TEAMID)    ← DISTRIBUTION
 #        2026-08-25 run #1 就是死抠 "Apple Distribution" 把一个对的证书判成了错的。
 #   IOS_CERT_PASSWORD       .p12 的密码
-#   IOS_PROFILE_APP_BASE64  主 App 的 .mobileprovision base64
-#   IOS_PROFILE_KB_BASE64   键盘扩展的 .mobileprovision base64
+#   🚨 IOS_PROFILE_APP_BASE64 / IOS_PROFILE_KB_BASE64 **已废弃，别再用**：
+#      描述文件现在由 `ios/ci_fetch_profiles.py` 构建时从 App Store Connect 现取。
+#      它们曾经是描述文件的**第二个配置点** —— 2026-08-28 在苹果那边重签之后
+#      secret 里还是旧的，CI 照样 success，而导出的 IPA 里没有 App Group，
+#      装到手机上键盘语音静默失效。全程没有任何红色。
 #   IOS_TEAM_ID             10 位 Team ID
 #   ASC_API_KEY_ID          App Store Connect API Key ID（上传用）
 #   ASC_API_ISSUER_ID       Issuer ID
@@ -121,8 +124,11 @@ jobs:
         env:
           CERT_B64: ${{ secrets.IOS_CERT_P12_BASE64 }}
           CERT_PW: ${{ secrets.IOS_CERT_PASSWORD }}
-          PROF_APP_B64: ${{ secrets.IOS_PROFILE_APP_BASE64 }}
-          PROF_KB_B64: ${{ secrets.IOS_PROFILE_KB_BASE64 }}
+          # 🚨 那两个 IOS_PROFILE_*_BASE64 secret 已经**不再使用** ——
+          #    见下面那段说明。别再加回来：它们是描述文件的第二个配置点。
+          ASC_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          ASC_KEY_B64: ${{ secrets.ASC_API_KEY_BASE64 }}
         run: |
           set -euo pipefail
           KEYCHAIN="$RUNNER_TEMP/build.keychain"
@@ -146,28 +152,22 @@ jobs:
           echo "找到 $N 个发布证书身份（Apple/iPhone Distribution 都算）"
           test "$N" -ge 1 || { echo "::error::证书没导入成功"; exit 1; }
 
+          # 🚨🚨 **描述文件从 App Store Connect 现取，不再走 secret**（2026-08-28 改）。
+          #
+          #    原来它们存在 `IOS_PROFILE_APP_BASE64` / `IOS_PROFILE_KB_BASE64` 里。
+          #    那天在苹果那边给两个 App ID 挂上 App Group、重签了描述文件 ——
+          #    **secret 里还是旧的**。结果：
+          #      · CI 构建 **success**
+          #      · 导出的 IPA 内嵌的描述文件**没有** application-groups
+          #      · 装到手机上 `containerURL(...)` 返回 nil → 键盘语音**静默失效**
+          #    **同一个东西两个配置点，只改了一个，而且全程没有任何红色。**
+          #    （是人去拆 IPA 才发现的 —— 那不该是发现方式。）
+          #
+          #    现在只剩一个来源：苹果那边。顺带把那条判据做成闸门，每次构建都查。
           PROF_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$PROF_DIR"
-          echo "$PROF_APP_B64" | base64 --decode > "$PROF_DIR/app.mobileprovision"
-          echo "$PROF_KB_B64"  | base64 --decode > "$PROF_DIR/kb.mobileprovision"
-
-          # 读出两个描述文件的 bundle id 和名字。
-          # 🚨 名字要传给导出那步：两个 target 各挂各的描述文件，只能靠名字点名。
-          #    bundle id 也在这儿核一遍 —— 两份装反了的话，错误会推迟到导出时才炸，
-          #    而那时的报错跟「描述文件装反了」完全看不出关系。
-          for f in app kb; do
-            security cms -D -i "$PROF_DIR/$f.mobileprovision" > "$RUNNER_TEMP/$f.plist"
-            AID=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:application-identifier" \
-                  "$RUNNER_TEMP/$f.plist")
-            NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" "$RUNNER_TEMP/$f.plist")
-            BID=${AID#*.}          # 去掉前面的 TEAMID.
-            echo "  $f: bundle=${BID}  profile=[${NAME}]"
-            if [ "$f" = app ]; then WANT=com.kevin.transless; VAR=PROF_APP_NAME
-            else                    WANT=com.kevin.transless.keyboard; VAR=PROF_KB_NAME; fi
-            test "$BID" = "$WANT" || {
-              echo "::error::${f} 的描述文件对应 ${BID}，应为 ${WANT}（两份装反了？）"; exit 1; }
-            echo "$VAR=$NAME" >> "$GITHUB_ENV"
-          done
+          python3 -m pip install --quiet --disable-pip-version-check pyjwt cryptography
+          python3 ios/ci_fetch_profiles.py "$PROF_DIR"
 
           echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
           echo "KEYCHAIN_PW=$KEYCHAIN_PW" >> "$GITHUB_ENV"
