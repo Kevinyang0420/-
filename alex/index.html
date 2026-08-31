@@ -18708,6 +18708,15 @@ function dictHasSpoken(e){
   if (e.kind === 'zh') return !!e.spokenPick;
   return Array.isArray(e.spoken) && e.spoken.length > 0;
 }
+/* 预览专用：**有什么给什么**，不套 dCacheGet 那条「缺口语段就算未命中」的规矩。
+   🚨 那条规矩是给「渲染完整结果」用的（让旧词重查一次补上口语段）。
+      拿它做历史预览的话，旧条目会显示成一片空白 —— 而他明明查过、数据就在本地。
+      点「再查一次」照旧走 doLook → dCacheGet，该补的还是会补，这里没绕过任何东西。 */
+function dCacheRaw(id){
+  const c = dCache()[id];
+  return (c && c.e) ? c.e : null;
+}
+
 function dCachePut(id, e, now){
   const c = dCache();
   c[id] = {e: e, ts: now || Date.now()};
@@ -19101,12 +19110,34 @@ function showDictHist(){
   dHist().forEach(h => put(h.q, h.ts));
   twAll().forEach(w => put(w.ctx || '', w.ts || 0).tw.push(w));
 
+  /* 🚨 当时查到的英文**直接摊在行上**（Kevin 2026-08-31）：
+     「我的历史记录里只能看到中文……反而改过一次的那些，我还可以看到当时
+      翻译的英文是什么，这不是很奇怪吗？」
+     —— 同一屏两套规矩确实奇怪，而且英文根本没丢、就在本地缓存里，
+     是我把它藏在「再查一次」后面了。三种查询存的形状不一样，分开取。 */
+  map.forEach(row => {
+    const e = row.q ? dCacheRaw(qId(row.q)) : null;
+    row.en = [];
+    if (!e) return;
+    if (e.kind === 'zh'){
+      if (e.pick) row.en.push({lb: '写进报告', en: e.pick, why: e.why || ''});
+      if (e.spokenPick && ENORM(e.spokenPick) !== ENORM(e.pick || ''))
+        row.en.push({lb: '口头就说', en: e.spokenPick, why: e.spokenWhy || ''});
+    } else if (e.kind === 'ask'){
+      (Array.isArray(e.options) ? e.options : []).filter(x => x && x.en)
+        .slice(0, 2).forEach(x => row.en.push({lb: '', en: x.en, why: x.cn || ''}));
+    }
+    /* en / phrase 不补：那一行的标题**本身就是英文**，再抄一遍是噪音。 */
+  });
+
   let rows = [...map.values()].sort((a, b) => b.ts - a.ts);
   const twTotal = twAll().length;
   if (DICT.hf === 'tw') rows = rows.filter(r => r.tw.length);
   const kw = (DICT.fq || '').trim().toLowerCase();
+  /* 🚨 摊出来了就得搜得到 —— 显示一句英文却搜不着它，比不显示更让人火大。 */
   if (kw) rows = rows.filter(r =>
     r.q.toLowerCase().indexOf(kw) >= 0 ||
+    (r.en || []).some(x => (x.en + ' ' + x.why).toLowerCase().indexOf(kw) >= 0) ||
     r.tw.some(w => (w.want + ' ' + w.en + ' ' + w.v1.en + ' ' + w.v2.en)
       .toLowerCase().indexOf(kw) >= 0));
 
@@ -19144,9 +19175,11 @@ function showDictHist(){
         : rows.map(r => {
             const has = r.tw.length;
             const named = !!r.q;
-            /* 🚨 别在这儿挂 data-hk：展开改稿用的是按钮上的 data-htw，
-               卡片上再挂一个没人读的属性 = 死属性（test_deadkeys 专抓这个）。 */
-            return '<div class="card" style="margin-bottom:10px">' +
+            /* `data-hk` 是这一行的键，下面挂三件套时按它定位。
+               🚨 2026-08-31 早些时候我把它删过一次（当时确实没人读 = 死属性），
+                  现在它**真的有读者**了才加回来 —— 别再当成死属性删掉。 */
+            return '<div class="card" style="margin-bottom:10px" ' +
+              'data-hk="' + esc(r.k) + '">' +
               '<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">' +
                 '<div style="font-size:16px;font-weight:800;flex:1;min-width:0;' +
                   'overflow-wrap:anywhere">' +
@@ -19155,6 +19188,23 @@ function showDictHist(){
                 (day(r.ts) ? '<span class="t" style="color:var(--muted)">' +
                    day(r.ts) + '</span>' : '') +
               '</div>' +
+              /* 当时给的英文。`data-say` = 点了能读（下面 bindSay 统一绑）。
+                 三件套由后面按 DOM 挂上去 —— 那是真节点，拼不进 innerHTML。 */
+              (r.en || []).map((x, i) =>
+                '<div class="hen" data-hi="' + i + '" style="margin-top:8px;' +
+                  'padding-left:8px;border-left:3px solid var(--brand-dark)">' +
+                  (x.lb ? '<div style="font-size:12px;color:var(--brand-dark);' +
+                    'font-weight:800">' + esc(x.lb) + '</div>' : '') +
+                  '<div class="en" style="font-size:15px;line-height:1.5" ' +
+                    'data-say="' + esc(x.en) + '">' + esc(x.en) + '</div>' +
+                  (x.why ? '<div class="sit" style="margin-top:3px">' +
+                    esc(x.why) + '</div>' : '') +
+                '</div>').join('') +
+              /* 查过、但本地那份已经被挤掉了（只留最近 120 条）——
+                 如实说一句，别让他以为「这条查了个寂寞」。 */
+              ((named && !(r.en || []).length && !dCacheRaw(qId(r.q)))
+                ? '<div class="t" style="margin-top:6px;color:var(--muted)">' +
+                  '本地没留当时的结果了，点「再查一次」重新取</div>' : '') +
               '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">' +
                 (named ? '<button class="rchip" data-hq="' + esc(r.q) + '" ' +
                   'style="font-size:12px;padding:4px 10px">🔍 再查一次</button>' : '') +
@@ -19171,6 +19221,21 @@ function showDictHist(){
     b.onclick = () => { DICT.hf = b.dataset.hf; showDictHist(); });
   f.querySelectorAll('[data-hq]').forEach(b =>
     b.onclick = () => { DICT.top = 'look'; showDict(b.dataset.hq); });
+
+  /* 🚨 摊出来的每一句都挂三件套（📋 / ✏️ / ☆）—— 跟它下面的改稿一个待遇。
+     只看得到、带不走，是这个项目的老毛病。 */
+  const byKey = new Map();
+  f.querySelectorAll('.card[data-hk]').forEach(c => byKey.set(c.dataset.hk, c));
+  rows.forEach(r => {
+    if (!(r.en || []).length) return;
+    const card = byKey.get(r.k);
+    if (!card) return;
+    card.querySelectorAll('.hen').forEach(el => {
+      const x = r.en[Number(el.dataset.hi)];
+      if (x) el.appendChild(miniBtns(x.en, r.q, el));
+    });
+  });
+  bindSay(f);              // 🚨 画了就绑，不绑点了不出声
 
   const inp = $('#hq');
   if (inp) inp.oninput = () => {
