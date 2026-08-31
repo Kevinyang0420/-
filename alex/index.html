@@ -19627,7 +19627,12 @@ function wordCard(e){
   box.appendChild(head);
   box.appendChild(playBtn(e.w || e.q, '🔊 读一遍'));
   /* 主词条不走 rowsBlock，所以这两颗键要单独挂一次（Kevin 2026-08-24） */
-  box.appendChild(miniBtns(e.w || e.q, '', box));
+  /* 🚨 第二个参数是**来路**（这一条是查哪个词时给的）。原来这儿写死 `''` ——
+     兄弟几处（zhCard / askCard）都传了 `e.q`，**唯独英文词条这条最常走的路漏了**。
+     后果是静默的：2026-08-25 真页面实测，从词条点「进一步修改」改出来的记录
+     `ctx` 是空的，于是它挂不到这个词底下，跑去了历史里「没记来路的改稿」那一行
+     —— 而 Kevin 要的正是「我历史上**查这个词**时的进一步修改记录」。 */
+  box.appendChild(miniBtns(e.w || e.q, e.q || e.w || '', box));
   const yg = youglish(e.w || e.q);
   if (yg) box.appendChild(yg);
   box.appendChild(bookRow(e));
