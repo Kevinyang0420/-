@@ -33796,6 +33796,482 @@
    "src": "美联储",
    "srcen": "Federal Reserve",
    "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731b.htm"
+  },
+  {
+   "id": "ph_data_are_seasonally_adjusted",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "Data are seasonally adjusted, represent three-month moving averages, and extend through April 2026.",
+   "why": "一句话把「数据做过什么处理、口径是什么、覆盖到哪天」三件事用同一个主语串成并列谓语（are adjusted / represent / extend through），不用三句短句也不用括号堆砌。中国人常写成 The data has been seasonally adjusted. It is a 3-month moving average. The period is up to April 2026.——主语重复、has 误用单数（data 在正式财经文体里作复数）、而且 up to 不如 extend through 交代得干净（through 含当月在内，up to 有歧义）。",
+   "when": "图表下方的数据注释、底稿附注、DD 报告里交代样本口径与截止日时。",
+   "slot": "Data are […], represent […], and extend through […].",
+   "swap": [
+    "Figures are presented on a […] basis and cover the period through […].（更书面、报告正文常用；不像图注那样紧凑）",
+    "Amounts have been adjusted for […] and are stated as at […].（会计披露腔，强调「已调整」的动作而非状态）",
+    "Data run through […] unless otherwise indicated.（更口语、更短，适合脚注加免责）"
+   ],
+   "para": "Note: Data are seasonally adjusted, represent three-month moving averages, and extend through April 2026. Data in fthe right panel are indexed to July 2018, which marks the start of the 2018-19 U.S.-China tariff hikes. April 2025 marks Liberation Day.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_which_marks_the_start_of",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "which marks the start of the 2018-19 U.S.-China tariff hikes",
+   "why": "用非限定 which 挂在时间点后面，一口气说明「为什么选这个基期」，把事实和理由缝在同一句里。中国人通常另起一句：July 2018 is the base period. Because at that time the tariff hikes started.——两句话、because 开头、started 还得配时态，读起来碎。marks 一个现在时动词就承担了「标志着」，不需要 represents the time when。",
+   "when": "解释指数基期、里程碑日期、分期截点为什么定在某一天。",
+   "slot": "[…], which marks the start of […]",
+   "swap": [
+    "[…], the point at which […] began（更中性叙述，不带「标志性」意味）",
+    "[…], being the date on which […] took effect（法务/合同腔，强调生效而非象征）",
+    "[…], chosen because it precedes […]（直说选取理由，比 marks 更露骨、更像方法论说明）"
+   ],
+   "para": "Note: Data are seasonally adjusted, represent three-month moving averages, and extend through April 2026. Data in fthe right panel are indexed to July 2018, which marks the start of the 2018-19 U.S.-China tariff hikes. April 2025 marks Liberation Day.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_consistent_with_mandate",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "sets monetary policy consistent with its dual mandate",
+   "why": "中国人写合规性时极易套用 'according to' 或 'in accordance with'。原句使用 'consistent with'（与……一致）作为后置修饰，显得行文更加流畅、客观，非常适合描述企业行为是否符合会计准则或内部控制要求。",
+   "when": "用于审计报告中描述被审计单位的会计政策选择或业务操作符合某项监管、准则或合同约定。",
+   "slot": "[...] consistent with [...]",
+   "swap": [
+    "in alignment with [...] (强调战略或方向上的一致性，适合管理层讨论与分析部分)",
+    "in compliance with [...] (语气更强硬，侧重于强制性法规、法律条款的遵守)"
+   ],
+   "para": "The economy is constantly experiencing shocks that change economic conditions and that policymakers must consider. Today, I will focus on shocks that are extremely difficult—if not impossible—to predict, such as the emergence of a pandemic, the start of a war, or a sudden breakthrough in technological advancement. When such shocks occur, the Federal Open Market Committee (FOMC) evaluates them and sets monetary policy consistent with its dual mandate of maximum employment and price stability.",
+   "srctitle": "Jefferson, Navigating Economic Shocks: A Monetary Policymaker’s Perspective",
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
+  },
+  {
+   "id": "ph_has_sent_prices_up",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "The disruption has sent prices at the pumps up across the world.",
+   "why": "因果关系直接压进一个动词 send…up 里，主语是名词化的 The disruption（那件事本身），不用 because/due to 也不用 caused an increase in。中国人一般写成 Because of the disruption, prices have increased significantly across the world —— 多一个从句、多一个空洞副词 significantly，句子重心还被推到后半段。这里 has sent 用现在完成时，暗示影响延续到现在，比 increased 多一层「还没结束」。",
+   "when": "报告里写某个事件把价格／成本／利润率推到某个方向时，一句话交代因果。",
+   "slot": "[…] has sent […] up across […].",
+   "swap": [
+    "has pushed […] higher —— 更中性，只讲方向不带「被推动」的力度感",
+    "has driven […] up sharply —— 力度更强，drive 暗示持续推力，适合写通胀、原材料成本",
+    "has lifted […] —— 最温和，偏正面或中性，写股价、收入回升常用"
+   ],
+   "para": "The disruption has sent prices at the pumps up across the world. In the UK petrol prices are now at levels seen at the start of the conflict, with the average cost of a litre of petrol hitting £1.60, according to the RAC motoring group.",
+   "srctitle": "",
+   "src": "BBC 商业",
+   "srcen": "BBC Business",
+   "url": "https://www.bbc.co.uk/news/articles/cpw9v0gnzxwo?at_medium=RSS&at_campaign=rss"
+  },
+  {
+   "id": "ph_at_levels_seen_at",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "petrol prices are now at levels seen at the start of the conflict",
+   "why": "不报绝对数字，而是拿一个读者认得的时间点当标尺：at levels seen at […]。seen 是省略了 which were 的过去分词后置定语，两个词就完成了一个定语从句。中国人惯写 the price level is the same as that of the beginning of the conflict，又长又要处理 that of 的指代，还容易写成 same with。",
+   "when": "做尽调或分析性复核，要说某个指标「回到了某个时点的水平」而不想先甩数字时。",
+   "slot": "[…] are now at levels seen at […].",
+   "swap": [
+    "are back to […] levels —— 更口语、更短，报告正文可以，正式附注偏随意",
+    "have returned to the levels recorded in […] —— 最正式，recorded 强调有据可查，适合审计底稿",
+    "remain close to […] levels —— 语气弱一档，表示接近但没说完全相等，不确定时用它"
+   ],
+   "para": "The disruption has sent prices at the pumps up across the world. In the UK petrol prices are now at levels seen at the start of the conflict, with the average cost of a litre of petrol hitting £1.60, according to the RAC motoring group.",
+   "srctitle": "",
+   "src": "BBC 商业",
+   "srcen": "BBC Business",
+   "url": "https://www.bbc.co.uk/news/articles/cpw9v0gnzxwo?at_medium=RSS&at_campaign=rss"
+  },
+  {
+   "id": "ph_with_avg_cost_hitting",
+   "kind": "phrase",
+   "dim": "attr",
+   "en": "with the average cost of a litre of petrol hitting £1.60, according to the RAC motoring group",
+   "why": "两个动作：一是 with + 名词 + hitting 这个独立主格，把具体数字挂在主句后面当佐证，不必另起一句 The average cost is £1.60；二是 according to 把数据来源钉在句尾，责任划得干干净净。中国人常写成 And the data from RAC shows that the average cost reached £1.60，两句话、主语换来换去。hitting 也比 reached 更有触及某个关口的意味。",
+   "when": "底稿或报告里给出一个关键数值，同时必须注明数据出处（管理层提供、第三方机构、公开披露）时。",
+   "slot": "…, with […] hitting […], according to […].",
+   "swap": [
+    "…, with […] standing at […], per […] —— standing at 只陈述现状，不含「冲上某个关口」的意味，更中立",
+    "…, with […] reaching […], based on […] —— reaching 最平实，based on 强调这是我们据以计算的基础而非引用",
+    "…, with […] at […], as reported by […] —— 省掉分词最简洁，as reported by 明确点出是对方报的、我们未验证"
+   ],
+   "para": "The disruption has sent prices at the pumps up across the world. In the UK petrol prices are now at levels seen at the start of the conflict, with the average cost of a litre of petrol hitting £1.60, according to the RAC motoring group.",
+   "srctitle": "",
+   "src": "BBC 商业",
+   "srcen": "BBC Business",
+   "url": "https://www.bbc.co.uk/news/articles/cpw9v0gnzxwo?at_medium=RSS&at_campaign=rss"
+  },
+  {
+   "id": "ph_whose_purpose_is_to_shift_behavior",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "whose purpose is to raise awareness on health issues, increase education on preventive medicine and available services and shift employee behavior through interactive activities and live presentations",
+   "why": "国人写“其目的是为了提高意识并改变行为”时，常写 'Its goal is to make employees know about... and change their behavior'。原文用非限制性定语从句 'whose purpose is to...' 顺畅连接，并用 'raise awareness on...'（提高对……的意识）和 'shift... behavior'（转变行为）。'shift' 比 'change' 显得更渐进、更具管理学上的引导性，非常适合描述控制活动的效果。",
+   "when": "在内部控制审计或尽调报告中，描述某项合规程序、管理制度或培训设计的初衷与预期达到的控制效果时。",
+   "slot": "[...] whose purpose is to raise awareness on [...], increase education on [...] and shift [...] behavior through [...]",
+   "swap": [
+    "[...], aimed at enhancing awareness of [...], strengthening training on [...], and aligning [...] practices with [...] (更具审计规范感，强调实操层面的合规对齐)",
+    "[...], designed to foster understanding of [...], promote compliance with [...], and drive behavioral change through [...] (强调设计意图，'drive behavioral change' 语气比 'shift' 更强硬、更具结果导向)"
+   ],
+   "para": "Along with our traditional healthcare benefits, we offer a broad variety of physical and mental wellness offerings to our global employees in a virtual as well as on-demand format, including fitness classes, webinars on practical wellness takeaways, strategies for stress reduction, financial planning and education, career development and social activities. We also host periodic wellness weeks, whose purpose is to raise awareness on health issues, increase education on preventive medicine and available services and shift employee behavior through interactive activities and live presentations. We proudly support an active community employee engagement program, which provides opportunities for our employees to volunteer and participate in community service in support of the communities where they live, work, and thrive. We employ remote and hybrid work models for designated roles, giving our employees the flexibility to work offsite or onsite and annual survey our employees to gain valuable feedback and suggestions on improvements to our culture and strategy.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_along_with_traditional_offerings_in_form",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "Along with our traditional healthcare benefits, we offer a broad variety of physical and mental wellness offerings to our global employees in a virtual as well as on-demand format",
+   "why": "国人在描述“除了传统业务，我们还以线上/即时形式提供多样化服务”时，常写 'Besides traditional services, we also provide many online services'。原文用 'Along with...' 引入背景，用 'a broad variety of... offerings' 替代单调的 'many services'，最出彩的是 'in a virtual as well as on-demand format'，将交付方式抽象为 'format'（格式/形态），极具专业财经报告的抽象高度。",
+   "when": "在业务尽调（Business DD）中描述目标公司的产品线拓展、服务交付模式（如混合交付、SaaS化）或增值服务矩阵时。",
+   "slot": "Along with our traditional [...], we offer a broad variety of [...] to our [...] in a [...] as well as [...] format",
+   "swap": [
+    "In addition to conventional [...], we provide a diverse range of [...] to [...] via both [...] and [...] channels (更侧重于多渠道交付，适合描述销售或分销模式)",
+    "Complementing our legacy [...], we deliver an extensive portfolio of [...] to [...] on a [...] and [...] basis (使用 'legacy' 和 'portfolio'，商业战略感和资本市场沟通语气更强)"
+   ],
+   "para": "Along with our traditional healthcare benefits, we offer a broad variety of physical and mental wellness offerings to our global employees in a virtual as well as on-demand format, including fitness classes, webinars on practical wellness takeaways, strategies for stress reduction, financial planning and education, career development and social activities. We also host periodic wellness weeks, whose purpose is to raise awareness on health issues, increase education on preventive medicine and available services and shift employee behavior through interactive activities and live presentations. We proudly support an active community employee engagement program, which provides opportunities for our employees to volunteer and participate in community service in support of the communities where they live, work, and thrive. We employ remote and hybrid work models for designated roles, giving our employees the flexibility to work offsite or onsite and annual survey our employees to gain valuable feedback and suggestions on improvements to our culture and strategy.",
+   "srctitle": "Arista Networks, Inc.  (ANET)  (CIK 0001596532)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1596532/000159653226000013/anet-20251231.htm"
+  },
+  {
+   "id": "ph_aligns_with",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "the topic of retail attraction for the city aligns with my research",
+   "why": "中国人在表达“符合准则/政策”时，极易套用 \"is consistent with\" 或 \"is in line with\"。动词 \"aligns with\"（与……对齐/一致）在现代英文财经报告中非常流行，比单纯的 \"is...\" 更有动感，更能体现管理层意图或财务数据与行业趋势的契合。",
+   "when": "用于评价被审计单位的会计政策是否符合会计准则（如IFRS/GAAP），或者其业务表现是否与行业趋势、管理层预期相符。",
+   "slot": "[...] aligns with [...]",
+   "swap": [
+    "[...] is in compliance with [...] (语气更强硬，强调法规、审计准则的硬性合规)",
+    "[...] is consistent with [...] (语气较平淡，属于常规的中性表述)"
+   ],
+   "para": "I am a Ph.D. candidate studying fiscal and social policy, with a specific interest in local tax reform and urban economic development. As a Detroit native, the topic of retail attraction for the city aligns with my research.",
+   "srctitle": "Detroit has a shortage of national retailers. What can officials do to attract more chains to the city?",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_updates_and_indexes",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "updates dollar-based thresholds and indexes them to economic growth going forward",
+   "why": "中国人常写成 'adjusts the money limits and links them to economic growth in the future'。原句用 'dollar-based thresholds' 极其地道，动词 'index to'（使…与…指数化挂钩）比 'link to' 更显量化专业度，'going forward' 比 'in the future' 更具职场高级感。",
+   "when": "用于描述财务指标、估值门槛或合同条款随特定经济指标（如通胀、GDP）动态调整的机制。",
+   "slot": "updates [...] thresholds and indexes them to [...] going forward",
+   "swap": [
+    "adjusts [...] limits and aligns them with [...] in the future (语气较平淡，适合口头或非正式报告)",
+    "revises [...] metrics and pegs them to [...] prospectively (peg to 强调硬性钉住/挂钩，prospectively 显得更具前瞻性)"
+   ],
+   "para": "The proposal updates dollar-based thresholds and indexes them to economic growth going forward. It addresses unnecessary applications of the rule to passive interests in companies held by investment funds, codifies other statutory requirements, incorporates long-standing regulatory interpretations, and simplifies the application of the rule.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731b.htm"
+  },
+  {
+   "id": "ph_addresses_unnecessary_applications",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "addresses unnecessary applications of the rule to passive interests",
+   "why": "中国人常写成 'solves the problem that the rule is wrongly used in passive equity'。原句用 'addresses' 代替 'solves/deals with' 显得客观中立；用 'unnecessary applications of the rule to...' 精确表达了‘规则被过度/不必要地套用到某对象上’，比 'wrongly used' 更具合规报告的严谨度。",
+   "when": "用于审计或尽调报告中，指出某项内部控制、会计准则或监管规则被过度套用、误用在不适用的业务板块或资产上。",
+   "slot": "addresses unnecessary applications of the [...] to [...]",
+   "swap": [
+    "resolves the over-application of the [...] to [...] (over-application 语气更重，直指过度适用)",
+    "rectifies the inappropriate extension of the [...] to [...] (rectifies 带有纠偏、整改的强硬语气，适合审计整改建议)"
+   ],
+   "para": "The proposal updates dollar-based thresholds and indexes them to economic growth going forward. It addresses unnecessary applications of the rule to passive interests in companies held by investment funds, codifies other statutory requirements, incorporates long-standing regulatory interpretations, and simplifies the application of the rule.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize its rule governing the extension of credit to bank \"insiders\"—bank executives, board members and major shareholders who could potentially influence a bank's lending decisions",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731b.htm"
+  },
+  {
+   "id": "ph_does_not_necessarily_imply",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "does not necessarily imply that the gains accrued primarily to",
+   "why": "中国人常写 does not mean that the benefits went to，显得口语化且结论过于绝对。用 does not necessarily imply 留有客观分析的余地，而 accrued primarily to 则是标准的财务/法务用语，指利益‘归属于’或‘应计入’某方，显得极度专业。",
+   "when": "在尽调报告中，分析某项业务增长或收入增加，但怀疑实际受益方并非目标公司本身时。",
+   "slot": "[...] does not necessarily imply that the gains accrued primarily to [...]",
+   "swap": [
+    "does not automatically mean that the benefits were captured chiefly by (语气稍显口语，但表达同样的意思)",
+    "does not guarantee that the economic benefits flowed directly to (语气更侧重于现金流或经济利益的实际走向)"
+   ],
+   "para": "The rapid expansion of Vietnam's exports to the U.S., however, does not necessarily imply that the gains accrued primarily to domestically owned Vietnamese firms. Instead, part of the increase may reflect the growing role of Chinese firms that relocated production to Vietnam in response to changing tariff incentives. Such relocation would be expected to increase not only exports from Vietnam to the U.S., but also imports from China, as newly established Chinese-owned firms source intermediate inputs from their existing supplier networks in China. Consistent with this mechanism, the right panel of Figure 1 shows that Vietnam's rising exports to the U.S. were accompanied by a disproportionate increase in Vietnamese imports from China relative to imports from the rest of the world, raising questions about the extent to which Chinese firms contributed to Vietnam's export boom. 1",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_draw_conclusions_based_on",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "draw conclusions about their nature based on analysis of data",
+   "why": "中国人写审计或尽调报告时，常机械地用 'make decisions according to data' 或 'get results from data'。原句用 'draw conclusions' 比 'make conclusions' 更符合专业报告规范，且用 'based on analysis of data' 替代 'according to'，显得结论是经过严谨分析程序得出的，极具客观说服力。",
+   "when": "适用于审计或尽调报告中，阐述如何基于获取的财务数据或凭证得出最终审计结论或发现。",
+   "slot": "draw conclusions about [...] based on analysis of [...]",
+   "swap": [
+    "formulate opinions on [...] based on the review of [...] (更偏向正式审计意见的表述)",
+    "derive findings regarding [...] from the assessment of [...] (更偏向尽调报告中对发现的客观陈述)"
+   ],
+   "para": "This responsibility is both crucial and complex. Since the effects of shocks are uncertain in real time, policymakers must draw conclusions about their nature based on analysis of data, rigorous economic modeling, and careful judgment. Economic conditions also often reflect the effects of overlapping shocks, whose relative importance and interactions must be assessed.",
+   "srctitle": "Jefferson, Navigating Economic Shocks: A Monetary Policymaker’s Perspective",
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
+  },
+  {
+   "id": "ph_differ_materially_347",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "could cause our actual results to differ materially from those projected",
+   "why": "国人常写成 'will make our actual results different from the forecast'。原句用 'could' 留有余地，符合审计的谨慎性要求；'differ materially'（实质性偏离）是财务专业词汇，比 'different' 更有分量；'those projected' 替代 'projected results' 避免了词汇重复。",
+   "when": "在尽调或审计报告中提示某些不确定因素可能导致目标公司未来实际业绩偏离预测值时。",
+   "slot": "[...] could cause our actual results to differ materially from those projected [...]",
+   "swap": [
+    "may result in actual performance deviating significantly from projections (语气同样客观，deviate significantly 也是常用审计词汇)",
+    "might lead to a material difference between actual outcomes and forecasts (使用名词 material difference，语气略显正式)"
+   ],
+   "para": "Other risks, uncertainties and factors, including those discussed below, under the section entitled “Risk Factors, ” could cause our actual results to differ materially from those projected in any forward-looking statements we make. Readers should read the discussion of these factors carefully to better understand the risks and uncertainties inherent in our business and underlying any forward-looking statements.",
+   "srctitle": "Leonardo DRS, Inc.  (DRS)  (CIK 0001833756)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1833756/000183375626000013/drs-20251231.htm"
+  },
+  {
+   "id": "ph_looking_to_expand",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "Retailers looking to expand into Detroit face high costs of entry",
+   "why": "中国人写‘有意向扩张的公司’常罗嗦地写成 'companies who want to expand' 或 'companies planning to expand'。原句用现在分词短语 'looking to expand into' 极其地道，且用 'face high costs of entry' 表达‘面临高昂的准入门槛/成本’，比 'have to pay high costs' 更具专业财经质感。",
+   "when": "用于行业分析或尽职调查中，描述特定市场准入障碍或新进入者面临的财务压力。",
+   "slot": "[...] looking to expand into [...] face high costs of [...]",
+   "swap": [
+    "[...] intending to enter [...] encounter substantial barriers to entry (语气更学术、更正式，强调‘进入壁垒’)",
+    "[...] seeking expansion in [...] are confronted with steep upfront costs (语气更强，突出‘高昂的前期成本压力’)"
+   ],
+   "para": "Today, these same factors make it difficult to convince national brands to return or invest in Detroit for the first time. Retailers looking to expand into Detroit face high costs of entry, driven by the highest property taxes in the state .",
+   "srctitle": "Detroit has a shortage of national retailers. What can officials do to attract more chains to the city?",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_in_total_assets",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "have less than $3 billion in total assets",
+   "why": "中国人常写成 whose total assets are less than...，句式冗长。原文用 have [金额] in total assets，介词 in 引导资产类别，极其地道且句式紧凑。",
+   "when": "适用于审计报告中披露被审计单位的资产规模、负债水平或特定财务指标区间。",
+   "slot": "[...] have less than [...] in total assets",
+   "swap": [
+    "hold under [...] of total assets (强调资产的持有或托管状态，常用于基金审计)",
+    "report total assets below [...] (更正式，侧重于财务报表上的列报数据)"
+   ],
+   "para": "The Federal Reserve Board on Friday requested comment on a proposal to modernize rules for mutual banking organizations. These institutions are owned by depositors rather than shareholders, and more than 90 percent have less than $3 billion in total assets.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize rules for mutual banking organizations",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731a.htm"
+  },
+  {
+   "id": "ph_more_than_double",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "more than double the $2.35bn made a year earlier",
+   "why": "中国人常写 'increased by 100% compared to last year'，表达冗长。原句用 'more than double' 配合过去分词 'made a year earlier'（比一年前赚取的），极其精炼且符合英语母语财务写作习惯。",
+   "when": "在财务分析（Analytical Review）中，对比本期与上年同期（YoY）业绩的重大波动时。",
+   "slot": "[...] was more than double the [...] made a year earlier",
+   "swap": [
+    "exceeded twice the [...] recorded in the prior year (语气更严谨，适合正式审计意见书)",
+    "more than twofold of the [...] from the same period last year (侧重倍数关系，语气较传统)"
+   ],
+   "para": "The oil giant reported a profit of $5.73bn (£4.26bn) between April and June. That was more than double the $2.35bn made a year earlier and the highest quarterly profit since 2022 when the Russia-Ukraine war began.",
+   "srctitle": "",
+   "src": "BBC 商业",
+   "srcen": "BBC Business",
+   "url": "https://www.bbc.co.uk/news/articles/cg5l11m02j3o?at_medium=RSS&at_campaign=rss"
+  },
+  {
+   "id": "ph_examine_the_extent",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "We examine the extent to which Chinese-owned firms benefited from the trade diversion induced by the U.S.-China tariffs.",
+   "why": "中国人写报告常用 \"We analyze how much...\" 或 \"We check if...\"，显得口语化且不精确。\"examine the extent to which...\" 极其严谨，用 \"induced by\" 代替 \"caused by\" 显得非常专业。",
+   "when": "在尽调报告中阐述对某一特定风险、政策或交易对目标公司影响的评估范围和程度时。",
+   "slot": "We examine the extent to which [...] benefited from the [...] induced by [...]",
+   "swap": [
+    "We assessed the degree to which [...] was affected by [...] (更侧重于被动受影响的程度评估，语气中立)",
+    "Our analysis focused on how far [...] capitalized on [...] resulting from [...] (更强调主动利用某种局势获利，语气更具穿透性)"
+   ],
+   "para": "We examine the extent to which Chinese-owned firms benefited from the trade diversion induced by the U.S.-China tariffs. This question has become increasingly important amid concerns that Chinese firms may be using third countries as a conduit to maintain access to the U.S. market. While transshipment through Vietnam has received considerable attention, existing evidence suggests its quantitative importance is limited (Freund et al., 2024; Iyoha et al., 2025). In contrast, much less is known about the role of FDI and the relocation of production by Chinese firms shifting operations to Vietnam in response to U.S. tariffs.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_increasingly_important_amid_concerns",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "This question has become increasingly important amid concerns that Chinese firms may be using third countries as a conduit to maintain access to the U.S. market.",
+   "why": "表达“在...担忧之下，这个问题很重要”时，中国人常写 \"Because people worry about... so this is important\"。原文用 \"amid concerns that...\" 优雅地作状语，并用 \"as a conduit to\"（作为通道/渠道）代替口语化的 \"as a way to\" 或 \"through\"。",
+   "when": "用于尽调报告中解释为什么某项审计发现或潜在合规风险（如关联交易、绕道合规、供应链重组）需要被高度关注。",
+   "slot": "This [...] has become increasingly important amid concerns that [...] may be using [...] as a conduit to [...]",
+   "swap": [
+    "This issue warrants heightened scrutiny given apprehensions that [...] might leverage [...] to bypass [...] (语气更警示，适合审计报告的风险提示)",
+    "The significance of this matter has amplified following indications that [...] could utilize [...] to sustain [...] (语气较客观，侧重于趋势和迹象分析)"
+   ],
+   "para": "We examine the extent to which Chinese-owned firms benefited from the trade diversion induced by the U.S.-China tariffs. This question has become increasingly important amid concerns that Chinese firms may be using third countries as a conduit to maintain access to the U.S. market. While transshipment through Vietnam has received considerable attention, existing evidence suggests its quantitative importance is limited (Freund et al., 2024; Iyoha et al., 2025). In contrast, much less is known about the role of FDI and the relocation of production by Chinese firms shifting operations to Vietnam in response to U.S. tariffs.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_quantitative_importance_is_limited",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "While transshipment through Vietnam has received considerable attention, existing evidence suggests its quantitative importance is limited",
+   "why": "当你想表达“虽然大家都关注某事，但实际数据表明影响不大”时，中国人常写 \"Although many people talk about it, the actual number is very small\"。原文用 \"quantitative importance is limited\"（量化重要性有限），措辞极其专业、客观，避免了主观的 \"small\" 或 \"unimportant\"。",
+   "when": "尽调中反驳某种市场传言或管理层陈述，用客观审计证据说明其财务实质影响微乎其微。",
+   "slot": "While [...] has received considerable attention, existing evidence suggests its quantitative importance is limited",
+   "swap": [
+    "Although [...] is widely discussed, our findings indicate its financial impact is immaterial (更贴近审计语言，直接使用 \"immaterial\" 表达不重要)",
+    "Despite the focus on [...], empirical data demonstrates that its actual scale remains negligible (语气更强硬，强调数据说话)"
+   ],
+   "para": "We examine the extent to which Chinese-owned firms benefited from the trade diversion induced by the U.S.-China tariffs. This question has become increasingly important amid concerns that Chinese firms may be using third countries as a conduit to maintain access to the U.S. market. While transshipment through Vietnam has received considerable attention, existing evidence suggests its quantitative importance is limited (Freund et al., 2024; Iyoha et al., 2025). In contrast, much less is known about the role of FDI and the relocation of production by Chinese firms shifting operations to Vietnam in response to U.S. tariffs.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_start_by_and_then_discuss",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "I will start by classifying economic shocks and then discuss how",
+   "why": "在报告开头或汇报结构时，中国人常用 First, I will... Second, I will...，显得单调且像学生作文。此句用 start by doing... and then discuss how 顺畅地将两个分析步骤连为一体，逻辑感极强。",
+   "when": "用于尽调报告的执行摘要（Executive Summary）或审计计划开头，向委托方介绍报告的分析框架和论证顺序。",
+   "slot": "I will start by [...] and then discuss how [...]",
+   "swap": [
+    "We will begin by analyzing [...] and subsequently address how [...] (语气更正式，适合代表项目组撰写的正式报告)",
+    "Our approach first entails [...] followed by an examination of how [...] (语气更具方法论色彩，强调审计或尽调的系统性)"
+   ],
+   "para": "Today , I will start by classifying economic shocks and then discuss how monetary policymakers might respond to different types of shocks. Then I will discuss how I am approaching the two significant developments affecting the current juncture: the energy price shock and the macroeconomic effects of artificial intelligence (AI). I will talk about how both might affect monetary policy going forward before taking your questions.",
+   "srctitle": "Jefferson, Navigating Economic Shocks: A Monetary Policymaker’s Perspective",
+   "src": "美联储讲话",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260716a.htm"
+  },
+  {
+   "id": "ph_averaged_in_quarter",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "averaged $103.85 a barrel in the April-to-June quarter",
+   "why": "中国人写财务报告常套用 'the average price was...' 这种名词作主语的句式，显得冗长。直接将 average 用作主动词，后接具体数值和期间，表达极其干练，是专业财经写作的标配。",
+   "when": "在尽调报告中汇报某项财务指标（如单价、毛利率、日均销售额）在特定期间的平均水平时。",
+   "slot": "averaged [...] in the [...] quarter",
+   "swap": [
+    "hovered around [...] during the [...] quarter (语气更侧重于数据在某一区间内波动)",
+    "was recorded at an average of [...] for the [...] quarter (语气更正式、偏向审计客观记录)"
+   ],
+   "para": "BP said Brent crude – the global benchmark for oil prices – averaged $103.85 a barrel in the April-to-June quarter, up from $67.88 in the same period last year.",
+   "srctitle": "",
+   "src": "BBC 商业",
+   "srcen": "BBC Business",
+   "url": "https://www.bbc.co.uk/news/articles/cg5l11m02j3o?at_medium=RSS&at_campaign=rss"
+  },
+  {
+   "id": "ph_up_from_in_same_period",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "up from $67.88 in the same period last year",
+   "why": "中国人表达同比上升时，极易写出 'which increased compared with...' 这样拖沓的定语从句。用 'up from [数字] in the same period last year' 这一介词短语直接作后置修饰，极其紧凑地完成了同比数据的对比。",
+   "when": "在财务分析中对比本期与上年同期（YoY）的营收、利润、单价等核心财务数据时。",
+   "slot": "up from [...] in the same period last year",
+   "swap": [
+    "compared to [...] in the prior year period (语气更中性，不带方向性，需前文有增减词)",
+    "representing an increase from [...] in the corresponding period of last year (语气更正式、严谨，适合审计报告正文)"
+   ],
+   "para": "BP said Brent crude – the global benchmark for oil prices – averaged $103.85 a barrel in the April-to-June quarter, up from $67.88 in the same period last year.",
+   "srctitle": "",
+   "src": "BBC 商业",
+   "srcen": "BBC Business",
+   "url": "https://www.bbc.co.uk/news/articles/cg5l11m02j3o?at_medium=RSS&at_campaign=rss"
+  },
+  {
+   "id": "ph_present_a_barrier",
+   "kind": "phrase",
+   "dim": "nom",
+   "en": "Premium insurance rates for commercial properties and vehicles present an additional financial barrier.",
+   "why": "主语是名词化的事实块（Premium insurance rates for A and B），谓语用 present 而不是 are/is，把「这件事构成一道障碍」写成动作，且不用人做主语。中国人常写 The insurance rates are very high, so it is difficult for retailers，用 are+形容词+so 串因果，像口语汇报；present an additional financial barrier 一句话就把定性和「它是又一项」压进去了，additional 还接住了前文已列的其他障碍。",
+   "when": "尽调/审计报告里给某个不利因素定性、并说明它是清单上的又一项时。",
+   "slot": "[…] for […] present an additional […] barrier.",
+   "swap": [
+    "[…] pose a further constraint on […]（pose 更强调带来风险/难题，语气更警示）",
+    "[…] represent an additional cost burden for […]（represent 偏中性描述，只说它属于一项成本，不含阻碍意味）",
+    "[…] add to the barriers facing […]（口语化一档，弱化正式定性，适合备忘录）"
+   ],
+   "para": "Premium insurance rates for commercial properties and vehicles present an additional financial barrier. For vehicles in particular, rates can spike 25% to 40% higher than the average cost in Michigan, which can increase the cost of moving goods and maintaining retail inventory.",
+   "srctitle": "Detroit has a shortage of national retailers. What can officials do to attract more chains to the city?",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_spike_x_to_y_higher",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "rates can spike 25% to 40% higher than the average cost in Michigan",
+   "why": "三件事压在一个短语里：幅度给区间（25% to 40%）、方向词 higher、基准点 than the average cost in Michigan。中国人常写 The rates are much higher, about 25%-40%，much higher 跟谁比不说，读者无法复核。且「动词+幅度+比较词」的 spike 25% to 40% higher 比 increase by a range of 25% to 40% compared with 省一半字。",
+   "when": "报告里给出一个偏离幅度、必须同时交代跟哪个基准比的时候。",
+   "slot": "[…] can spike […]% to […]% higher than the average […] in […]",
+   "swap": [
+    "[…] can run […]% to […]% above the […] average（run above 更平实、不含骤升意味，适合陈述稳定差异）",
+    "[…] typically exceed the […] benchmark by […]% to […]%（基准明确叫 benchmark，最正式，适合出具意见）",
+    "[…] may be as much as […]% higher than […]（只给上限、语气更谨慎，手上只有一个极值时用）"
+   ],
+   "para": "Premium insurance rates for commercial properties and vehicles present an additional financial barrier. For vehicles in particular, rates can spike 25% to 40% higher than the average cost in Michigan, which can increase the cost of moving goods and maintaining retail inventory.",
+   "srctitle": "Detroit has a shortage of national retailers. What can officials do to attract more chains to the city?",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_which_can_increase_cost",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "which can increase the cost of moving goods and maintaining retail inventory",
+   "why": "用非限定 which 把后果挂在前面整句上，不另起 This will lead to…；情态词 can 留了口，是「可能推高」不是「必然推高」；后果落到两个动名词 moving goods / maintaining retail inventory，具体到业务动作而非笼统的 operating costs。中国人常写 …, and it will increase the cost，which 从句既避免代词 it 指代不清，也避免把 and 当万能连接词。",
+   "when": "在同一句里把一个已量化的事实顺势推到它对经营的影响上。",
+   "slot": "which can increase the cost of […] and […]",
+   "swap": [
+    "which in turn raises the cost of […]（in turn 强调传导链条，去掉 can 后语气更肯定）",
+    "potentially driving up the cost of […]（分词结构更简省，把不确定性挪到副词上）",
+    "with a knock-on effect on the cost of […]（名词化说法，最含蓄，只提示存在影响、不断言方向）"
+   ],
+   "para": "Premium insurance rates for commercial properties and vehicles present an additional financial barrier. For vehicles in particular, rates can spike 25% to 40% higher than the average cost in Michigan, which can increase the cost of moving goods and maintaining retail inventory.",
+   "srctitle": "Detroit has a shortage of national retailers. What can officials do to attract more chains to the city?",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
   }
  ]
 }

@@ -977,6 +977,10 @@ button{font-family:inherit}
    却只在两个出口堵了**。现在从 html/body 一路显式打开，
    再把按钮单独关掉（按钮上长按冒出选择手柄很烦）。 */
 
+@keyframes dlspin{to{transform:rotate(360deg)}}
+
+@media (prefers-reduced-motion: reduce){ #dlspin{animation:none;opacity:.5} }
+
 html,body{-webkit-user-select:text;user-select:text}
 
 button,.rchip,.btn,.play,.sbtn,.tabs,.nav,#topnav,#mic{
@@ -1446,7 +1450,7 @@ const LS = {key:'alex_api_key', be:'alex_backend', st:'alex_state', mdl:'alex_mo
 
       这行由 deploy_pages.py 在部署时改写 —— 我不用手动记着改。 */
 
-const BANKV = '78ac5ba2';
+const BANKV = '48b1ce4d';
 
 const bankURL = n => n + (BANKV === 'dev' ? '' : '?v=' + BANKV);
 
@@ -17777,12 +17781,20 @@ function showChatRec(rec, justDone){
    两个本子按他的原话分：**单词本** / **专业表达本**。收的时候给默认归类但可改 ——
    他自己的本子，凭什么由我定。                                                    */
 
-const DICT = {q:'', cur:null, top:'look', book:'word', fq:'', busy:false, err:'', _ft:0};
+const DICT = {q:'', cur:null, top:'look', book:'word', fq:'', hf:'', busy:false, err:'', _ft:0};
 
 const NB_LS  = 'alex_nb';          // 本子
 const DCACHE = 'alex_dict_cache';  // 查过的词条（省额度，也让离线能翻）
 const DHIST  = 'alex_dict_hist';   // 最近查过什么
-const NB_MAX = 500, DC_MAX = 120, DH_MAX = 24;
+/* 「进一步修改」的记录。2026-08-25 之前这东西**根本没存**：
+   tweak 改出来的两版只活在页面 DOM 里，他一离开就没了。
+   他问「我想看我历史上查词的进一步修改记录，这个在哪里可以看得到呢？」
+   —— 当时的诚实答案是「哪儿都看不到」。这个键就是补这个。 */
+const TWHIST = 'alex_tweak_hist';
+const TW_MAX = 300;
+/* 🚨 DH_MAX 24 → 200：24 是按「主界面铺 12 个 chip」定的；
+   2026-08-25 历史挪进独立一屏、还要挂改稿记录，24 条会把上周查的挤掉。 */
+const NB_MAX = 500, DC_MAX = 120, DH_MAX = 200;
 /* 🚨 2026-08-24 合并成一个本子。Kevin：「单词本和专业表达本这么分开没有任何意义，
    合在一起吧。反正到时候支持用语义搜索，我想搜什么表达，它就会在我的历史记录里
    找到当时我收藏的表达。」
@@ -18728,14 +18740,58 @@ function dCacheDrop(id){
   try { localStorage.setItem(DCACHE, JSON.stringify(c)); } catch(_){}
 }
 
+/* 每条是 {q, ts}。
+   🚨 2026-08-25 之前存的是**裸字符串**，所以「什么时候查的」这个信息压根没有。
+      这里把老记录补成 `{q, ts:0}` —— **不清空、不迁移**：
+      他一百多条查询记录还在，只是老的那些不显示日期。
+      （换个 key 重开一份会把他攒的东西一次性作废，那正是 DCACHE 当初不换 key 的理由。） */
 function dHist(){
-  try { return JSON.parse(localStorage.getItem(DHIST) || '[]') || []; }
+  let raw = [];
+  try { raw = JSON.parse(localStorage.getItem(DHIST) || '[]') || []; }
   catch(_){ return []; }
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map(x => (typeof x === 'string' ? {q: x, ts: 0} : x))
+    .filter(x => x && normQ(x.q))
+    .map(x => ({q: normQ(x.q), ts: Number(x.ts) || 0}));
 }
 function dHistPush(q){
-  const h = dHist().filter(x => qId(x) !== qId(q));
-  h.unshift(normQ(q));
+  const h = dHist().filter(x => qId(x.q) !== qId(q));
+  h.unshift({q: normQ(q), ts: Date.now()});
   try { localStorage.setItem(DHIST, JSON.stringify(h.slice(0, DH_MAX))); } catch(_){}
+}
+
+/* ── 「进一步修改」的记录 ──
+   🚨 存在 `tweakAsk` 里而不是存在 miniBtns 那段 UI 里：
+      miniBtns 是**目前**唯一的调用点，但 tweakAsk 才是「改出一版且判过合格」
+      的唯一出口。挂在出口上，以后新增调用点自动就有记录 ——
+      这个项目为「同一条规矩漏在某个出口上」返工过五次，不想要第六次。 */
+function twAll(){
+  let raw = [];
+  try { raw = JSON.parse(localStorage.getItem(TWHIST) || '[]') || []; }
+  catch(_){ return []; }
+  return Array.isArray(raw) ? raw.filter(x => x && x.want && x.v1) : [];
+}
+function twPush(rec){
+  const list = twAll();
+  list.unshift(rec);
+  try { localStorage.setItem(TWHIST, JSON.stringify(list.slice(0, TW_MAX))); return true; }
+  catch(_){
+    /* 满了就砍一半再存一次 —— 静默丢掉他刚改出来的那版是最糟的结果 */
+    try {
+      localStorage.setItem(TWHIST, JSON.stringify(list.slice(0, Math.floor(TW_MAX / 2))));
+      return true;
+    } catch(_2){ return false; }
+  }
+}
+/* 某个词下面的改稿（老的在后面）。ctx 为空的收在 '' 这一档。 */
+function twFor(q){
+  const k = qId(q || '');
+  return twAll().filter(x => qId(x.ctx || '') === k);
+}
+function twDel(id){
+  const list = twAll().filter(x => x.id !== id);
+  try { localStorage.setItem(TWHIST, JSON.stringify(list)); } catch(_){}
 }
 
 /* ── 本子 ── */
@@ -18891,8 +18947,13 @@ function dictTop(){
   const n = nbAll().length, due = revDue().length;
   const b = (k, nm) => '<button class="rchip' + (DICT.top === k ? ' on' : '') +
     '" data-dtop="' + k + '">' + nm + '</button>';
+  /* 🚨 2026-08-25 加「历史」这一档。Kevin：「点『查』的时候，没必要把所有历史
+     记录都铺开，这样很冗余、很烦；如果我自己感兴趣，会专门去查历史的。」
+     —— 历史从**主界面铺开**变成**要看时自己进来**。 */
+  const hn = (typeof dHist === 'function' ? dHist().length : 0);
   return '<div class="tabs" style="margin-bottom:12px">' +
     b('look', '查词') +
+    b('hist', '历史' + (hn ? ' ' + hn : '')) +
     b('nb', '我的本子' + (n ? ' ' + n : '') + (due ? ' · 待复习 ' + due : '')) +
     '</div>';
 }
@@ -18977,6 +19038,7 @@ function showDict(q){
   $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
   if (window.selBarHide) selBarHide();
   if (DICT.top === 'nb') return showNotebook();
+  if (DICT.top === 'hist') return showDictHist();
   const f = $('#feed');
   $('#sub').textContent = '想起什么就查什么，查完顺手收进本子';
   f.innerHTML = dictTop() +
@@ -18999,8 +19061,9 @@ function showDict(q){
       '单词给音标、义项、搭配；词组和句式给「什么场合用、能不能写进报告」；' +
       '直接输中文就给几个地道说法让你挑。' +
     '</div>' +
-    '<div id="dres"></div><div id="dawrap"></div>' +
-    '<div id="dhist" style="margin-top:14px"></div>';
+    /* 🚨 2026-08-25：`#dhist` 从这儿**拿掉了** —— 历史现在是独立一个 Tab。
+       他说「没必要把所有历史记录都铺开，很冗余、很烦」。 */
+    '<div id="dres"></div><div id="dawrap"></div>';
   bindDictTop();
   const inp = $('#dq'), btn = $('#dgo');
   inp.value = (q != null && q !== '') ? normQ(q) : (DICT.q || '');
@@ -19015,7 +19078,6 @@ function showDict(q){
   inp.onkeydown = ev => {
     if (ev.key === 'Enter'){ ev.preventDefault(); inp.blur(); fire(); }
   };
-  paintHist();
   /* 🚨 「知道一个词直接收进本子」的入口 —— 写了函数不挂上去等于白写
      （这个项目栽过：画了不绑 / 建了字段不落盘）。
      放在结果**下面**：有结果时不抢主线，查不出来时它就是那条退路。 */
@@ -19025,21 +19087,178 @@ function showDict(q){
   else if (DICT.err) $('#dres').innerHTML = '<div class="note">' + esc(DICT.err) + '</div>';
 }
 
-function paintHist(){
-  const h = $('#dhist');
-  if (!h) return;
-  const list = dHist();
-  if (!list.length){ h.innerHTML = ''; return; }
-  h.innerHTML = '<div class="tabs" style="margin-bottom:10px;flex-wrap:wrap">' +
-    list.slice(0, 12).map(x =>
-      '<button class="rchip" data-dq="' + esc(x) + '">' + esc(x) + '</button>').join('') +
-    '</div>';
-  h.querySelectorAll('[data-dq]').forEach(b =>
+/* 🚨 `paintHist` 已经**删掉**（2026-08-25）。它往 `#dhist` 铺 12 个 chip，
+   而那个容器随「历史进独立 Tab」一起从主界面撤了 —— 留着就是一个
+   每次都 `return` 的空函数，看起来还在工作。
+   查完要刷新的是**顶上那排 chip 的计数**（历史 N），那是 refreshDictTop 的活。
+
+   ── 历史这一屏 ──
+   他的原话：「点『查』的时候，没必要把所有历史记录都铺开，这样很冗余、很烦；
+   如果我自己感兴趣，会专门去查历史的。」
+   —— 所以这一屏不是把 chip 换个地方堆：能搜、显示查过的时间、
+      点一条直接重查，**并且挂着当时的「进一步修改」记录**。 */
+function showDictHist(){
+  $('#list').hidden = true; $('#brief').hidden = true; $('#bar').hidden = true;
+  DICT.top = 'hist';
+  const f = $('#feed');
+  $('#sub').textContent = '查过的都在这儿，包括当时改过的版本';
+
+  /* 🚨 **一条路径**：历史条目和改稿的来路合并成同一张表（key = qId）。
+     不特判的好处：改过但历史已经滚出去的词**照样有行**，不会因为
+     DH_MAX 截断把他的改稿弄丢。 */
+  const map = new Map();
+  const put = (q, ts) => {
+    const k = qId(q || '');
+    const cur = map.get(k);
+    if (cur){ if (ts > cur.ts) cur.ts = ts; return cur; }
+    const row = {k: k, q: normQ(q || ''), ts: ts || 0, tw: []};
+    map.set(k, row);
+    return row;
+  };
+  dHist().forEach(h => put(h.q, h.ts));
+  twAll().forEach(w => put(w.ctx || '', w.ts || 0).tw.push(w));
+
+  let rows = [...map.values()].sort((a, b) => b.ts - a.ts);
+  const twTotal = twAll().length;
+  if (DICT.hf === 'tw') rows = rows.filter(r => r.tw.length);
+  const kw = (DICT.fq || '').trim().toLowerCase();
+  if (kw) rows = rows.filter(r =>
+    r.q.toLowerCase().indexOf(kw) >= 0 ||
+    r.tw.some(w => (w.want + ' ' + w.en + ' ' + w.v1.en + ' ' + w.v2.en)
+      .toLowerCase().indexOf(kw) >= 0));
+
+  const day = ts => {
+    if (!ts) return '';
+    const d = new Date(ts), n = new Date();
+    const same = x => x.getFullYear() === d.getFullYear()
+      && x.getMonth() === d.getMonth() && x.getDate() === d.getDate();
+    if (same(n)) return '今天';
+    const y = new Date(n.getTime() - 864e5);
+    if (same(y)) return '昨天';
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+  };
+
+  const chip = (k, nm) => '<button class="rchip' + (DICT.hf === k ? ' on' : '') +
+    '" data-hf="' + k + '">' + nm + '</button>';
+
+  f.innerHTML = dictTop() +
+    (map.size
+      ? '<div class="tabs" style="margin-bottom:10px">' +
+          chip('', '全部 ' + map.size) +
+          chip('tw', '✏️ 改过的 ' + twTotal) +
+        '</div>' +
+        '<input id="hq" placeholder="在历史里搜（词、你的要求、改出来的句子）…" ' +
+          'value="' + esc(DICT.fq || '') + '" ' +
+          'style="width:100%;box-sizing:border-box;padding:10px 12px;' +
+          'border:1px solid var(--line);border-radius:12px;font-size:14px;' +
+          'background:var(--card);color:var(--fg);margin-bottom:10px">'
+      : '') +
+    (map.size === 0
+      ? '<div class="note">还没查过东西。<br><br>去「查词」查一个，' +
+        '查过的都会留在这儿；在结果下面点「✏️ 进一步修改」改出来的版本也会记在这里。</div>'
+      : (rows.length === 0
+        ? '<div class="note">没搜到。</div>'
+        : rows.map(r => {
+            const has = r.tw.length;
+            const named = !!r.q;
+            /* 🚨 别在这儿挂 data-hk：展开改稿用的是按钮上的 data-htw，
+               卡片上再挂一个没人读的属性 = 死属性（test_deadkeys 专抓这个）。 */
+            return '<div class="card" style="margin-bottom:10px">' +
+              '<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">' +
+                '<div style="font-size:16px;font-weight:800;flex:1;min-width:0;' +
+                  'overflow-wrap:anywhere">' +
+                  (named ? esc(r.q)
+                         : '<span style="color:var(--muted)">没记来路的改稿</span>') + '</div>' +
+                (day(r.ts) ? '<span class="t" style="color:var(--muted)">' +
+                   day(r.ts) + '</span>' : '') +
+              '</div>' +
+              '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">' +
+                (named ? '<button class="rchip" data-hq="' + esc(r.q) + '" ' +
+                  'style="font-size:12px;padding:4px 10px">🔍 再查一次</button>' : '') +
+                (has ? '<button class="rchip" data-htw="' + esc(r.k) + '" ' +
+                  'style="font-size:12px;padding:4px 10px">✏️ 改过 ' + has +
+                  ' 次 ▾</button>' : '') +
+              '</div>' +
+              '<div class="twhist"></div>' +
+            '</div>';
+          }).join('')));
+
+  bindDictTop();
+  f.querySelectorAll('[data-hf]').forEach(b =>
+    b.onclick = () => { DICT.hf = b.dataset.hf; showDictHist(); });
+  f.querySelectorAll('[data-hq]').forEach(b =>
+    b.onclick = () => { DICT.top = 'look'; showDict(b.dataset.hq); });
+
+  const inp = $('#hq');
+  if (inp) inp.oninput = () => {
+    clearTimeout(DICT._ft);
+    DICT._ft = setTimeout(() => {
+      DICT.fq = inp.value;
+      showDictHist();
+      const n2 = $('#hq');
+      if (n2){ n2.focus(); n2.setSelectionRange(n2.value.length, n2.value.length); }
+    }, 300);
+  };
+
+  /* 展开某个词下面的改稿。
+     🚨 用 DOM 拼不用 innerHTML 拼 —— 每一版下面要挂**三件套**（📋/✏️/☆），
+        那是真节点。画了不挂等于又给他一屏「看得到、带不走」的东西。 */
+  f.querySelectorAll('[data-htw]').forEach(b => {
     b.onclick = () => {
-      const v = b.dataset.dq, i = $('#dq');
-      if (i) i.value = v;
-      doLook(v);
-    });
+      const card = b.closest('.card');
+      const box = card && card.querySelector('.twhist');
+      if (!box) return;
+      if (box.childElementCount){                 // 再点一次收起来
+        box.innerHTML = '';
+        b.textContent = b.textContent.replace('▴', '▾');
+        return;
+      }
+      b.textContent = b.textContent.replace('▾', '▴');
+      const k = b.dataset.htw;
+      const list = twAll().filter(w => qId(w.ctx || '') === k);
+      list.forEach(w => {
+        const one2 = document.createElement('div');
+        one2.style.cssText = 'margin-top:10px;padding-top:10px;'
+          + 'border-top:1px dashed var(--line-strong)';
+        one2.innerHTML =
+          '<div class="t" style="color:var(--muted)">' + day(w.ts) + ' · 你说：</div>' +
+          '<div style="font-size:14px;margin:2px 0 6px">「' + esc(w.want) + '」</div>' +
+          '<div class="t" style="color:var(--muted)">原句</div>' +
+          '<div class="en" style="font-size:14px;line-height:1.5;opacity:.75" ' +
+            'data-say="' + esc(w.en) + '">' + esc(w.en) + '</div>';
+        [w.v1, w.v2].forEach(v => {
+          if (!v || !v.en) return;
+          const row = document.createElement('div');
+          row.style.cssText = 'margin-top:8px;padding-left:8px;'
+            + 'border-left:3px solid var(--brand-dark)';
+          row.innerHTML =
+            '<div style="font-size:12px;color:var(--brand-dark);font-weight:800">' +
+              esc(v.name || '版本') + '</div>' +
+            '<div class="en" style="font-size:15px;line-height:1.5" data-say="' +
+              esc(v.en) + '">' + esc(v.en) + '</div>';
+          /* 三件套：这一版照样能复制、能再改一轮、能收进本子 */
+          row.appendChild(miniBtns(v.en, w.ctx || '', row));
+          one2.appendChild(row);
+        });
+        if (w.why)
+          one2.insertAdjacentHTML('beforeend',
+            '<div class="t" style="margin-top:8px;color:var(--muted)">' +
+            esc(w.why) + '</div>');
+        if (w.note)
+          one2.insertAdjacentHTML('beforeend',
+            '<div class="sit" style="margin-top:4px">' + esc(w.note) + '</div>');
+        const del = document.createElement('button');
+        del.className = 'rchip';
+        del.style.cssText = 'font-size:12px;padding:4px 10px;margin-top:8px;'
+          + 'color:var(--muted)';
+        del.textContent = '🗑 删掉这条改稿';
+        del.onclick = ev => { ev.stopPropagation(); twDel(w.id); showDictHist(); };
+        one2.appendChild(del);
+        box.appendChild(one2);
+      });
+      bindSay(box);      // 🚨 画了就要绑，否则点了不出声（这项目栽过好几次）
+    };
+  });
 }
 
 async function doLook(q){
@@ -19051,7 +19270,7 @@ async function doLook(q){
   const hit = dCacheGet(id);
   if (hit){
     DICT.cur = hit;
-    dHistPush(q); paintHist();
+    dHistPush(q); refreshDictTop();
     dictRender(hit, true);
     return;
   }
@@ -19067,9 +19286,28 @@ async function doLook(q){
      所以走秒 + 到点了说人话，让他知道**还在动、大概还要多久**。
      这一条不砍任何内容，也不多花一分钱。 */
   const _t0 = Date.now();
-  res.innerHTML = '<div class="note" id="dwait">Alex 正在查「' + esc(normQ(q)) + '」…' +
-    (kind === 'zh' ? '（中文 → 给你几个地道说法）' : '') +
-    '<br><span id="dsec" style="color:var(--muted);font-size:12px"></span></div>';
+  /* 🚨 2026-08-25 换外观。Kevin：「这行字很小一点点，大部分篇幅都留给了
+     我查过的历史记录」—— 视觉重心整个反了。现在是占屏幕中部的一块。
+     **下面那些判断一个字没改**（走秒、分段文案、先画一次再起定时器），
+     只是把它们放进一个看得见的容器里。 */
+  res.innerHTML =
+    '<div class="card" id="dwait" style="padding:26px 18px;text-align:center">' +
+      '<div id="dlspin" style="width:44px;height:44px;margin:0 auto 14px;' +
+        'border:4px solid var(--line);border-top-color:var(--brand-dark);' +
+        'border-radius:50%;animation:dlspin .9s linear infinite"></div>' +
+      '<div style="font-size:16px;font-weight:700;line-height:1.5">' +
+        'Alex 正在查「' + esc(normQ(q)) + '」</div>' +
+      '<div class="t" style="color:var(--muted);margin-top:6px">' +
+        (kind === 'zh' ? '中文 → 给你几个地道说法'
+         : kind === 'ask' ? '这是个问题 —— 直接回答你'
+         : '音标、义项、搭配、口语说法') + '</div>' +
+      '<div style="margin:16px auto 0;max-width:260px;height:6px;border-radius:3px;' +
+        'background:var(--line);overflow:hidden">' +
+        '<div id="dlbar" style="height:100%;width:4%;border-radius:3px;' +
+          'background:var(--brand-dark);transition:width .5s ease-out"></div></div>' +
+      '<div class="t" id="dsec" style="color:var(--muted);margin-top:10px;' +
+        'font-variant-numeric:tabular-nums"></div>' +
+    '</div>';
   const _paint = () => {
     const el = document.getElementById('dsec');
     if (!el) return;
@@ -19078,6 +19316,15 @@ async function doLook(q){
       s < 6  ? '（一般 5 秒左右）'
     : s < 14 ? '　这次给的东西多，再等等'
     :          '　还在重查（上一版没达标），最多再试两次');
+    /* 🚨 **不假装知道进度**：查词 5–7 秒、重试到 15 秒，没有真实百分比可给。
+       这是一条渐近曲线（6 秒 ~80%，之后越来越慢，封顶 94%）——
+       到 100% 却还没出结果，那才是拿假数据骗他。
+       真实的量是上面那个「几秒」，那个照旧。 */
+    const bar = document.getElementById('dlbar');
+    if (bar){
+      const el2 = (Date.now() - _t0) / 1000;
+      bar.style.width = Math.min(94, 4 + 90 * (1 - Math.exp(-el2 / 3.2))).toFixed(1) + '%';
+    }
   };
   /* 🚨 先画一次再起定时器 —— `setInterval` 要等满 1 秒才第一次触发，
      而**头一秒恰恰是他最容易觉得「点了没反应」的那一秒**（真页面量到的：
@@ -19097,7 +19344,7 @@ async function doLook(q){
           缓存和历史照写没关系 —— 那两样跟他现在在看什么无关。 */
     if (qId(DICT.q) !== id) return;
     DICT.cur = e;
-    if ($('#dres')){ dictRender(e, false); paintHist(); }
+    if ($('#dres')){ dictRender(e, false); refreshDictTop(); }
   } catch(err){
     /* 🚨 兜底：词典那条走不通时**转自由问答**，别死在「没查出来」。
        他 2026-08-24 撞到的就是这个 —— 打了一句英文提问，
@@ -19121,10 +19368,12 @@ async function doLook(q){
         dHistPush(q);
         if (qId(DICT.q) !== id) return;      // 等答案这几秒里他可能已经改查别的
         DICT.cur = j;
-        if ($('#dres')){ dictRender(j, false); paintHist(); }
+        if ($('#dres')){ dictRender(j, false); refreshDictTop(); }
         return;
       } catch(_){ /* 问答也不行才如实报错 */ }
     }
+    /* 🚨 查不出来 → 把「直接收进本子」那条退路放回来（它平时被结果盖住） */
+    { const aw = $('#dawrap'); if (aw) aw.hidden = false; }
     DICT.err = '没查出来：' + String(err && err.message ? err.message : err).slice(0, 80);
     if (qId(DICT.q) === id && $('#dres'))
       $('#dres').innerHTML = '<div class="note">' + esc(DICT.err) +
@@ -19489,7 +19738,26 @@ async function tweakAsk(en, want, ctx){
       + (last ? '\n' + '\n' + '🚨 上一次被判废了：' + last + '，这次避开。' : ''), 0.5)); }
     catch(e){ last = e.message || String(e); continue; }
     const bad = tweakBad(j);
-    if (!bad.length) return j;
+    if (!bad.length){
+      /* 🚨 落盘就在这儿。2026-08-25 之前这一句不存在，于是他按自己的要求
+         改出来的两版**只活在页面 DOM 里**，离开那一屏就没了；
+         他问「这个在哪里可以看得到呢？」——当时的答案是「哪儿都看不到」。
+         存**原句 + 他的要求 + 改出来的两版**，三样缺一就看不懂当时在干嘛。 */
+      try {
+        twPush({
+          id: 'tw' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          ts: Date.now(),
+          ctx: normQ(ctx || ''),      // 这一版是从查哪个词衍生出来的
+          en: String(en || ''),       // 原句（他要的是对照，原句不能丢）
+          want: String(want || ''),   // 他当时的要求，原话
+          v1: {en: String((j.v1 || {}).en || ''), name: String((j.v1 || {}).name || '')},
+          v2: {en: String((j.v2 || {}).en || ''), name: String((j.v2 || {}).name || '')},
+          why: String(j.why || ''),
+          note: String(j.note || '')
+        });
+      } catch(_){ /* 存不下不该挡住他看结果 */ }
+      return j;
+    }
     last = bad.join('；');
   }
   throw new Error(last || '改不出来');
@@ -19794,9 +20062,15 @@ function dictRender(e, cached){
   const res = $('#dres');
   if (!res || !e) return;
   DICT._cached = !!cached;
-  // 有结果了就把那段说明收起来 —— 它每多占一行，收藏键就往下掉一行
+  /* 🚨 2026-08-25：出了结果就**只剩词条本身**（他的第 ③ 条）。
+     `#dhint` 是给第一次用的人看的说明；`#dawrap` 是「直接收进本子」那条退路。
+     🚨 `#dawrap` 只**隐藏**不删除 —— 它是查不出来时的退路
+     （08-24 那条铁规：单词本不许锁在「查词成功」后面）。
+     没结果 / 出错时下面会把它放回来。 */
   const hint = $('#dhint');
   if (hint) hint.hidden = true;
+  const aw = $('#dawrap');
+  if (aw) aw.hidden = true;
   res.innerHTML = '';
   if (e.kind === 'ask'){
     res.appendChild(askCard(e));
