@@ -20295,6 +20295,30 @@ function openNb(id){
     : '复习进度：记住 ' + (r.n || 0) + ' 次（跨 ' + ((r.days || []).length) + ' 天）' +
       (r.due ? ' · 下次 ' + r.due : '');
   f.appendChild(st);
+
+  /* 🚨 分叉 C 的落地点：粘贴导入进来的条目，能翻回它当初那段原文。
+     他选这条的理由是「Gemini 会给 full context，那段上下文本身有价值」——
+     三个月后他要能看懂「当时为什么收这条」。
+
+     🚨 `srcPeek()` 在这之前是**零调用点**：原文存住了、条目上也带着 srcId，
+        就是没有任何地方把它显示出来 —— 存了等于没存。
+        「写了函数不挂上去等于白写」，这个项目为它栽过好几次。 */
+  const sid = (rec.e && rec.e.srcId) || '';
+  if (sid && typeof srcPeek === 'function'){
+    const wrap = document.createElement('div');
+    const b = document.createElement('button');
+    b.className = 'rchip';
+    b.style.cssText = 'margin-top:10px';
+    b.textContent = '📄 看当时的原文';
+    b.onclick = () => {
+      const had = wrap.querySelector('.card');
+      if (had){ had.remove(); b.textContent = '📄 看当时的原文'; return; }
+      const box = srcPeek(sid);
+      if (box){ wrap.appendChild(box); b.textContent = '📄 收起原文'; }
+    };
+    wrap.appendChild(b);
+    f.appendChild(wrap);
+  }
 }
 
 /* ═══ 复习 ═══
