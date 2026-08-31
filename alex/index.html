@@ -6111,8 +6111,29 @@ async function showMyRecs(){
         'font-weight:800">' + esc(s.title) + '</span>' +
         '<span class="done">' + esc(s.on) + '</span></div>' +
       (s.sub ? '<div class="sit" style="margin-top:4px">' + esc(s.sub) + '</div>' : '') +
-      '<div class="t" style="margin-top:6px">' + esc(s.meta) + '</div></div>').join('');
+      '<div class="t" style="margin-top:6px">' + esc(s.meta) + '</div>' +
+      /* 🚨 一步直达「接着聊」。Kevin 为这件事发过火：「我练过的这些你也不要就
+         终止嘛……聊过的继续接着聊，怎么就不能接着聊了呢？」
+         这颗按钮原来长在对话页那份「聊过的」列表里，那份列表 2026-08-24
+         按他要求撤掉之后（「不要搞得到处都是」），**能力跟着掉到了两步**：
+         点卡片 → 进详情 → 再找按钮。函数当时留着没删，闸门照样搜得到
+         `data-chaton=`，所以绿了一周 —— 判据守的对象跟他真正走的路脱了钩。
+         现在放在记录真正住的地方。 */
+      (s.kind === 'chat'
+        ? '<button class="rchip" data-chaton="' + esc(s.id) + '" ' +
+          'style="margin-top:8px;font-size:12px;padding:4px 10px">接着聊 →</button>'
+        : '') +
+      '</div>').join('');
   bindSessTop();
+  /* 🚨 stopPropagation：这颗按钮在卡片里面，不拦的话会连带触发卡片自己的
+     onclick —— 先进详情再进聊天屏，多推一层导航，返回键就要多点一下。
+     （这条是从被删掉的那份列表里原样带过来的，当初就踩过。） */
+  document.querySelectorAll('#feed [data-chaton]').forEach(b =>
+    b.onclick = async ev => {
+      ev.stopPropagation();
+      const r = await chatGet(b.dataset.chaton);
+      if (r) chatResume(r);
+    });
   document.querySelectorAll('#feed .card[data-rid]').forEach(el =>
     el.onclick = async () => {
       const id = el.dataset.rid;
@@ -15850,7 +15871,6 @@ function scnToScene(sc){
    .join('\n');
 }
 
-const CHAT_TOPICS_LS = 'alex_chat_topics';   // 他自己给过的话题
 const CHAT_SPK_LS    = 'alex_chat_speak';    // 自动朗读开关（记住）
 const CHAT_HIST      = 6;                    // 喂回去的上下文轮数
 const CHAT_EASY_RATIO = 1.2;                 // easy 的词数上限倍数
@@ -16534,18 +16554,11 @@ async function chatDel(id){
   catch(e){ return false; }
 }
 
-/* 他自己给过的话题（跟打磨那边的 topic 历史分开存） */
-function chatTopics(){
-  try { return JSON.parse(localStorage.getItem(CHAT_TOPICS_LS) || '[]') || []; }
-  catch(_){ return []; }
-}
-function chatTopicPush(t){
-  const v = String(t || '').trim();
-  if (!v) return;
-  const list = chatTopics().filter(x => x !== v);
-  list.unshift(v);
-  try { localStorage.setItem(CHAT_TOPICS_LS, JSON.stringify(list.slice(0, 8))); } catch(_){}
-}
+/* 🚨 `chatTopics` / `chatTopicPush` 已删（2026-08-31）——**只写不读**。
+   `chatTopics()` 唯一的读者是 `chatTopicPush()` 自己（去重用），
+   而把这些话题显示出来的那排 chip，正是 Kevin 嫌「一大堆很长的历史记录」
+   拿掉的那个。于是每次开聊都往 localStorage 写一份**没有任何人看**的东西。
+   要再做「最近聊过的话题」的话，从「我的记录」里现算就有，不必另存一份。 */
 
 /* ── 小结：全是数出来的，不调模型 ─────────────────────────────
    算术归代码 —— 这一块没有任何编造空间，也不花一次调用。 */
@@ -16757,39 +16770,10 @@ function showChat(){
   if (rm) rm.onclick = () => { NAV.length = 0; go(showMyRecs, '我的记录'); };
 }
 
-async function chatPaintList(){
-  const box = document.getElementById('chatlist');
-  if (!box) return;
-  const list = await chatList();
-  if (!list.length){ box.innerHTML = ''; return; }
-  box.innerHTML = '<div class="k" style="font-weight:800;margin:14px 4px 8px">聊过的</div>' +
-    list.map(r => {
-      const s = chatSummary(r);
-      return '<div class="card" data-chatid="' + esc(r.id) + '">' +
-        '<div class="hd"><span class="ct" style="font-size:11.5px;color:var(--brand-dark);' +
-        'font-weight:800">' + esc(String(r.topic || occTitle()).slice(0, 40)) + '</span>' +
-        '<span class="done">' + esc(r.on) + '</span></div>' +
-        '<div class="t" style="margin-top:6px">' + s.n + ' 轮' +
-        (s.lv.error ? ' · ' + s.lv.error + ' 处要改' : ' · 没说错') +
-        (s.lv.polish ? ' · ' + s.lv.polish + ' 处能更自然' : '') + '</div>' +
-        /* 一步就能接着聊，不用先点进去再找按钮 */
-        '<button class="rchip" data-chaton="' + esc(r.id) + '" ' +
-        'style="margin-top:8px">接着聊 →</button></div>';
-    }).join('');
-  document.querySelectorAll('#chatlist .card[data-chatid]').forEach(el =>
-    el.onclick = async () => {
-      const r = await chatGet(el.dataset.chatid);
-      if (r) go(() => showChatRec(r), '这一场');
-    });
-  /* 🚨 stopPropagation：这颗按钮在卡片里面，不拦的话会连带触发卡片的
-     onclick，先进详情再进聊天屏 —— 多推一层，返回键就要多点一下。 */
-  document.querySelectorAll('#chatlist [data-chaton]').forEach(b =>
-    b.onclick = async ev => {
-      ev.stopPropagation();
-      const r = await chatGet(b.dataset.chaton);
-      if (r) chatResume(r);
-    });
-}
+/* 🚨 `chatPaintList` 已删（2026-08-31）。它是对话页底下那一坨「聊过的」，
+   Kevin 2026-08-24 说「为什么要搞这么多聊天记录？不要搞得到处都是」之后，
+   记录统一收进了「我的记录」——**但当时只把它从渲染路径上摘掉，函数留着**，
+   零调用点地挂了一周。空壳看起来还在工作，是最难发现的一种死代码。 */
 
 /* 点「开聊」→ Alex 先开口 → 进聊天屏
    🚨 判据 E2：iOS 上 speechSynthesis 必须在**用户手势里真的 speak 过一次**才解锁。
@@ -16834,7 +16818,6 @@ async function chatStart(topic){
   try {
     const seed = chatPickSeed(t);
     const j = await chatOpen(seed);
-    if (t) chatTopicPush(t);
     const rec = chatNew(String(j.topic || t || occTitle()).trim(), seed.src);
     CHAT.id = rec.id; CHAT.on = rec.on; CHAT.t0 = rec.t0;
     CHAT.topic = rec.topic; CHAT.src = rec.src;
