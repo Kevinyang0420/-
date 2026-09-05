@@ -41,7 +41,145 @@ enum Theme {
     static let accent = hex(0x7C5CE6)   // 安卓 ACCENT
     static let accentDown = hex(0x5F41B8)   // 安卓 ACCENT_DN
     static let danger = hex(0xA8456B)   // 安卓 DANGER
+    /// **渐变紫**（Kevin 2026-09-04：「iOS 输入法中，麦克风底色及翻译、工作等 tab 的
+    /// 紫色不够渐变，需调整为渐变紫色」）。
+    ///
+    /// 🚨 **用现有的两个紫，不新造色值**（他说过「不要自己设计…你审美我不放心」）：
+    ///    上 `accent` `#7C5CE6` → 下 `accentDown` `#5F41B8`，都是 Skin/Theme 里已有的。
+    /// 🚨 做成**可拉伸的 1×64 竖向渐变图**，用 `setBackgroundImage` 铺 —— 不用
+    ///    `CAGradientLayer`：那要手动跟着 frame 变，按钮一改尺寸就露馅；
+    ///    resizable image 由 UIKit 自己拉伸，任何尺寸都对。
+    /// 🚨 **单一配置点**：所有紫色块都从这儿取，别在各处各画一个渐变。
+    static let purpleGrad: UIImage? = {
+        let h: CGFloat = 64
+        let r = UIGraphicsImageRenderer(size: CGSize(width: 1, height: h))
+        let img = r.image { ctx in
+            let cs = CGColorSpaceCreateDeviceRGB()
+            guard let g = CGGradient(colorsSpace: cs,
+                                     colors: [accent.cgColor,
+                                              accentDown.cgColor] as CFArray,
+                                     locations: [0, 1]) else { return }
+            ctx.cgContext.drawLinearGradient(
+                g, start: CGPoint(x: 0, y: 0), end: CGPoint(x: 0, y: h),
+                options: [])
+        }
+        return img.resizableImage(withCapInsets: .zero, resizingMode: .stretch)
+    }()
+
+    /// 说话记录/详情里**按档位给译文上色**（2.1 定，Kevin 09-03 看图点头）。
+    /// 🚨 跟安卓一致：结构化英文 = `Skin.OK`，整理中文 = `Skin.ACCENT_HI`。别另挑色。
+    static let modeEnGreen = hex(0x6EE7B7)   // 结构化英文档
+    static let modeZhPurple = hex(0xB98BE8)  // 整理中文档
     // <<<PALETTE-END>>>
+
+    // ─────────────────────────────────────────────────────────────
+    // 🚨🚨 以下是 **iOS 专用、不进安卓同步** 的键盘配色层。
+    //    必须放在 `<<<PALETTE-END>>>` **之后** —— 上面那段是
+    //    `D:\_build\sync_theme_ios.py` 从安卓 `Theme.java` 生成的，
+    //    写在里面下次同步就被覆盖掉（09-03 我就这么放错过一次）。
+    // ─────────────────────────────────────────────────────────────
+
+    /// **系统「下巴」的实测色（浅色宿主）**。
+    /// 🚨 2026-09-03 从 Kevin 真机截图逐像素量的：#D0D3DA。
+    ///    早先写的 #1B1B1D 是在**模拟器**上量**系统自带键盘**得的，量错了对象。
+    /// 🚨 这条带子公开接口改不了，跟**宿主 App 的外观**走
+    ///    （Kevin：Typeless、腾讯输入法都一样，苹果的限制）。
+    static let chinLight = hex(0xD0D3DA)
+
+    /// 深色宿主下的下巴色。🚨 **这个还没实测**，按 iOS 深色键盘常见带估的。
+    ///    拿到深色宿主截图后用同一套量法换掉，结构不用动。
+    static let chinDark = hex(0x2C2C2E)
+
+    /// 下巴上系统自己那两个图标的颜色（地球、麦克风），从截图量的：
+    /// 地球最暗 100 像素均值 (70,75,81)、麦克风 (73,77,83) → #464B51。
+    static let chinGlyph = hex(0x464B51)
+
+    // MARK: - 浅紫雾面（Kevin 2026-09-03 选的，Grok 方案二）
+    //
+    // 🚨 **编号有两套，别再搞混**：他说的「方案三」＝我发给他的对比图里**第三张**，
+    //    也就是 Grok 正文里的「方案 2 浅紫雾面」。我第一版按 Grok 的编号做了他的
+    //    方案 3（浅色宿主纯灰平涂），被他当场更正。以后给他编号一律用图上那个号。
+    //
+    // Grok 对前几版的诊断（他的原话「这三个都很丑」的成因）：
+    //   丑的**是结构不是某一档 hex** ——「上半深紫 + 下半浅键」是两套语言
+    //   挤在 250pt 里，看着像主题褪色。所以要**选边**：浅色宿主整面就是浅的，
+    //   起点就浅，没有从 #0B1230 泄下来的脏渐变。
+    // 跟纯灰那版的差别：面板带一点品牌色相（很淡的冷紫雾），紫身份还在。
+
+    /// 当前宿主是不是浅色外观。**由键盘在 `viewDidLoad` / 外观变化时写入**。
+    /// 🚨 不要在这里自己去读 `UIScreen.main.traitCollection` ——
+    ///    键盘要的是**宿主 App**（微信）的外观，不是系统设置。
+    static var hostIsLight = false
+
+    static var chin: UIColor { hostIsLight ? chinLight : chinDark }
+
+    /// 普通按键（两行功能键）的填充。
+    static var kbKey: UIColor { hostIsLight ? hex(0xFFFFFF) : key }
+    /// 普通按键上的字。浅色 #1C1C1E on #FFFFFF = 17.01:1。
+    static var kbKeyText: UIColor { hostIsLight ? hex(0x1C1C1E) : text }
+    /// 底排三个键（打字/朗读/删除）的填充。
+    /// 浅色下比白键略紫一点，仍是浅色家族；深色下用实色，别叠半透明白
+    /// （叠出来跟面板糊在一起）。
+    static var kbBottomKey: UIColor {
+        hostIsLight ? hex(0xC9C4DC) : hex(0x3A3650)
+    }
+    /// 底排的字/图标。浅色 #1C1C1E on #C9C4DC = 10.06:1；深色 #EBEBF5 on #3A3650 ≈ 9:1。
+    static var kbBottomText: UIColor { hostIsLight ? hex(0x1C1C1E) : text }
+    /// 提示文字。🚨 浅色下**不要**用系统灰 #6E6E73（压在 #D0D3DA 上只有 4.06，不过线），
+    ///    也不要用浅紫灰 #6B6578（压在 #E4E0F2 上只有 4.32，同样不过）。
+    ///    直接复用下巴图标色 #464B51（5.87–6.08），跟系统的地球/麦克风同一级，
+    ///    接缝两侧的文字也就统一了。
+    static var kbHint: UIColor { hostIsLight ? chinGlyph : dim }
+    /// 按下态。
+    static var kbKeyDown: UIColor { hostIsLight ? hex(0xC0BBD4) : keyDown }
+
+    // MARK: - 手写板（Kevin 2026-09-03：「手写也不要黑色啦，用白色底就好了」）
+    //
+    // 🚨🚨 这三个色只管**用户看到的画布**。
+    //    **喂给模型的那张 96×96 是另外渲染的**（`HandwritePad` 里那个
+    //    `UIGraphicsImageRenderer` 自己 fill 黑底、笔色 `modelInk = 160/255`），
+    //    跟这里完全无关。那条「纯白会让准确率从 95% 掉到 28%」的实测
+    //    管的是模型那张图 —— **别把它套到这三个色上**，也别为了"一致"
+    //    去把模型那张图改成白底。
+
+    /// **重试角标的琥珀色**（角标那个圆的**填充**）。🚨 Kevin 09-03 指定 `#F0B429`，
+    /// **不用红** —— 红是"出错了"，琥珀是"等你一下"。这不是我挑的色，别改成 `danger`。
+    static let amber = hex(0xF0B429)
+
+    /// 角标里那个 `!` 的颜色。🚨 **深墨不是白**（2026-09-03 Kevin 骂"看不清"后按对比度改）：
+    /// 白 `!` 压琥珀填充只有 **1.86:1**（实测），深墨压琥珀 **9.13:1**。填充色是固定的
+    /// 琥珀，所以这里不随宿主变。
+    static let amberInk = hex(0x1C1C1E)
+
+    /// 「没传上去·再点一下」那行**提示字**的颜色。
+    /// 🚨🚨 **不能用 `amber` 当字色**（2026-09-03 Kevin 原话「黄色的字根本看不清」）：
+    ///    琥珀字压**浅色宿主**键盘底（`kbPanel` 浅=`#F4F2FA`）只有 **1.68:1**，废。
+    ///    深色宿主保持 `#F0B429`（压深底 9.78:1）。**改前后都量过，不是拍脑袋。**
+    /// 🚨🚨 第一版用 `#A15C00`（隔离 4.68）**还是被骂看不清** —— 抽真机渲染像素量：
+    ///    只有 **3.59:1**。两个原因：真实背景是更浅的 `#E3E3EA`（不是我以为的 kbPanel），
+    ///    小字抗锯齿又把笔画调淡。**这就是"只信 hex 号会骗人、必须量渲染后的像素"。**
+    ///    改用 `#6B3F00`（隔离 7.04），留足抗锯齿余量，渲染后才稳过 4.5。仍是暖琥珀棕。
+    static var kbHintWarn: UIColor { hostIsLight ? hex(0x6B3F00) : amber }
+
+    /// **shift 大写锁定态**的底和箭头。
+    /// 🚨 浅色宿主下普通键就是 `#FFFFFF`，所以锁定态**不能也用白底** ——
+    ///    那样三态里有两态长得一样，他看不出大写锁没锁。
+    ///    浅色用近黑底白箭头（跟白色普通键、紫色 shift 态都拉开）；
+    ///    深色沿用原来的白底紫箭头（那边普通键是半透明白，白底本来就够显眼）。
+    static var kbShiftLock: UIColor { hostIsLight ? hex(0x1C1C1E) : hex(0xFFFFFF) }
+    static var kbShiftLockInk: UIColor { hostIsLight ? hex(0xFFFFFF) : accent }
+
+    /// 手写画布的底。
+    static var kbInkCanvas: UIColor { hostIsLight ? hex(0xFFFFFF) : hex(0x000000) }
+    /// 米字格虚线。要看得见但不抢笔画。
+    static var kbInkGrid: UIColor { hostIsLight ? hex(0xD3D6DE) : hex(0x2A313B) }
+    /// 笔画颜色。浅底就得用深笔，否则白底白字什么都看不见。
+    static var kbInk: UIColor { hostIsLight ? hex(0x1C1C1E) : hex(0xFFFFFF) }
+
+    /// 浮层面板（语言选择、历史）的底。浅色宿主下比面板更亮一档，
+    /// 免得浮层跟浅紫面板糊在一起分不出层次。
+    static var kbPanel: UIColor { hostIsLight ? hex(0xF4F2FA) : bg }
+
 
     /// 键盘/页面的底：**线性渐变 + 一枚径向柔光**，跟安卓 `Theme.keyboardBg()` 同构。
     ///
@@ -54,14 +192,40 @@ enum Theme {
         let root = CALayer()
         root.frame = bounds
 
+        // ── 浅色宿主：浅紫雾面 ──────────────────────────────────────
+        // 🚨 关键是**起点就浅**，不是从深紫泄下来。跟被否掉的 B/C 的差别就在这：
+        //    那两版上半仍是 #0B1230 深紫，半深半浅才是「丑」的成因。
+        //    这里顶到底 #E4E0F2 → #D8D6E4 → #D0D3DA，对下巴的对比从约 1.20
+        //    收到 1.00 —— 肉眼不是接缝，是一层很淡的冷紫雾。
+        // 🚨 **浅色下不铺径向柔光**：白光压在浅底上看不见，只会把面板整体提亮发灰。
+        if hostIsLight {
+            let mist = CAGradientLayer()
+            mist.frame = bounds
+            mist.colors = [hex(0xE4E0F2).cgColor,
+                           hex(0xD8D6E4).cgColor,
+                           chinLight.cgColor]
+            mist.locations = [0, 0.55, 1]
+            mist.startPoint = CGPoint(x: 0.5, y: 0)
+            mist.endPoint = CGPoint(x: 0.5, y: 1)
+            root.addSublayer(mist)
+            return root
+        }
+
+        // ── 深色宿主：保持现网深紫（跟安卓同一张脸）────────────────────
         let lin = CAGradientLayer()
         lin.frame = bounds
-        lin.colors = [bgTop.cgColor, bg.cgColor, bgBot.cgColor]
-        lin.locations = [0, 0.5, 1]
+        // 深色宿主：#16122A → #1C1830 → 对齐深色下巴 #2C2C2E。
+        // 🚨 `chinDark` 是**估的、没实测过**（iOS 深色键盘常见带）。
+        //    拿到深色宿主的真机截图后用同一套逐像素量法换掉它，结构不用动。
+        lin.colors = [hex(0x16122A).cgColor,
+                      hex(0x1C1830).cgColor,
+                      chinDark.cgColor]
+        lin.locations = [0, 0.70, 1]
         lin.startPoint = CGPoint(x: 0.5, y: 0)
         lin.endPoint = CGPoint(x: 0.5, y: 1)
         root.addSublayer(lin)
 
+        // 径向柔光只在深色下有意义（浅色底上白光看不见，还会发灰）
         let glow = CAGradientLayer()
         glow.type = .radial
         glow.frame = bounds
@@ -105,6 +269,24 @@ enum Theme {
     ///    「不需要留长了，还是用回原来那个圆圈的形状，这样整个输入法都显得干净一点」。
     ///    当初改长条的前提（说明行占着一整行、圆圈会被底排压住）已经不成立。
     static let micBarHeight: CGFloat = 76
+
+    /// **给圆钮装麦克风图标的唯一出口。`side` 传按钮直径，别自己再乘系数。**
+    ///
+    /// 🚨🚨 Kevin 2026-09-05：「button 里面的话筒有点太小了，跟面对面那个不是
+    ///    一个 size」。查出来是**同一个 0.6 被乘了两遍**：`micGlyph` 内部本来
+    ///    就乘 0.60，随手那两处又在外面写了 `micBarHeight * 0.6`
+    ///    → 图标 27.4pt，而面对面/键盘是 45.6 / 52.8。
+    ///
+    ///    三个界面各写各的 `setImage(Theme.micGlyph(…))`，**同一条规矩三份实现**，
+    ///    漂了也没人报错 —— 图标小一圈编译不会红、测试也不会红。
+    ///    所以收成这一个出口，并且**在这里挡住"又乘了一次"**：
+    ///    真实的按钮直径是 60（面对面紧凑）/ 76（随手、面对面常规）/ 88（键盘），
+    ///    传进来小于 60 的一定是被谁乘过了。
+    static func setMicGlyph(_ b: UIButton, side: CGFloat) {
+        assert(side >= 60, "🚨 micGlyph 的 side 要传按钮直径（60/76/88），"
+               + "收到 \(side) —— 是不是在外面又乘了一次系数？")
+        b.setImage(micGlyph(side), for: .normal)
+    }
 
     /// `size` 传图形框边长，麦克风占 60%（它是竖长条，52% 时视觉上偏细）。
     static func micGlyph(_ size: CGFloat) -> UIImage? {
