@@ -39,9 +39,36 @@ enum Skin {
     /// Skin.java OK = 0xFF6EE7B7
     static let ok = UIColor(red: 0x6E/255.0, green: 0xE7/255.0,
                            blue: 0xB7/255.0, alpha: 0xFF/255.0)
+    /// Skin.java OK_ZH = 0xFFB98BE8
+    static let okZh = UIColor(red: 0xB9/255.0, green: 0x8B/255.0,
+                           blue: 0xE8/255.0, alpha: 0xFF/255.0)
     /// Skin.java SLOGAN_ZH_COLOR = 0xFFD4CDE8
     static let sloganZh = UIColor(red: 0xD4/255.0, green: 0xCD/255.0,
                            blue: 0xE8/255.0, alpha: 0xFF/255.0)
+
+    // ---- 玻璃卡（从安卓 `Skin.glass()` 生成）----
+    //
+    // 🚨 安卓那边是一个返回 GradientDrawable 的函数；iOS 的圆角/描边挂在
+    //    layer 上，一个对象给不全，所以拆成填充色 + 描边色两个常量。
+    //    圆角一律 18、描边宽 0.6 —— 别在调用处各写各的。
+    /// Skin.glass 填充 = Color.argb(26, 255, 255, 255) = 白 10.2%
+    static let glassFill = UIColor(white: 1, alpha: 26.0 / 255.0)
+    /// Skin.glass 描边 = Color.argb(41, 255, 255, 255) = 白 16.1%
+    static let glassStroke = UIColor(white: 1, alpha: 41.0 / 255.0)
+    /// Skin.glass 圆角 = dp(18)
+    static let glassRadius: CGFloat = 18
+    /// Skin.glass 描边宽 = dp(0.6)
+    static let glassBorder: CGFloat = 0.6
+
+    // ---- 常用词芯片（从安卓 `VocabActivity.chip()` 生成）----
+    //
+    // 🚨 两态**只有填充深浅不同**，描边和文字色完全一样 ——
+    //    安卓那行写的是 `kept ? Skin.TEXT : Skin.TEXT`，不是笔误，
+    //    是「已收录和候选的字一样清楚」这个决定。
+    /// 已收录芯片填充：ACCENT 20%
+    static let chipKeptFill = accent.withAlphaComponent(51.0 / 255.0)
+    /// 候选芯片填充：ACCENT 8%
+    static let chipCandFill = accent.withAlphaComponent(20.0 / 255.0)
 
     // ---- 排版（sp 与 pt 按 1:1）----
     /// Skin.java BRAND_SP = 28f
