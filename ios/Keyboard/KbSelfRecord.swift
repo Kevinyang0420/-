@@ -76,8 +76,16 @@ enum KbSelfRecord {
     /// 能分辨的信息**一直在调用方手里**：`finishLocal` 被调用本身就意味着
     /// `Voice.start()` 已经成功返回；只有 `tryLocalRecord` 的同步失败分支
     /// 才是真的"起不来"。所以这里要它明说，不许我猜。
+    /// 🚨🚨 **`who` 没有默认值，必须每个调用点明说。**
+    ///
+    /// 2026-08-28：宿主快速档接进这个函数之后，判词还写着「**扩展直录**」，
+    /// 而执行者其实是宿主 —— 总协调**差点据此告诉 Kevin「键盘能录了」**。
+    /// **同一句话在两条路径上意思相反。**
+    ///
+    /// 给默认值就还会有人忘了传，**而忘了传的那一次正好会误导**。
+    /// 所以宁可让编译器逼着写。
     static func report(ok: Bool, frames: Int, peak: Float,
-                       note: String, foreground: Bool,
+                       note: String, foreground: Bool, who: String,
                        started: Bool = true) -> String {
         let verdict: String
         if !ok && frames == 0 && started {
@@ -93,20 +101,21 @@ enum KbSelfRecord {
                 : "PARTIAL 起来了也听到声音，但这一轮没走完"
         } else if !ok {
             // 走到这里 = `started == false`，即 `Voice.start()` 同步就失败了。
-            verdict = "FAIL 扩展直录起不来（引擎没起来）"
+            verdict = "FAIL 起不来（引擎没起来）"
         } else if peak < voiced {
             // 🚨 这一档必须单独存在：引擎起来了、也拿到帧了，**但全是静音**。
             //    如果把它算成成功，我们会得出"扩展能录"的错误结论，
             //    然后在一个永远只录到静音的架构上继续盖楼。
-            verdict = "SILENT 扩展直录起来了但全程静音"
+            verdict = "SILENT 起来了但全程静音"
         } else {
-            verdict = "OK 扩展直录拿到非静音音频"
+            verdict = "OK 拿到非静音音频"
         }
         // 🚨 `%d` 对应 `Int32`，这里传的是 64 位 `Int` —— 用 `%ld`（L1）。
         // 🚨 「峰值」其实是**每帧 RMS 的最大值**，不是采样峰值 ——
         //    量的对象和说的对象要一致（L3），所以改叫「最大帧音量」。
-        return String(format: "%@\n帧数 %ld  最大帧音量 %.3f（静音阈值 %.2f）\n%@\n%@",
-                      verdict, frames, peak, voiced,
+        // 🚨 执行者放**最前面** —— 读的人第一眼就知道这句话在说谁。
+        return String(format: "[%@] %@\n帧数 %ld  最大帧音量 %.3f（静音阈值 %.2f）\n%@\n%@",
+                      who, verdict, frames, peak, voiced,
                       foreground ? "键盘可见" : "键盘状态未知", note)
     }
 }
