@@ -75,8 +75,53 @@ enum WordBook {
                       en: en.trimmingCharacters(in: .whitespacesAndNewlines),
                       span: span, tone: tone, on: today, rev: Srs.Rev(today))
         save(WordBookCore.insert(cur, it))
+        // 🚨 收进本子的那一刻就把它流进常用词（跟安卓 `WordBook.add` 一样）。
+        pushToVocab()
         // 🚨 满了之后仍然是**加成功了**（挤掉最旧的那条），不能报"本子满了"。
         return cur.count >= WordBookCore.max ? "added_evicted" : "added"
+    }
+
+    /// 把本子里的词收进**常用词**。**单向**：常用词绝不回流单词本。
+    ///
+    /// 🚨🚨 2026-09-04 补：iOS 这条流**整条不存在**（安卓 `Vocab.pullFromWordBook`
+    ///    有，而且在三个地方调）。后果是他在单词本里存的词，在 iOS 上**永远**
+    ///    不会变成常用词 —— 而"存进单词本"正是他表达"这个说法我要"的动作。
+    ///
+    /// 🚨 **放在 `WordBook` 而不是 `KbBridge`**：一开始我写在 `KbBridge` 里，
+    ///    结果**灵动岛 target 编不过**（`cannot find 'WordBook' in scope`）——
+    ///    那个 target 是**逐个列文件**的，`KbBridge` 一引用 `WordBook` 就得
+    ///    把整条单词本链条塞进一个只显示录音状态的小组件里。
+    ///    依赖方向反过来就没这个问题：单词本认识常用词是自然的，反过来不是。
+    ///
+    /// 🚨 收的是**英文那一面**（`it.en`）：常用词管的是"怎么听、怎么说"，
+    ///    中文那一面是他说的原话，不是要模型学的说法。
+    /// 🚨 **跳过墓碑**：他删掉过的词不许再流回来 ——
+    ///    不跳的话表现成"我删了它自己又回来了"。
+    /// 🚨 额度按**总条数**封顶（跟安卓 `cur.size() >= MAX` 一致，不是只数已收录的）：
+    ///    这条流是自动的，宁可少收也不许把他手动加的挤出去。
+    ///
+    /// - Returns: 这次新收了几条。
+    @discardableResult
+    static func pushToVocab() -> Int {
+        var cur = KbBridge.loadVocab()
+        var have = Set(cur.map { $0.id })
+        let dead = KbBridge.vocabTombstones()
+        var n = 0
+        for w in list() {
+            let t = w.en
+            guard VocabCore.usable(t) else { continue }
+            let id = VocabCore.idOf(t)
+            if have.contains(id) || dead.contains(id) { continue }
+            if cur.count >= VocabCore.LIMIT_COUNT { break }
+            cur.append(VocabCore.Term(id: id, text: VocabCore.norm(t),
+                                      kind: VocabCore.KIND_BOTH,
+                                      src: VocabCore.SRC_BOOK,
+                                      at: Int64(Date().timeIntervalSince1970 * 1000)))
+            have.insert(id)
+            n += 1
+        }
+        if n > 0 { KbBridge.saveVocab(cur) }
+        return n
     }
 
     static func list() -> [Item] {
