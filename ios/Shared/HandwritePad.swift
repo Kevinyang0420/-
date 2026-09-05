@@ -44,7 +44,12 @@ final class HandwritePad: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = .black          // 必须黑底，跟训练集一致
+        // 🚨 原来这里写 `.black` 并注着「必须黑底，跟训练集一致」——
+        //    **那句话贴错地方了**：训练集的约束管的是下面 `modelImage()` 里
+        //    那张 96×96（它自己 fill 黑底、用 `modelInk`），跟用户看的这块画布无关。
+        //    全文件只有那一个 renderer，**没有任何对视图截图的路径**，查过才改的。
+        //    Kevin 2026-09-03：「手写也不要黑色啦，就是用白色底就好了嘛？」
+        backgroundColor = Theme.kbInkCanvas
         isMultipleTouchEnabled = false
     }
 
@@ -88,12 +93,12 @@ final class HandwritePad: UIView {
         g.move(to: CGPoint(x: 0, y: h / 2)); g.addLine(to: CGPoint(x: w, y: h / 2))
         g.lineWidth = 2
         g.setLineDash([10, 10], count: 2, phase: 0)
-        UIColor(red: 0x2A / 255.0, green: 0x31 / 255.0,
-                blue: 0x3B / 255.0, alpha: 1).setStroke()
+        Theme.kbInkGrid.setStroke()
         g.stroke()
 
         let lw = max(6, min(w, h) * 0.055)
-        UIColor.white.setStroke()
+        // 🚨 笔色必须跟画布反着来，白底白笔＝什么都看不见。
+        Theme.kbInk.setStroke()
         for p in strokes { p.lineWidth = lw; p.stroke() }
         if let c = current { c.lineWidth = lw; c.stroke() }
     }
