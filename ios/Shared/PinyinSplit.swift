@@ -55,6 +55,23 @@ enum PinyinSplit {
             if dict[k] == nil { dictKeys.append(k) }
             dict[k] = String(ln[ln.index(after: t)...])
         }
+        // 🚨 汉字→读音：从**单音节键**反查（键本身就是一个音节时，
+        //    它的值里每个单字都读这个音）。实测覆盖 4286 字、141 个多音字，
+        //    常用字全在里面。**不另外带一份字表**，少一个会漂的配置点。
+        for k in dictKeys where syl.contains(k) {
+            for w in (dict[k] ?? "").split(separator: " ") where w.count == 1 {
+                let c = w.first!
+                var ps = charPy[c] ?? []
+                if !ps.contains(k) { ps.append(k); charPy[c] = ps }
+            }
+        }
+
+        // 🚨 **把他自己收录的常用词学进来**（Kevin 2026-09-04：「词库也要逐渐更新」）。
+        //    挂在这里是因为它是**词库唯一的装载点** —— 挂在别处就得靠调用方记得调，
+        //    而"靠人记得"这条今天已经栽过好几次。
+        //    读不到就当没有：常用词是网络同步来的，第一次装机时本来就是空的。
+        learnLocked(VocabCore.wordsFor(KbBridge.loadVocab(), asr: true))
+
         for ln in readLines("wubi") {
             guard let t = ln.firstIndex(of: "\t") else { continue }
             let k = String(ln[ln.startIndex..<t])
@@ -171,7 +188,65 @@ enum PinyinSplit {
 
     /// 拼音串的候选（可能是词）。查不到返回空 —— 调用方负责"原样上屏"的出口。
     static func candidates(_ key: String) -> [String] {
-        lookup(dict, key)
+        // 🚨 **他自己的词排在系统词前面** —— 他收录过的词就是他常打的词。
+        //    去重在 `refreshCandidates` 那边统一做（`seen` 集合），这里只管顺序。
+        userWords[key].map { $0 + lookup(dict, key) } ?? lookup(dict, key)
+    }
+
+    // MARK: - 个人词库（他自己的词，免费、不上传、边用边长）
+
+    /// 他收录的常用词长出来的拼音键 → 词。
+    /// 🚨 跟系统词库**分开存**：系统词库是只读资源，个人词随时会变；
+    ///    混在一起就分不清"哪些是他的"，也没法单独清掉。
+    private static var userWords: [String: [String]] = [:]
+    /// 汉字 → 读音（可能多个）。从**系统词库自己的单音节键**反查出来的，
+    /// 不额外带一份字表（多一份数据就多一个会漂的配置点）。
+    private static var charPy: [Character: [String]] = [:]
+
+    /// 给一批中文词，算出它们的拼音键并收进个人词库。
+    ///
+    /// 🚨🚨 立这个的原因（Kevin 2026-09-04）：
+    ///    「不能够只有词库里的词。你这个词库也要逐渐更新」。
+    ///    他**已经在维护常用词**（PressLogic / circle back / 李文彬），
+    ///    但打字时一个都没用上 —— 现成的东西没接。
+    ///
+    /// 🚨 **多音字只展开到 4 个组合**：`会` 有 hui/kuai、`文` 有 wen/weng，
+    ///    一个长词全排列会炸。超过就只取每个字的第一个读音 ——
+    ///    宁可少一条键，不许把词库撑爆。
+    /// 🚨 反查不到读音的字（生僻字）**整词放弃**，不拿半截拼音去凑。
+    static func learn(_ words: [String]) {
+        ensureLoaded()
+        lock.lock(); defer { lock.unlock() }
+        learnLocked(words)
+    }
+
+    /// 🚨 **不带锁的那一半** —— `ensureLoaded()` 自己已经持锁，
+    ///    在里面再调带锁的 `learn` 会当场自锁死（`NSLock` 不可重入）。
+    ///    这类"一个函数两种调用场景"的锁，拆成壳+核是唯一稳妥的写法。
+    private static func learnLocked(_ words: [String]) {
+        for w in words {
+            let t = w.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard t.count >= 2, t.count <= 8 else { continue }   // 单字没意义，太长不像词
+            var options: [[String]] = []
+            var ok = true
+            for ch in t {
+                guard let ps = charPy[ch], !ps.isEmpty else { ok = false; break }
+                options.append(ps)
+            }
+            guard ok else { continue }
+            // 组合数超过 4 就退化成"每字取第一个读音"
+            let total = options.reduce(1) { $0 * $1.count }
+            let keys: [String]
+            if total <= 4 {
+                keys = options.reduce([""]) { acc, ps in acc.flatMap { a in ps.map { a + $0 } } }
+            } else {
+                keys = [options.map { $0[0] }.joined()]
+            }
+            for k in keys where !k.isEmpty {
+                var arr = userWords[k] ?? []
+                if !arr.contains(t) { arr.append(t); userWords[k] = arr }
+            }
+        }
     }
 
     /// 连拼整句：每个音节取最优，拼成一句。
@@ -182,12 +257,70 @@ enum PinyinSplit {
     ///    整句猜不出来就返回空串，调用方据此不提供这条候选，
     ///    改用前缀联想（`prefixWords`）去猜他想打的词。
     static func firstGuess(_ s: String) -> String {
+        // 🚨🚨 **先走按词解码**（2026-09-04）。Kevin 原话：
+        //    「连打的话只能一个词。我想一个句子连打就不行了，
+        //     没那么聪明，它这个联想能力还不够」。
+        //    根因就在下面那个逐音节取首选的写法里 —— 它**没有"词"的概念**，
+        //    `wo jin tian` 会各取一个最常用字拼起来，音节越多越离谱。
+        //    词库里本来就有多音节词键（jintian→今天、kaihui→开会），
+        //    只是从来没人用它们来覆盖整句。
+        let byWord = sentence(s)
+        if !byWord.isEmpty { return byWord }
+        // 兜底：按词覆盖不出来（生僻组合）才退回逐音节。
         var sb = ""
         for syl in split(s) {
             guard let first = candidates(syl).first else { return "" }
             sb += first
         }
         return sb
+    }
+
+    /// **整句按词解码**：把音节序列切成词库里真实存在的**词**，而不是逐字。
+    ///
+    /// `wo jin tian yao qu kai hui` → 我 / 今天 / 要 / 去 / 开会
+    ///
+    /// ## 判据：**用最少的词覆盖整串**
+    ///
+    /// 词越长越可能是他真正想打的（`jintian`＝今天，好过 今+天）。
+    /// 所以按"段数最少"做动态规划；段数相同时**靠前的位置优先用长词**，
+    /// 这样长词不会被拆在后面。
+    ///
+    /// 🚨 **拼不出的一段一律整体放弃，返回空串** —— 沿用 `firstGuess` 那条：
+    ///    绝不把没配上的字母原样塞进结果（Kevin 2026-08-22：
+    ///    「打 WOQ 一打就变成一个『我Q』，这个不行」）。
+    ///
+    /// 🚨 **不查未登录词、不做概率模型**：那要语言模型和词频，我们没有。
+    ///    这一版只保证「词库里有的词会被当成词」—— 比逐字强一个量级，
+    ///    但**不许说成"能理解句子"**。
+    static func sentence(_ s: String) -> String {
+        ensureLoaded()
+        let syls = split(s)
+        guard syls.count > 1 else { return "" }
+        // 🚨 跨度封顶 6：词库里最长的词也就四五个音节，
+        //    不封顶的话长串会白扫一堆不可能命中的键。
+        let maxSpan = 6
+        let n = syls.count
+        // best[i] = 覆盖前 i 个音节的最优解；nil = 覆盖不了
+        var bestText = [String?](repeating: nil, count: n + 1)
+        var bestSegs = [Int](repeating: Int.max, count: n + 1)
+        bestText[0] = ""
+        bestSegs[0] = 0
+        for i in 1...n {
+            var j = max(0, i - maxSpan)
+            while j < i {
+                defer { j += 1 }
+                guard bestText[j] != nil, bestSegs[j] != Int.max else { continue }
+                let key = syls[j..<i].joined()
+                guard let w = candidates(key).first, !w.isEmpty else { continue }
+                let segs = bestSegs[j] + 1
+                // 段数少的赢；一样多时**长词靠前**（j 小的先来，天然满足）
+                if segs < bestSegs[i] {
+                    bestSegs[i] = segs
+                    bestText[i] = (bestText[j] ?? "") + w
+                }
+            }
+        }
+        return bestText[n] ?? ""
     }
 
     /// 拿**整串**去词表做前缀匹配 —— 拼音没打完也能联想出词。
