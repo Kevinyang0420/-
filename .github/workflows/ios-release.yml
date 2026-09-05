@@ -218,8 +218,27 @@ jobs:
           #    Kevin 为此白试了一次（582）。
           #    **这条要在归档后就查，别等导出、更别等装机。**
           A="$RUNNER_TEMP/Transless.xcarchive/Products/Applications/Transless.app"
-          for T in "$A" "$A/PlugIns/Keyboard.appex"; do
+          # 🚨 **范围写死成两个目标是个坑**（2.1 2026-08-29 指出）：
+          #    再加第三个 appex（探针键盘之类）它**不会被查，而且一声不吭** ——
+          #    判据没写错，是它**根本没看那个对象**。「闸门看的范围不对」那一族。
+          #    → 遍历所有 appex。
+          # 🚨 而且**必须先确认真的找到了 appex**：`ls *.appex` 一个都没匹配上时
+          #    循环会零次执行，**闸门就变成"什么都没查却通过了"**。
+          N=$(ls -d "$A"/PlugIns/*.appex 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$N" -lt 1 ]; then
+            echo "::error::PlugIns 下一个 appex 都没找到 —— 这是没查，不是通过"
+            ls -la "$A/PlugIns" 2>&1 | head -20 || true
+            exit 1
+          fi
+          echo "要查的 appex 个数：$N"
+          for T in "$A" "$A"/PlugIns/*.appex; do
             E=$(codesign -d --entitlements - --xml "$T" 2>/dev/null || true)
+            # 🚨 **把原始输出存盘。** 582 那个空 dict 产物本可以当这道闸门
+            #    唯一的真实坏样本，但**没人留下它的原始输出，盘上和台账里都没有** ——
+            #    **产物没留＝坏样本永远没了。**（2.1 2026-08-29 提，已进铁律。）
+            #    所以不靠"下次记得存"，让 CI 每次自动留档。
+            mkdir -p "$RUNNER_TEMP/entitlements"
+            printf '%s' "$E" > "$RUNNER_TEMP/entitlements/$(basename "$T").xml"
             echo "--- $T"
             echo "$E" | grep -o "group\.com\.kevin\.transless" | head -1 || true
             echo "$E" | grep -q "group.com.kevin.transless" || {
@@ -227,7 +246,15 @@ jobs:
               echo "$E" | head -40
               exit 1; }
           done
-          echo "=== 归档里两个二进制都带着 App Group ==="
+          # 🚨🚨 **报闸门必须分两行**（0 总协调 2026-08-29 定成通用判据）：
+          #    **坏样本够真 ≠ 覆盖面够全。**
+          #    前者只证明「这几种写法会被抓到」；
+          #    后者要证明「没有第五种写法能溜过去」—— 那是另一件事。
+          #    **只写第一行，读的人会当成第二行也成立。**
+          echo "=== 主二进制 + $N 个 appex 都带着 App Group ==="
+          echo "闸门覆盖：主二进制 + PlugIns 下【所有】 appex；空匹配会判失败"
+          echo "闸门【未】覆盖：Frameworks/ 下的动态库、以及"
+          echo "               entitlements 存在但【值】不对（只查了这个 group 在不在）"
 
       # ---- 结构闸门：键盘扩展有没有被打进包（这一步不管签名）----
       - name: 结构闸门（键盘扩展在不在包里）
@@ -381,6 +408,15 @@ jobs:
           ASC_KEY_ID="$KEY_ID" ASC_ISSUER_ID="$ISSUER_ID" ASC_KEY_B64="$KEY_B64" \
             WANT_BUILD="$WANT_BUILD" \
             "$RUNNER_TEMP/pvenv/bin/python" ios/ci_verify_upload.py
+
+      # 🚨 **不管闸门过没过都要留**（`if: always()`）——
+      #    最值钱的正是**失败那次**的原始输出，那才是坏样本。
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: entitlements-dump
+          path: ${{ runner.temp }}/entitlements/
+          if-no-files-found: warn
 
       - uses: actions/upload-artifact@v4
         with:
