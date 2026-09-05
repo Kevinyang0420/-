@@ -45,9 +45,19 @@ targets:
     info:
       path: App/Info.plist
       properties:
+        # 🚨🚨 **主 App 也要声明深色**（2026-09-05 补）。
+        #    Kevin：「我点『设置』的时候，下面的 tab 面板会切成白色，
+        #     然后很快又会变成黑色。这个为什么会闪退色呢？」
+        #    这一条原来**只写在键盘扩展上，主 App 一条都没有** ——
+        #    我们自己画的视图是深色，而**系统画的那些**（UIMenu 下拉、
+        #    tab 栏底衬、转场）跟手机系统外观走，浅色模式下就是浅的。
+        #    旁证：40 门语言下拉的截图里菜单整个是白底。
+        #    🚨 跟 `overrideUserInterfaceStyle = .dark` 不是一回事：
+        #    后者只管我们自己的 view controller，管不到系统在我们周围怎么画。
+        UIUserInterfaceStyle: Dark
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260828.734"
-        CFBundleVersion: "734"
+        CFBundleShortVersionString: "20260905.1095"
+        CFBundleVersion: "1095"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -55,6 +65,25 @@ targets:
         CFBundleLocalizations: [zh-Hans, zh-Hant, en]
         # 🚨 键盘扩展弹不出系统权限框，必须由容器 App 先要过一次。
         #    转写改到后端后只需要麦克风；语音识别不再走 iOS 的 Speech 框架。
+        # 🚨 没有这一行，`Activity.request` 会直接抛 —— 而它抛的错
+        #    完全不指向"少了个 Info.plist 键"。
+        NSSupportsLiveActivities: true
+        # 高频更新（2026-08-31 加）—— Kevin 亲眼比出来的差别
+        # 他说 Typeless 那个实时活动点进去还能再设置，我们这边打开就没了
+        # iOS 设置页多出那一层，靠的就是这个键
+        # 对我们不只是多个开关，它允许高频推送更新灵动岛
+        NSSupportsLiveActivitiesFrequentUpdates: true
+        # 🚨 canOpenURL 要先声明；不声明它恒 false，而 open 仍可能成 —— 判据不同。
+        # 🚨 `canOpenURL` 必须先在这里声明，否则**一律返回 false**（iOS 9 起）。
+        #    这份名单照 Typeless 2.5.0 裁的 —— 2026-09-01 用
+        #    `ideviceinstaller -n -u <udid> list --all --xml -b com.typeless.mobile`
+        #    从他手机上读出它的 `Info.plist`，那里列了 **50 个**别的 App 的 scheme。
+        #    而这个键**只有用 `canOpenURL` 才需要声明** → **它不认宿主，它是挨个试的**。
+        #    （Apple DTS 说没有认宿主的 API 是对的；这条路根本不需要认。）
+        # 🚨🚨 **不许加系统 scheme**（sms / mailto / message / x-web-search）：
+        #    它们**永远返回可打开**，加进去会永远第一个命中，
+        #    把他从微信劫持到短信。顺序在 `KbVoiceHost.guessBackOrder` 里定。
+        LSApplicationQueriesSchemes: [weixin, wechat, lark, mqq, xhsdiscover, snssdk1128, taobao, tmall, alipay, openapp.jdmobile, tg, telegram, whatsapp, slack, msteams, ms-outlook, notion, instagram, twitter, googlechrome, youtube, sinaweibo, orpheus]
         NSMicrophoneUsageDescription: 用来听你说的中文，转成文字后整理并译成英文。
         # 🚨 声明支持 iPad（TARGETED_DEVICE_FAMILY "1,2"）就**必须给 iPad 全四个方向**，
         #    否则上传 App Store 直接被拒：
@@ -75,8 +104,24 @@ targets:
         #    而 iOS 只让「正在播放或录制音频」的 App 留在后台 ——
         #    没有这一条，App 一切到后台就被挂起，键盘立刻变成对着一个死宿主干等。
         #    见 `Shared/KbBridge.swift` 和 `App/KbVoiceHost.swift`。
+        # 🚨 键盘要拉起主 App 就得有自己的 URL scheme。
+        #    苹果 DTS（thread 812091，2026-01）明确说 4.4.1 的 `other apps`
+        #    **不含自家容器 App**，并给了可用代码。
+        CFBundleURLTypes:
+          - CFBundleURLName: com.kevin.transless
+            CFBundleURLSchemes:
+              - transless
+        # 🚨 `remote-notification` = 允许**静默推送把 App 叫醒在后台**。
+        #    为什么要它：认宿主那条路 2026-09-02 四种取法全部判死
+        #    （详见 `回程_已验死的路.md`），所以改走「**根本不用离开**」——
+        #    主 App 被他划掉后，键盘不再跳过去，而是让服务端发一条静默推送
+        #    把它叫醒、在后台架好引擎，键盘直接录。
+        #    ✅ 关键未知数已实测通过：`04:27:17 冷启架引擎（走梯子）：成了 ✅`
+        #       —— **主 App 不在前台时也架得起来**。
+        #    旁证：Typeless 声明的正是 `['audio','remote-notification']`。
         UIBackgroundModes:
           - audio
+          - remote-notification
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UISupportedInterfaceOrientations~ipad:
@@ -96,6 +141,30 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.com.kevin.transless
+        # 🚨 通用链接（2026-09-02）：Typeless 的 entitlements 里有 applinks:ios.typeless.com；
+        #    推断它靠通用链接从键盘拉主 App，主 App 因此拿到宿主身份（sourceApplication），
+        #    再按 bundle ID 开回去。我们的域名 transless.net（GitHub Pages）放 AASA。
+        com.apple.developer.associated-domains:
+          - applinks:transless.net
+        # 🚨🚨 **推送权限（2026-08-30 加）** —— 「不跳出微信」唯一活路
+        #    `push-to-start Live Activity` 的前提。
+        #    苹果 DTS 已明确答复：键盘识别宿主 App、容器 App 反查来源，
+        #    **都没有公开办法**，所以「跳过去再切回来」是死路，只能不跳。
+        # 🚨 描述文件里必须也有它，否则装不进去（`aps-environment` 已确认在）。
+        # 🚨🚨 **别跑 `dev_install.py --setup`** —— 实测它会把 App ID 上的
+        #    PUSH_NOTIFICATIONS 能力**抹掉**（每次重开都返回 201 Created ＝
+        #    上一次被它删了），然后描述文件又没有 aps-environment。
+        #    要重建描述文件用 asc_enable_push.py 那条单独的路（在 D:/_build 下）。
+        aps-environment: development
+        # 🚨🚨 **SiriKit 权限（2026-08-31 加）** —— `AudioRecordingIntent` 要它。
+        #    Kevin：「是不是还有一些什么 .p8 文件或者授权没有开通，
+        #    所以你才没办法完成？」—— 方向对了，查出来两件事：
+        #      ① 我上午把**推送开在了错的 App ID 上**
+        #         （`com.kevin.transless.uitests`，真身是 `com.kevin.transless`）
+        #      ② 真身上**从来没开过 SIRIKIT**
+        #    所以之前那次「自调 AudioRecordingIntent 失败」的实验，
+        #    **包里根本没有这个权限，前置条件不成立，结论不算数**。
+        com.apple.developer.siri: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kevin.transless
@@ -121,6 +190,8 @@ targets:
     dependencies:
       - target: Keyboard
         embed: true
+      - target: LiveActivity
+        embed: true
 
   # ---- 探针（对照组）：最小键盘，用来分辨「代码问题」vs「签装问题」 ----
   TransProbe:
@@ -131,9 +202,19 @@ targets:
     info:
       path: Probe/App/Info.plist
       properties:
+        # 🚨🚨 **主 App 也要声明深色**（2026-09-05 补）。
+        #    Kevin：「我点『设置』的时候，下面的 tab 面板会切成白色，
+        #     然后很快又会变成黑色。这个为什么会闪退色呢？」
+        #    这一条原来**只写在键盘扩展上，主 App 一条都没有** ——
+        #    我们自己画的视图是深色，而**系统画的那些**（UIMenu 下拉、
+        #    tab 栏底衬、转场）跟手机系统外观走，浅色模式下就是浅的。
+        #    旁证：40 门语言下拉的截图里菜单整个是白底。
+        #    🚨 跟 `overrideUserInterfaceStyle = .dark` 不是一回事：
+        #    后者只管我们自己的 view controller，管不到系统在我们周围怎么画。
+        UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260828.734"
-        CFBundleVersion: "734"
+        CFBundleShortVersionString: "20260905.1095"
+        CFBundleVersion: "1095"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -143,9 +224,95 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kevin.tprobe
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        # 🚨 装到他手机上要开发描述文件（`uitest_setup.py` 建的）
+        PROVISIONING_PROFILE_SPECIFIER: TranslessDevProbe
+    # 🚨 2026-08-29 暂时不带 ProbeKeyboard：那个扩展没有自己的开发描述文件，
+    #    带着它整个包就签不了名（`No code signature found`）。
+    #    我现在用探针 App 只是当「假微信」验证「主 App 退出后回到哪」，
+    #    用不到那个键盘。要用回来就给它也建一份描述文件。
+    # dependencies:
+    #   - target: ProbeKeyboard
+    #     embed: true
+
+  # 🚨🚨 **真机 UI 测试**（2026-08-29 加）。
+  #    Kevin：「不要老是让我去测。我去测，我看到了你又看不到。」
+  #    XCUITest 是 iOS 上唯一能在真机模拟真实触摸的正规办法 ——
+  #    有了它，「键盘扩展能不能录音」这类实验我自己就能跑。
+  UITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+      # 🚨 纯逻辑**直接编进测试包**。UI 测试跑在独立进程里，
+      #    `@testable import Transless` 拿不到 App 的符号 —— 表现是链接失败
+      #    （clang: linker command failed），不是编译期报找不到类型，
+      #    所以看错误信息容易以为是签名或依赖的问题。
+      #    WordKind 不碰存储、不碰 UI，编两份没有副作用。
+      - path: Shared/WordKind.swift
+      # 同理：纯逻辑编进测试包（UI 测试是独立进程，@testable 链接不到）
+      - path: Shared/SpellFold.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kevin.transless.uitests
+        INFOPLIST_KEY_CFBundleDisplayName: UITests
+        # 🚨 测试包和它的 Runner 各自要签名（全局 base 是不签名的）
+        CODE_SIGNING_ALLOWED: YES
+        CODE_SIGNING_REQUIRED: YES
+        # 🚨 测试包用**自动签名** —— 手动指定描述文件时 Xcode 报
+        #    「requires a provisioning profile」，而它的 Runner 是构建时才生成的
+        #    独立 bundle（`...uitests.xctrunner`），手动模式很难喂对。
+        #    自动模式配 `-allowProvisioningUpdates` 让它自己去建。
+        # 🚨🚨 **编的时候不签，由 `resign_uitest.py` 事后重签。**
+        #    自动签名要一份它自己管理的 `...xctrunner` 描述文件（我建的那份它不认）；
+        #    手动签名又报「requires a provisioning profile」。
+        #    而 Xcode 生成的 Runner 本来就带苹果模板签名、必须重签才装得进真机 ——
+        #    **既然横竖都要重签，就别在构建期折腾。**
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
     dependencies:
-      - target: ProbeKeyboard
-        embed: true
+      - target: TransProbe
+
+  # 🚨🚨 **灵动岛（Live Activity）扩展**（2026-08-29 加）。
+  #    从 Kevin 手机上列进程看到 Typeless 跑着 `dynamicisland.appex` ——
+  #    **它的主 App 常驻后台，所以按键盘不用跳过去，也就没有"回不来"这个问题**。
+  #    我们照做。
+  LiveActivity:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: LiveActivity
+      - path: Shared/RecActivity.swift
+      # 🚨 `Button(intent:)` 要求**灵动岛 target 也能看到 Intent 的类型**，
+      #    所以这两个文件必须编进来（Intent 的 `perform()` 仍然跑在主 App 进程里）。
+      - path: Shared/RecIntent.swift
+      - path: Shared/KbBridge.swift
+      # 🚨 `KbBridge` 现在引用 `VocabCore`（常用词的过滤唯一实现在那儿），
+      #    **逐个列文件的 target 必须一起加**，否则只有这个 target 编不过。
+      #    App 和 Keyboard 两个 target 收的是整个 `Shared` 目录，自动带上；
+      #    只有这里是手列的 —— 这就是「同一依赖，两种收法」的代价。
+      - path: Shared/VocabCore.swift
+      - path: Shared/WordId.swift
+      - path: Shared/KbProtocol.swift
+    info:
+      path: LiveActivity/Info.plist
+      properties:
+        CFBundleDisplayName: Transless 录音状态
+        CFBundleShortVersionString: "20260905.1095"
+        CFBundleVersion: "1095"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kevin.transless.liveactivity
+        # 🚨 必须跟主 App/键盘一样打开签名 —— 全局 base 里是
+        #    `CODE_SIGNING_ALLOWED: NO`，不覆盖的话这个扩展**不签名**，
+        #    然后报「Embedded binary is not signed with the same certificate」，
+        #    而那句错完全不指向"我少写了三行签名设置"。
+        CODE_SIGNING_ALLOWED: YES
+        CODE_SIGNING_REQUIRED: YES
+        CODE_SIGN_STYLE: Manual
+        PROVISIONING_PROFILE_SPECIFIER: TranslessDevLive
+        INFOPLIST_KEY_CFBundleDisplayName: Transless 录音状态
 
   ProbeKeyboard:
     type: app-extension
@@ -155,9 +322,13 @@ targets:
     info:
       path: Probe/Keyboard/Info.plist
       properties:
+        # 🚨 跟真键盘保持一致：这一条 2026-09-05 的闸门第一次跑就抓到
+        #    ProbeKeyboard 漏了。探针键盘的外观跟真键盘不一样，
+        #    用它做的外观判断就不能代表真键盘。
+        UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260828.734"
-        CFBundleVersion: "734"
+        CFBundleShortVersionString: "20260905.1095"
+        CFBundleVersion: "1095"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -197,8 +368,8 @@ targets:
       path: Keyboard/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260828.734"
-        CFBundleVersion: "734"
+        CFBundleShortVersionString: "20260905.1095"
+        CFBundleVersion: "1095"
         # 🚨🚨 **键盘扩展自己也要声明支持哪些语言**（2026-08-28 补）。
         #    Kevin 真机截图：主 App 是中文，**键盘里全是英文**
         #    （Translate / Transcribe / History / Casual / Work / Email…）。
@@ -226,6 +397,15 @@ targets:
         #    Kevin 真机反馈：主 App 的「随手翻译」能正常录音，
         #    但同一台机、同一个已授权的麦克风，**键盘里录不了**，
         #    报「录音引擎未能完成操作，com.apple.coreaudio.avfaudio 错误 200」。
+        # 🚨🚨🚨 **`UIBackgroundModes: audio` 已从键盘扩展摘掉（2026-09-01 13:1x）。**
+        #    加它的理由（2026-08-30）是「键盘自己录音就不用跳」。
+        #    **今天他机器上的痕迹证明这个理由没兑现**：键盘照样
+        #    `2003329396 / 输入源 0 个`，一次都没录成。
+        #    而代价是实打实的：键盘扩展是**独立进程**，他把主 App 从后台划掉
+        #    也杀不掉它 —— 这个声明等于**给了它在后台攥住麦克风的资格**。
+        #    Kevin 13:1x：「我后台已经关掉了，但还是保持着麦克风开着的」。
+        #    → 摘掉。跟今早那个 `.playAndRecord` 保活同型：**代价在，好处没有。**
+        #    🚨 主 App 那处**不动** —— 它要在后台把录好的那段传完。
         #    查下来：`NSMicrophoneUsageDescription` **只写在容器 App 那边，
         #    这个扩展 target 一条都没有**。扩展是独立 bundle、独立 Info.plist，
         #    跟"资源和码表只给容器 App 就等于扩展里没有"完全同型。
@@ -234,6 +414,15 @@ targets:
         #    什么类别、权限什么状态」全报出来，下次截个图就能定性。
         NSMicrophoneUsageDescription: 用来听你说的中文，转成文字后整理并译成英文。
         NSSpeechRecognitionUsageDescription: 把你说的话转成文字，只在你按下麦克风时进行。
+        # 🚨🚨 **键盘扩展也要声明，不然它起不了灵动岛。**
+        #    2026-08-30 真机原文：
+        #    `键盘灵动岛：起不来 —— Target does not include NSSupportsLiveActivities plist key`
+        #    —— 我只给主 App 加了，**忘了扩展是独立 bundle、有自己的 Info.plist**。
+        #    这跟「资源只给容器 App 等于扩展里没有」是同一个坑，今天又踩一次。
+        # 🚨 这条很关键：主 App 在后台**起不了**灵动岛（`Target is not foreground`），
+        #    而键盘按下那一刻扩展是活跃的 —— 由它起岛，主 App 才拿得到
+        #    "可见存在"，后台才给麦克风。**这是「不跳转」的最后一环。**
+        NSSupportsLiveActivities: true
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).KeyboardViewController
