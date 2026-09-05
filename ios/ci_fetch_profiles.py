@@ -45,6 +45,10 @@ API = "https://api.appstoreconnect.apple.com/v1"
 WANT = [
     ("app", "Transless AppStore", "com.kevin.transless"),
     ("kb", "Transless Keyboard AppStore", "com.kevin.transless.keyboard"),
+    # 🚨 LiveActivity（灵动岛那一条）—— 2026-09-05 加。
+    #    它以前不在这张表里，是因为那个目录从没被推到仓库、
+    #    发版构建里根本没有这个 target。推上去之后 Archive 立刻要它。
+    ("live", "Transless Live AppStore", "com.kevin.transless.liveactivity"),
 ]
 
 #: 🚨 组名。**唯一真值在 `Shared/KbBridge.swift`**，这里从那个文件读，不写死。
