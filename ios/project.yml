@@ -311,7 +311,10 @@ targets:
         CODE_SIGNING_ALLOWED: YES
         CODE_SIGNING_REQUIRED: YES
         CODE_SIGN_STYLE: Manual
-        PROVISIONING_PROFILE_SPECIFIER: TranslessDevLive
+        # 🚨 发版要用 AppStore 描述文件（原来写死 `TranslessDevLive`，
+        #    那是**开发**用的，发版构建里不装它 → Archive 报
+        #    「No profile for team matching 'TranslessDevLive'」）。
+        PROVISIONING_PROFILE_SPECIFIER: "Transless Live AppStore"
         INFOPLIST_KEY_CFBundleDisplayName: Transless 录音状态
 
   ProbeKeyboard:
