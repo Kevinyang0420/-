@@ -25,8 +25,14 @@ enum Backspace {
     static let wordAfter: TimeInterval = 1.2
 
     /// 给一个按钮装上完整的退格行为。
-    static func attach(_ button: UIButton, proxy: @escaping () -> UITextDocumentProxy?) {
+    /// - Parameter eatsFirst: **前置钩子**，每一下删除之前问一次。
+    ///   返回 true = 这一下已经被上层（拼音缓冲）吃掉，不要碰文档。
+    ///   传 nil 就是老行为（一律删文档）。
+    static func attach(_ button: UIButton,
+                       proxy: @escaping () -> UITextDocumentProxy?,
+                       eatsFirst: (() -> Bool)? = nil) {
         let h = Holder(proxy: proxy)
+        h.eatsFirst = eatsFirst
         button.addTarget(h, action: #selector(Holder.down),
                          for: [.touchDown])
         button.addTarget(h, action: #selector(Holder.up),
@@ -39,6 +45,16 @@ enum Backspace {
 
     private final class Holder: NSObject {
         let proxy: () -> UITextDocumentProxy?
+        /// **前置钩子**：返回 true 表示这一下已经被上层（拼音缓冲）吃掉了，
+        /// 不要再删文档。
+        ///
+        /// 🚨🚨 为什么做成钩子、而不是在外面套一个 `if` 再决定要不要 attach：
+        ///    退格在这个组件里有**三条出口** —— `down()` 那一下、长按连删、
+        ///    以及超过 `wordAfter` 之后的按词删。外面套 if 只挡得住第一下，
+        ///    **长按连删照样一路删到文档里**（他一按住就会把已经上屏的字也删掉）。
+        ///    钩子放在这一层，三条出口自动都过它。
+        ///    这正是本项目反复栽的那个形态：同一条规矩多个出口，只落地一个。
+        var eatsFirst: (() -> Bool)?
         private var timer: Timer?
         private var downAt = Date()
 
@@ -46,9 +62,15 @@ enum Backspace {
             self.proxy = proxy
         }
 
+        /// 删一下：**先问钩子**，钩子吃掉了就不碰文档。
+        private func deleteOne() {
+            if eatsFirst?() == true { return }
+            proxy()?.deleteBackward()
+        }
+
         @objc func down() {
             downAt = Date()
-            proxy()?.deleteBackward()      // 先删一下，手感跟系统键盘一致
+            deleteOne()                    // 先删一下，手感跟系统键盘一致
             timer?.invalidate()
             timer = Timer.scheduledTimer(withTimeInterval: firstDelay,
                                           repeats: false) { [weak self] _ in
@@ -65,7 +87,11 @@ enum Backspace {
             timer?.invalidate()
             timer = Timer.scheduledTimer(withTimeInterval: repeatInterval,
                                           repeats: true) { [weak self] _ in
-                guard let s = self, let p = s.proxy() else { return }
+                guard let s = self else { return }
+                // 🚨 长按连删**每一下都要问钩子**：缓冲里还剩拼音时，
+                //    连删应该一个一个吃缓冲，而不是越过它去删已经上屏的字。
+                if s.eatsFirst?() == true { return }
+                guard let p = s.proxy() else { return }
                 if Date().timeIntervalSince(s.downAt) > wordAfter {
                     Backspace.deleteWord(p)
                 } else {
