@@ -1,5 +1,13 @@
 import UIKit
 
+// 🚨🚨 2026-09-03 配色跟宿主外观分叉之后，本文件**必须用 `Theme.kb*`**，
+//    不能再用 `Theme.key` / `Theme.text` / `Theme.dim`（那三个是**深色专用**的）。
+//    Kevin 当天的原话：「你改完颜色，你要知道这是牵一发动全身的，每个地方都要看一下。
+//    你现在键盘的颜色淡成什么样子了？别人能用吗？」
+//    —— 我当时只换了 `KeyboardViewController.swift`，本文件漏了，于是
+//    半透明白键 + 近白文字压在浅紫面板上，基本看不见。
+//    这是「同一规矩散在多个文件，改一处等于没改」那一族。
+
 /// 候选栏。**逐行照搬安卓 `TypingKeyboard.java` 的 `paintPage` / `pageButton`。**
 ///
 /// 结构（Kevin 2026-08-23 定的那一版，别改回去）：
@@ -69,14 +77,18 @@ final class CandidateBar: UIView {
         }
         // 波形键。安卓那个是画出来的声波图标，这里用同一套画法
         // （`Theme.waveIcon`），别用 emoji —— 系统 emoji 在深色底上发灰。
-        voiceBtn.setImage(Theme.waveIcon(color: Theme.text), for: .normal)
-        voiceBtn.tintColor = Theme.text
-        voiceBtn.backgroundColor = Theme.key
+        voiceBtn.setImage(Theme.waveIcon(color: Theme.kbKeyText), for: .normal)
+        voiceBtn.tintColor = Theme.kbKeyText
+        voiceBtn.backgroundColor = Theme.kbKey
         voiceBtn.layer.cornerRadius = Theme.rKey
         voiceBtn.addAction(UIAction { [weak self] _ in self?.onVoice?() },
                            for: .touchUpInside)
         addSubview(voiceBtn)
 
+        // 🚨 给端到端测试**按类型的锚点**：按文字「中」「英」找会随文案/界面语言变，
+        //    而这两个键正是验「英文档下左下角那个输入法键该消失」的入口。
+        chipZh.accessibilityIdentifier = "kb.chip.zh"
+        chipEn.accessibilityIdentifier = "kb.chip.en"
         chipZh.addTarget(self, action: #selector(tapZh), for: .touchUpInside)
         chipEn.addTarget(self, action: #selector(tapEn), for: .touchUpInside)
         refreshChips()
@@ -211,11 +223,11 @@ final class CandidateBar: UIView {
     private func candButton(_ s: String) -> UIButton {
         let b = UIButton(type: .system)
         b.setTitle(s, for: .normal)
-        b.setTitleColor(Theme.text, for: .normal)
+        b.setTitleColor(Theme.kbKeyText, for: .normal)
         b.titleLabel?.font = .systemFont(ofSize: K.candFont)
         b.titleLabel?.adjustsFontSizeToFitWidth = true
         b.titleLabel?.minimumScaleFactor = 0.7
-        b.backgroundColor = Theme.key
+        b.backgroundColor = Theme.kbKey
         b.layer.cornerRadius = Theme.rKey
         b.addAction(UIAction { [weak self] _ in self?.onPick?(s) },
                     for: .touchUpInside)
@@ -225,9 +237,9 @@ final class CandidateBar: UIView {
     private func pageButton(_ label: String, forward: Bool) -> UIButton {
         let b = UIButton(type: .system)
         b.setTitle(label, for: .normal)
-        b.setTitleColor(Theme.dim, for: .normal)
+        b.setTitleColor(Theme.kbHint, for: .normal)
         b.titleLabel?.font = .systemFont(ofSize: K.pageFont)
-        b.backgroundColor = Theme.key
+        b.backgroundColor = Theme.kbKey
         b.layer.cornerRadius = Theme.rKey
         b.addAction(UIAction { [weak self] _ in
             guard let self else { return }
@@ -257,9 +269,9 @@ final class CandidateBar: UIView {
         for (title, act) in topKeys {
             let b = UIButton(type: .system)
             b.setTitle(title, for: .normal)
-            b.setTitleColor(Theme.text, for: .normal)
+            b.setTitleColor(Theme.kbKeyText, for: .normal)
             b.titleLabel?.font = .systemFont(ofSize: 18)
-            b.backgroundColor = Theme.key
+            b.backgroundColor = Theme.kbKey
             b.layer.cornerRadius = Theme.rKey
             b.addAction(UIAction { _ in act() }, for: .touchUpInside)
             addSubview(b)
@@ -269,10 +281,10 @@ final class CandidateBar: UIView {
     }
 
     private func refreshChips() {
-        chipZh.backgroundColor = chinese ? Theme.accent : Theme.key
-        chipZh.setTitleColor(chinese ? .white : Theme.dim, for: .normal)
-        chipEn.backgroundColor = chinese ? Theme.key : Theme.accent
-        chipEn.setTitleColor(chinese ? Theme.dim : .white, for: .normal)
+        chipZh.backgroundColor = chinese ? Theme.accent : Theme.kbKey
+        chipZh.setTitleColor(chinese ? .white : Theme.kbHint, for: .normal)
+        chipEn.backgroundColor = chinese ? Theme.kbKey : Theme.accent
+        chipEn.setTitleColor(chinese ? Theme.kbHint : .white, for: .normal)
     }
 
     @objc private func tapZh() { onMode?(true) }
