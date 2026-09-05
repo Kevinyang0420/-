@@ -150,6 +150,14 @@ enum Auth {
                             userId: uid,
                             isNew: (obj["new_user"] as? Bool) ?? false)
                         save(s)
+                        // 🚨 登录成功的**唯一咽喉**，所以常用词的 merge 挂在这儿
+                        //    （跟安卓 `LoginActivity` 登录后调 `mergeAfterLoginAsync`
+                        //     同一时机）。这是**唯一**用 merge 的时刻：
+                        //    把未登录期间攒的本地词并上去，服务端做并集，两边都留着。
+                        //    之后一律走 replace 三步（否则删除传播不出去）。
+                        // 🚨 挂在这里而不是登录页的回调里：登录页有好几条成功路径
+                        //    （验证码/自动登录/重试），挂在页面上必然漏一条。
+                        VocabSync.mergeAfterLoginAsync()
                         done(.success(s))
                     case .failure(let e):
                         done(.failure(e))
