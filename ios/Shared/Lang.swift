@@ -28,33 +28,33 @@ enum Lang {
     private static let service = "com.kevin.transless.prefs"
     private static let account = "lang.ui"
 
+    /// 🚨🚨 **改存 App Group，不再用 Keychain**（2026-09-05）。
+    ///
+    /// 原来在 Keychain，而文件头那段注释写着「不跨进程共享」（主 App 和键盘扩展
+    /// 的默认 Keychain 访问组不同，工程里一条 `keychain-access-groups` 都没有）——
+    /// 后果是**主 App 改完语言，键盘扩展仍然读不到**。
+    ///
+    /// 🚨 2.1 估算「这条要动 App Group + entitlements，是单独一件事」——
+    ///    **前提不成立，我核过了**：`group.com.kevin.transless` 早就在
+    ///    `project.yml:142` 声明并且在用（单词本就靠它跨进程）。
+    ///    **基础设施已经在跑，成本是几行，不是一个单独的工程。**
+    ///    → 拿别人的成本估算当事实之前，先去看一眼那个东西在不在。
+    ///
+    /// 🚨 旧值不迁移：这只是一个界面语言偏好，丢了就是回到「跟随系统」，
+    ///    代价可忽略；写迁移代码反而多一处只跑一次、没人会再测的分支。
+    private static var store: UserDefaults? {
+        UserDefaults(suiteName: KbBridge.group)
+    }
+
+    private static let key = "lang.ui"
+
     private static func read() -> String? {
-        let q: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var out: CFTypeRef?
-        guard SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess,
-              let d = out as? Data, let s = String(data: d, encoding: .utf8),
-              !s.isEmpty else { return nil }
-        return s
+        guard let v = store?.string(forKey: key), !v.isEmpty else { return nil }
+        return v
     }
 
     private static func write(_ v: String) {
-        let base: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-        SecItemDelete(base as CFDictionary)
-        var add = base
-        add[kSecValueData as String] = Data(v.utf8)
-        add[kSecAttrAccessible as String] =
-            kSecAttrAccessibleAfterFirstUnlock
-        SecItemAdd(add as CFDictionary, nil)
+        store?.set(v, forKey: key)
     }
 
     static var current: String {
