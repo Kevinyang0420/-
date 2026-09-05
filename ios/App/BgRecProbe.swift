@@ -115,6 +115,7 @@ final class BgRecProbe {
     // ------------------------------------------------------------ 一次尝试
 
     private func attempt() {
+        Speaker.stop()   // 🚨 起录前停播放（诊断探针也算一个出口）
         guard running else { return }
         let state = UIApplication.shared.applicationState
         let mins = bgSince.map { Int(Date().timeIntervalSince($0) / 60) } ?? -1
