@@ -184,6 +184,20 @@ final class HistoryListViewController: UIViewController {
         zh.translatesAutoresizingMaskIntoConstraints = false
         box.addSubview(zh)
 
+        // 🚨🚨 **这些条目原来一个手势都没挂** —— 他点一条什么都不会发生，
+        //    而卡片只在 `WordBookViewController` 的详情页里。
+        //    Kevin 2026-09-06 连问三次「单词卡片在哪儿呢」，
+        //    **有一半原因是从他看的这一屏根本到不了那儿。**
+        box.isUserInteractionEnabled = true
+        box.accessibilityIdentifier = "hist.wb.row"
+        let tap = WbRowTap(target: WbRowTap.box, action: #selector(WbRowTap.noop))
+        tap.id = it.id
+        tap.onPick = { [weak self] id in
+            self?.navigationController?.pushViewController(
+                WordBookViewController(open: id), animated: true)
+        }
+        box.addGestureRecognizer(tap)
+
         let en = UILabel()
         en.text = it.en
         en.font = .systemFont(ofSize: 20, weight: .semibold)
@@ -262,7 +276,11 @@ final class HistoryListViewController: UIViewController {
         box.addSubview(time)
 
         let chev = UILabel()
-        chev.text = "›"
+        // RTL（阿语）下箭头要朝左。实测：整排布局会自动镜像（文字右对齐、
+        // 箭头挪到左边、tab 顺序翻转），**唯独这个字符本身不会跟着翻** ——
+        // 于是箭头在左边却指着右边。**自动镜像的是位置，不是字形。**
+        chev.text = UIView.userInterfaceLayoutDirection(for: .unspecified)
+            == .rightToLeft ? "‹" : "›"
         chev.font = .systemFont(ofSize: 22, weight: .light)
         chev.textColor = Theme.dim
         chev.translatesAutoresizingMaskIntoConstraints = false
@@ -430,3 +448,25 @@ private final class TapItem: UITapGestureRecognizer {
     var custom: ((History.Item) -> Void)?
 }
 private final class HoldItem: UILongPressGestureRecognizer { var item: History.Item? }
+
+/// 单词本条目的点击手势 —— 带上是哪一条。
+///
+/// 🚨 用手势不用 `addTarget`：这些条目是 `UIView` 不是 `UIControl`，
+///    跟 `ChipTap` 同一个做法，别在这一屏另发明一套。
+final class WbRowTap: UITapGestureRecognizer {
+    static let box = WbRowTap(target: nil, action: nil)
+    @objc func noop() {}
+
+    var id: String = ""
+    var onPick: ((String) -> Void)?
+
+    override init(target: Any?, action: Selector?) {
+        super.init(target: target, action: action)
+        addTarget(self, action: #selector(fire))
+    }
+
+    @objc private func fire() {
+        guard state == .ended else { return }
+        onPick?(id)
+    }
+}
