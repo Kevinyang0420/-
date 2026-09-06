@@ -254,11 +254,23 @@ jobs:
             mkdir -p "$RUNNER_TEMP/entitlements"
             printf '%s' "$E" > "$RUNNER_TEMP/entitlements/$(basename "$T").xml"
             echo "--- $T"
-            echo "$E" | grep -o "group\.com\.kevin\.transless" | head -1 || true
-            echo "$E" | grep -q "group.com.kevin.transless" || {
+            # 🚨 **该不该有 App Group，按 project.yml 现读**，不是所有 appex 一刀切。
+            #    2026-09-06：LiveActivity 在 project.yml 里根本没声明
+            #    application-groups，这道闸却要求它有 → 发版一直卡在这儿。
+            #    判据只留一份（ios/wants_app_group.py），描述文件那道也调它。
+            WANT=$(python3 ios/wants_app_group.py --for-bundle "$(basename "$T")")               || { echo "::error::$T 不在 BUNDLE_TO_TARGET 里登记，不许默默放行"; exit 1; }
+            HAS=no
+            echo "$E" | grep -q "group.com.kevin.transless" && HAS=yes
+            echo "    project.yml 说要=${WANT}，产物里有=${HAS}"
+            if [ "$WANT" = yes ] && [ "$HAS" = no ]; then
               echo "::error::$T 的 entitlements 里没有 group.com.kevin.transless"
               echo "$E" | head -40
-              exit 1; }
+              exit 1
+            fi
+            if [ "$WANT" = no ] && [ "$HAS" = yes ]; then
+              echo "::error::$T 在 project.yml 里没声明 App Group，产物里却有 —— 两边不同源"
+              exit 1
+            fi
           done
           # 🚨🚨 **报闸门必须分两行**（0 总协调 2026-08-29 定成通用判据）：
           #    **坏样本够真 ≠ 覆盖面够全。**
