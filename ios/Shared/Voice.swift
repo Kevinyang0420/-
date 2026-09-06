@@ -416,6 +416,10 @@ final class Voice: NSObject {
     /// 每帧音量（0…1）。键盘那条波形靠它。**单句模式也会给**。
     var onLevel: ((Float) -> Void)?
 
+    /// 这一段录音的电平统计（判「有没有人说话」用）。每次 `start` 清零。
+    /// 🚨 判据挂**输入**不挂**输出**：见 `SpeechPresence` 顶部那段。
+    var speech = SpeechPresence.Stats()
+
     /// `reuseSession` = **直接用当前这个音频会话，不碰类别、不重新激活**。
     ///
     /// 🚨 给方案 B 用：待机保活已经持着 `.playAndRecord`，
@@ -450,6 +454,7 @@ final class Voice: NSObject {
         convErrCount = 0
         convErrCode = 0
         emptyFrames = 0
+        speech = SpeechPresence.Stats()   // 同上：不清的话第二轮读到的是两轮之和
         startedAt = Date()
 
         // 🚨🚨 **按阶梯试配置**，不是只试一档（2026-08-26 加）。
@@ -683,6 +688,10 @@ final class Voice: NSObject {
             let lv = Float(min(1.0,
                 ((s0 / Double(n)).squareRoot() / 32768.0).squareRoot() * 1.9))
             self.onLevel?(lv)
+            // 🚨 顺手统计这一段的峰值/本底 —— 判「有没有人说话」要挂在
+            //    **音频本身**上，不能挂在后端返回的文字上（模型对同一段静音
+            //    会给出三种不同说法，追措辞永远追不上）。见 `SpeechPresence`。
+            self.speech.feed(lv)
 
             // 🚨 **长录音分段**（单句模式也要走）：满一段就交出去，
             //    `pcm` 只留最后 `SEG_OVERLAP_MS` 那点尾巴当重叠。
