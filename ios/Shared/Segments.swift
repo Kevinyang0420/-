@@ -48,6 +48,21 @@ final class Segments {
     private let lock = NSLock()
     private var slots: [Slot] = []
 
+    /// **这一轮有没有收到过声音**（任何一段不是数字静音就算有）。
+    ///
+    /// 🚨 收尾时靠它分流：真没声音 → 提示指向麦克风、不留音频；
+    ///    有声音 → **留住音频给重发键**。
+    ///    Kevin 2026-09-06：「说了这么多话却被告知没转出，
+    ///    **也没有重新上传处理的按钮**」—— 他撞的就是分段这条路。
+    private var sawSoundFlag = false
+    var sawSound: Bool { lock.lock(); defer { lock.unlock() }; return sawSoundFlag }
+
+    /// 有多少段是被判成数字静音、**没有发出去**的。
+    var skippedSilent: Int {
+        lock.lock(); defer { lock.unlock() }; return skippedCount
+    }
+    private var skippedCount = 0
+
     /// 转写一段的实现。默认走 `Backend.transcribe`；自测时替换成假的。
     private let transcribe: (Data, @escaping (Result<String, Error>) -> Void) -> Void
 
@@ -60,10 +75,26 @@ final class Segments {
     /// 交一段进来，**立刻去转**，不等。
     /// - Parameter wav: 已经封好 WAV 头的一段音频
     func submit(wav: Data) {
+        // 🚨🚨 **每段先量再决定传不传**（2026-09-06 补；原来一段都不量）。
+        //    整段数字静音时传上去，只是一次次花钱换同一个空结果 ——
+        //    而他看到的是「【第 N 段没转出来：空结果】」，
+        //    完全指不出真正的毛病（麦克风没解开静音）。
+        // 🚨 判据走 `SilenceVerdict`，跟短录音那条**同一处阈值**，
+        //    不在这里另写一个数。
+        let zp = AudioStats.zeroPct(wav)
+        let silent = SilenceVerdict.micGotNothing(zeroPct: zp)
         lock.lock()
         let s = Slot(slots.count)
         slots.append(s)
+        if !silent { sawSoundFlag = true } else { skippedCount += 1 }
         lock.unlock()
+        if silent {
+            // 🚨 **不发请求**，但这一段仍然记在册上 ——
+            //    段号要连续，否则拼出来的「第 N 段」跟他听到的对不上。
+            s.error = "麦克风没收到声音"
+            s.done.signal()
+            return
+        }
         transcribe(wav) { r in
             switch r {
             case .success(let t): s.text = t
