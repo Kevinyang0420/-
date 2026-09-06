@@ -1499,6 +1499,11 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             //    去"拉起主 App"并把自己收掉，系统就退回默认输入法。
             //    **这两件事必须分开记**：一个是"引擎在跑"，一个是"人在这屏"。
             KbBridge.markForeground()
+            // 🚨 **在这里读回才有意义** —— 启动那一刻还没进前台，
+            //    在那儿打必然是 false，证明不了任何事（我第一版就放错了时刻）。
+            //    这一行证明的是：`markForeground` 真的执行了、而且读得回来。
+            KbBridge.note("前台标记：进前台后读回="
+                          + String(KbBridge.hostForeground))
         }
         // 🚨 进后台**立刻清**：不清的话键盘会在接下来 6 秒里以为主 App 还在前台，
         //    那几秒内点键盘就不会去拉起它 —— 变成另一个方向的坏。
