@@ -631,7 +631,21 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
 
-    func handleArmURL() {
+    /// 架引擎。`returnAfter` = 架完把他送回原来那个 App。
+    ///
+    /// 🚨 **就地架（`returnAfter: false`）时他哪儿也没去** ——
+    ///    键盘在我们自己 App 里弹着，是发通知叫我们架的，没有发生跳转。
+    ///    这时再 `returnToPreviousApp` 会把他从自己的 App 里"送"出去。
+    /// 🚨 参数化而不是复制一份：架引擎这段逻辑只许有一处
+    ///    （同一规矩两处实现必漂，今天已经栽过几次）。
+    func handleArmURL(returnAfter: Bool = true) {
+        func leave(_ why: String) {
+            guard returnAfter else {
+                KbBridge.note("arm：就地架的，不送他回去（" + why + "）")
+                return
+            }
+            KbVoiceHost.shared.returnToPreviousApp(why)
+        }
         // 决定性实验（2026-09-02）：多时刻采样 systemNavigationAction（那个「返回条」）。
         for tt in [0.1, 0.5, 1.0, 1.8, 2.6, 3.4] {
             DispatchQueue.main.asyncAfter(deadline: .now() + tt) {
@@ -662,8 +676,11 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             KbBridge.note("arm：趁前台建灵动岛（后台建不了，这是唯一窗口）")
             KbVoiceHost.shared.startLiveActivity()
             KbBridge.note("arm：架好了 ✅（" + String(format: "%.1f", Date().timeIntervalSince(t0)) + " 秒）")
-            AppDelegate.showReadyOverlay()
-            KbVoiceHost.shared.returnToPreviousApp("arm 架好")
+            // 🚨 那层引导写的是「向后滑动以继续」—— **只有跳过来的时候才对**。
+            //    就地架的时候他本来就在 Transless 里，这句话是在叫他离开自己的 App。
+            //    （同一个函数被两种场景复用，副作用也得跟着分。）
+            if returnAfter { AppDelegate.showReadyOverlay() }
+            leave("arm 架好")
         }
         func pollArmed(_ n: Int) {
             if KbBridge.hostArmed() { afterArmed(); return }
@@ -672,13 +689,13 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             //    上一版把它读成「没架上」还 markArmed(false) ——录着的时候告诉键盘失败了。**录着 = 活着**。
             if KbVoiceHost.shared.isRecording {
                 KbBridge.note("arm：跳转路径已经在录（" + String(format: "%.1f", Date().timeIntervalSince(t0)) + " 秒）→ 当架好处理，退场")
-                KbVoiceHost.shared.returnToPreviousApp("arm 已在录")
+                leave("arm 已在录")
                 return
             }
             if n >= 20 {
                 KbBridge.markArmed(false)
                 KbBridge.note("arm：🚨 等了 4 秒既没架上也没在录 → 标记置假后送他回去（键盘照实显示失败，不假装在录）")
-                KbVoiceHost.shared.returnToPreviousApp("arm 没架上")
+                leave("arm 没架上")
                 return
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { pollArmed(n + 1) }
@@ -693,7 +710,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             if n >= 20 {
                 KbBridge.markArmed(false)
                 KbBridge.note("arm：🚨 4 秒没等到前台（" + AppDelegate.appStateLine() + "）→ 标记置假后送他回去")
-                KbVoiceHost.shared.returnToPreviousApp("arm 没等到前台")
+                leave("arm 没等到前台")
                 return
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { armWhenActive(n + 1) }
@@ -943,6 +960,29 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                     DispatchQueue.main.async { PipVCKeepAlive.shared.showNow() }
                 },
                 "com.kevin.transless.debug.pipshow" as CFString, nil, .deliverImmediately)
+        }
+        // 🚨🚨 **就地架引擎的观察者，启动时无条件注册。**
+        //    Kevin 09-06 真机 FAIL：在 Transless 里点我们的键盘，
+        //    键盘去"拉起主 App"架引擎 —— **跳转本身**就让键盘失焦、
+        //    系统切回默认输入法，他还得手工切回来。
+        //    主 App 明明就在前台，这一跳是纯损失。
+        //
+        //    🚨 **不能挂在 `KbVoiceHost.observe()` 上**：那个只在
+        //    `setStandby(true)` 里注册，而这条要用的场景恰恰是
+        //    **待机关着、引擎没架** —— 挂在那儿等于永远收不到，
+        //    并且不报错，表现成"发了没反应"。
+        // 🚨 **用 AppDelegate 自己的 token，绝不借 `KbVoiceHost` 那个。**
+        //    `setStandby(false)` 会 `stopObserving(KbVoiceHost 的 token)`，
+        //    而它撤的是**整个 token 下的全部观察者** —— 借它的话，
+        //    待机一关这条通道就被连坐掉，而这条要用的场景恰恰是待机关着。
+        //    （源码里前人已经为自检/长录通道记过同一个坑。）
+        KbBridge.observeArmNow(Unmanaged.passUnretained(self).toOpaque()) {
+            _, _, _, _, _ in
+            DispatchQueue.main.async {
+                KbBridge.note("收到就地架引擎（键盘在我们自己 App 里按的，没有跳转）")
+                (UIApplication.shared.delegate as? AppDelegate)?
+                    .handleArmURL(returnAfter: false)
+            }
         }
         switch ProcessInfo.processInfo.environment["TRANSLESS_RECURL"] {
         case "long": KbVoiceHost.shared.runLongRec()

@@ -3165,7 +3165,11 @@ final class KeyboardViewController: UIInputViewController {
                 KbBridge.note("拉起失败，本次没有录音")
                 self.setPhase(.idle, hint: KbBridge.hasRetryAudio() ? L.kb_rec_failed_retry : L.kb_rec_failed_tap)
             })
-            if r == .dispatched {
+            if r == .armedInPlace {
+                // 🚨 **就地架好了，一次跳转都没发生** —— 不收键盘、不报错。
+                //    他人就在 Transless 里，`completeRequest` 会把他踢出去。
+                setPhase(.idle, hint: L.kb_rearming)
+            } else if r == .dispatched {
                 setPhase(.idle, hint: L.kb_rearming)
                 // 🚨🚨🚨 **在拉起主 App 的同一刻就 `completeRequest`。**
                 //    上一版是等主 App 架好后发通知回来再调 —— **测下来一次都没跑到**：
@@ -3982,6 +3986,15 @@ final class KeyboardViewController: UIInputViewController {
         case dispatched
         /// 响应链里根本找不到能开 URL 的对象 —— 当场就知道失败
         case noOpener
+        /// **主 App 就在前台，已经就地架了，一次跳转都没发生。**
+        ///
+        /// 🚨 单独一个 case、不复用 `dispatched`：`dispatched` 的调用点
+        ///    后面普遍跟着 `completeRequest`（把用户送回宿主），
+        ///    而这条恰恰**不能收键盘** —— 他要去的地方他已经在了。
+        ///    借 `dispatched` 的话这些调用点会静默做错事。
+        /// 🚨 加 case 是**故意让编译器报错**：`switch` 要穷举，
+        ///    哪个调用点没处理就当场编不过，不用等真机。
+        case armedInPlace
     }
 
     /// **拉起主 App 失败时的统一收尾。**
@@ -4004,6 +4017,24 @@ final class KeyboardViewController: UIInputViewController {
     @discardableResult
     func openContainerApp(_ path: String = "rec",
                           onOpened: ((Bool) -> Void)? = nil) -> OpenResult {
+        // 🚨🚨🚨 **主 App 在前台就不跳** —— 收在这里，不在各个调用点。
+        //    Kevin 09-06 真机：在 Transless 里点我们的键盘，
+        //    「还是自动转回默认输入法…**它还是要重新启动这个引擎**」。
+        //    **跳转这个动作本身**就让键盘失焦、系统切回默认输入法，
+        //    跟收不收键盘无关 —— 上一版我挡的是后果。
+        //
+        //    🚨 这里有**四个调用点**，我第一版只改了按麦克风那一个，
+        //    另外两条回退路径（后台架不起来 / 不跳转那条没应答）照样会跳。
+        //    「每个调用点都记得判一下」等于没修 —— 收进函数自己，
+        //    新加的调用点自动受保护。
+        //
+        //    🚨 只对 `arm` 短路：`rec` 是"把他扣在主 App 里录完"，语义不同。
+        if path == "arm", KbBridge.hostForeground {
+            KbBridge.note("宿主就在前台[" + Self.fgAgeText()
+                          + "] → **就地架引擎，不跳转**（openContainerApp 短路）")
+            KbBridge.pokeArmNow()
+            return .armedInPlace
+        }
         // 🚨 **先留条子，再叫醒。** 冷启动时 URL 本身送不到（实测 `url=无`），
         //    所以意图不能挂在 URL 上 —— URL 只负责把 App 叫起来。
         // 🚨 参数**从键盘这份**送过去（H4）：主 App 读自己的 UserDefaults
@@ -4271,6 +4302,11 @@ final class KeyboardViewController: UIInputViewController {
                 self.setPhase(.idle, hint: L.err_open_app_failed)
             })
             switch r3 {
+            case .armedInPlace:
+                // 🚨 **不能落进下面那个 `default`** —— 那条会显示
+                //    「拉不起主 App」，而引擎其实已经就地架好了。
+                //    宽松的 `default` 会把新 case 静默吞掉并**说假话**。
+                self.setPhase(.idle, hint: L.kb_rearming)
             case .dispatched:
                 self.setPhase(.idle, hint: L.kb_rearming)
                 if let ctx = self.extensionContext {
@@ -4381,7 +4417,10 @@ final class KeyboardViewController: UIInputViewController {
                 guard self.phase != .listening else { return }
                 self.setPhase(.idle, hint: L.err_open_app_failed)
             })
-            if r4 == .dispatched {
+            if r4 == .armedInPlace || r4 == .dispatched {
+                // 🚨 `.armedInPlace` 走这条：就地架好了，同样只改提示、
+                //    不收键盘。落进下面 else 的话会说「连拉都拉不动」——
+                //    而它根本不需要拉。
                 self.setPhase(.idle, hint: L.kb_rearming)
             } else {
                 KbBridge.note("兜底：连拉都拉不动（noOpener）→ 明说")

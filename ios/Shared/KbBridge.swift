@@ -1322,6 +1322,29 @@ enum KbBridge {
             CFNotificationName(name), nil, nil, true)
     }
 
+    /// **就地架引擎**的通知名。
+    ///
+    /// 🚨 跟 `noteCmd` 分开、**不走命令队列**：命令队列的泵
+    ///    （`KbVoiceHost.drain`）第一句是 `guard standby`，
+    ///    而这条要用的场景恰恰就是**待机关着、引擎没架**。
+    ///    混在一起的话它永远被那道 guard 挡掉，而且不报错。
+    private static let noteArmNow =
+        "com.kevin.transless.cmd.armnow" as CFString
+
+    /// 键盘喊一声「你就在前台，就地把引擎架起来」。
+    ///
+    /// 🚨 这是**不跳转**那条路的全部 —— 主 App 在前台时，
+    ///    `openContainerApp` 一次都不许被调用（跳转本身就会让键盘失焦、
+    ///    系统切回默认输入法，跟收不收键盘无关）。
+    static func pokeArmNow() { poke(noteArmNow) }
+
+    /// 主 App 订阅它。🚨 **必须在启动时无条件注册**，
+    ///    不能塞进 `setStandby(true)` 里 —— 待机关着时就没人接了。
+    static func observeArmNow(_ token: UnsafeRawPointer,
+                              _ cb: @escaping CFNotificationCallback) {
+        observe(token, noteArmNow, cb)
+    }
+
     /// 订阅命令通知（主 App 用）。
     static func observeCommands(_ token: UnsafeRawPointer,
                                 _ cb: @escaping CFNotificationCallback) {
