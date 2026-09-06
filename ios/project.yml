@@ -256,6 +256,10 @@ targets:
       # 同理：判「这一段有没有人说话」。纯值类型 + 纯函数，不碰音频也不碰存储
       # —— 真正读麦克风的在 `Voice`，那个不进测试包
       - path: Shared/SpeechPresence.swift
+      # 同理：「处理中… 已等 N 秒」那个秒表的判断部分。
+      # 🚨 它最危险的一条是「别人写了就交出去」—— 坏了会把错误提示
+      #    盖成「处理中…」，屏幕上有字、完全不报错。必须有判据挡着。
+      - path: Shared/ThinkHint.swift
       # 同理：单词本卡片的解析。纯解析，不碰存储也不碰界面
       - path: Shared/WordCard.swift
       # WordCard.fromDict 要它 —— DictEntry 也是纯模型
