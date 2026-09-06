@@ -21,12 +21,22 @@ enum Reverse {
 
     /// 界面语言 → 反向翻译的目标语言码（`engine.LANGS` 里的键）。
     /// - Parameter uiLang: `Lang.current` 的值：`zh` / `hant` / `en`
+    /// 界面语言 -> 目标语言码的**查表**。
+    ///
+    /// 🚨🚨 2026-09-06 从三个 if 分支改成查表（界面语言要从 3 门扩到 7 门）。
+    ///    **加一门语言就在这里加一行**，不要再写 if。
+    ///    这份是后端 `mylang.TARGET_OF` 的镜像 —— **那边是唯一真值**。
+    ///
+    /// 🚨 `hant -> zht` 不是笔误：繁体界面反向到 `zht`，不是 `zh`。
+    static let targetOf: [String: String] = [
+        "zh": "zh", "hant": "zht", "en": "en",
+        "ja": "ja", "de": "de", "es": "es", "ar": "ar",
+    ]
+
     static func target(for uiLang: String?) -> String {
-        guard let u = uiLang else { return "zh" }
-        if u == "en" { return "en" }
-        if u == "hant" { return "zht" }
         // 🚨 兜底给简体中文，不是英文 —— 认不出的多半是某种中文变体。
-        return "zh"
+        guard let u = uiLang else { return "zh" }
+        return targetOf[u] ?? "zh"
     }
 
     /// 面对面翻译：**这句话是谁说的**（安卓 `Reverse.isMine`）。
@@ -80,12 +90,22 @@ enum Reverse {
         if target(for: "en") != "en" { return "英文界面该反向到 en" }
         if target(for: nil) != "zh" { return "nil 该兜底到 zh（不崩）" }
         if target(for: "") != "zh" { return "空串该兜底到 zh" }
-        if target(for: "ja") != "zh" { return "认不出的语言该兜底到 zh" }
+        // 🚨 样本必须是**结构上不可能成为界面语言**的码。
+        //    原来是 "ja"，日语转正后这条立刻红 —— 判据没错，样本过期了。
+        if target(for: "xx-not-a-language") != "zh" { return "认不出的语言该兜底到 zh" }
         // 🚨 三个真实界面语言必须**互不相同** —— 全返回同一个值的实现
         //    也能过上面每一条，但那是错的。
         if target(for: "zh") == target(for: "en") { return "zh 和 en 不该同档" }
         if target(for: "zh") == target(for: "hant") { return "zh 和 hant 不该同档" }
         if target(for: "en") == target(for: "hant") { return "en 和 hant 不该同档" }
+        // 🚨 2026-09-06 界面语言扩到 7 门。查表加了四行，这里就得加四条 ——
+        //    **加了语言不加判据 = 那四门从来没被检查过**，
+        //    而且 `gate_pure_logic` 的坏样本注进来也不会红（实测撞到过）。
+        //    跟安卓 `Reverse.selfTest` 的六条一一对应，别只补一端。
+        if target(for: "ja") != "ja" { return "日语界面 -> ja" }
+        if target(for: "de") != "de" { return "德语界面 -> de" }
+        if target(for: "es") != "es" { return "西语界面 -> es" }
+        if target(for: "ar") != "ar" { return "阿语界面 -> ar" }
 
         // ---- 方向判定。**坏样本是这一组的要害**（对齐安卓 selfTest）----
         if !isMine("我们明天开个会") { return "纯中文该判我说的" }
