@@ -15,7 +15,17 @@ import sys
 sys.stdout.reconfigure(encoding="utf-8")
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
-import engine  # noqa: E402
+# 🚨🚨 **`engine` 只在本机有，CI 上没有**（`engine.py` 不在 iOS 仓库里，
+#    `ci-workflow.yml` 里那段注释早就写过这件事）。
+#    这个模块现在同时被 CI 调用（`secrets_body`），所以**顶层不许硬 import** ——
+#    硬 import 的话 CI 一 `import sync_prompts` 就 ImportError，
+#    而那正是我 2026-09-06 差点埋进去的雷：为了修「两个生成器走散」，
+#    把一条「在 CI 上必然失败」的 import 写进了 CI。
+#    → 同步（`main`）需要 engine；生成 `Secrets.swift` 只需要 .txt。**分开。**
+try:
+    import engine  # noqa: E402
+except ImportError:
+    engine = None
 
 # 🚨🚨 **三份，不是两份**（2026-08-31 补）。
 #    原来只同步翻译档和整理档，**逐字档 `PUNCT_PROMPT` 从来没同步过** ——
@@ -28,16 +38,82 @@ import engine  # noqa: E402
 #    否则会出现"内容同步对了、闸门却报 FAIL"（2026-08-31 就是这样：
 #    engine.py 早把 "Chinese speech-cleanup engine" 改成了不带 Chinese 的版本，
 #    这里还在找旧串）。**特征串要挑那种改文案也不会动的结构性标记。**
-PAIRS = [
-    ("prompt.txt", engine.SYSTEM_PROMPT, "PASS 2 - STRUCTURE"),
-    ("prompt_zh.txt", engine.TRANSCRIBE_PROMPT, "speech-cleanup engine"),
-    ("prompt_punct.txt", engine.PUNCT_PROMPT, ""),
-    # 🚨 ASR 那一步的提示词（2026-08-31 提到 engine.py）。
-    #    iOS 原来自己硬写了一句「只输出这段话的**中文**逐字转写」——
-    #    他说英文时那句话会把模型往中文上拽。特征串挑 SAME language，
-    #    因为那正是这一份存在的理由。
-    ("prompt_asr.txt", engine.ASR_PROMPT, "SAME language"),
+# 🚨 **文件名 + 特征串这一层不依赖 engine** —— CI 上要用它生成 Secrets.swift。
+#    engine 里对应的变量名单独放在下面，本机同步时才需要。
+FILES = [
+    ("prompt.txt", "PASS 2 - STRUCTURE"),
+    ("prompt_zh.txt", "speech-cleanup engine"),
+    ("prompt_card.txt", "VERBATIM SUBSTRING"),
+    ("prompt_punct.txt", ""),
+    ("prompt_asr.txt", "SAME language"),
 ]
+
+_ENGINE_VARS = {
+    "prompt.txt": "SYSTEM_PROMPT",
+    "prompt_zh.txt": "TRANSCRIBE_PROMPT",
+    "prompt_card.txt": "CARD_PROMPT",
+    "prompt_punct.txt": "PUNCT_PROMPT",
+    "prompt_asr.txt": "ASR_PROMPT",
+}
+
+# 🚨 `PAIRS` 需要 engine，所以只在本机成立；CI 上是空的（那边也用不到它）。
+#    **判据别挂在 `PAIRS` 上** —— 它在 CI 上恒空，挂上去就是个永远不失败的检查。
+PAIRS = ([(fn, getattr(engine, _ENGINE_VARS[fn]), mk) for fn, mk in FILES]
+         if engine else [])
+
+
+
+# --------------------------------------------------------------
+# Secrets.swift 的**唯一生成实现**（2026-09-06）
+# --------------------------------------------------------------
+# 三个生成器（本机 Mac 构建 / ci-workflow / ci-release-workflow）一律调
+# 下面这两个函数，成员表从 `FILES` 派生 —— 以后往 `FILES` 里加一份 prompt，
+# 三处自动都有，不会再漏。
+#
+# 在这之前它们各写各的：本机 5 个成员、两份 CI 各 3 个，
+# 而 Swift 用 5 个 → CI 出包必然 `cannot find 'promptPunct' in scope`。
+#
+# 这里**只读 .txt、不读 engine** —— `engine.py` 不在 iOS 仓库里，
+# CI 上 import 不到（ci-workflow.yml 里那段注释已经写过这件事）。
+# 逐字节比对由本机 `push_ios.py` 在推之前做，那才是能真失败的地方。
+
+
+def member(filename):
+    """`prompt_zh.txt` -> `promptZh`。成员名从文件名派生，不另写一张表。"""
+    stem = filename[:-4] if filename.endswith(".txt") else filename
+    head, *rest = stem.split("_")
+    return head + "".join(w[:1].upper() + w[1:] for w in rest)
+
+
+def secrets_body(root, password, json_str):
+    """拼出整份 `Secrets.swift`。
+
+    - `root`      : `ios/` 目录（pathlib.Path）
+    - `json_str`  : 把 Python 字符串转成 Swift 字面量的函数（各处已有各自的）
+
+    回 `(正文, 问题清单)`。清单非空时**调用方必须中止**，别写出半份。
+    """
+    bad = []
+    lines = [
+        "// 构建时生成，勿提交。提示词来自 ios/prompt*.txt（源头是 engine.py）。",
+        "// 成员表由 sync_prompts.PAIRS 派生 —— 别在这里手加，加了会跟别处走散。",
+        "enum Secrets {",
+        "    static let pass = %s" % json_str(password),
+    ]
+    # 🚨 走 `FILES` 不走 `PAIRS` —— PAIRS 在 CI 上恒空（那边没有 engine），
+    #    挂上去就是个永远不失败的检查。
+    for fn, marker in FILES:
+        p = root / fn
+        if not p.exists():
+            bad.append("%s 不存在 —— 是不是没推上来？" % fn)
+            continue
+        txt = p.read_text(encoding="utf-8")
+        if marker and marker not in txt:
+            bad.append("%s 缺结构性标记 %r —— 内容不对劲" % (fn, marker))
+            continue
+        lines.append("    static let %s = %s" % (member(fn), json_str(txt)))
+    lines.append("}")
+    return "\n".join(lines) + "\n", bad
 
 
 def main():
