@@ -27,6 +27,24 @@ struct DictEntry {
     let exampleZh: String
     let collocations: [String]
 
+    /// **拿去显示的音标** —— 已经剥掉两边的斜杠。
+    ///
+    /// 🚨🚨 Kevin 2026-09-06 报 `//rɪˈzɪliənt//`。根因在**契约**：
+    ///    `LOOKUP_PROMPT` 写的是 `"phonetic": "IPA in slashes"`（自带斜杠），
+    ///    而四个渲染点各自又包了一层 `/…/`。
+    ///    **不是谁忘了 strip，是契约和所有使用者的默认假设正好相反。**
+    ///
+    /// 🚨 1.1 已经改了契约 + 服务端出口 strip，**但那只管新查的词** ——
+    ///    **他单词本里已存的旧卡片存的是带斜杠的老数据**，
+    ///    不在渲染前再剥一次，那些卡片永远显示 `//…//`。
+    ///    **判据要拿已存的旧卡片验；只验新查的词，这半漏了也是绿的。**
+    ///
+    /// 🚨 放模型这一层、不放各渲染点 —— 跟下面 `trimmed()` 同一个理由：
+    ///    渲染层各剥各的，换个入口就漏一个。
+    var phoneticForDisplay: String {
+        phonetic.trimmingCharacters(in: CharacterSet(charactersIn: "/ "))
+    }
+
     /// 🚨 **截断的唯一出口。** 放在模型这一层而不是渲染层：
     ///    渲染层截的话，缓存里存的还是十条，换个入口渲染就漏了。
     static let maxSenses = 3
