@@ -368,7 +368,7 @@ enum L {
     static var lang_recent: String { s(["zh": "最近用过", "en": "Recent", "hant": "最近用過", "ja": "最近使用", "de": "Zuletzt", "es": "Recientes", "ar": "الأخيرة"]) }
     static var lang_all: String { s(["zh": "全部语言", "en": "All languages", "hant": "全部語言", "ja": "すべての言語", "de": "Alle Sprachen", "es": "Todos los idiomas", "ar": "كل اللغات"]) }
     static var p_tone: String { s(["zh": "语气", "en": "Tone", "hant": "語氣", "ja": "トーン", "de": "Ton", "es": "Tono", "ar": "النبرة"]) }
-    static var p_lang: String { s(["zh": "译成", "en": "To", "hant": "譯成", "ja": "へ", "de": "Zu", "es": "A", "ar": "إلى"]) }
+    static var p_lang: String { s(["zh": "译成", "en": "To", "hant": "譯成", "ja": "翻訳先", "de": "Zu", "es": "A", "ar": "إلى"]) }
     static var p_style: String { s(["zh": "方式", "en": "Mode", "hant": "方式", "ja": "モード", "de": "Modus", "es": "Modo", "ar": "الوضع"]) }
     static var home_try_sub: String { s(["zh": "开口即译，不用找键盘", "en": "Speak and it translates - no keyboard hunting", "hant": "開口即譯，不用找鍵盤", "ja": "話すだけで翻訳、キーボード探し不要", "de": "Sprich und es übersetzt – kein Tastensuchen", "es": "Habla y traduce, sin buscar el teclado", "ar": "تحدث وسيُترجم - لا حاجة للبحث عن لوحة المفاتيح"]) }
     static var try_title_zh: String { s(["zh": "随便说点啥", "en": "Say anything", "hant": "隨便講兩句", "ja": "何でも話しかけて", "de": "Sag irgendwas", "es": "Di lo que sea", "ar": "قل أي شيء"]) }
