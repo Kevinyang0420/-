@@ -78,7 +78,48 @@ def api(path):
         return e.code, json.loads(e.read() or b"{}")
 
 
+def precheck():
+    """**上传之前**问一句：这个构建号是不是已经传过了。
+
+    🚨 跟 `main()` 的判据方向**正好相反**：
+       `main()` 要"它出现了"才算成功；这里要"它**没**出现"才放行。
+       所以不能复用同一段代码 —— 复用的话必然有一半判反。
+    """
+    want = os.environ["WANT_BUILD"]
+    st, r = api("/apps?limit=200")
+    if st != 200:
+        print("::error::列 App 失败 %s —— 撞号闸没查成，不放行" % st)
+        return 1
+    hit = [d for d in r["data"] if d["attributes"]["bundleId"] == BUNDLE]
+    if not hit:
+        print("::error::找不到 %s —— 撞号闸没查成，不放行" % BUNDLE)
+        return 1
+    st, r = api("/apps/%s/builds?limit=200" % hit[0]["id"])
+    if st != 200:
+        print("::error::列构建失败 %s —— 撞号闸没查成，不放行" % st)
+        return 1
+    same = [d["attributes"] for d in r.get("data", [])
+            if d["attributes"].get("version") == want]
+    if same:
+        a = same[0]
+        print("::error::🚨 构建号 %s **已经传过了**（%s，状态 %s）。"
+              % (want, a.get("uploadedDate"), a.get("processingState")))
+        print("::error::这不是上传失败 —— 苹果不接受重复的构建号，"
+              "传上去也会被当重复件拒掉。")
+        print("::error::先把号推上去再发：`py D:\\_build\\bump_ios_build.py`"
+              "（或跑 sync_ios_version.py 跟安卓对齐），然后重新发版。")
+        return 1
+    print("撞号闸：构建号 %s 在 ASC 上没出现过，可以传 ✓（已比对 %d 个历史构建）"
+          % (want, len(r.get("data", []))))
+    return 0
+
+
 def main():
+    # 🚨 `--precheck` 必须在这儿分流：两个模式的判据方向相反，
+    #    走错分支的表现是"它出现了就放行"——正好把撞号放过去。
+    if "--precheck" in sys.argv:
+        return precheck()
+
     want = os.environ.get("WANT_BUILD", "").strip()
     if not want:
         print("::error::WANT_BUILD 没传 —— 判据不知道该找哪个构建")

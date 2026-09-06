@@ -401,6 +401,25 @@ jobs:
           test "$FAIL" -eq 0 || { echo "::error::签名闸门未过"; exit 1; }
           echo "=== 双 target 签名闸门 PASS（查的是 IPA）==="
 
+      # 🚨 **撞号要在上传之前红**，而不是让苹果去拒。
+      #    号从安卓 manifest 同步过来，而同步不在这条链路上 ——
+      #    安卓不出包时连发两轮就是同一个号。苹果拒重复构建的报错很隐蔽，
+      #    人会去查一个不存在的上传问题（今天已经被这种误导带偏过一次）。
+      - name: 撞号闸（这个构建号传过没有）
+        if: ${{ inputs.upload }}
+        env:
+          KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          KEY_B64: ${{ secrets.ASC_API_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          WANT_BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" \
+            "$RUNNER_TEMP/ipacheck/Payload/Transless.app/Info.plist")
+          ASC_KEY_ID="${KEY_ID}" ASC_ISSUER_ID="${ISSUER_ID}" \
+            ASC_KEY_B64="${KEY_B64}" WANT_BUILD="${WANT_BUILD}" \
+            "$RUNNER_TEMP/pvenv/bin/python" \
+            "${GITHUB_WORKSPACE}/ios/ci_verify_upload.py" --precheck
+
       - name: 上传 App Store Connect
         if: ${{ inputs.upload }}
         env:
