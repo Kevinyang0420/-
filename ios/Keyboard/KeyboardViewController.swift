@@ -496,6 +496,10 @@ final class KeyboardViewController: UIInputViewController {
         histButton.addTarget(self, action: #selector(showHistory),
                              for: .touchUpInside)
 
+        // 🚨 **键盘顶排这个 logo 保留** —— Kevin 2026-09-05 23:0x 明确划界：
+        //    「我没有说键盘顶部那个删，就是**现在这个随手翻译这个 logo 删**就可以了」。
+        //    我上一版两处都删了，**删多了**，这里恢复。
+        //    要删的只有 `AppDelegate` 那一屏（随手翻译）的那个。
         let logo = UIImageView(image: UIImage(named: "logo"))
         logo.contentMode = .scaleAspectFit
         logo.alpha = 0.55
@@ -703,9 +707,11 @@ final class KeyboardViewController: UIInputViewController {
         //
         // 🚨 乙比甲多的那一条**才是直接治「经常点错」的** ——
         //    他说的是误触，缩小发送只治一半，**两键之间拉开距离才治另一半**。
+        // Kevin 2026-09-05 23:5x: fix only this gap.
+        //    8+8+20 = 12+12+12 = 36 (sum unchanged, key widths untouched)
         let kDelW: CGFloat = 88
-        let kGapNormal: CGFloat = 8
-        let kGapBeforeSend: CGFloat = 20
+        let kGapNormal: CGFloat = 12
+        let kGapBeforeSend: CGFloat = 12
 
         bottom.spacing = kGapNormal
         del.widthAnchor.constraint(equalToConstant: kDelW).isActive = true
@@ -4598,7 +4604,36 @@ final class KeyboardViewController: UIInputViewController {
         //    🚨 空结果时**保留 `heardLabel` 上的中文**，至少证明"听到了"。
         guard !out.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             heardLabel.text = zh
-            setPhase(.idle, hint: L.kb_host_slow)
+            // 🚨🚨 Kevin 2026-09-06 01:50 **第二次**报同一件事（「这个很不合理」）：
+            //    「再说一次会很费精力，而且**都已经录进去了**，为什么不能够
+            //      直接再试一次翻译一次呢，干嘛让我再说一次呢」
+            //    → 有存货就给**重发**，不要他重说。`retryIfWeHaveAudio()` 早就有，
+            //      只是没挂到这条路上。
+            // 🚨 `hasRetryAudio() ? 重试 : 重说` 这个模式**全树已经用在 6 处**，
+            //    偏偏这三条结果失败的路一处都没用 —— 「规矩要按每个出口落地」。
+            // 🚨 这一条**不是超时**：后端 200 秒回了，只是 `out` 是空串
+            //    （只录到语气词/静音时的常见返回）。原来跟真超时共用
+            //    「等太久了」—— **失败的名字指错层**，他会去查网络。
+            // 🚨🚨 **静音不能劝他"重发"** —— 1.1 2026-09-06 给的后端口径：
+            //    `kind: asr_empty`（他没说话/纯静音）时 `retry: false`，
+            //    **这时候让他重说才是对的**；重发一段静音只会拿到同样的结果，
+            //    把他关进一个循环。
+            //
+            // 🚨 `kind` 现在到不了这里（`deliverLocal` 只收 `zh`/`out` 两个参数），
+            //    但**同一件事本地就能判**：静音时后端识别出的中文 `zh` 也是空的。
+            //    有中文没结果 = 值得重发；中文也没有 = 真没听到，请他重说。
+            //    → 正解仍是把 `kind` 串下来，已记进队列；这一版先用 `zh` 兜住，
+            //      **因为它已经在手上，而 Kevin 现在就在用**。
+            // 🚨🚨 判据从 `zh` 换成**音频本身的电平**（2026-09-06）。
+            //    上一版挂在 `zh`（后端识别出的中文是不是空的）——那是
+            //    **模型返回的东西**，而 1.1 实测：同一段静音，模型给过三种说法
+            //    （空串 / 「你所给音频无有效说话内容。」/ 「啊?」）。
+            //    **追模型的措辞永远追不上，判据要挂在输入上。**
+            //    结论由宿主算好写进共享区（键盘扩展拿不到音频本身），
+            //    阈值只有一处：`SpeechPresence`。
+            let heardNothing = !KbBridge.spoke()
+            setPhase(.idle, hint: (KbBridge.hasRetryAudio() && !heardNothing)
+                     ? L.kb_empty_out : L.kb_empty_out_plain)
             return
         }
         let mode = KbBridge.prefs.string(forKey: "vime.mode") ?? "en"
@@ -4636,7 +4671,10 @@ final class KeyboardViewController: UIInputViewController {
             if let d = self.pollDeadline, Date() > d {
                 t.invalidate()
                 self.remoteSeq = -1
-                self.setPhase(.idle, hint: L.kb_host_slow)
+                // 🚨 这一条**才是真超时**（`pollDeadline` 到期）。
+                //    但有存货时仍然不该让他重说 —— 见下面那条 Kevin 的原话。
+                self.setPhase(.idle, hint: KbBridge.hasRetryAudio()
+                              ? L.kb_slow_retry : L.kb_host_slow)
                 return
             }
             guard let r = KbBridge.takeResult(seq: self.remoteSeq,
@@ -4684,7 +4722,17 @@ final class KeyboardViewController: UIInputViewController {
         guard let d = json.data(using: .utf8),
               let o = try? JSONSerialization.jsonObject(with: d) as? [String: String],
               let out = o["out"], !out.isEmpty else {
-            setPhase(.idle, hint: L.kb_host_slow)
+            // 🚨🚨 Kevin 2026-09-06 01:50 **第二次**报同一件事（「这个很不合理」）：
+            //    「再说一次会很费精力，而且**都已经录进去了**，为什么不能够
+            //      直接再试一次翻译一次呢，干嘛让我再说一次呢」
+            //    → 有存货就给**重发**，不要他重说。`retryIfWeHaveAudio()` 早就有，
+            //      只是没挂到这条路上。
+            // 🚨 `hasRetryAudio() ? 重试 : 重说` 这个模式**全树已经用在 6 处**，
+            //    偏偏这三条结果失败的路一处都没用 —— 「规矩要按每个出口落地」。
+            // 🚨 这一条**也不是超时**：结果回来了，只是 JSON 里没有 `out`
+            //    或者解不出。跟"慢"和"空"都不是一回事，各给各的话。
+            setPhase(.idle, hint: KbBridge.hasRetryAudio()
+                     ? L.kb_bad_result : L.kb_bad_result_plain)
             return
         }
         let zh = o["zh"] ?? ""
