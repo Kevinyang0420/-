@@ -175,7 +175,20 @@ jobs:
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             build
           P="build/Build/Products/Release-iphoneos/TransProbe.app"
-          test -d "$P/PlugIns/ProbeKeyboard.appex" || { echo "::error::探针键盘没打进去"; exit 1; }
+          # 🚨 **判据跟着 project.yml 走，不写死。**
+          #    2026-08-29 探针的 ProbeKeyboard 依赖被注释掉了（那个扩展没有
+          #    自己的开发描述文件，带着它整个包签不了名），**而这里的检查没跟着改**
+          #    → 从那天起这一步必然失败，CI 因此红了 9 天没人看出原因。
+          #    典型的「同一个决定散在两处，改一处等于没改」。
+          #    现在从 project.yml 现读：声明了就必须在，没声明就必须不在，
+          #    **两个方向都能失败**。
+          if grep -qE '^[[:space:]]*-[[:space:]]*target:[[:space:]]*ProbeKeyboard' ios/project.yml; then
+            test -d "$P/PlugIns/ProbeKeyboard.appex"               || { echo "::error::project.yml 声明了探针键盘，但没打进包"; exit 1; }
+            echo "探针键盘：project.yml 声明了，包里也有 ✓"
+          else
+            test ! -d "$P/PlugIns/ProbeKeyboard.appex"               || { echo "::error::project.yml 没声明探针键盘，包里却出现了"; exit 1; }
+            echo "探针键盘：project.yml 没声明，包里也没有 ✓"
+          fi
           rm -rf /tmp/probe && mkdir -p /tmp/probe/Payload
           cp -R "$P" /tmp/probe/Payload/
           (cd /tmp/probe && zip -qry TransProbe.ipa Payload)
