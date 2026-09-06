@@ -52,17 +52,12 @@ extension KbVoiceHost {
     ///    安静环境读 1334、放着声音反而读 575 —— **它量的根本不是"房间里有没有声音"**。
     ///    （多半是起录瞬间的直流/瞬态占了峰值，跟内容无关。）
     ///    零占比不含糊：`setInputMuted` 若真生效，整段应当是数字零。
-    static func zeroPct(_ d: Data?) -> Int {
-        guard let d = d, d.count > 46 else { return -1 }
-        var zeros = 0
-        let n = (d.count - 44) / 2
-        guard n > 0 else { return -1 }
-        d.withUnsafeBytes { (raw: UnsafeRawBufferPointer) in
-            for k in 0..<n where raw.loadUnaligned(fromByteOffset: 44 + k * 2,
-                                                   as: Int16.self) == 0 { zeros += 1 }
-        }
-        return zeros * 100 / n
-    }
+    /// **转调 `AudioStats.zeroPct`，这里不留第二份实现。**
+    ///
+    /// 🚨 抽出去是为了**能验**：这边拖着音频引擎，编不进测试包，
+    ///    于是"字节 → 零占比"这半一直没被任何用例跑过 ——
+    ///    而真正会出错的正是这半（偏移、按字节还是按采样点、44 字节头）。
+    static func zeroPct(_ d: Data?) -> Int { AudioStats.zeroPct(d) }
 
     /// 16-bit PCM 绝对值峰值（0…32767）；跳过 44 字节 WAV 头。-1 = 数据太短。
     static func peakOf(_ d: Data?) -> Int {
@@ -3937,7 +3932,26 @@ final class KbVoiceHost {
                 self.segs = nil
                 if zh.isEmpty {
                     // 🚨 **别静默**：拼出来是空的就说出来，否则他只看到"没反应"
-                    self.done(seq: seq, kind: "error", body: L.err_empty)
+                    // 🚨🚨 **按"到底收到声音没有"分流**（2026-09-06 补）——
+                    //    原来一律 `err_empty`（"没听清，再说一次"），
+                    //    于是他说了一大段、我们全扔了，还让他重说。
+                    //    他的原话：「说了这么多话却被告知没转出，
+                    //    **也没有重新上传处理的按钮**，直接让人再说一次，很不合理」。
+                    // 🚨 短录音那条路我上一轮改了，**这条分段路当时一行没碰** ——
+                    //    而「第一段未转出」这个措辞正是从这条路出来的。
+                    //    **同一个功能两条路，修完一条不等于修完。**
+                    if sg.sawSound {
+                        // 有声音却全军覆没 -> 留住音频，给他重发键
+                        KbBridge.setHasRetryAudio(true)
+                        KbBridge.note("长录音：收到过声音但一段都没转出来 —— "
+                                      + "**留住音频**，给重发键")
+                        self.done(seq: seq, kind: "error", body: L.err_empty)
+                    } else {
+                        // 每一段都是数字静音 -> 指向真问题，别说成"他没说话"
+                        KbBridge.note("长录音：\(sg.skippedSilent) 段全是数字静音 —— "
+                                      + "麦克风没收到声音")
+                        self.done(seq: seq, kind: "error", body: L.err_mic_silent)
+                    }
                     return
                 }
                 // 🚨 复用现成的出稿链，不新造一条 —— 只是跳过转写那一步
@@ -4239,19 +4253,52 @@ final class KbVoiceHost {
                     //    **他看到一句莫名其妙的话**，而正确答案是「没听清，再说一次」。
                     // 🚨 判据挂在**峰值**上 —— 静音的 wav 一样有字节，
                     //    按 `wav.count` 判等于没判。
-                    // 🚨 阈值复用 `SilenceSplitter.silenceLevel`（跟安卓同一个数），
-                    //    **不另写一个** —— 两个阈值早晚会漂。
+                    // 🚨🚨 **判据换成零采样点占比，不再用峰值**（2026-09-06）。
+                    //    峰值这个指标 2026-08-31 就被正负样本判死了 ——
+                    //    安静环境读 1334、**放着声音反而读 575**。
+                    //    这个文件的文件头（第 49–54 行）自己写着这句话，
+                    //    **而这道闸一直在用它**。
+                    //    `zeroPct` 验过、不含糊（`setInputMuted` 真生效时整段是数字零），
+                    //    但它**只用在 3298 那个探针里，出事的这条路一次都没用过** ——
+                    //    **判据验过了，却没装到出事的那条路上。**
+                    //
+                    // 🚨 三处自相矛盾也一并修：原来注释说复用 `silenceLevel`、
+                    //    代码比 `micDeadLevel`(0.01)、日志印 `silenceLevel`(0.08)。
+                    //    日志会打「峰值 0.026 < 0.08」，让人以为卡在 0.08。
+                    //    **现在日志印的就是真正比的那个数。**
+                    //    （注释里那句「跟安卓同一个数」是假的：安卓没有 `micDeadLevel`。）
                     let peakNow = self.diagQ.sync { jPeak }
-                    if peakNow < SilenceSplitter.micDeadLevel {
-                        KbBridge.note("这一轮全程静音（峰值 "
-                                      + String(format: "%.3f", peakNow)
-                                      + " < " + String(SilenceSplitter.silenceLevel)
-                                      + "），**不上传**，直接告诉他没听清")
-                        RecLog.add(sec: 0, bytes: wav.count, result: "静音未上传",
-                                   detail: "峰值 " + String(format: "%.3f", peakNow))
-                        self.done(seq: seq, kind: "error", body: L.err_empty)
+                    let zp = KbVoiceHost.zeroPct(wav)
+                    let secs = Double(max(0, wav.count - 44)) / 32000.0
+                    // 🚨 **六个值一起记**（0 定的）：他说这问题会再犯，
+                    //    下次再犯时要能一眼看出是「麦克风没收到」还是「后端返空」。
+                    //    只记峰值的话，两种失败长得一模一样。
+                    let diag = String(format:
+                        "零占比=%d%% 峰值=%.3f 时长=%.1fs 字节=%d",
+                        zp, peakNow, secs, wav.count)
+                    // 零占比 ≥ 98% = 整段几乎全是数字零 = 麦克风真没收到声音。
+                    // 🚨 用 `>=98` 不用 `==100`：WAV 头之后偶有一两个非零采样点，
+                    //    卡死 100 会让这道闸**永远不成立**（假检查的经典形态）。
+                    // 🚨 判据本体在 `SilenceVerdict`（纯逻辑、能进测试包）——
+                    //    阈值只有一处。写死 98 在这里就是第二份。
+                    if SilenceVerdict.micGotNothing(zeroPct: zp) {
+                        KbBridge.note("这一轮麦克风没收到声音（" + diag
+                                      + "，判据=零占比≥98%），**不上传**")
+                        RecLog.add(sec: secs, bytes: wav.count,
+                                   result: "麦克风没收到声音·未上传", detail: diag)
+                        self.done(seq: seq, kind: "error", body: L.err_mic_silent)
                         return
                     }
+                    // 🚨 **正常上传这一次也要进诊断列表**（2026-09-06 补）。
+                    //    原来只有"判成静音"那一支写 `RecLog`，
+                    //    而他要查的恰恰是**「说了话却没转出」**那一次 ——
+                    //    那一次走的是这一支，诊断里一条记录都没有。
+                    //    「记了日志」和「他在录音诊断里看得到」是两件事：
+                    //    `KbBridge.note` 进的是开发者日志，
+                    //    `RecLog` 才是设置页那一屏。
+                    KbBridge.note("起传（" + diag + "）")
+                    RecLog.add(sec: secs, bytes: wav.count,
+                               result: "已上传", detail: diag)
                     self.uploadAndDeliver(seq: seq, wav: wav, tone: tone,
                                           mode: mode, lang: lang)
 }
@@ -4310,10 +4357,36 @@ Backend.transcribe(wav: wav, rid: rid) { [weak self] t in
             //    **不写 `kind == "no_speech"`** —— 那是把后端语义硬编进客户端，
             //    而且会让"把 retry_kind 改成 resend"这个坏样本**改不动行为**，
             //    等于分叉根本没接上（2.1 的验收判据就是这一条）。
+            // 🚨🚨 **只有我们自己量到"真的没声音"时才作废**（2026-09-06 改）。
+            //    Kevin 亲口：「说了这么多话却被告知没转出，**也没有重新上传处理的
+            //    按钮**，直接让人再说一次，很不合理」，而且「不止一次出现」。
+            //
+            //    上面那段避免无限重传的理由**本身是对的**，但它有个前提：
+            //    「我们确定那是静音」。而**我们并不确定** —— 后端说 respeak
+            //    只代表它没听出内容，不代表麦克风没收到声音。
+            //    真实情况是他说了一大段，我们把那段扔了。
+            //
+            // 🚨 分流判据用**客户端自己量到的 `zeroPct`**，跟后端语义无关 ——
+            //    所以 2.1 那条「不许把 `kind == no_speech` 硬编进客户端」仍然成立，
+            //    两者不冲突：`needsRespeak` 决定"要不要重说"，
+            //    `zeroPct` 决定"这段还值不值得留"。
+            //
+            // 🚨 **留住 ≠ 自动重传**：按钮由他点，不会无限烧钱 ——
+            //    原来那条注释担心的正是自动重传，而我们从来没做过自动重传。
             if f.needsRespeak {
-                KbBridge.clearPendingAudio()
-                self.lastWav = nil
-                KbBridge.note("respeak：这段音频作废，不进重传队列（避免同一段静音无限重发）")
+                let zp = KbVoiceHost.zeroPct(self.lastWav?.0)
+                // 🚨 同上：走 `SilenceVerdict`，两处不各写一遍阈值。
+                if !SilenceVerdict.keepAudioForRetry(needsRespeak: true,
+                                                     zeroPct: zp) {
+                    KbBridge.clearPendingAudio()
+                    self.lastWav = nil
+                    KbBridge.note("respeak + 零占比 \(zp)% = 真没收到声音，"
+                                  + "这段作废（重传必然还是没内容）")
+                } else {
+                    KbBridge.setHasRetryAudio(true)
+                    KbBridge.note("respeak 但零占比 \(zp)% = **确实有声音**，"
+                                  + "**留住这段**，给他重发按钮")
+                }
             }
             self.done(seq: seq, kind: "error", body: "\(f)")
         case .success(let zh):
