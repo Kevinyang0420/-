@@ -95,19 +95,25 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os, pathlib
+          import json, os, pathlib
           root = pathlib.Path("Shared")
           pw = os.environ["ALEX_PASS"]
-          prompt = pathlib.Path("prompt.txt").read_text(encoding="utf-8")
-          prompt_zh = pathlib.Path("prompt_zh.txt").read_text(encoding="utf-8")
-          def swift_str(s):
-              return '"' + s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n') + '"'
-          body = "// 构建时生成，勿提交\nimport Foundation\n\n"
-          body += "enum Secrets {\n"
-          body += "    static let pass = %s\n" % swift_str(pw)
-          body += "    static let prompt = %s\n" % swift_str(prompt)
-          body += "    static let promptZh = %s\n" % swift_str(prompt_zh)
-          body += "}\n"
+          # 🚨 成员表**从 sync_prompts.FILES 派生**，不在这里手写。
+          #    2026-09-06 查出：本机生成器 5 个成员、两份 CI 各只有 3 个，
+          #    而 Swift 用 5 个（Secrets.promptPunct 在 Backend.swift:25）——
+          #    这条路一跑起来必然 cannot find 'promptPunct' in scope。
+          #    Kevin 09-05 叫停了触发 CI，所以这个洞一直没人撞到。
+          import sys as _sys
+          _sys.path.insert(0, ".")
+          import sync_prompts as _sp
+          # 用 json.dumps 转 Swift 字面量（跟 ci-workflow.yml 同一个做法）——
+          # 手写那版转义写法在 YAML 里反复被吃掉，端到端跑一次当场炸。
+          body, _bad = _sp.secrets_body(
+              pathlib.Path('.'), pw,
+              lambda s: json.dumps(s, ensure_ascii=False))
+          if _bad:
+              raise SystemExit("Secrets 生成失败：" + "; ".join(_bad))
+          # 头注释由 secrets_body 自己带，这里不再拼 —— 拼接里的换行转义在 YAML 里被吃过两次。
           out = root / "Secrets.swift"
           out.write_text(body, encoding="utf-8")
           written = out.read_text(encoding="utf-8")
