@@ -69,6 +69,8 @@ final class FaceToFaceViewController: UIViewController {
 
     private let ctxStack = UIStackView()
     private let bigLabel = UILabel()
+    /// 正在取朗读音频。用来①防连点②决定大字是不是紫的。
+    private var speaking = false
     /// 「＋ 单词本」—— 2.1 规格第 4 条：**面对面两端原来完全没接**，
     /// 而「遇到生词最多的恰恰是面对面场景」。
     private let keepBtn = UIButton(type: .system)
@@ -312,7 +314,12 @@ final class FaceToFaceViewController: UIViewController {
             bigLabel.leadingAnchor.constraint(equalTo: textArea.leadingAnchor),
             bigLabel.trailingAnchor.constraint(equalTo: textArea.trailingAnchor),
 
-            keepBtn.topAnchor.constraint(equalTo: bigLabel.bottomAnchor, constant: 10),
+            // 🚨 Kevin 2026-09-06：「+单词本 跟大字挨得太近了。
+            //    你也像安卓那样把它挪到下面去，放到选语言那一行的上面」
+            //    原来是贴着大字下沿 10pt —— 大字一多行就顶在一起。
+            //    改成**钉在语言行上方**：不管大字几行，它的位置都不动。
+            keepBtn.bottomAnchor.constraint(
+                equalTo: langBar.topAnchor, constant: -12),
             keepBtn.centerXAnchor.constraint(equalTo: textArea.centerXAnchor),
 
             emptyStack.centerYAnchor.constraint(equalTo: textArea.centerYAnchor),
@@ -648,10 +655,29 @@ final class FaceToFaceViewController: UIViewController {
         // 🚨 **待机占着音频会话时先让开** —— 否则 TTS 起不来，
         //    表现就是"点了没声音"。跟起录前 `yieldMic()` 是同一个道理，
         //    而这条路原来**漏了**（起录让、朗读不让）。
+        // 🚨 Kevin 2026-09-06：「我看安卓点大字的时候，大字会变颜色
+        //    （变成紫色），代表它正在 loading、准备读，但苹果这边还不会」
+        //    朗读要走一次后端，这段时间原来**一点反馈都没有** ——
+        //    他分不出「在取」和「点了没反应」。
+        // 🚨 防连点：没有反馈时他不会连点，**加了反馈之后连点才成为可能** ——
+        //    两下就是两次请求、两段声音叠着放。
+        //    加东西时要问一句「它让什么新动作变得可能」。
+        guard !speaking else {
+            KbBridge.note("面对面·朗读：正在取，这一下忽略")
+            return
+        }
+        speaking = true
+        bigLabel.textColor = Theme.accent      // 紫 = 正在取
         KbVoiceHost.shared.yieldMic()
         Backend.speak(text: t) { [weak self] r in
             DispatchQueue.main.async {
                 guard let self = self else { return }
+                // 🚨 **两条路都要复位**。只在成功那支复位的话，
+                //    一次失败就把大字永久留在紫色、而且 `speaking`
+                //    卡在 true —— 之后再点全被那道 guard 挡掉，
+                //    表现是「朗读彻底坏了」。放在 switch 之前，一次写完。
+                self.speaking = false
+                self.bigLabel.textColor = Theme.text
                 switch r {
                 case .success(let mp3):
                     KbBridge.note("面对面·朗读：拿到音频 \(mp3.count) 字节，开播")
