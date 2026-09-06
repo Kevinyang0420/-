@@ -21,8 +21,17 @@ import AVFoundation
 
 /// 品牌语。两端一模一样、不随界面语言变（安卓那边也是写死在代码里）。
 enum Brand {
-    static let sloganZh = "让世界听懂你"
-    static let sloganEn = "No Language In Between"
+    /// 按界面语言取品牌语。**转调生成物，这里不留第二份实现。**
+    ///
+    /// 🚨🚨 这里原来写死了四个常量（zh/hant/ja/en）+ 一个 switch ——
+    ///    那是 0 让我做的"就地锁"止血，判断是对的，**但它是第二份实现**。
+    ///    1.1 随后把它做成了单一来源（`i18n_map.slogan_for()` → 三端同源生成）。
+    ///
+    /// 🚨 **为什么值得删，有实证不是洁癖**：安卓那份写死的日文是
+    ///    `言葉の壁をなくす`，而译文包早就换成了 `世界に、あなたが伝わる。`
+    ///    —— **写死的那份已经过期了，没人发现。**
+    ///    我这份的日文碰巧是新的，但同样会漂。
+    static func slogan() -> String { L.slogan }
 }
 
 @main
@@ -1017,6 +1026,46 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //    于是"截图里有历史"全靠模拟器上攒下来的真数据，换台机器就没了。
         // 🚨 **原来那段种子在文件里有两份拷贝**（Scene 的两个分支各一份）——
         //    同一批样本抄两遍，改一处等于没改。现在只有这一份。
+        // 🚨 **种一条带卡片的单词本条目**，专门用来把卡片拍下来。
+        //    Kevin 2026-09-06 问了三次「单词卡片在哪儿呢」，而我一直
+        //    交不出一张**渲染出来**的图 —— 模拟器上单词本挡着登录门、
+        //    本子又是空的。**「代码写完了」和「他能看到那张卡」是两件事。**
+        //    只有 simctl/Xcode 能注入环境变量，真机用户设不了。
+        if ProcessInfo.processInfo.environment["TRANSLESS_SEED_CARD"] == "1" {
+            // 装成已登录 —— 否则连列表都进不去（`Auth` 只看这一个本地键）。
+            UserDefaults.standard.set("probe", forKey: "transless.auth.userId")
+            // 🚨 **不能用「本子空的才种」当前提**：本子里可能有别的用例留下的条目，
+            //    于是种子静默不生效，而截图看起来像"卡片没做出来"。
+            //    我第一版就是这么写的，拍回来一张老条目的图。
+            //    探针要的是**确定的状态**，就把它清干净再种。
+            if ProcessInfo.processInfo.environment["TRANSLESS_SEED_CARD"] == "1" {
+                for it in WordBook.list() { WordBook.remove(id: it.id) }
+                // A · 查词来的（卡片在收藏那一刻就存下来了）
+                _ = WordBook.add(
+                    zh: "", en: "resilient", span: "full", tone: "",
+                    today: Srs.todayString(),
+                    // 🚨 音标**故意带斜杠** —— 这就是他手机上那些旧卡片的样子，
+                    //    用来验"渲染前剥斜杠"那条真的在旧数据上生效。
+                    card: "{\"kind\":\"word\",\"phonetic\":\"/r\u{026A}\u{02C8}z\u{026A}li\u{0259}nt/\","
+                        + "\"pos\":\"adj.\","
+                        + "\"senses\":[{\"en\":\"able to recover quickly\",\"zh\":\"有韧性的\"},"
+                        + "{\"en\":\"springing back into shape\",\"zh\":\"回弹的\"}],"
+                        + "\"examples\":[{\"en\":\"A resilient economy.\",\"zh\":\"有韧性的经济。\"}],"
+                        + "\"collocations\":[\"resilient system\",\"highly resilient\"]}")
+                // B · 句子来的（结构拆解 / 换个说法 / 可以拆下来用的）
+                _ = WordBook.add(
+                    zh: "下周一开会把时间线再确认一下",
+                    en: "Let's confirm the timeline at Monday's meeting.",
+                    span: "full", tone: "work", today: Srs.todayString(),
+                    card: "{\"kind\":\"sentence\","
+                        + "\"breakdown\":[{\"part\":\"Let's\",\"role\":\"提议\",\"note\":\"比 We should 更像同事之间\"},"
+                        + "{\"part\":\"confirm the timeline\",\"role\":\"核心动作\",\"note\":\"confirm 比 check 更正式\"}],"
+                        + "\"alternatives\":[{\"en\":\"Can we lock the timeline on Monday?\",\"when\":\"更随意\"},"
+                        + "{\"en\":\"I'd like to confirm the timeline at Monday's meeting.\",\"when\":\"更正式\"}],"
+                        + "\"keys\":[{\"en\":\"confirm the timeline\",\"zh\":\"确认时间线\"}]}")
+            }
+        }
+
         if ProcessInfo.processInfo.environment["TRANSLESS_SEED_HIST"] == "1",
            History.list().isEmpty {
             History.add(mode: "en", tone: "", zh: "我想订一张明天去香港的高铁票",
@@ -1807,16 +1856,33 @@ extension AppDelegate {
 final class SplashViewController: UIViewController {
 
     private let logo = UIImageView(image: UIImage(named: "logo"))
-    private let zh = UI.label(Brand.sloganZh, size: Skin.sloganZhSize,
+    // 🚨 **跟界面语言走**（2026-09-06）。原来写死 `Brand.sloganZh`，
+    //    日文/德文界面下启动那两秒仍是中文 —— 首页那处我改了、
+    //    **这处漏了**。`Brand.sloganZh` 全树两个消费者，我只修了一个。
+    //    **规矩要按每个出口落地。**
+    private let zh = UI.label(Brand.slogan(), size: Skin.sloganZhSize,
                               kern: Skin.sloganZhKern, color: Skin.sloganZh,
                               weight: .regular)
-    private let en = UI.label(Brand.sloganEn, size: Skin.sloganEnSize,
+    private let en = UI.label(L.sloganEn, size: Skin.sloganEnSize,
                               kern: Skin.sloganEnKern, color: Skin.dim,
                               weight: .light)
     private let brand = UI.label("Transless", size: Skin.brandSize,
                                  kern: Skin.brandKern, color: Skin.text,
                                  weight: .medium)
     private var went = false
+
+    /// 英文界面下**两行会一模一样**（上面那行回落成英文品牌语），
+    /// 那时候第二行不显示 —— 同一句话印两遍不是设计，是 bug。
+    /// 上面那行**已经就是**英文品牌语时，别再印第二遍。
+    /// 🚨 现在 en/de/es/ar 都落英文，所以这四门都只显示一行 ——
+    ///    副行只在中文和日文界面下出现（那时上下两句确实不同）。
+    /// 上面那行**已经就是**英文品牌语时，别再印第二遍。
+    ///
+    /// 🚨 判据挂在**两句话本身**上，不数「哪几门有自己的 slogan」——
+    ///    数语言的话，`L.slogan` 里有一份规则、这里又有一份，加一门就漏一处。
+    ///    （上一版我就是那么写的，标了"这是重复"然后向 1.1 要访问器；
+    ///     `L.sloganEn` 已经加进生成器，同源，现在换掉。）
+    private var showEnLine: Bool { L.slogan != L.sloganEn }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -1841,7 +1907,14 @@ final class SplashViewController: UIViewController {
         zh.alpha = 0
         en.alpha = 0
         fade(zh, delay: 0.26)
-        fade(en, delay: 1.18)
+        // 🚨 英文界面下上面那行已经**就是**英文品牌语，再浮出一遍就是同一句印两遍。
+        //    不显示时**整个隐藏**（不只是 alpha 0）——`UIStackView` 里
+        //    alpha 0 的视图**仍然占位**，会留下一块空白，看着像排版塌了。
+        if showEnLine {
+            fade(en, delay: 1.18)
+        } else {
+            en.isHidden = true
+        }
 
         // 🚨🚨🚨 **被键盘拉起来时，开屏一秒都不能等（2026-09-01，Kevin 指出）。**
         //
@@ -2064,7 +2137,11 @@ final class HomeViewController: UIViewController {
         //    对**开屏页**成立 —— 那里中英两行**同时**出现，是品牌演出。
         //    但首页**只显示一行**，那一行就必须是他看得懂的那种语言。
         //    **同一个常量在两个场景里的正确用法不同**，照搬注释就会错。
-        let slogan = UI.label(L.isEn ? Brand.sloganEn : Brand.sloganZh,
+        // 🚨 走文案表，不再二选一 —— 二选一的写法只认「英不英文」，
+        //    第四门语言一出现就必然掉进错的那一支。
+        // 🚨 走 `Brand.slogan()` **不走 `L.home_slogan`** —— 见 `Brand` 里那段：
+        //    文案表里 de/es 是译文，而口径是那两门走英文原句。
+        let slogan = UI.label(Brand.slogan(),
                               size: 13, kern: Skin.sloganZhKern,
                               color: Skin.sloganZh, weight: .regular)
         slogan.textAlignment = .left
@@ -2331,7 +2408,11 @@ final class HomeViewController: UIViewController {
         t2.translatesAutoresizingMaskIntoConstraints = false
 
         let chev = UILabel()
-        chev.text = "›"
+        // RTL（阿语）下箭头要朝左。实测：整排布局会自动镜像（文字右对齐、
+        // 箭头挪到左边、tab 顺序翻转），**唯独这个字符本身不会跟着翻** ——
+        // 于是箭头在左边却指着右边。**自动镜像的是位置，不是字形。**
+        chev.text = UIView.userInterfaceLayoutDirection(for: .unspecified)
+            == .rightToLeft ? "‹" : "›"
         chev.font = .systemFont(ofSize: 24, weight: .light)
         chev.textColor = UIColor.white.withAlphaComponent(0.75)
         chev.isUserInteractionEnabled = false
@@ -3011,7 +3092,7 @@ final class PrefsViewController: UIViewController {
         let build = (Bundle.main.infoDictionary?["CFBundleVersion"]
                      as? String) ?? ver
         list.addArrangedSubview(row(L.prefs_about,
-                                    "版本 " + build, nil))
+                                    L.fill(L.prefs_version, build), nil))
         // 🚨 安卓的「检查更新」是连他局域网那台机下载 APK 的。
         //    **iOS 上不存在这条路** —— 苹果不允许 App 自己装包。
         //    所以这一项如实说明走 TestFlight，不做一个按了没反应的假按钮。
@@ -3086,7 +3167,11 @@ final class PrefsViewController: UIViewController {
         if let a = action {
             b.addTarget(self, action: a, for: .touchUpInside)
             let chev = UILabel()
-            chev.text = "›"
+            // RTL（阿语）下箭头要朝左。实测：整排布局会自动镜像（文字右对齐、
+        // 箭头挪到左边、tab 顺序翻转），**唯独这个字符本身不会跟着翻** ——
+        // 于是箭头在左边却指着右边。**自动镜像的是位置，不是字形。**
+        chev.text = UIView.userInterfaceLayoutDirection(for: .unspecified)
+            == .rightToLeft ? "‹" : "›"
             chev.textColor = Skin.dim
             chev.font = .systemFont(ofSize: 20)
             chev.translatesAutoresizingMaskIntoConstraints = false
@@ -3171,7 +3256,11 @@ final class PrefsViewController: UIViewController {
         //    actionSheet 不设 popover 的 sourceView 会直接闪退（审查 H4）。
         let a = UIAlertController(title: L.lang_title, message: nil,
                                   preferredStyle: .alert)
-        for code in Lang.all {
+        // 🚨 走 `Lang.selectable` 不走 `Lang.all`：
+        //    `all` 是「代码支持哪几门」，`selectable` 是「可以给用户选哪几门」。
+        //    阿语是 RTL，布局实测通过之前不列进来。
+        //    **两件事，别用同一个列表。**
+        for code in Lang.selectable {
             a.addAction(UIAlertAction(title: Lang.label(code),
                                       style: .default) { _ in
                 Lang.set(code)
@@ -3275,7 +3364,22 @@ final class MainViewController: UIViewController {
     //    这里是**第三份**副本，暂时只能手工对齐 —— iOS 没走构建期生成那条路。
     //    改档位时三处都要动：engine.py / build_apk.py 生成的 Gen / 这里。
     private let tones = Prompts.all
-    private let toneLabels = Prompts.all.map(Prompts.label)
+    /// 语气档的显示名。**每次读都算**，不缓存。
+    ///
+    /// 🚨🚨 原来是 `private let`（实例初始化时算一次）。主 App 没事 ——
+    ///    `Lang.set` 之后紧跟 `rebuildUI()`，整个 rootViewController 重建。
+    ///    **但 `rebuildUI()` 只动主 App 的窗口，而键盘扩展是另一个进程。**
+    ///    用户在 App 里把界面语言切成日语、再切到键盘，
+    ///    只要键盘进程还活着，语气条上显示的就还是切换前那套。
+    ///
+    /// 🚨 **修法比验它便宜**：这条要真机上让键盘进程跨越一次语言切换才复现，
+    ///    而改成计算属性的成本是"每次读重算三个元素"。
+    ///    **能用结构消掉的，别留着靠测试去守。**
+    ///
+    /// 🚨 同族：生成器里 `L.code` 也专门写过「必须是计算属性，不能是 `static let`
+    ///    —— `static let` 每进程只算一次，切完语言要等重启才变」。
+    ///    **同一条道理在这个文件里没落地。**
+    private var toneLabels: [String] { Prompts.all.map(Prompts.label) }
     private var tone = Prompts.normalize(KbBridge.prefs.string(forKey: "vime.tone"))
 
     /// 输出模式：译成英文（默认）/ 只转写。跟安卓一致。
@@ -3585,6 +3689,7 @@ final class MainViewController: UIViewController {
         toneButton.showsMenuAsPrimaryAction = true
 
         // 语言选择：跟语气并排，不藏进设置
+        langButton.accessibilityIdentifier = "app.lang"     // UITest 用
         langButton.titleLabel?.font = .systemFont(ofSize: 15)
         langButton.setTitleColor(Theme.text, for: .normal)
         langButton.backgroundColor = Theme.key
@@ -3865,6 +3970,18 @@ final class MainViewController: UIViewController {
         langPanel = nil
     }
 
+    /// 收掉这一屏所有浮层。**切档、离开这屏时都要调。**
+    ///
+    /// 🚨 Kevin 2026-09-06：「跳去转写，这时候语言菜单还是开着的，
+    ///    **而且被归到了左边**」。
+    ///    根因：面板钉在语言按钮上，切到转写时那个按钮被隐藏、宽度塌成 0，
+    ///    **面板没人收，就跟着塌掉的锚点挪过去了**。
+    /// 🚨 收成一个函数：切档的入口不止一个，各写一遍必漏。
+    private func dismissPanels() {
+        langPanel?.removeFromSuperview()
+        langPanel = nil
+    }
+
     @objc private func toggleLangPanel() {
         if let old = langPanel {
             old.removeFromSuperview()
@@ -4022,6 +4139,12 @@ final class MainViewController: UIViewController {
     }
 
     private func setMode(_ m: Backend.Mode) {
+        // 🚨 **切档先把浮层收掉**（Kevin 2026-09-06）。
+        //    面板钉在语言按钮上，切到转写时那个按钮隐藏、宽度塌成 0，
+        //    面板没人收就跟着塌掉的锚点挪到左边。
+        //    🚨 挂在 `setMode` 这**一个**出口上 —— 四个 `pickXxx` 各写一遍的话，
+        //       以后加一个档位就漏一处。
+        dismissPanels()
         mode = m
         KbBridge.prefs.set(m.rawValue, forKey: "vime.mode")
         paintMode()
