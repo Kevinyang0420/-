@@ -1963,9 +1963,13 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             //    再点 🌐 切过去，这两步模拟器上脚本点不动。把同一个
             //    `TypingKeyboardView` 直接塞进 App 里截图，看到的是同一份代码。
             //    正式界面里没有任何入口，只有这个环境变量能进。
-            // 直达单词本 —— 上架截图要它（正式入口在设置里，
-            //    靠点文案进不去：**界面语言一换文案就变**，7 门语言各点一次必漂）。
-            case "wb": nav.pushViewController(WordBookViewController(), animated: false)
+            // 🚨 **这里没有 `wb` 深链，是故意的。**
+            //    我 09-07 为上架截图加过一条，直接 push 单词本 ——
+            //    **绕过了登录门**，`gate_wordbook_copy.py` 当场红，
+            //    还连带把安卓的包改名成 `.FAILED.apk` 推不到他手机上。
+            //    闸门抓得对：**单词本只许有一个入口，就是带门的那个**。
+            //    截图改成按标识点设置里那一行（`prefs.row.wordbook`），
+            //    不受界面语言影响，也照样过门。
             case "kb": nav.pushViewController(KeyboardPreviewController(), animated: false)
             // 拼音引擎对拍（期望值来自独立的 Python 参照实现）
             case "pysplit": nav.pushViewController(PinyinSelfTestController(),
@@ -3268,8 +3272,11 @@ final class PrefsViewController: UIViewController {
         // 🚨 **单词本从首页挪进设置**（Kevin 2026-09-04 四 Tab 需求变更点 2：
         //    「单词本不是最 key 的，最 key 的是常用词。所以单词本放设置里」）。
         //    首页那条长条已同步去掉 —— **两处只能留一处**，不然又是同一入口两个地方。
-        list.addArrangedSubview(row(L.home_wordbook, nil,
-                                    #selector(openWordbookFromPrefs)))
+        // 🚨 带标识：自动化按**标识**点，不按文案 ——
+        //    界面语言一换文案就变，7 门语言的截图会各漏各的。
+        let wbRow = row(L.home_wordbook, nil, #selector(openWordbookFromPrefs))
+        wbRow.accessibilityIdentifier = "prefs.row.wordbook"
+        list.addArrangedSubview(wbRow)
 
         // ② 偏好
         list.addArrangedSubview(group(L.prefs_g_pref))

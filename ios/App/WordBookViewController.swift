@@ -81,6 +81,12 @@ final class WordBookViewController: UIViewController {
             scroll.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            // 🚨 钉**安全区**，不是 `view.bottomAnchor`。
+            //    钉 view 底的话滚动内容会钻到底栏下面 —— 滚到底时
+            //    最后一根按钮被底栏压住，看着就是"贴死"。
+            //    实测：加了 16pt 垫片 + 20pt 内边距（共 36），
+            //    可见间距仍只有 14.7pt —— **21pt 被底栏吃掉了**。
+            //    这不是间距调小了，是**内容区的边界画错了**。
             scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             body.topAnchor.constraint(equalTo: scroll.topAnchor, constant: 20),
             body.leadingAnchor.constraint(equalTo: view.leadingAnchor,
@@ -109,6 +115,7 @@ final class WordBookViewController: UIViewController {
     // MARK: - 列表
 
     private func showList() {
+        clearDetailMenu()
         mode = .list
         clearBody()
         let all = WordBook.list()
@@ -340,10 +347,15 @@ final class WordBookViewController: UIViewController {
 
         renderNote(it)
 
-        let del = bigButton(L.wb_delete, #selector(tapDelete))
-        del.backgroundColor = Theme.danger
-        body.addArrangedSubview(del)
-        body.addArrangedSubview(bigButton(L.wb_back, #selector(showListAction)))
+        // 🚨🚨 **方案 A：这里原来还有两根通栏条，已经拆掉**（Kevin 09-07 点头）。
+        //    他的话是「这三个长条太丑了」。Grok 的判断（我同意）：
+        //    丑的不是圆角也不是配色，是**三根同形同尺寸同权重的东西贴着底栏叠成一堵墙** ——
+        //    几何完全一样，只靠红/紫区分，看着像三个广告位，不像三个不同级别的操作。
+        //    · 「删掉这条」低频且破坏性 → 降权进导航栏右上 `⋯`（见 `installDetailMenu`）
+        //    · 「返回」系统已经给了（左上角 chevron）→ **纯重复，删掉**
+        //    · 只留「写笔记」，它才是这一屏唯一想让他点的东西
+        //    剩的那根由 `renderNote` 画，规格见 `primaryButton`。
+        installDetailMenu(it)
     }
 
     /// **我的笔记** —— 卡片上唯一由他自己写的东西。
@@ -361,10 +373,17 @@ final class WordBookViewController: UIViewController {
                       note.isEmpty ? Skin.dim : Skin.text)
         v.accessibilityIdentifier = "wb.note.body"
         body.addArrangedSubview(v)
-        let b = bigButton(note.isEmpty ? L.wb_note_write : L.wb_note_edit,
-                          #selector(tapEditNote))
+        let b = primaryButton(note.isEmpty ? L.wb_note_write : L.wb_note_edit,
+                              #selector(tapEditNote))
         b.accessibilityIdentifier = "wb.note.edit"
         body.addArrangedSubview(b)
+        // 与上面笔记文案 12pt（`body` 的 spacing 是 12，这里不用再加）；
+        // 🚨 **与底栏至少 16pt** —— 原来 `body` 底部只留 20pt 到 scroll 底，
+        //    而 scroll 铺到 view 底、底栏压在上面，看起来就是贴死的。
+        //    这一条只在详情页加，列表页不受影响。
+        let pad = UIView()
+        pad.heightAnchor.constraint(equalToConstant: 16).isActive = true
+        body.addArrangedSubview(pad)
     }
 
     @objc private func tapEditNote() {
@@ -565,6 +584,39 @@ final class WordBookViewController: UIViewController {
 
     @objc private func showListAction() { showList() }
 
+    /// 详情页的导航栏：右上 `⋯`，标题换成这个词本身。
+    ///
+    /// 🚨 **标题换成词**（Kevin 也点了头）：这一屏从头到尾没有出现过这个单词，
+    ///    导航标题却写着「单词本」—— 用户会以为自己还在列表页。
+    ///    音标上面空着的那一行本来就是词该在的位置。
+    /// 🚨 删除**只放这一处**，不再在正文里留一根红条：
+    ///    破坏性操作不该跟主操作同体积同实心（Grok 的四条规则之一）。
+    private func installDetailMenu(_ it: WordBookCore.Item) {
+        title = it.en.isEmpty ? L.wb_title : it.en
+        let del = UIAction(title: L.wb_delete,
+                           image: UIImage(systemName: "trash"),
+                           attributes: .destructive) { [weak self] _ in
+            // 🚨 复用现有的 `tapDelete` —— 那里已经有确认框，
+            //    再写一个"确认"就是同一规矩两处实现，改的时候必漏一个。
+            self?.tapDelete()
+        }
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            image: UIImage(systemName: "ellipsis.circle"),
+            menu: UIMenu(children: [del]))
+        navigationItem.rightBarButtonItem?.accessibilityIdentifier = "wb.more"
+    }
+
+    /// 回列表时**必须把详情的导航栏收掉**。
+    ///
+    /// 🚨 不收的话：列表页顶上挂着上一条词的标题和一个 `⋯`，
+    ///    而那个 `⋯` 里的「删掉这条」删的是 `detailId` —— **删的是他已经离开的那一条**。
+    ///    这类残留在截图上完全看不出来（标题像是"当前分组"），
+    ///    只有真去点才会出事。
+    private func clearDetailMenu() {
+        title = L.wb_title
+        navigationItem.rightBarButtonItem = nil
+    }
+
     // MARK: - 小工具
 
     private func label(_ s: String, _ size: CGFloat, _ c: UIColor) -> UILabel {
@@ -584,6 +636,30 @@ final class WordBookViewController: UIViewController {
         v.numberOfLines = 0
         body.addArrangedSubview(v)
         body.setCustomSpacing(18, after: v)
+    }
+
+    /// **唯一的主按钮**（方案 A）。数字是 Grok 定的，三端共用，别随手改：
+    ///
+    /// | 项 | 值 | 为什么 |
+    /// |---|---|---|
+    /// | 高度 | 48pt | 原来 52，三根并排时更显厚重 |
+    /// | 圆角 | 12pt | 🚨 **不是全高胶囊** —— 全胶囊只适合单颗 FAB 或小 chip，
+    ///                 三根并排就成了「糖豆广告」 |
+    /// | 与上文 | 12pt | 跟笔记正文成一组 |
+    /// | 与底栏 | ≥16pt | 🚨 原来贴死，底栏已经占一层，再贴一根就是"下面好挤" |
+    ///
+    /// 🚨 **同一屏最多一颗实心主色按钮**（Grok 四条规则之首）——
+    ///    加第二颗之前先想清楚它是不是真的同级。
+    private func primaryButton(_ t: String, _ sel: Selector) -> UIButton {
+        let b = UIButton(type: .system)
+        b.setTitle(t, for: .normal)
+        b.setTitleColor(.white, for: .normal)
+        b.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        b.backgroundColor = Skin.accent
+        b.layer.cornerRadius = 12
+        b.addTarget(self, action: sel, for: .touchUpInside)
+        b.heightAnchor.constraint(equalToConstant: 48).isActive = true
+        return b
     }
 
     private func bigButton(_ t: String, _ sel: Selector) -> UIButton {

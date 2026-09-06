@@ -3168,7 +3168,19 @@ final class KeyboardViewController: UIInputViewController {
             if r == .armedInPlace {
                 // 🚨 **就地架好了，一次跳转都没发生** —— 不收键盘、不报错。
                 //    他人就在 Transless 里，`completeRequest` 会把他踢出去。
+                //
+                // 🚨🚨 **必须等它架完再往下，而且这里一定要 return。**
+                //    Kevin 09-07：「它说什么 **Transless 没在后台**，
+                //    然后**还要再点一下才行**」——
+                //    上一版这个分支只改了个提示就**掉到下面那道
+                //    `guard KbBridge.hostAlive`**，而就地架是**异步的**
+                //    （主 App 收到通知 → 架 → 零点几秒），这一刻当然还没架好。
+                //    他第二次点时已经架好了，所以"第二次就行"。
+                //    **我把一个异步动作当成同步的用了**；跳转那条我记得 return，
+                //    是因为跳转会让键盘消失、看不出来，就地这条立刻现形。
                 setPhase(.idle, hint: L.kb_rearming)
+                waitArmedThenRecord()
+                return
             } else if r == .dispatched {
                 setPhase(.idle, hint: L.kb_rearming)
                 // 🚨🚨🚨 **在拉起主 App 的同一刻就 `completeRequest`。**
@@ -4329,6 +4341,36 @@ final class KeyboardViewController: UIInputViewController {
     ///   写进痕迹，否则两个不同机制会被混成一个结论（交叉审查 中-4）。
     /// - Parameter hint: 相位提示。直录回退时要把那句短提示带过来，
     ///   否则「实验做了、结论是什么」他答不上来（默认空串＝原行为）。
+    /// 就地架引擎发出去之后，**等它架好，然后自己接着录**。
+    ///
+    /// 🚨 他不该为一次架引擎点两下。跳转那条路本来就是靠 `markWantRec`
+    ///    在主 App 回来时自动接上的 —— 就地这条没有"回来"这个时刻，
+    ///    所以要在这儿自己等。
+    /// 🚨 **走 `startOnArmedHost`**，不另写一条起录路径：
+    ///    这个文件里"起录"已经有四个调用点，再加一条必然漂。
+    /// 🚨 等不到要**说实话**：干等和假装在录都比一句实话糟。
+    private func waitArmedThenRecord(_ n: Int = 0) {
+        // 🚨 他中途改了主意就别再抢：相位不是待命了就停手
+        //    （比如他按了取消、或者已经开始打字）。
+        guard phase == .idle else {
+            KbBridge.note("就地架：等的过程中相位变了 → 放弃这一次")
+            return
+        }
+        if KbBridge.hostAlive {
+            KbBridge.note("就地架：架好了 → 直接起录（他只点了一次）")
+            _ = startOnArmedHost(tone: tone, via: "就地架好自动接上")
+            return
+        }
+        if n >= 20 {                       // 20 × 0.15 ≈ 3 秒
+            KbBridge.note("就地架：3 秒还没架好 → 照实说，不假装在录")
+            setPhase(.idle, hint: L.kb_need_standby)
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            self?.waitArmedThenRecord(n + 1)
+        }
+    }
+
     private func startOnArmedHost(tone: String, via: String,
                                   hint: String = "") -> Bool {
         KbBridge.note("键盘：宿主引擎已架好，直接发命令，不跳转｜via=" + via)
