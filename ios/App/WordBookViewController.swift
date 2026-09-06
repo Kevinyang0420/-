@@ -512,6 +512,45 @@ final class WordBookViewController: UIViewController {
         loading.numberOfLines = 0
         body.addArrangedSubview(loading)
 
+        // 🚨🚨 **单词走 `lookup`，句子才走 `card`。**
+        //    Kevin 09-06：「这个单词没有例句，什么都没了呀！」——
+        //    我当时把例句写进了**测试数据**，产品这条路一直没修。
+        //    09-07 把种子换成真查，例句当场消失，才现形。
+        //
+        //    实测线上：`card` 问 commute 回的是
+        //    `{"kind":"sentence","alternatives":[…],"keys":[]}` ——
+        //    **没有音标、没有义项、没有例句**；
+        //    而 `lookup` 回音标 + 义项 + 3 条例句。
+        //    两屏"内容不一样"从来不是渲染问题，是**取数取错了接口**。
+        //
+        //    🚨 判据用现成的 `WordKind`，不新写一套 ——
+        //    这摊活在"同一规则两处实现"上已经栽过好几次。
+        if WordKind.of(it.en) == .word {
+            Backend.lookup(it.en) { [weak self] r in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    guard self.mode == .detail, self.detailId == it.id else { return }
+                    switch r {
+                    case .success(let e):
+                        // 🚨 笔记照旧要接住 —— 它是卡片上唯一不该被重取覆盖的字段。
+                        WordBook.setCard(
+                            id: it.id,
+                            card: WordCard.merged(fromServer: WordCard.fromDict(e),
+                                                  keepingNoteOf: it.card))
+                        if let fresh = WordBook.list().first(where: { $0.id == it.id }) {
+                            self.showDetail(fresh)
+                        }
+                    case .failure(let f):
+                        KbBridge.note("取词条失败：\(f)")
+                        loading.text = L.wb_card_failed
+                        let again = self.bigButton(L.wb_card_retry,
+                                                   #selector(self.tapRetryCard))
+                        self.body.addArrangedSubview(again)
+                    }
+                }
+            }
+            return
+        }
         Backend.card(en: it.en, zh: it.zh, tone: it.tone) { [weak self] r in
             DispatchQueue.main.async {
                 guard let self = self else { return }

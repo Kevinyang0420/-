@@ -32,7 +32,18 @@ final class StoreShots: XCTestCase {
         app.launchEnvironment["TRANSLESS_NO_ARM"] = "1"   // 模拟器音频会 abort
         app.launchEnvironment["TRANSLESS_UILANG"] = lang
         app.launchEnvironment["TRANSLESS_PAGE"] = page
-        if seedCard { app.launchEnvironment["TRANSLESS_SEED_CARD"] = "1" }
+        // 🚨 出图专用：键盘预览页那身绿底和「预览：真实键盘扩展（…）」横幅
+        //    是调试脚手架，**不能出现在上架图里**（09-07 交过一次，被 0 拦下）。
+        app.launchEnvironment["TRANSLESS_STORE_SHOT"] = "1"
+        if seedCard {
+            app.launchEnvironment["TRANSLESS_SEED_CARD"] = "1"
+            // 🚨 **真查一次，不用写死中文的假数据。**
+            //    Kevin 09-07 看日语版：「例文里面也是用中文去写」——
+            //    那张卡片是种子里写死的中文。真实链路是对的
+            //    （`ui_lang` 已经在传，后端按语言给），错的是假数据。
+            //    这张图要送日本区 App Store，不能拿"只是测试数据"糊过去。
+            app.launchEnvironment["TRANSLESS_LIVE_CARD"] = "1"
+        }
         app.terminate()
         app.launch()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 25),
@@ -65,14 +76,61 @@ final class StoreShots: XCTestCase {
         shot("03_随手翻译")
 
         // ④ 单词本卡片 —— 要有内容才好看，种一条进去再点开
-        let wb = launch("wb", seedCard: true)
+        //
+        // 🚨 **走设置里那一行进去，不走深链。**
+        //    我原来加过 `TRANSLESS_PAGE=wb` 直达 —— 它**绕过了登录门**，
+        //    `gate_wordbook_copy.py` 当场红，还连带把安卓的包判成失败、
+        //    推不到他手机上。闸门判得对：**单词本只许有一个入口，就是带门的那个**。
+        //    这里按标识 `prefs.row.wordbook` 点，不按文案（文案随语言变）。
+        let wb = launch("prefs", seedCard: true)
+        let wbRow = wb.descendants(matching: .any)
+            .matching(identifier: "prefs.row.wordbook").firstMatch
+        if !wbRow.waitForExistence(timeout: 6) {
+            wb.swipeUp(); Thread.sleep(forTimeInterval: 1.0)
+        }
+        XCTAssertTrue(wbRow.waitForExistence(timeout: 8),
+                      "🚨 [\(lang)] 设置里找不到单词本那一行")
+        wbRow.tap()
+        Thread.sleep(forTimeInterval: 2.5)
         let row = wb.staticTexts.matching(NSPredicate(
             format: "label CONTAINS %@", "commute")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 8),
                       "🚨 [\(lang)] 单词本里没有 commute —— 种子没生效，"
                       + "这张会是空本子")
         row.tap()
-        Thread.sleep(forTimeInterval: 2.5)
+        // 🚨 真查要等网络回来（详情页会转一下「正在取卡片…」）。
+        //    等不够就截到"正在取"，而那张图看起来只是"排版空"，
+        //    不像"没等到" —— 又一个安静的坏。
+        Thread.sleep(forTimeInterval: 9.0)
+        // 🚨🚨 **判据必须看得出语言真换了**，不是"有内容就行"。
+        //    上一轮我交的 35 张全过了「尺寸/张数/md5 互不相同」，
+        //    而**七门语言跑出来的全是中文** —— md5 不同只是因为时钟在变。
+        //    这里按脚本判：日语要有假名、阿语要有阿拉伯字母、
+        //    德/西要有拉丁字母且**不含汉字**。
+        let texts = wb.staticTexts.allElementsBoundByIndex
+            .prefix(120).filter { $0.exists }.map { $0.label }.joined()
+        func has(_ range: ClosedRange<UInt32>) -> Bool {
+            texts.unicodeScalars.contains { range.contains($0.value) }
+        }
+        let han = has(0x4E00...0x9FFF)
+        switch lang {
+        case "ja":
+            XCTAssertTrue(has(0x3040...0x30FF),
+                          "🚨 [ja] 卡片里一个假名都没有 —— 释义多半还是中文")
+        case "ar":
+            XCTAssertTrue(has(0x0600...0x06FF),
+                          "🚨 [ar] 卡片里没有阿拉伯字母 —— 释义没跟界面语言走")
+        case "de", "es":
+            XCTAssertFalse(han,
+                           "🚨 [\(lang)] 卡片里出现汉字 —— 释义还是中文")
+        case "en":
+            XCTAssertFalse(han,
+                           "🚨 [en] 卡片里出现汉字 —— 释义还是中文")
+        default:
+            // zh / hant：中文本来就该有汉字，这条判据在这两门上分辨不了，
+            // 🚨 **如实跳过**，不假装验过。
+            break
+        }
         shot("04_单词本卡片")
 
         // ⑤ 多语言 —— 面对面那屏的语言下拉，展开给看

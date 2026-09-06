@@ -1135,6 +1135,33 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             //    探针要的是**确定的状态**，就把它清干净再种。
             if ProcessInfo.processInfo.environment["TRANSLESS_SEED_CARD"] == "1" {
                 for it in WordBook.list() { WordBook.remove(id: it.id) }
+                // 🚨🚨 **上架截图专用：种一条「没有卡片」的词，逼它真查一次。**
+                //
+                //    Kevin 09-07 看日语版截图：「为什么日文的版本，
+                //    它这个**例文**里面也是用中文去写啊？…如果是日文的话，
+                //    就应该是日英翻译嘛」。
+                //
+                //    下面那些种子的卡片 JSON **写死了中文释义** ——
+                //    真实链路是对的（`lookup`/`card` 都带 `ui_lang`，
+                //    后端实测按语言给解释），**错的是这些假数据**。
+                //    而那张图要送去日本区 App Store，图上是中文就是错的。
+                //
+                //    🚨 不手翻一份日/德/西/阿塞进来 —— 那还是假数据，
+                //    而且我翻得对不对没人验。`card: ""` 会让详情页
+                //    `fetchCard` 按**当前界面语言**真查一次，
+                //    图上是什么、真实用户看到的就是什么。
+                //    **顺带把 `ui_lang` 端到端也验了** —— 假数据那条路
+                //    修多少次都证明不了这一点。
+                //    🚨 **用 if/else，不许在这里 `return`** —— 这一段在
+                //    `didFinishLaunching` 里，早退会把后面**全部初始化跳掉**。
+                //    我第一版就写成了 `return true`（今晚第四次"挂错位置"）。
+                let liveCard =
+                    ProcessInfo.processInfo.environment["TRANSLESS_LIVE_CARD"] == "1"
+                if liveCard {
+                    _ = WordBook.add(zh: "", en: "commute", span: "full",
+                                     tone: "", today: Srs.todayString(), card: "")
+                }
+                if !liveCard {
                 // A · 查词来的（卡片在收藏那一刻就存下来了）
                 _ = WordBook.add(
                     zh: "", en: "resilient", span: "full", tone: "",
@@ -1188,6 +1215,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                         + "\"alternatives\":[{\"en\":\"Can we lock the timeline on Monday?\",\"when\":\"更随意\"},"
                         + "{\"en\":\"I'd like to confirm the timeline at Monday's meeting.\",\"when\":\"更正式\"}],"
                         + "\"keys\":[{\"en\":\"confirm the timeline\",\"zh\":\"确认时间线\"}]}")
+                }
             }
         }
 
@@ -5593,11 +5621,32 @@ final class KeyboardPreviewController: UIViewController {
         //    语音面板和打字键盘的内边距不同，就会量出假的高度差。
         //    换成纯色之后，"不是这个色的那一块"就是键盘，边界是硬的。
         //    🚨 只影响预览页（`TRANSLESS_PAGE=kb`），正式界面没有入口。
-        view.backgroundColor = UIColor(red: 0.10, green: 0.42, blue: 0.16,
-                                       alpha: 1)   // 深绿，键盘配色里没有
+        // 🚨🚨 **出上架图时不要这身绿。**（09-07 0 抓到）
+        //    这张绿底 + 类名横幅是**调试脚手架**，我却把它当上架图交了出去：
+        //    七门语言的第 1 张全是它，绿底占 74%，图上还印着
+        //    「预览：真实键盘扩展（KeyboardViewController）」——
+        //    内部类名 + 中文调试字样出现在阿拉伯语上架图里，提交必被拒。
+        //
+        //    🚨 **不能直接把绿去掉** —— 上面那段注释说得很清楚：
+        //    量键盘高度的闸门靠「不是这个色的那块就是键盘」找边界，
+        //    去掉就把那些检查弄坏了。所以只加一个**出图专用**的开关，
+        //    默认行为一个字不动。
+        //
+        //    🚨 我只做到"不含调试痕迹、用产品自己的底色"这一步。
+        //    这一屏该摆成什么样（上半屏放什么、要不要做成聊天场景）
+        //    **是版面设计，不归我定** —— 已交 2.1 走 Grok 那条流程。
+        let storeShot =
+            ProcessInfo.processInfo.environment["TRANSLESS_STORE_SHOT"] == "1"
+        if storeShot {
+            UI.paintBg(self)
+        } else {
+            view.backgroundColor = UIColor(red: 0.10, green: 0.42, blue: 0.16,
+                                           alpha: 1)   // 深绿，键盘配色里没有
+        }
 
         let fake = UILabel()
         // 调试页：正式界面没有入口（TRANSLESS_PAGE=kb 才进得来）
+        fake.isHidden = storeShot          // 出图时不许露类名
         fake.text = "  预览：真实键盘扩展（KeyboardViewController）"
         fake.font = .systemFont(ofSize: 13)
         fake.textColor = Theme.dim
