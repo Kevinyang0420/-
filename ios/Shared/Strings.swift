@@ -226,7 +226,7 @@ enum L {
     static var wb_card_alternatives: String { s(["zh": "换个说法", "en": "Other ways to say it", "hant": "換個說法", "ja": "別の言い方", "de": "Andere Formulierungen", "es": "Otras formas de decirlo", "ar": "صيغ أخرى"]) }
     static var wb_card_keys: String { s(["zh": "可以拆下来用的", "en": "Worth reusing", "hant": "可以拆下來用的", "ja": "再利用できる表現", "de": "Wiederverwendbar", "es": "Vale la pena reutilizar", "ar": "جدير بالاستخدام"]) }
     static var prefs_version: String { s(["zh": "版本 %1$@", "en": "Version %1$@", "hant": "版本 %1$@", "ja": "バージョン %1$@", "de": "Version %1$@", "es": "Versión %1$@", "ar": "الإصدار %‎1‎$@"]) }
-    static var home_slogan: String { s(["zh": "让世界听懂你", "en": "No Language In Between", "hant": "讓世界聽懂你", "ja": "世界に、あなたが伝わる。", "de": "No Language In Between", "es": "No Language In Between", "ar": "No Language In Between"]) }
+    static var home_slogan: String { s(["zh": "让世界听懂你", "en": "No Language In Between", "hant": "讓世界聽懂你", "ja": "言葉の壁をなくす。", "de": "No Language In Between", "es": "No Language In Between", "ar": "No Language In Between"]) }
     static var err_mic_silent: String { s(["zh": "没收到麦克风的声音。把 Transless 打开一次再试", "en": "No sound reached the microphone. Open Transless once and try again", "hant": "沒收到麥克風的聲音。把 Transless 打開一次再試", "ja": "マイクに音が届きませんでした。Translessを一度開いてからもう一度お試しください。", "de": "Kein Ton erreichte das Mikrofon. Öffne Transless einmal und versuche es erneut.", "es": "No llegó sonido al micrófono. Abre Transless una vez e inténtalo de nuevo.", "ar": "لم يصل أي صوت إلى الميكروفون. افتح ‎Transless‎ مرة واحدة ثم حاول مجددًا"]) }
     static var kb_host_slow: String { s(["zh": "等太久了，再说一次", "en": "That took too long — try again", "hant": "等太久了，再說一次", "ja": "時間がかかりすぎました。もう一度お試しください", "de": "Das hat zu lange gedauert – versuch es nochmal", "es": "Tardó demasiado. Inténtalo de nuevo", "ar": "استغرق ذلك وقتًا طويلاً — حاول مرة أخرى"]) }
     static var kb_slow_retry: String { s(["zh": "等太久了 · 刚才那段还在，点一下重发", "en": "That took too long — your recording is still here, tap to resend", "hant": "等太久了 · 剛才那段還在，點一下重發", "ja": "時間がかかりすぎました。録音はまだありますので、タップして再送信してください", "de": "Das hat zu lange gedauert – deine Aufnahme ist noch da, tippe zum erneuten Senden", "es": "Tardó demasiado: la grabación sigue aquí, toca para reenviar", "ar": "استغرق ذلك وقتًا طويلًا — تسجيلك ما زال هنا، اضغط لإعادة الإرسال"]) }
@@ -491,7 +491,7 @@ enum L {
     /// 首页 slogan，**按界面语言查表**（Kevin 2026-09-06 口径）。
     ///
     /// 🚨🚨 **不许改成 `L.home_slogan`** —— de/es 的 ui_i18n 里
-    ///    home_slogan 有译文，而口径是它们走英文原句。**读资源就违口径。**
+    ///    home_slogan 有译文，**但那不是 Kevin 选的那句**。品牌语是**选定的**，不是翻译出来的 —— 走翻译管线会被重跑器覆盖（ja 已有前科）。
     /// 🚨 源头是 `i18n_map.slogan_for()`，三端同源。手改这里会被生成覆盖。
     static var slogan: String {
         switch code {
