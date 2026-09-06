@@ -497,10 +497,10 @@ enum L {
         switch code {
         case "zh-Hans": return "让世界听懂你"
         case "zh-Hant": return "讓世界聽懂你"
-        case "ja": return "言葉の壁をなくす。"
+        case "ja": return "言葉のままで、心が届く。"
         case "de": return "Deine Worte, jede Sprache."
-        case "es": return "Habla, y que te entiendan."
-        case "ar": return "بلا حواجز لغوية."
+        case "es": return "Habla, y te entienden."
+        case "ar": return "كلامك، بأي لغة."
         default: return "No Language In Between"   // 没列出来的语言退英文原句
         }
     }
