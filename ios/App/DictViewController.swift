@@ -22,7 +22,15 @@ final class DictViewController: UIViewController {
     private let scroll = UIScrollView()
     private let col = UIStackView()
     private let field = UITextField()
-    private let micBtn = UIButton(type: .custom)
+    private let searchBtn = UIButton(type: .custom)
+    /// 查询失败时的**弱化提示行** —— 2.1 2026-09-06 定案。
+    ///
+    /// 🚨🚨 **原来是黑底 toast 浮在屏幕底部**，两个毛病：
+    ///    ① 它盖在别的东西上、2.2 秒就没了，他没看清就走了；
+    ///    ② 位置在最底下，看着像是「+ 单词本」弹的 ——
+    ///       0 就是这么把它误判成「加入单词本失败」的（`tapAdd` 全程不弹任何提示）。
+    ///    **提示放错地方，会让下一个人把故障归错因。**
+    private let errLabel = UILabel()
     private let card = UIView()
     private let cardCol = UIStackView()
     private let recentTitle = UILabel()
@@ -30,7 +38,6 @@ final class DictViewController: UIViewController {
 
     private var current: DictEntry?
     private var addBtn: UIButton?
-    private let voice = Voice()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -67,14 +74,28 @@ final class DictViewController: UIViewController {
         field.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(field)
 
-        micBtn.backgroundColor = Theme.accent
-        micBtn.layer.cornerRadius = 21
-        Theme.setMicGlyph(micBtn, side: 60)   // 🚨 走唯一出口，不自己乘系数
-        micBtn.tintColor = .white
-        micBtn.accessibilityIdentifier = "dict.mic"
-        micBtn.addTarget(self, action: #selector(tapMic), for: .touchUpInside)
-        micBtn.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(micBtn)
+        // 🚨🚨 **这个钮原来是麦克风、点下去起录；现在是放大镜、点下去就查。**
+        //    Kevin 2026-09-06 一手原话（2.1 转）：
+        //    「就用放大镜就好了…**不需要麦克风的 icon，打字的话就是我录入，
+        //      我用 Transless 去说话转写就行了**」
+        //
+        //    他点破的是：**我们自己就是语音输入法** —— 要说话就用 Transless 键盘
+        //    往这个框里说，查词页不需要再长一个麦克风。
+        //    （我和 2.1 都先想成「删麦克风＝丢掉语音查词」，
+        //      那是**盯着这一屏找入口，而入口在产品的另一层**。）
+        //
+        // 🚨 只换图形和行为：42×42、圆角 21、紫底、白 tint、位置**一个都没动**。
+        searchBtn.backgroundColor = Theme.accent
+        searchBtn.layer.cornerRadius = 21
+        searchBtn.setImage(Theme.searchGlyph(60), for: .normal)
+        searchBtn.tintColor = .white
+        // 🚨 名字和 a11y id 这次**跟着行为一起改** —— 它现在真的是查询了。
+        //    （上一版故意留着 `mic`，因为那时它还在起录；名字要指着它真做的事。）
+        searchBtn.accessibilityIdentifier = "dict.search"
+        searchBtn.addTarget(self, action: #selector(tapSearch),
+                            for: .touchUpInside)
+        searchBtn.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(searchBtn)
 
         // ── 结果卡 ──────────────────────────────────────────
         card.backgroundColor = Theme.panel
@@ -102,6 +123,15 @@ final class DictViewController: UIViewController {
         col.alignment = .fill
         col.spacing = 14
         col.translatesAutoresizingMaskIntoConstraints = false
+        // 🚨 错误行排在**结果卡之上**，紧贴搜索框下方 ——
+        //    2.1：「不占结果卡片的位置」。它平时 isHidden，
+        //    `UIStackView` 会把隐藏项的尺寸压成 0，所以不留空。
+        errLabel.font = .systemFont(ofSize: 13)
+        errLabel.textColor = Theme.dim          // 弱化：次要色，不是警告红
+        errLabel.numberOfLines = 0
+        errLabel.isHidden = true
+        errLabel.accessibilityIdentifier = "dict.err"
+        col.addArrangedSubview(errLabel)
         col.addArrangedSubview(card)
         col.addArrangedSubview(recentTitle)
         col.addArrangedSubview(recentRow)
@@ -118,16 +148,30 @@ final class DictViewController: UIViewController {
             field.topAnchor.constraint(equalTo: g.topAnchor, constant: 12),
             field.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 16),
             field.heightAnchor.constraint(equalToConstant: 46),
-            micBtn.leadingAnchor.constraint(equalTo: field.trailingAnchor, constant: 12),
-            micBtn.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -16),
-            micBtn.centerYAnchor.constraint(equalTo: field.centerYAnchor),
-            micBtn.widthAnchor.constraint(equalToConstant: 42),
-            micBtn.heightAnchor.constraint(equalToConstant: 42),
+            searchBtn.leadingAnchor.constraint(equalTo: field.trailingAnchor, constant: 12),
+            searchBtn.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -16),
+            searchBtn.centerYAnchor.constraint(equalTo: field.centerYAnchor),
+            searchBtn.widthAnchor.constraint(equalToConstant: 42),
+            searchBtn.heightAnchor.constraint(equalToConstant: 42),
 
             scroll.topAnchor.constraint(equalTo: field.bottomAnchor, constant: 16),
             scroll.leadingAnchor.constraint(equalTo: g.leadingAnchor),
             scroll.trailingAnchor.constraint(equalTo: g.trailingAnchor),
-            scroll.bottomAnchor.constraint(equalTo: g.bottomAnchor),
+            // 🚨🚨 **底部要给中间那个凸起让位**，否则最后一块内容点不到也看不全。
+            //    Kevin 2026-09-06 那张图：「最近查过」的标题贴在悬浮 tab 栏上沿，
+            //    **它下面的 chip 一条都露不出来** —— 记忆 `feedback_ui_below_fold_is_missing`：
+            //    **滚不到的地方 = 不存在。**
+            //
+            // 🚨 用 `MainTabController.bottomClearance`（= bumpLift + 12），
+            //    **不自己另写一个数** —— 那个常量就是为这件事设的单一配置点，
+            //    它的注释里写着「凸起是盖在**所有** Tab 页上的…谁把控件贴到底
+            //    就会被它压住（09-04 面对面的录音钮就被压了）」。
+            //
+            // 🚨 规矩早就有，**只有面对面一屏用了它**，其余屏全漏（含这一屏）——
+            //    典型的「规矩要按每个出口落地」。
+            scroll.bottomAnchor.constraint(
+                equalTo: g.bottomAnchor,
+                constant: -MainTabController.bottomClearance),
 
             col.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor),
             col.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor,
@@ -196,9 +240,32 @@ final class DictViewController: UIViewController {
     }
 
     func search(_ raw: String) {
-        let w = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        // 🚨🚨 **`SpellFold` 挂在这里，不挂在某一条输入路径上。**
+        //
+        //    它原来只在麦克风回调里跑（`DictViewController` 旧的 `tapMic`）——
+        //    那是它**唯一的生产调用点**。麦克风一删，拼字母折叠就没人走了，
+        //    而单元测试还全绿：**测试活着不等于功能活着。**
+        //    （今天刚栽过反过来的一次：换实现时没清死代码，留下骗人的名字；
+        //      这次是删实现时差点把还要用的东西一起删掉。）
+        //
+        //    挂在 `search` 上比原来更全：不管是打字、用 Transless 键盘口述、
+        //    还是点「最近查过」，**发起查询前都过一遍**。
+        //    判据不变：≥3 段且每段单字母才拼，否则原样返回。
+        let w = SpellFold.fold(
+            raw.trimmingCharacters(in: .whitespacesAndNewlines))
         guard !w.isEmpty else { return }
+        clearErr()      // 🚨 新查询先收掉旧错误，别让它挂在新结果旁边
+        // 折过之后把框里也同步成真正查的那个词，别让他看到的和查的不是一个
+        if field.text != w { field.text = w }
 
+        // 🚨 **确定性失败注入**（只在离线样本开关下生效）。
+        //    2.1 的判据是「制造一次查词失败 → 截图 → 输入框里仍是那个词」，
+        //    没有注入口就只能靠网络抖动 —— **那是不可复现的假验证**。
+        if ProcessInfo.processInfo.environment["TRANSLESS_DICT_FAKE"] == "1",
+           DictStore.key(w) == "failnow" {
+            showErr(L.err_other)
+            return
+        }
         if let f = fakeEntry(w) {
             // 🚨 注入也要**走同一条截断和缓存**，否则测的就不是真链路了。
             let cut = f.trimmed()
@@ -211,32 +278,40 @@ final class DictViewController: UIViewController {
                 guard let self = self else { return }
                 switch r {
                 case .success(let e): self.render(e)
-                case .failure(let f): self.toastErr(f.userText)
+                case .failure(let f): self.showErr(f.userText)
                 }
             }
         }
     }
 
-    private func toastErr(_ t: String) {
-        let l = UILabel()
-        l.text = t
-        l.font = .systemFont(ofSize: 14)
-        l.textColor = Theme.text
-        l.textAlignment = .center
-        l.numberOfLines = 0
-        l.backgroundColor = UIColor.black.withAlphaComponent(0.8)
-        l.layer.cornerRadius = 12
-        l.clipsToBounds = true
-        l.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(l)
-        NSLayoutConstraint.activate([
-            l.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            l.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor,
-                                      constant: -40),
-            l.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, multiplier: 0.8),
-            l.heightAnchor.constraint(greaterThanOrEqualToConstant: 40),
-        ])
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) { l.removeFromSuperview() }
+    /// 显示一条查询失败提示。**不写进输入框、不做浮层。**
+    ///
+    /// 🚨🚨 2.1 2026-09-06 的定案，原话：
+    ///    「问题不是文案不好看，是**【错误变成了输入】** —— 用户下一次点查询，
+    ///      会拿着"网络连接失败"这句话去查词。**输入框里的东西一定会被再查一次，
+    ///      那是它的语义。**」
+    ///    → `field.text` 只放用户要查的词，**任何时候都不许被写入非用户内容**。
+    private func showErr(_ t: String) {
+        errLabel.text = t
+        errLabel.isHidden = false
+        // 🚨🚨 **失败时必须把上一条的卡片收掉**，否则它会冒充这一次的结果。
+        //
+        //    2.1 2026-09-06 从我自己交的验收图上抓到的：那张图里输入框是
+        //    `lookup`、而卡片显示的是上一次 `ubiquitous` 的释义 ——
+        //    **用户点「最近查过」里的 lookup，读到的是别的词的解释，
+        //    而且没有任何东西告诉他这是旧卡片。**
+        //
+        // 🚨 这跟「错误文案被写进输入框」是**同一个形状**：
+        //    **一个东西冒充了另一个东西**。那次是错误冒充用户输入，
+        //    这次是旧结果冒充新结果。修一个不修另一个等于只修了一半。
+        card.isHidden = true
+        current = nil          // 🚨 连带清掉，否则「＋单词本」会收上一条
+    }
+
+    /// 发起新查询时先把上一条错误收掉 —— 否则旧错误会挂在新结果旁边。
+    private func clearErr() {
+        errLabel.text = nil
+        errLabel.isHidden = true
     }
 
     // MARK: - 渲染结果卡（Grok v3 的七条都落在这一个函数里）
@@ -448,43 +523,13 @@ final class DictViewController: UIViewController {
         paintAdd()
     }
 
-    @objc private func tapMic() {
-        if voice.running {
-            voice.stop(keepSession: false)
-            micBtn.backgroundColor = Theme.accent
-            return
-        }
-        guard !AudioGate.off else { return }      // 模拟器上音频会 abort
-        // 🚨🚨 **起录前必须先停朗读**（2.1 2026-09-05 用闸门抓到，我这处是第四个出口）。
-        //    查词页是最容易撞上的一屏：🔊 和麦克风在同一张卡上，
-        //    标准动线就是「点 🔊 听一遍 → 接着按麦克风查下一个词」。
-        //    不停的话：① 刚播的发音会被录进去；
-        //    ② 更麻烦 —— `Speaker.play` 已经把会话切成播放类别，
-        //       起录会带着一个**被我们自己搞坏的会话**去开引擎，
-        //       报出来的 stage/code 会长得像「扩展不能录音」，**把根因结论打偏**。
-        //    这条规矩已经在三个出口上各漏过一次，形态是「规矩要按每个出口落地」。
-        Speaker.stop()
-        micBtn.backgroundColor = Theme.danger
-        voice.start(onPartial: { _ in }, onUtterance: nil, onWav: { [weak self] r in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                self.micBtn.backgroundColor = Theme.accent
-                guard case .success(let wav) = r else { return }
-                // 🚨 参数形状**照 Backend.swift:1177 抄** —— transcribe 只吃 wav，
-                //    没有 mode/tone/lang。我第一版凭印象加了三个参数。
-                Backend.transcribe(wav: wav) { t in
-                    DispatchQueue.main.async {
-                        guard case .success(let text) = t else { return }
-                        // 🚨 说单词 / 拼字母**走同一个键**，判断在 `SpellFold`。
-                        //    做成两个模式让他选是错的（2.1：他不该在按之前
-                        //    就知道自己要用哪种）。
-                        let w = SpellFold.fold(text)
-                        self.field.text = w
-                        self.search(w)
-                    }
-                }
-            }
-        })
+    /// 点放大镜 = 查框里的词。
+    ///
+    /// 🚨 收键盘再查 —— 不收的话结果卡被键盘挡住一半，
+    ///    他会以为"点了没反应"。
+    @objc private func tapSearch() {
+        field.resignFirstResponder()
+        search(field.text ?? "")
     }
 }
 
