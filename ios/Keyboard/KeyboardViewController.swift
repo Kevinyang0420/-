@@ -192,7 +192,16 @@ final class KeyboardViewController: UIInputViewController {
     private var lang: String =
         KbBridge.prefs.string(forKey: "vime.lang") ?? "en"
     /// 最后一次上屏的结果 —— 「朗读」要用。
-    private var lastOut = ""
+    ///
+    /// 🚨 `didSet` 把「朗读键将要念什么」**同步到无障碍值**上。
+    ///    这不是为了好看：`lastOut` 是私有的，UI 测试读不到它，
+    ///    于是「点历史上屏 → 主界面朗读念的是哪一条」这件事
+    ///    **过去根本没有判据可挂** —— 而它恰恰是会**静默念错**的地方
+    ///    （2026-09-06 之前 `insertHistory` 只插字不更新它）。
+    ///    挂在 `didSet` 上 = 唯一出口，三处赋值都自动生效，不会漂。
+    private var lastOut = "" {
+        didSet { speakButton.accessibilityValue = lastOut }
+    }
 
     /// 🚨 只为**预览页**能切到打字键盘各档（截图/量高度）。
     ///    正式界面里没有任何地方从外部碰它。
@@ -2327,6 +2336,7 @@ final class KeyboardViewController: UIInputViewController {
                 b.setTitle(History.label(it) + "  " + it.out, for: .normal)
                 b.setTitleColor(Theme.kbKeyText, for: .normal)
                 b.accessibilityValue = it.out
+                b.accessibilityIdentifier = "transless.hist.row"   // UITest 用
                 b.addTarget(self, action: #selector(insertHistory(_:)),
                             for: .touchUpInside)
 
@@ -2334,6 +2344,7 @@ final class KeyboardViewController: UIInputViewController {
                 //    「历史记录里可以留个入口，支持把我说过的这些翻译
                 //     同步到我的单词本里」。
                 let keep = UIButton(type: .system)
+                keep.accessibilityIdentifier = "transless.hist.keep"  // UITest 用
                 keep.tag = i
                 keep.titleLabel?.font = .systemFont(ofSize: 13)
                 // 🚨 按钮自带约 16dp 横向内边距，不清掉就会把「收藏」挤成「收…」
@@ -2349,20 +2360,21 @@ final class KeyboardViewController: UIInputViewController {
                 keep.addTarget(self, action: #selector(keepHistory(_:)),
                                for: .touchUpInside)
 
-                // 🚨 每行一个 🔊 —— 对齐安卓。**只朗读、不插入**：
-                //    两个动作分开，免得他只想听一下却把文字插进了聊天框。
-                let sp = UIButton(type: .system)
-                sp.setTitle("🔊", for: .normal)
-                sp.titleLabel?.font = .systemFont(ofSize: 16)
-                sp.accessibilityValue = it.out
-                sp.accessibilityIdentifier = "transless.hist.speak"
-                sp.setContentHuggingPriority(.required, for: .horizontal)
-                sp.setContentCompressionResistancePriority(.required,
-                                                           for: .horizontal)
-                sp.addTarget(self, action: #selector(speakHistoryRow(_:)),
-                             for: .touchUpInside)
-
-                let row = UIStackView(arrangedSubviews: [b, sp, keep])
+                // 🚨 **每行的 🔊 已去掉**（Kevin 2026-09-06）：
+                //    「历史记录里也不需要给每一条都加个朗读的小图标。
+                //      主输入法界面上本来就有朗读键，用户可以先把内容重新上屏，
+                //      再去点主界面的朗读」。
+                //    替代路径就是他说的那条，而它**在补上面那行 `lastOut` 之前是坏的**
+                //    —— 所以那一行先落地，这里才敢删。
+                // 🚨 **同语言转写不显示收藏钮，不是禁用**（Kevin 2026-09-06）：
+                //    「普通的同语言转写本来也不需要收藏，不如直接把这个收藏按钮
+                //      关掉，现在放这里有点鸡肋」。
+                //    禁用的按钮**还占位置、还让人想点**，"鸡肋"感一点没解决。
+                //    判定口径：**产出跟原话不是同一种语言**才显示。
+                //    `it.mode` 是 en / zh / raw，后两个是同语言转写。
+                let crossLang = (it.mode == "en")
+                let row = UIStackView(
+                    arrangedSubviews: crossLang ? [b, keep] : [b])
                 row.axis = .horizontal
                 row.spacing = 8
                 list.addArrangedSubview(row)
@@ -2407,15 +2419,16 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     /// 历史行里的 🔊 —— **只朗读，不插入**。
-    @objc private func speakHistoryRow(_ b: UIButton) {
-        guard let t = b.accessibilityValue, !t.isEmpty else { return }
-        KbBridge.note("历史朗读：" + String(t.prefix(30)))
-        speakText(t)
-    }
-
     @objc private func insertHistory(_ b: UIButton) {
         if let t = b.accessibilityValue, !t.isEmpty {
             textDocumentProxy.insertText(t)
+            // 🚨🚨 **上屏了就要更新 `lastOut`** —— 主界面朗读键读的是它。
+            //    2026-09-06 之前这里只插字不更新，于是「点历史上屏 →
+            //    点主界面朗读」念的是**上一次**的结果，而且**不报错、就念错的那段**，
+            //    用户只会以为朗读坏了。
+            //    这一行是删掉每行 🔊 的**前提**：他给的替代路径
+            //    （先上屏再点主界面朗读）在补这一行之前是坏的。
+            lastOut = t
         }
         hideHistory()
     }
