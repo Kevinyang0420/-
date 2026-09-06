@@ -12,11 +12,23 @@ final class DictViewController: UIViewController {
 
     // MARK: - 版式常量（全部来自 v3 稿，改之前先回去看图）
 
-    /// 组与组之间（义项 1 / 2 / 3 之间、例句与搭配之间）。
-    private static let gapGroup: CGFloat = 46
+    // 🚨🚨 Kevin 2026-09-06（带截图）：「我在查词那个界面，这里查出来的东西太松了…
+    //    卡片太松散了，能不能把它弄得紧凑一些？」
+    //    他那张图上一整屏只装下 3 条释义 + 1 个例句。
+    // 🚨 **只收间距，不动字号** —— 他说的是"松"，没说字小。
+    // 🚨 **`gapCta` 一个点不动**：那 30 是 Grok ⑥ 专门定的
+    //    （「和搭配芯片贴得近，扫一眼会觉得芯片也是操作区」）——
+    //    他抱怨的是释义之间、释义和例句之间，不是主按钮那一段。
+    //    **别顺手把别人为具体问题定过的数一起改了。**
+
+    /// 组与组之间（义项 1 / 2 / 3 之间、例句与搭配之间）。46 → 24。
+    private static let gapGroup: CGFloat = 24
     /// 一组之内的行距（英文释义 ↔ 中文对译）。
-    private static let gapLine: CGFloat = 19
+    /// 🚨 19 → 6：这两行**是同一个义项的两半**，本来就该贴着。
+    ///    19 让它们看起来像两条独立的东西 —— 那正是"松散"的主要来源。
+    private static let gapLine: CGFloat = 6
     /// 主按钮上边距 —— Grok ⑥：「和搭配芯片贴得近，扫一眼会觉得芯片也是操作区」。
+    /// 🚨 **这个不动**（见上面那段）。
     private static let gapCta: CGFloat = 30
 
     private let scroll = UIScrollView()
@@ -334,7 +346,7 @@ final class DictViewController: UIViewController {
         // 🚨 喇叭用 `Theme.speakGlyph` 这张**自己画的单色图**，不是 emoji 🔊。
         //    Theme.swift:302 那段注释写着：🔊 是彩色 emoji，`tintColor` 管不到，
         //    Kevin 2026-08-22 点名「跟这个紫色调有点冲」。我刚才差点又用它。
-        ph.setTitle("/" + e.phonetic + "/", for: .normal)
+        ph.setTitle("/" + e.phoneticForDisplay + "/", for: .normal)
         ph.setImage(Theme.speakGlyph(15).withRenderingMode(.alwaysTemplate), for: .normal)
         ph.tintColor = Theme.dim
         ph.semanticContentAttribute = .forceRightToLeft   // 图标放文字右边
@@ -350,7 +362,9 @@ final class DictViewController: UIViewController {
         phRow.axis = .horizontal
         cardCol.addArrangedSubview(phRow)
         cardCol.setCustomSpacing(6, after: head)
-        cardCol.setCustomSpacing(28, after: phRow)
+        // 🚨 28 → 14：音标行跟下面的词性/释义是同一张卡的内容，
+        //    不是两个区块。
+        cardCol.setCustomSpacing(14, after: phRow)
 
         // ② 词性作**一次**小标题（不是每行前缀）
         let pos = UILabel()
@@ -506,8 +520,15 @@ final class DictViewController: UIViewController {
     }
 
     /// 🚨 身份走**唯一那个 id 算法**（随手翻译 / 说话记录 / 面对面都是它）。
+    /// 查词条目的身份 —— **只由那个词决定**（2.1 09-06 规格，安卓已对齐）。
+    ///
+    /// 🚨 原来是 `idOf(e.word, 首义中文)` —— **释义参与了身份**。
+    ///    同一个词查两次、释义差一个字就变成两条，他会问「怎么多出来一条」。
+    ///    **身份不能由会变的内容决定。**
+    /// 🚨 `zh` 传空串是**规格定的**，不是偷懒：查词条目没有"当时说的中文"。
+    ///    复习卡的中文面改从 `card` 取首义（见 `WordBookViewController`）。
     private func wbId(_ e: DictEntry) -> String {
-        WordBookCore.idOf(e.word, e.senses.first?.zh ?? "")
+        WordBookCore.dictId(word: e.word)
     }
 
     @objc private func tapAdd() {
@@ -516,8 +537,18 @@ final class DictViewController: UIViewController {
         if WordBook.list().contains(where: { $0.id == id }) {
             WordBook.remove(id: id)
         } else {
-            _ = WordBook.add(zh: e.word, en: e.senses.first?.zh ?? "",
-                             span: "full", tone: "", today: Srs.todayString())
+            // 🚨🚨 **把查词已经拿到的那份解释一起存下来**（Kevin 09-06 连问三次
+            //    「单词卡片在哪儿呢」）。以前只存了词 + 第一条中文释义，
+            //    音标/词性/全部释义/例句/搭配**全丢了**，点进去就是一片空白。
+            // 🚨 **在这一刻存**，不是点进去再查 —— 那时这份数据已经不在手上了，
+            //    而且规格明写「重新查一次…两次结果可能不一样，
+            //    用户会觉得『我收藏的那个解释变了』」。
+            // 🚨 `zh` 空串、`en` = 规范化后的那个词 —— 跟 `wbId` 同一套口径。
+            //    原来是反的（zh 装英文词、en 装中文释义），两个字段的含义整个颠倒，
+            //    而且释义进了 id。
+            _ = WordBook.add(zh: "", en: WordId.norm(e.word).lowercased(),
+                             span: "full", tone: "", today: Srs.todayString(),
+                             card: WordCard.fromDict(e))
         }
         // 🚨 重画前读盘，不拿本地布尔取反（写失败时界面照样变，他会以为收进去了）
         paintAdd()
