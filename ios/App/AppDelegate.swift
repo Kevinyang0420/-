@@ -3281,7 +3281,6 @@ final class MainViewController: UIViewController {
     /// 输出模式：译成英文（默认）/ 只转写。跟安卓一致。
     private var mode: Backend.Mode =
         Backend.Mode(rawValue: KbBridge.prefs.string(forKey: "vime.mode") ?? "en") ?? .en
-    private let logoView = UIImageView()
     /// 长按说明的文案表。用 ObjectIdentifier 当键，免得给每个控件都挂 tag。
     private var tips: [ObjectIdentifier: String] = [:]
     // 第一级 Tab
@@ -3338,6 +3337,8 @@ final class MainViewController: UIViewController {
     /// 目标语言（翻译模式用）。跟安卓共用同一套 code。
     private var lang = KbBridge.prefs.string(forKey: "vime.lang") ?? "en"
     private let langButton = UIButton(type: .system)
+    /// 自绘的选语言面板（弹出时非 nil）。系统菜单不用管这个，自绘要自己收。
+    private var langPanel: UIView?
 
     /// 🔊 朗读：把刚出的译文用 Andrew 的声音念出来
     private let speakButton = UIButton(type: .system)
@@ -3445,23 +3446,34 @@ final class MainViewController: UIViewController {
         //    template 模式会把所有非透明像素**整块涂成 tintColor**，
         //    渲染出来就是 tab 行右边那个莫名其妙的灰方块（2026-08-26 截图发现）。
         //    template 只适合单色描边图形，不适合有底的图标。
-        logoView.image = UIImage(named: "logo")
-        logoView.contentMode = .scaleAspectFit
+        // 🚨 **这一屏的 logo 也删**（同上，Kevin 2026-09-05 要求）。
+        //    他实拍的是键盘那屏，但**同一个东西在这屏也有** ——
+        //    只删他截图那一处的话，他明天会再拍一张一模一样的照片。
 
-        let modeStack = UIStackView(arrangedSubviews: [tabTranslate, tabTranscribe, logoView])
+        let modeStack = UIStackView(arrangedSubviews: [tabTranslate, tabTranscribe])
         modeStack.axis = .horizontal
         modeStack.spacing = Theme.gap * 0.7
         modeStack.distribution = .fill
         tabTranslate.setContentHuggingPriority(.defaultLow, for: .horizontal)
         tabTranscribe.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        // 🚨 **未选中的那个**收窄到固定宽，选中的自然吃满剩下的。
-        //    Kevin 2026-08-25：「它应该是一个动态的图标，而不是静态的…
-        //    我点『转写』的时候，『转写』进一步拉，也是可以拉长到那么长。」
-        //    原来两个 hugging 一样低，`.fill` 把富余空间**全给第一个**
-        //    （「翻译」）—— 跟谁被选中毫无关系，所以永远长短固定。
+        // ⛔️ **下面这两条 `narrow*` 约束永不启用，别照这段注释做。**
         //
-        // 🚨 88 是要放得下未选中时的完整标签。太窄会截成「转…」，
-        //    那比不做动画更糟。
+        //    它们是 Kevin 2026-08-25 要的「选中的那个拉长」：
+        //    「我点『转写』的时候，『转写』进一步拉」。
+        //    **那条被他自己 2026-09-05 看图推翻了**（方案 F）——
+        //    Grok 判拉长最伤「左翻译、右转写」的位置记忆，他看完图接受等宽。
+        //    启用点在 `paintMode()`：`narrow*.isActive = false` + `equalTabs = true`。
+        //
+        // 🚨 **实测确认现状就是等宽**（2026-09-06 按像素量）：
+        //    翻译档 187.3 / 187.0pt，转写档 187.3 / 187.0pt —— 切档不变。
+        //
+        // 🚨 约束留着不删是**故意的**（想回滚不用重写），但**注释必须说清它不生效** ——
+        //    上一版这里还在描述拉伸行为，2.1 照着它派了一次"把 iOS 改成等宽"的工，
+        //    而 iOS 早就是等宽了。**过期的注释会让下一个人去修一个不存在的问题。**
+        //    （同型：`refreshLangMenu` 这个名字建的其实是 `LangPanel`，今晚刚清掉。）
+        //
+        // 🚨 88 只在启用 `narrow*` 时才有意义（放得下未选中时的完整标签，
+        //    太窄会截成「转…」）。等宽之后宽度由 `equalTabs` 决定，它用不上。
         narrowTranslate = tabTranslate.widthAnchor.constraint(
             equalToConstant: Self.tabNarrow)
         narrowTranscribe = tabTranscribe.widthAnchor.constraint(
@@ -3472,8 +3484,6 @@ final class MainViewController: UIViewController {
         tabTranslate.titleLabel?.minimumScaleFactor = 0.75
         tabTranscribe.titleLabel?.adjustsFontSizeToFitWidth = true
         tabTranscribe.titleLabel?.minimumScaleFactor = 0.75
-        logoView.setContentHuggingPriority(.required, for: .horizontal)
-        logoView.widthAnchor.constraint(equalToConstant: 26).isActive = true
 
         // 🚨 「整理 / 逐字」，不是「结构化转写 / 逐字转录」——
         //    Kevin 2026-08-21：「这几个表达让人听不懂」。安卓当天改了并加了闸门，
@@ -3579,9 +3589,9 @@ final class MainViewController: UIViewController {
         langButton.setTitleColor(Theme.text, for: .normal)
         langButton.backgroundColor = Theme.key
         langButton.layer.cornerRadius = 16
-        // 🚨 **不再 addTarget** —— 改挂下拉菜单（`refreshLangMenu`）。
+        // 🚨 **不再 addTarget** —— 改挂自绘面板（`refreshLangPanel` → `LangPanel`）。
         //    留着 addTarget 的话，点一下会既弹菜单又走老路径。
-        refreshLangMenu()
+        refreshLangPanel()
 
         speakButton.setTitle(L.kb_speak, for: .normal)
         // 🚨 单色喇叭贴在文字左边（原来是彩色 emoji，跟主题冲）
@@ -3806,7 +3816,10 @@ final class MainViewController: UIViewController {
 
     // MARK: - 模式
 
-    /// 语言选择：**下拉菜单**（`LangMenu`），跟「语气」「方式」同一个控件。
+    /// 语言选择：**自绘面板**（`LangPanel`）。
+/// 🚨 原来是系统 `UIMenu`（旧 `LangMenu`），2026-09-05 换掉了 ——
+///    `UIMenu` 表达不了「两段不同类」，上下两段长得一样时
+///    同一门语言出现两次会被读成 bug（Kevin 实拍报障）。
     ///
     /// 🚨🚨 原来是 `UIAlertController(.actionSheet)`，一门一个 action。
     ///    Kevin 2026-09-05 要把目标语言从 9 门扩到 23+ 门（中东、欧洲小语种），
@@ -3815,17 +3828,82 @@ final class MainViewController: UIViewController {
     ///    「你选择器不要一下子展示那么多嘛，加个下拉，就可以支持我滑动去选了嘛，
     ///     所以 32 项又怎么样嘛」。
     ///
-    /// 🚨 排法在 `LangMenu` 一处（最近用过置顶 + 全量），三个选择器共用 ——
+    /// 🚨 排法在 `LangRecents.sections` 一处（最近用过 + 全量），三个选择器共用 ——
     ///    各写各的话 23 门时会各坏各的。
-    private func refreshLangMenu() {
-        langButton.menu = LangMenu.build(current: lang) { [weak self] code in
+    private func refreshLangPanel() {
+        // 🚨🚨 **不再用系统 `UIMenu`**（Kevin 2026-09-05 晚拍板「要改」）。
+        //
+        //    系统菜单的两段（最近用过 / 全部语言）**长得一模一样** ——
+        //    都是一行行文字，只有一条细线隔开。所以同一门语言出现两次时
+        //    看着像重复，而那正是他早上实拍报障的观感。
+        //
+        // 🚨 换成 `LangPanel`（跟面对面那屏**同一个组件**）：
+        //    最近用过＝横滑 chips（描边不填充、更扁），全部语言＝竖排列表，
+        //    **一眼是两种东西**。
+        //    🚨 判据是"两段看上去不是同一种东西"，不是"我用了 chips"。
+        langButton.showsMenuAsPrimaryAction = false
+        langButton.menu = nil
+        langButton.removeTarget(self, action: #selector(toggleLangPanel),
+                                for: .touchUpInside)
+        langButton.addTarget(self, action: #selector(toggleLangPanel),
+                             for: .touchUpInside)
+    }
+
+    /// 弹 / 收 选语言面板。
+    ///
+    /// 🚨 自绘面板要自己管三样（系统菜单本来白送）：
+    ///    **弹出定位**、**点空白收起**、**再点一次收起**。
+    ///    这三样漏任何一样，用户都会觉得"点了没反应"或"关不掉"。
+    /// 点空白处收掉面板。
+    ///
+    /// 🚨 **自绘面板必须自己做这一样**（系统 `UIMenu` 本来白送）。
+    ///    漏了的表现是"面板关不掉" —— 而且不会报任何错。
+    ///    照抄面对面那屏 `FaceToFaceViewController.touchesBegan` 的做法。
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        langPanel?.removeFromSuperview()
+        langPanel = nil
+    }
+
+    @objc private func toggleLangPanel() {
+        if let old = langPanel {
+            old.removeFromSuperview()
+            langPanel = nil
+            return
+        }
+        let panel = LangPanel.make(current: lang) { [weak self] code in
             guard let self = self else { return }
+            self.langPanel?.removeFromSuperview()
+            self.langPanel = nil
             self.lang = code
             KbBridge.prefs.set(code, forKey: "vime.lang")
+            LangRecents.use(code)       // 唯一写入口，三个选择器共用
             self.paintMode()
-            self.refreshLangMenu()      // 勾要挪到新选中的那条上
         }
-        langButton.showsMenuAsPrimaryAction = true
+        view.addSubview(panel)
+        langPanel = panel
+        NSLayoutConstraint.activate([
+            panel.topAnchor.constraint(equalTo: langButton.bottomAnchor, constant: 6),
+            // 🚨 **底边不许越过安全区** —— 31 门语言时面板会很长，
+            //    不设上限的话底下几门滚不到、也点不着。
+            // 🚨🚨 **底边不许越过麦克风** —— 出图自查发现的：
+            //    原来只写了 `≤ 安全区底`，面板一直伸到屏幕底，
+            //    **最后几门语言压在录音键下面，点不到**。
+            //    31 门语言时这一条必须有，9 门时看不出来。
+            panel.bottomAnchor.constraint(
+                lessThanOrEqualTo: micButton.topAnchor, constant: -12),
+            // 🚨🚨 宽度：**跟语言钮同宽**，不是"从语言钮左边开始一直铺到屏幕右边"。
+            //
+            //    我上一版写的是 `panel.leading = langButton.leading`
+            //    ＋ `trailing ≤ view.trailing` —— **约束写法没错，挂的对象错了**：
+            //    语言钮本身就在右半屏，所以面板从中间开始、一直铺到最右，
+            //    还是占掉大半个屏。出图自查才看出来。
+            //    🚨 **改对了约束、挂错了对象，读数一样不动** —— 今天第 N 次。
+            //
+            //    现在两边都锚在语言钮上：面板**正好盖住它**，往下展开。
+            panel.leadingAnchor.constraint(equalTo: langButton.leadingAnchor),
+            panel.trailingAnchor.constraint(equalTo: langButton.trailingAnchor),
+        ])
     }
 
     /// 朗读最近一次的译文。再点一下 = 停。
@@ -4052,7 +4130,7 @@ final class MainViewController: UIViewController {
             //    而这里是 `viewDidAppear` —— 不重建的话菜单里still是空的"最近用过"。
             //    第一版就是这么红的：种子写进去了、菜单没跟着变，
             //    **"改了数据"跟"界面用上了"是两件事。**
-            refreshLangMenu()
+            refreshLangPanel()
         }
         // 🚨 **只为把界面推进「处理中」那一档**，好让闸门量到秒数在不在走。
         //    被测的是 `BusyTicker`（没被这个开关碰过）——
