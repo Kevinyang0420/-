@@ -1,0 +1,67 @@
+import Foundation
+
+/// 查词结果的**纯解析** —— 不碰网络、不碰存储、不碰界面。
+///
+/// 🚨 从 `Backend` 抽出来的理由是**判据跑不动**：UI 测试是独立进程，
+///    `Backend` 拖着网络和 `Secrets`，编不进测试包 ——
+///    于是「换了 JSON 结构之后老缓存还解不解得出」这条**根本没法验**。
+///    （`LangRank` / `WordCard` / `SpellFold` 同一套路。）
+///
+/// 🚨 **两种结构都要认**（2026-09-06 iOS 改用 `engine.LOOKUP_PROMPT` 之后）：
+/// ```
+/// engine ->  senses[{pos,en,zh,register}] / examples[{en,zh}] / phonetic "/juː/"
+/// 旧的   ->  senses[{en,zh,register}] / pos / example_en / example_zh
+/// ```
+/// 旧的**不能删**：缓存里存着按旧结构存下来的条目，只认新的会让
+/// 「以前查过的词打不开了」—— 而那不像换提示词引起的，会把人带去查缓存。
+enum DictParse {
+
+    static func entry(word: String, raw: String) -> DictEntry? {
+        var t = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let a = t.firstIndex(of: "{"), let b = t.lastIndex(of: "}") {
+            t = String(t[a...b])
+        }
+        guard let d = t.data(using: .utf8),
+              let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any]
+        else { return nil }
+        let raws = o["senses"] as? [[String: Any]] ?? []
+        let ss = raws.map {
+            DictSense(en: ($0["en"] as? String) ?? "",
+                      zh: ($0["zh"] as? String) ?? "",
+                      register: ($0["register"] as? String) ?? "")
+        }
+        guard !ss.isEmpty else { return nil }
+
+        // 🚨 **两种结构都要认**（2026-09-06 换 engine 那份提示词之后）：
+        //    engine  ->  "examples": [{"en":…, "zh":…}]      数组
+        //    旧的    ->  "example_en" / "example_zh"          两个平铺字段
+        //    🚨 旧结构**不能删** —— 缓存里存着按旧结构存下来的条目，
+        //       只认新的会让老缓存整条解不出（表现是"以前查过的词打不开了"）。
+        var exEn = (o["example_en"] as? String) ?? ""
+        var exZh = (o["example_zh"] as? String) ?? ""
+        if exEn.isEmpty, let arr = o["examples"] as? [[String: Any]],
+           let first = arr.first {
+            exEn = (first["en"] as? String) ?? ""
+            exZh = (first["zh"] as? String) ?? ""
+        }
+
+        // 🚨 词性：engine 把 `pos` 放在**每条 sense 里**，旧结构是顶层一个。
+        //    界面只显示一次（Grok ②：`adj.` 重复三次是噪音），取第一条的。
+        var pos = (o["pos"] as? String) ?? ""
+        if pos.isEmpty { pos = (raws.first?["pos"] as? String) ?? "" }
+
+        // 🚨 engine 要求音标**带斜杠**（"IPA in slashes"），而界面自己会补
+        //    `/…/`（`DictViewController:344` 附近）—— 不剥的话显示成 `//juː//`。
+        //    也可能是 `null`，那时上面的 `as? String` 已经回空串。
+        var ph = (o["phonetic"] as? String) ?? ""
+        ph = ph.trimmingCharacters(in: CharacterSet(charactersIn: "/ "))
+
+        return DictEntry(word: (o["word"] as? String) ?? word,
+                         phonetic: ph,
+                         pos: pos,
+                         senses: ss,
+                         exampleEn: exEn,
+                         exampleZh: exZh,
+                         collocations: (o["collocations"] as? [String]) ?? [])
+    }
+}
