@@ -251,6 +251,11 @@ targets:
       - path: Shared/WordKind.swift
       # 同理：纯逻辑编进测试包（UI 测试是独立进程，@testable 链接不到）
       - path: Shared/SpellFold.swift
+      # 同理：语言"最常用"排序（Kevin 2026-09-06 那条），纯函数不碰存储
+      - path: Shared/LangRank.swift
+      # 同理：判「这一段有没有人说话」。纯值类型 + 纯函数，不碰音频也不碰存储
+      # —— 真正读麦克风的在 `Voice`，那个不进测试包
+      - path: Shared/SpeechPresence.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kevin.transless.uitests
@@ -311,9 +316,9 @@ targets:
         CODE_SIGNING_ALLOWED: YES
         CODE_SIGNING_REQUIRED: YES
         CODE_SIGN_STYLE: Manual
-        # 🚨 发版要用 AppStore 描述文件（原来写死 `TranslessDevLive`，
+        # 🚨 发版要用 AppStore 描述文件（原来写死的是开发那个，
         #    那是**开发**用的，发版构建里不装它 → Archive 报
-        #    「No profile for team matching 'TranslessDevLive'」）。
+        #    发版构建里不装开发描述文件 → Archive 报 No profile for team。
         PROVISIONING_PROFILE_SPECIFIER: "Transless Live AppStore"
         INFOPLIST_KEY_CFBundleDisplayName: Transless 录音状态
 
