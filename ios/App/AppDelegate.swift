@@ -1291,12 +1291,27 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //    整条猜的逻辑在真机上跑一遍，只差最后那下 `open`。
         //    没有这一行，我只能说"代码写了"，说不出"它在他机器上真的选得出来"。
         DispatchQueue.main.async {
-            let all = KbVoiceHost.guessBackOrder.filter {
-                URL(string: $0.scheme).map { UIApplication.shared.canOpenURL($0) } ?? false
-            }
-            KbBridge.note("回程候选：装着的有 " + String(all.count) + " 个 —— "
-                          + all.prefix(6).map { $0.name }.joined(separator: "、")
-                          + "｜要回去时会开：" + (all.first?.name ?? "（一个都没有）"))
+            // 🚨 **每一步都写死类型、字符串不许连加**（2026-09-06 修 CI）。
+            //    CI（macos-15 / Xcode 16）在这一行报「unable to type-check
+            //    this expression in reasonable time」，而他 Mac（Xcode 26.6）
+            //    连 200ms 阈值都不到 —— **本机编过 ≠ CI 编得过**。
+            //    两个爆炸点：① `filter { URL(...).map { } ?? false }` 三层嵌套推断；
+            //    ② 五段字符串 `+` 连加，每个 `+` 都要解一次重载。
+            let all: [(scheme: String, name: String)] =
+                KbVoiceHost.guessBackOrder.filter { cand in
+                    guard let u = URL(string: cand.scheme) else { return false }
+                    return UIApplication.shared.canOpenURL(u)
+                }
+            let names: [String] = all.prefix(6).map { $0.name }
+            let joined: String = names.joined(separator: "、")
+            let first: String = all.first?.name ?? "（一个都没有）"
+            var line: String = "回程候选：装着的有 "
+            line += String(all.count)
+            line += " 个 —— "
+            line += joined
+            line += "｜要回去时会开："
+            line += first
+            KbBridge.note(line)
         }
         KbVoiceHost.shared.armDebugStress()
         KbVoiceHost.shared.armDebugForceArm()
