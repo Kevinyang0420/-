@@ -44,7 +44,17 @@ FILES = [
     ("prompt.txt", "PASS 2 - STRUCTURE"),
     ("prompt_zh.txt", "speech-cleanup engine"),
     ("prompt_card.txt", "VERBATIM SUBSTRING"),
-    ("prompt_punct.txt", ""),
+    # 🚨 查词提示词（2026-09-06 接进来）。原来 iOS 手写了两份中文的，
+    #    跟 engine 那份是"手抄的近亲" —— 1.1 修好 engine 之后改动到不了这里，
+    #    实测 register 填成了 finance/business（领域，不是语域）。
+    #    特征串取 "DIRECTION" —— 它是这份 prompt 的结构骨架
+    #    （让模型自己判中→英还是英→中），改文案不会动它。
+    ("prompt_lookup.txt", "DIRECTION"),
+    # 2026-09-06 补：这一份原来**没有特征串** —— CI 上拿不到 engine.py 时，
+    #   逐字比对那层用不了，只剩特征串这层，而它是空的 = 这份文件无人看管。
+    #   挑 "subsequence"：它是这份 prompt 的**技术不变量**（输出必须是输入的子序列），
+    #   改文案不会把它改掉，改掉了就说明契约真的变了 —— 那时本来就该报。
+    ("prompt_punct.txt", "subsequence"),
     ("prompt_asr.txt", "SAME language"),
 ]
 
@@ -52,6 +62,7 @@ _ENGINE_VARS = {
     "prompt.txt": "SYSTEM_PROMPT",
     "prompt_zh.txt": "TRANSCRIBE_PROMPT",
     "prompt_card.txt": "CARD_PROMPT",
+    "prompt_lookup.txt": "LOOKUP_PROMPT",
     "prompt_punct.txt": "PUNCT_PROMPT",
     "prompt_asr.txt": "ASR_PROMPT",
 }
