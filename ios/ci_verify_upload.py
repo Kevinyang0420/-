@@ -114,16 +114,36 @@ def main():
                 continue
             age = (now - t).total_seconds() / 60
             # 🚨 版本号对上**且**是刚传的，两个条件缺一不可
-            if age <= MAX_AGE_MIN:
-                print("✅ 构建 %s 已入库（%.1f 分钟前，%s）" % (ver, age, state))
-                return 0
-            print("  版本对上但是 %.0f 分钟前的旧包 —— 不算数" % age)
+            if age > MAX_AGE_MIN:
+                print("  版本对上但是 %.0f 分钟前的旧包 —— 不算数" % age)
+                continue
+            # 🚨🚨 **构建出现了之后，还要看苹果怎么判它。**
+            #    原来这里只要"出现了"就返回 0，于是「苹果拒了这个包」
+            #    会被当成成功放过去 —— 而那时 TestFlight 上根本装不到。
+            if state in ("INVALID", "FAILED"):
+                print("::error::苹果**拒了**构建 %s（processingState=%s）"
+                      % (ver, state))
+                print("::error::这不是「等得不够」，重跑没用 —— 包本身要改。"
+                      "苹果会把原因发邮件到账号邮箱，那封邮件是唯一的证据。")
+                return 1
+            print("✅ 构建 %s 已入库（%.1f 分钟前，%s）" % (ver, age, state))
+            return 0
         if i < TRIES - 1:
             time.sleep(WAIT)
-    print("::error::等了 %d 分钟，App Store Connect 上没有出现刚上传的构建 %s"
+    # 🚨🚨 **超时 ≠ 上传失败。** 这两个结论的修法完全相反：
+    #    一个是等（或把等待拉长），一个是改包重传。
+    #    2026-09-06 实撞：altool 明明打了 `UPLOAD SUCCEEDED with no errors`、
+    #    Delivery UUID 都拿到了，这里却报「没有出现刚上传的构建」，
+    #    还顺手写着"altool 可能打了 ERROR" —— **那句话把排查引向了一个
+    #    根本不存在的上传问题**。措辞本身就是判据的一部分。
+    print("::error::等了 %d 分钟，App Store Connect 上还没出现构建 %s"
           % (TRIES * WAIT // 60, want))
-    print("::error::altool 可能打了 ERROR 却返回 0（2026-08-28 就是这样）——"
-          "去看上一步的完整输出")
+    print("::error::🚨 这**不等于上传失败** —— 上一步若打了 "
+          "「UPLOAD SUCCEEDED with no errors」，包就是传上去了，"
+          "只是苹果还在处理（偶尔要一两个小时）。")
+    print("::error::分辨方法：去 App Store Connect / TestFlight 看构建 %s 在不在；"
+          "被拒的话苹果会发邮件说原因。**别直接重传** —— "
+          "换个号重传会让这一次永远成为悬案。" % want)
     return 1
 
 
