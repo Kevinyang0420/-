@@ -2483,7 +2483,22 @@ final class KeyboardViewController: UIInputViewController {
                 b.contentHorizontalAlignment = .left
                 b.titleLabel?.font = .systemFont(ofSize: 13)
                 b.titleLabel?.lineBreakMode = .byTruncatingTail
-                b.setTitle(History.label(it) + "  " + it.out, for: .normal)
+                // 🚨🚨 **两处一起做，缺一条就还会漏**（Kevin 2026-09-06 18:28 带图：
+                //    「这个中间这个转写要把它压平，距离保持一致，不要隔这么开」）。
+                //
+                //    ① `UIButton.titleLabel` 的 `numberOfLines` **默认是 0（不限行）**
+                //       —— 不是 UILabel 那个 1。整理档的 `it.out` 是带换行的分点产出，
+                //       按钮就按真实行数撑高：实测那一行 **59pt，其余 28pt**。
+                //       `byTruncatingTail` 只管"最后一行怎么截"，**不阻止它变高**。
+                //    ② 光钉一行不够：多行文本折成一行后中间没有空格，
+                //       `1.测试…2.之前…` 会黏成一坨。换行要先压成空格。
+                //    反过来光压空格也不够：超长文本仍可能被排成多行。
+                b.titleLabel?.numberOfLines = 1
+                let preview = it.out
+                    .replacingOccurrences(of: "\r\n", with: " ")
+                    .replacingOccurrences(of: "\n", with: " ")
+                    .replacingOccurrences(of: "\r", with: " ")
+                b.setTitle(History.label(it) + "  " + preview, for: .normal)
                 b.setTitleColor(Theme.kbKeyText, for: .normal)
                 b.accessibilityValue = it.out
                 b.accessibilityIdentifier = "transless.hist.row"   // UITest 用

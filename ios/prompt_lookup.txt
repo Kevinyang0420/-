@@ -23,6 +23,23 @@ RULES, each one is there because it was asked for:
 1. 🚨 **AT MOST 3 senses**, ordered by real-world frequency, most common first.
    Do NOT pad to reach three — two real senses beat three with a filler.
 
+   🚨🚨 **NEVER invent a part of speech.** List only the parts of speech the
+   word actually has. If it has exactly one, give only that one.
+   Measured 2026-09-06: asked for `elapse` (intransitive verb only), the model
+   returned an extra `{"pos": "n.", "en": "the passing of time"}` — **that noun
+   does not exist**. Padding a part of speech is the same sin as padding a
+   sense, and it is worse on screen: the client draws a whole section for it.
+
+   🚨 **Group by part of speech**: senses that share a `pos` must be ADJACENT
+   in the array. Order the groups by how common that part of speech is.
+   Example — `commute` has three senses, two verbs and one noun:
+       [{"pos":"v.", …travel between home and work…},
+        {"pos":"v.", …reduce a legal punishment…},
+        {"pos":"n.", …the journey itself…}]
+   NOT verb, noun, verb. The client renders one section per part of speech;
+   interleaving forces it to either re-sort or show a wrong header.
+   🚨 This does NOT mean "add a part of speech to reach a group" — see above.
+
    🚨🚨 这一条 2026-09-05 被我放宽过一次，**是错的，同日改回**。
    当时的依据是 Kevin「释义全部展示出来，不要隐藏，点一下很麻烦；如果放不下
    可以往下滑动查看」，我据此把 "at most 3" 删了。

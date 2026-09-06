@@ -366,17 +366,40 @@ final class DictViewController: UIViewController {
         //    不是两个区块。
         cardCol.setCustomSpacing(14, after: phRow)
 
-        // ② 词性作**一次**小标题（不是每行前缀）
-        let pos = UILabel()
-        pos.text = e.pos
-        pos.font = .systemFont(ofSize: 13, weight: .bold)
-        pos.textColor = Theme.accent
-        cardCol.addArrangedSubview(pos)
-        cardCol.setCustomSpacing(14, after: pos)
+        // ② 词性小标题。
+        // 🚨 **只在整卡真有一个统一词性时才显示**（旧结构顶层带 pos）。
+        //    新结构的词性是**义项级**的，由下面的分节标题负责 ——
+        //    在这里显示第一条的词性，正是 Kevin 报的
+        //    「commute 只给了动词，名词没写上来」的成因。
+        if !e.pos.isEmpty {
+            let pos = UILabel()
+            pos.text = e.pos
+            pos.font = .systemFont(ofSize: 13, weight: .bold)
+            pos.textColor = Theme.accent
+            cardCol.addArrangedSubview(pos)
+            cardCol.setCustomSpacing(14, after: pos)
+        }
 
         // ③④ 义项：编号 + 英文在上中文在下；**组间距 46 > 行间距 19**
         //     Grok：「英中是一对，三条是三组 —— 现在看不出组边界」
+        // 🚨 **按词性分节**：词性一变就起一个小标题。
+        //    Kevin 2026-09-06「commute 只给了动词，名词没写上来」——
+        //    三条义项是 v./n./v.，而界面只在页头标了第一条的 `v.`，
+        //    名词那条就藏在动词标题底下。
+        //    1.1 已在 prompt 里保证**同词性的义项相邻**，所以比一下上一条就够，
+        //    不用自己聚合。逐条都标的话 `adj.` 会重复三次（Grok 点过是噪音）。
+        var lastPos = ""
         for (i, sn) in e.senses.enumerated() {
+            if !sn.pos.isEmpty, sn.pos != lastPos {
+                let head = UILabel()
+                head.text = sn.pos
+                head.font = .systemFont(ofSize: 13, weight: .bold)
+                head.textColor = Theme.accent
+                head.accessibilityIdentifier = "dict.pos.section"
+                cardCol.addArrangedSubview(head)
+                cardCol.setCustomSpacing(6, after: head)
+                lastPos = sn.pos
+            }
             // ⑤ 带用法标注的那条**降一级**
             let row = senseRow(no: i + 1, sense: sn, minor: !sn.register.isEmpty)
             cardCol.addArrangedSubview(row)

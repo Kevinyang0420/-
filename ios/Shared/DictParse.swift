@@ -34,7 +34,8 @@ enum DictParse {
         let ss = raws.map {
             DictSense(en: ($0["en"] as? String) ?? "",
                       zh: ($0["zh"] as? String) ?? "",
-                      register: ($0["register"] as? String) ?? "")
+                      register: ($0["register"] as? String) ?? "",
+                      pos: ($0["pos"] as? String) ?? "")
         }
         guard !ss.isEmpty else { return nil }
 
@@ -51,10 +52,15 @@ enum DictParse {
             exZh = (first["zh"] as? String) ?? ""
         }
 
-        // 🚨 词性：engine 把 `pos` 放在**每条 sense 里**，旧结构是顶层一个。
-        //    界面只显示一次（Grok ②：`adj.` 重复三次是噪音），取第一条的。
-        var pos = (o["pos"] as? String) ?? ""
-        if pos.isEmpty { pos = (raws.first?["pos"] as? String) ?? "" }
+        // 🚨🚨 **不许拿第一条义项的词性当整卡词性。**
+        //    engine 把 `pos` 放在**每条 sense 里**，旧结构才是顶层一个。
+        //    原来这里有个 fallback「顶层没有就取第一条的」——
+        //    commute 第一条是 `v.`，于是整卡标成 `v.`，
+        //    而第二条明明是 `n.`（通勤路程），被摆在动词标题底下 →
+        //    **Kevin 看到的就是「名词没写上来」**。
+        //    词性是**义项级**的；整卡级的那个只对旧结构有意义，
+        //    留着 fallback 就是这个错的来源（1.1 建议直接删，同意）。
+        let pos = (o["pos"] as? String) ?? ""
 
         // 🚨 engine 要求音标**带斜杠**（"IPA in slashes"），而界面自己会补
         //    `/…/`（`DictViewController:344` 附近）—— 不剥的话显示成 `//juː//`。

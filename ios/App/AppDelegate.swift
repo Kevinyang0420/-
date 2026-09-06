@@ -1066,13 +1066,34 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }
 
-        if ProcessInfo.processInfo.environment["TRANSLESS_SEED_HIST"] == "1",
-           History.list().isEmpty {
+        if ProcessInfo.processInfo.environment["TRANSLESS_SEED_HIST"] == "1" {
+            // 🚨🚨 **先清空再种。** 原来这里有个 `History.list().isEmpty`
+            //    守卫 —— 模拟器上跑过一次之后本子就不空了，
+            //    **后面每次改种子都静默不生效**，而判据照样绿。
+            //    我为此以为"带换行的长文本复现不出行距问题"，
+            //    实际是那条记录**根本没被种进去**。
+            //    📌 判据喂不到会触发问题的数据 = 判据不存在，
+            //       而它绿着，看不出来。（单词卡那次踩过一模一样的。）
+            //    只在这个 env 下清，真机用户设不了 env。
+            History.clear()
             History.add(mode: "en", tone: "", zh: "我想订一张明天去香港的高铁票",
                         out: "I'd like to book a high-speed rail ticket to Hong Kong for tomorrow.",
                         durMs: 40_000, lang: "en")
             History.add(mode: "zh", tone: "", zh: "这个功能挺好用的，就是有点小问题",
                         out: "这个功能挺好用的，就是有点小问题。", durMs: 12_000)
+            // 🚨 **带换行的整理档产出** —— Kevin 2026-09-06 18:28 带图报的那条
+            //    「转写 整理」就长这样：结构化分点，`it.out` 里有真实换行。
+            //    `UIButton.titleLabel` 的 `numberOfLines` **默认是 0（不限行）**，
+            //    所以这种记录会把整行按真实行数撑高，而旁边翻译档那条只有一行 ——
+            //    他看到的「中间隔这么开、距离不一致」就是这么来的。
+            //    🚨 **种子里原来全是短句，所以这个毛病在测试里永远复现不出来。**
+            //    判据喂不到会触发问题的数据 = 判据不存在。
+            History.add(mode: "zh", tone: "",
+                        zh: "测试语音录入是否达到要求 之前试过几次都不太行",
+                        out: "1. 测试语音录入是否达到要求：之前试过几次都不太理想。\n"
+                           + "2. 这次想确认一下分段和标点是不是正常。\n"
+                           + "3. 如果可以的话，后面就按这个方式继续用。",
+                        durMs: 26_000)
             History.add(mode: "en", tone: "", zh: "帮我把这段话说得客气一点，我要发给客户",
                         out: "Could you help me phrase this more politely? I need to send it to a client.",
                         durMs: 18_000, lang: "en")
