@@ -28,26 +28,47 @@ final class KbLangChipWidthProbe: XCTestCase {
         XCTAssertTrue(chip.waitForExistence(timeout: 10),
                       "🚨 找不到键盘的语言 chip（标识 kb.lang）")
 
-        // 同一行上的邻居，用来算"这一行还剩多少给它"
-        let hist = app.buttons["kb.hist"]
         let screenW = app.windows.firstMatch.frame.width
+        // 🚨🚨 **不许量到屏幕边缘就当"余量"**。
+        //    我第一版就是这么算的：`屏宽 - chip.maxX = 239pt`，
+        //    **而那一片上坐着「历史」钮**（x=338..430）——
+        //    239 里有一大半根本不是空的。
+        //    量的对象比结论说的对象大一圈，这是我今晚反复栽的那一类。
+        //    → 改成**把那一行的控件全列出来**，余量只算到最近的邻居。
+        let rowY = chip.frame.midY
+        var neighbours: [(String, CGRect)] = []
+        let all = app.buttons.allElementsBoundByIndex
+        for b in all where b.exists {
+            let f = b.frame
+            guard f.width > 1, f.height > 1 else { continue }
+            // 同一行 = 垂直中心相差不到半个 chip 高
+            guard abs(f.midY - rowY) < chip.frame.height / 2 else { continue }
+            let id = b.identifier.isEmpty ? b.label : b.identifier
+            neighbours.append((id.isEmpty ? "(无名)" : id, f))
+        }
+        neighbours.sort { $0.1.minX < $1.1.minX }
 
         var lines: [String] = []
-        lines.append(String(format: "屏宽            %.0f pt", screenW))
-        lines.append(String(format: "chip 当前宽     %.0f pt   (x=%.0f..%.0f)",
-                            chip.frame.width, chip.frame.minX, chip.frame.maxX))
-        if hist.exists {
-            lines.append(String(format: "同行「历史」钮  %.0f pt   (x=%.0f..%.0f)",
-                                hist.frame.width, hist.frame.minX, hist.frame.maxX))
+        lines.append(String(format: "屏宽 %.0f pt ｜ chip 当前 %.0f pt (x=%.0f..%.0f)",
+                            screenW, chip.frame.width,
+                            chip.frame.minX, chip.frame.maxX))
+        lines.append("同一行上的控件（按 x 排）：")
+        for (id, f) in neighbours {
+            lines.append(String(format: "   %-18@ x=%.0f..%.0f  宽 %.0f",
+                                id as NSString, f.minX, f.maxX, f.width))
         }
-        // 🚨 「还能长多少」＝ 这一行右边到屏幕边缘还剩多少。
-        //    这是**上界**，不是承诺 —— 真扩上去还要看这一行别的控件让不让。
-        let roomRight = screenW - chip.frame.maxX
-        lines.append(String(format: "右侧余量        %.0f pt（上界，不是承诺）", roomRight))
-        lines.append(String(format: "chip 可达上界   %.0f pt = 当前宽 + 右侧余量",
-                            chip.frame.width + roomRight))
+        // 右邻居的左边缘 —— 没有右邻居才用屏幕边缘
+        let rightEdge = neighbours.first { $0.1.minX >= chip.frame.maxX - 1 }?
+            .1.minX ?? screenW
+        let leftEdge = neighbours.last { $0.1.maxX <= chip.frame.minX + 1 }?
+            .1.maxX ?? 0
+        lines.append(String(format: "左邻居右缘 %.0f ｜ 右邻居左缘 %.0f",
+                            leftEdge, rightEdge))
+        lines.append(String(format: "🚨 chip 真实可扩上界 %.0f pt（挤到两侧邻居为止）",
+                            rightEdge - leftEdge))
         lines.append("—— 对照文字需求：常见 105 / 现状最宽 127 / 异常最宽 260")
-        lines.append("🚨 我只出数。放不放得下、异常组合怎么退化，归版面判。")
+        lines.append("🚨 这仍是**上界**：挤满等于两边贴死，没有间距。"
+                     + "放不放得下、异常组合怎么退化，归版面判，我只出数。")
 
         let a = XCTAttachment(string: lines.joined(separator: "\n"))
         a.name = "键盘语言chip可用宽度"
