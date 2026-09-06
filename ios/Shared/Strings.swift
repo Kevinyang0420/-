@@ -26,6 +26,15 @@ enum L {
         switch Lang.effective {
         case Lang.en: return "en"
         case Lang.hant: return "zh-Hant"
+        // 🚨🚨 **新加的语言必须各回各的码**（2026-09-06）。
+        //    原来它们全掉进 `default` -> "zh-Hans" ——
+        //    **App 内部认为用户在用简体中文**。
+        //    表面症状只是 slogan 出中文（`isEn` 是唯一的消费者），
+        //    但根子是这里：下一个用 `isEn`/`isHant` 的人会再中一次。
+        case Lang.ja: return "ja"
+        case Lang.de: return "de"
+        case Lang.es: return "es"
+        case Lang.ar: return "ar"
         default: return "zh-Hans"
         }
     }
@@ -39,420 +48,465 @@ enum L {
     ///    枚举地区码会漏掉它，然后静默掉回简体。
     static var isHant: Bool { code.hasPrefix("zh-Hant") }
 
-    private static func s(_ zh: String, _ en: String,
-                          _ hant: String) -> String {
-        isEn ? en : (isHant ? hant : zh)
+    /// 按当前界面语言取一条文案。
+    ///
+    /// 🚨🚨 **原来是三个位置参数** `s(zh, en, hant)` —— 结构上装不下第四门。
+    ///    Kevin 2026-09-06 两次点名要日/德/西/阿，译文早就跑完了，
+    ///    **没地方放**。这不是漏了一步，是文案系统装不下。
+    ///
+    /// 🚨 回落顺序：**要的那门 → en → zh**。
+    ///    日德西阿的用户看英文能懂、看中文看不懂 ——
+    ///    回落要落到「更多人能读」的那一门。
+    ///    （三参那版里非英非繁一律落中文，那对日语用户是最差的一档。）
+    private static func s(_ m: [String: String]) -> String {
+        if let v = m[Lang.effective], !v.isEmpty { return v }
+        if let v = m[Lang.en], !v.isEmpty { return v }
+        return m[Lang.zh] ?? ""
     }
 
-    static var ui_lang: String { s("zh", "en", "zh") }
-    static var home_login: String { s("注册 / 登录", "Sign in", "註冊 / 登錄") }
-    static var home_set_ime: String { s("设为当前输入法", "Set as keyboard", "設為當前輸入法") }
-    static var login_next_ver: String { s("登录功能下一版做", "Sign-in arrives in the next version", "登錄功能下一版做") }
-    static var step_mic: String { s("允许录音", "Allow microphone", "允許錄音") }
-    static var step_enable: String { s("启用输入法", "Enable keyboard", "啟用輸入法") }
-    static var step_default: String { s("设为默认", "Make it default", "設為預設") }
-    static var act_allow: String { s("去允许 ›", "Allow ›", "去允許 ›") }
-    static var act_enable: String { s("去启用 ›", "Enable ›", "去啟用 ›") }
-    static var act_settings: String { s("去设置 ›", "Settings ›", "去設定 ›") }
-    static var done_allowed: String { s("已允许", "Allowed", "已允許") }
-    static var done_enabled: String { s("已启用", "Enabled", "已啟用") }
-    static var done_default: String { s("已是默认", "Default", "已是預設") }
-    static var setup_hint: String { s("三步做完就能在任何输入框里说话", "Three steps, then just talk in any text field", "三步做完就能在任何輸入框裡說話") }
-    static var ai_notice: String { s("⚠️ 译文由 AI 生成，可能有错，发送前请自行核对。", "⚠️ Translations are AI-generated and may be wrong. Check before you send.", "⚠️ 譯文由 AI 生成，可能有錯，發送前請自行核對。") }
-    static var check_update: String { s(" · 检查更新", " · Check for updates", " · 檢查更新") }
-    static var checking: String { s("检查中…", "Checking…", "檢查中…") }
-    static var ex_translate: String { s("翻译：说中文（或英文），出目标语言的干净短消息。语气和目标语言在下面那排选。", "Translate: speak Chinese (or English), get a clean short message in the target language. Pick the tone and target language in the row below.", "翻譯：說中文（或英文），出目標語言的乾淨短消息。語氣和目標語言在下面那排選。") }
-    static var ex_transcribe: String { s("转写：不翻译，保留你说的那个语言。下面可选「整理」（去口水话、该分点就分点）或「逐字」（一个字不改）。", "Transcribe: no translation — you get back the language you spoke. Below, pick Clean up (drops filler, splits into points where it helps) or Verbatim (nothing changed).", "轉寫：不翻譯，保留你說的那個語言。下面可選「整理」（去口水話、該分點就分點）或「逐字」（一個字不改）。") }
-    static var ex_history: String { s("历史：之前上屏过的内容都在这里，删没了可以回来重新复制。", "History: everything you've inserted lives here — if you delete it, come back and copy it again.", "歷史：之前上屏過的內容都在這裡，刪沒了可以回來重新複製。") }
-    static var ex_polish: String { s("整理：滤掉「嗯、那个、就是说」这类口水话，说了几件事就分几条，但不翻译，你说什么语言就出什么语言。", "Clean up: drops filler like um and you know, splits several points into separate lines — but does not translate. You get back the language you spoke.", "整理：濾掉「嗯、那個、就是說」這類口水話，說了幾件事就分幾條，但不翻譯，你說什麼語言就出什麼語言。") }
-    static var ex_verbatim: String { s("逐字：听到什么写什么，一个字不改、不整理、不翻译。", "Verbatim: exactly what you said — nothing changed, cleaned up or translated.", "逐字：聽到什麼寫什麼，一個字不改、不整理、不翻譯。") }
-    static var ex_mic: String { s("点一下开始说，说完再点一下停。中途停顿思考没关系，不会自动截断。单次最长 %1$s 秒，最后 %2$s 秒圆圈里会倒数，到点会自动帮你整理这一段。", "Tap once to start talking, tap again to stop. Pausing to think is fine — it won't cut you off. Up to %1$s seconds per take; the last %2$s seconds count down inside the circle, and it wraps up on its own at the end.", "點一下開始說，說完再點一下停。中途停頓思考沒關係，不會自動截斷。單次最長 %1$s 秒，最後 %2$s 秒圓圈裡會倒數，到點會自動幫你整理這一段。") }
-    static var ex_type: String { s("打字：内置键盘，拼音/五笔/英文/手写四档，用来改错字。不会把你切到别的输入法。", "Type: the built-in keyboard — Pinyin, Wubi, English and handwriting — for fixing a wrong character. It never switches you to another keyboard.", "打字：內置鍵盤，拼音/五筆/英文/手寫四檔，用來改錯字。不會把你切到別的輸入法。") }
-    static var ex_speak: String { s("朗读：把刚上屏的那段念出来。中文用中文女声，英文用 Andrew。", "Read aloud: plays back what was just inserted. A Chinese voice for Chinese, Andrew for English.", "朗讀：把剛上屏的那段念出來。中文用中文女聲，英文用 Andrew。") }
-    static var ex_backspace: String { s("退格：点一下删一个字，长按连删，1.2 秒后按词删。有选中就整段删。", "Backspace: one tap deletes one character; hold to repeat, and after 1.2 seconds it deletes whole words. If something is selected, it goes all at once.", "退格：點一下刪一個字，長按連刪，1.2 秒後按詞刪。有選中就整段刪。") }
-    static var ex_send: String { s("发送：相当于按输入框右边那个发送键。个别 App 不支持时，会退回按一下回车。", "Send: same as tapping the send button in the app. Where that isn't supported, it falls back to pressing Enter.", "發送：相當於按輸入框右邊那個發送鍵。個別 App 不支持時，會退回按一下回車。") }
-    static var ex_tone_casual: String { s("随意：熟人之间的口气，短、放松，可以用缩写。", "Casual: how you'd talk to someone you know — short, relaxed, contractions are fine.", "隨意：熟人之間的口氣，短、放鬆，可以用縮寫。") }
-    static var ex_tone_work: String { s("工作：发给同事或对接人的直接消息（Slack / 微信 / Teams），专业但不端着。", "Work: a direct message to a colleague or counterpart (Slack, WeChat, Teams) — professional without being stiff.", "工作：發給同事或對接人的直接消息（Slack / 微信 / Teams），專業但不端著。") }
-    static var ex_tone_email: String { s("邮件：邮件正文，也用于给客户、监管、审计的正式书面沟通。完整句子、措辞精确，不加称呼和落款（除非你自己说了）。", "Email: the body of an email, and formal written contact with clients, regulators or auditors. Full sentences, precise wording, no greeting or sign-off unless you said one.", "郵件：郵件正文，也用於給客戶、監管、審計的正式書面溝通。完整句子、措辭精確，不加稱呼和落款（除非你自己說了）。") }
-    static var ex_mic_ios: String { s("点一下开始说，说完再点一下停。中途停顿思考没关系，不会自动截断。", "Tap once to start talking, tap again to stop. Pausing to think is fine — it won't cut you off.", "點一下開始說，說完再點一下停。中途停頓思考沒關係，不會自動截斷。") }
-    static var ex_tone_cycle: String { s("语气：随意 / 工作 / 邮件三档，点一下轮换。", "Tone: Casual, Work or Email — tap to cycle.", "語氣：隨意 / 工作 / 郵件三檔，點一下輪換。") }
-    static var ex_lang_pick: String { s("翻译成哪种语言。", "Which language to translate into.", "翻譯成哪種語言。") }
-    static var ex_speak_ios: String { s("朗读：把刚出的那段念出来。中文用中文女声，英文用 Andrew。", "Read aloud: plays back what just came out. A Chinese voice for Chinese, Andrew for English.", "朗讀：把剛出的那段念出來。中文用中文女聲，英文用 Andrew。") }
-    static var st_recognizing: String { s("识别中…", "Transcribing…", "識別中…") }
-    static var st_polishing: String { s("整理中…", "Cleaning up…", "整理中…") }
-    static var st_translating: String { s("整理并译成英文…", "Cleaning up and translating…", "整理並譯成英文…") }
-    static var st_inserting: String { s("上屏…", "Inserting…", "上屏…") }
-    static var st_testing: String { s("测试中…", "Testing…", "測試中…") }
-    static var btn_got_it: String { s("知道了", "Got it", "知道了") }
-    static var lbl_translate_to: String { s("翻译成", "Translate into", "翻譯成") }
-    static var mic_allowed: String { s("麦克风：已允许 ✓", "Microphone: allowed ✓", "麥克風：已允許 ✓") }
-    static var mic_not_allowed: String { s("麦克风：还没允许", "Microphone: not allowed yet", "麥克風：還沒允許") }
-    static var kb_tr_before: String { s("译光标前的中文", "Translate the text before the cursor", "譯光標前的中文") }
-    static var kb_nothing_before: String { s("光标前没有内容", "Nothing before the cursor", "光標前沒有內容") }
-    static var kb_no_pass: String { s("这个版本有问题，请重新安装一次", "Something's wrong with this build — please reinstall", "這個版本有問題，請重新安裝一次") }
-    static var kb_type_plain: String { s("打字", "Type", "打字") }
-    static var kb_rec_failed_tap: String { s("录音失败 · 上面是现场，可长按复制；点一下收起", "Recording failed — details above, tap to dismiss", "錄音失敗 · 上面是現場，可長按複製；點一下收起") }
-    static var kb_rec_failed_retry: String { s("录音失败 · 上次的音频还在，点一下重试", "Recording failed — last audio kept, tap to retry", "錄音失敗 · 上次的音頻還在，點一下重試") }
-    static var kb_rec_failed_plain: String { s("录音失败，点一下收起", "Recording failed, tap to dismiss", "錄音失敗，點一下收起") }
-    static var kb_lang_pick: String { s("选语言", "Language", "選語言") }
-    static var kb_preparing: String { s("准备中…", "Preparing…", "準備中…") }
-    static var kb_rearming: String { s("重新架引擎…", "Re-arming…", "重新架引擎…") }
-    static var kb_resending: String { s("重发中…", "Resending…", "重發中…") }
-    static var ready_title: String { s("准备好了", "You're all set", "準備好了") }
-    static var ready_body: String { s("到任何 App 里切到 Transless 键盘，按麦克风开始说", "Switch to the Transless keyboard in any app and tap the mic", "到任何 App 裡切到 Transless 鍵盤，按麥克風開始說") }
-    static var err_polish_timeout: String { s("润色超时，先给你逐字稿", "Polishing timed out — showing the raw transcript", "潤色超時，先給你逐字稿") }
-    static var kb_need_full_short: String { s("设置 › 通用 › 键盘 › Transless 开启「允许完全访问」", "Settings › General › Keyboard › Transless › Allow Full Access", "設定 › 通用 › 鍵盤 › Transless 開啟「允許完全訪問」") }
-    static var kb_history_none: String { s("还没有记录", "Nothing yet", "還沒有記錄") }
-    static var kb_jumped_hint: String { s("已跳到 Transless 录音，说完点左上角返回", "Recording in Transless - tap the back arrow when done", "已跳到 Transless 錄音，說完點左上角返回") }
-    static var kb_jump_failed: String { s("这次没出稿，点这里看原因", "No text this time - tap for details", "這次沒出稿，點這裡看原因") }
-    static var rec_r0_title: String { s("正在准备…", "Getting ready...", "正在準備…") }
-    static var rec_r0_cancel: String { s("取消", "Cancel", "取消") }
-    static var rec_r1_title: String { s("正在为键盘录音", "Recording for the keyboard", "正在為鍵盤錄音") }
-    static var rec_r1_hint: String { s("说完点停止", "Tap stop when you're done", "說完點停止") }
-    static var rec_r1_stop: String { s("停止", "Stop", "停止") }
-    static var rec_r2_title: String { s("正在出稿…", "Working on it...", "正在出稿…") }
-    static var rec_r3_title: String { s("好了，点左上角回去", "Done - tap the back arrow to return", "好了，點左上角回去") }
-    static var rec_r3_hint: String { s("英文已经准备好，回到刚才那个输入框就会填进去", "Your English is ready - go back and it will be inserted", "英文已經準備好，回到剛才那個輸入框就會填進去") }
-    static var rec_r4_title: String { s("这次没成", "That didn't work", "這次沒成") }
-    static var rec_r4_detail: String { s("坏在这一步：%@", "Where it broke: %@", "壞在這一步：%@") }
-    static var rec_r4_retry: String { s("再试一次", "Try again", "再試一次") }
-    static var rec_tail_warn: String { s("还剩 %@ 秒", "%@s left", "還剩 %@ 秒") }
-    static var err_expired: String { s("这次等太久过期了，再说一次", "That request expired - say it again", "這次等太久過期了，再說一次") }
-    static var err_open_app_failed: String { s("打不开 Transless，去设置里给键盘开「完全访问」", "Can't open Transless - enable Full Access for the keyboard", "打不開 Transless，去設定裡給鍵盤開「完全訪問」") }
-    static var kb_cancelled: String { s("已取消，可以重新说", "Cancelled - say it again", "已取消，可以重新說") }
-    static var ok_copied: String { s("已复制，可以去任何地方粘贴", "Copied - paste it anywhere", "已複製，可以去任何地方粘貼") }
-    static var err_timeout: String { s("等太久了，再说一次试试", "Took too long - try again", "等太久了，再說一次試試") }
-    static var err_unauthorized: String { s("登录过期了，重新登录一下", "Session expired - please sign in again", "登錄過期了，重新登錄一下") }
-    static var err_quota: String { s("今天的次数用完了", "You've used up today's quota", "今天的次數用完了") }
-    static var err_http: String { s("服务器没响应，等一下再试", "Server didn't respond - try again in a moment", "伺服器沒響應，等一下再試") }
-    static var err_network: String { s("网络连不上，检查一下网络", "Can't reach the network - check your connection", "網絡連不上，檢查一下網絡") }
-    static var err_ourbug: String { s("出了点问题，这条没发出去", "Something went wrong - it wasn't sent", "出了點問題，這條沒發出去") }
-    static var err_empty: String { s("没听清，再说一次", "Didn't catch that - say it again", "沒聽清，再說一次") }
-    static var err_other: String { s("出了点问题，再试一次", "Something went wrong - try again", "出了點問題，再試一次") }
-    static var err_zh_unreadable: String { s("这次没整理好 —— 再说一次试试", "Could not format that - try saying it again", "這次沒整理好 —— 再說一次試試") }
-    static var err_speak_failed: String { s("没能播出来，你的文字还在，再点一下", "Couldn't play that - your text is still there, tap again", "沒能播出來，你的文字還在，再點一下") }
-    static var retry_badge: String { s("没传上去 · 再点一下", "Not sent · tap again", "沒傳上去 · 再點一下") }
-    static var mode_switched: String { s("已切到：%1$s", "Switched to: %1$s", "已切到：%1$s") }
-    static var tone_switched: String { s("语气：%1$s", "Tone: %1$s", "語氣：%1$s") }
-    static var ime_enabled_not_default: String { s("Transless 已经装好了，还不是默认输入法 —— 点这里切换", "Transless is installed but not your default keyboard - tap to switch", "Transless 已經裝好了，還不是預設輸入法 —— 點這裡切換") }
-    static var home_stats_empty: String { s("说几句试试，这里会记下你说了多少", "Say a few things - your numbers will show up here", "說幾句試試，這裡會記下你說了多少") }
-    static var home_stats_footnote: String { s("按平均打字 %1$s 词/分钟算", "Based on average typing speed of %1$s words per minute", "按平均打字 %1$s 詞/分鐘算") }
-    static var tab_home: String { s("首页", "Home", "首頁") }
-    static var tab_history: String { s("历史", "History", "歷史") }
-    static var tab_wordbook: String { s("单词本", "Words", "單詞本") }
-    static var tab_me: String { s("我的", "Me", "我的") }
-    static var tab_history_soon: String { s("历史现在在键盘里看，这一屏还在做", "History lives in the keyboard for now - this screen is on the way", "歷史現在在鍵盤裡看，這一屏還在做") }
-    static var ime_switch_here: String { s("点这里切换", "Tap to switch", "點這裡切換") }
-    static var ime_not_default_line1: String { s("Transless 已经装好了，还不是默认输入法", "Transless is installed but not your default keyboard", "Transless 已經裝好了，還不是預設輸入法") }
-    static var kb_retry_a11y: String { s("麦克风。上一句还在，没传上去。轻点重试。要说新的一句，用底部 Speak。", "Microphone. Your last sentence is kept but was not sent. Tap to retry. To say something new, use Speak below.", "麥克風。上一句還在，沒傳上去。輕點重試。要說新的一句，用底部 Speak。") }
-    static var kb_retrying: String { s("正在再试…", "Retrying…", "正在再試…") }
-    static var kb_retry_gone: String { s("那段音频已经不在了，只能再说一次", "That audio is gone - please say it again", "那段音訊已經不在了，只能再說一次") }
-    static var f2f_back: String { s("‹ 返回", "‹ Back", "‹ 返回") }
-    static var f2f_hint_1: String { s("把手机放在两人中间", "Put the phone between you", "把手機放在兩人中間") }
-    static var f2f_hint_2: String { s("轮流对着它说", "Take turns speaking to it", "輪流對著它說") }
-    static var f2f_speak: String { s("按一下说话", "Tap to speak", "按一下說話") }
-    static var f2f_zh: String { s("中文", "Chinese", "中文") }
-    static var hist_clear_ask: String { s("清空之后就找不回来了，确定吗？", "This cannot be undone. Clear everything?", "清空之後就找不回來了，確定嗎？") }
-    static var hist_copy: String { s("复制译文", "Copy translation", "複製譯文") }
-    static var hist_resend: String { s("重新翻译", "Translate again", "重新翻譯") }
-    static var hist_d_orig: String { s("你说的", "What you said", "你說的") }
-    static var hist_d_out: String { s("译文", "Translation", "譯文") }
-    static var hist_resent: String { s("重新翻译好了", "Re-translated", "重新翻譯好了") }
-    static var kpi_words: String { s("翻译的词", "Words", "翻譯的詞") }
-    static var kpi_saved: String { s("省下时间", "Time saved", "省下時間") }
-    static var kpi_spoken: String { s("累计说话", "Time spoken", "累計說話") }
-    static var kpi_chars: String { s("说了多少字", "Characters", "說了多少字") }
-    static var cand_head: String { s("新发现的（%1$s）· 点一下收录，长按不要", "New words (%1$s) · tap to keep, long-press to skip", "新發現的（%1$s）· 點一下收錄，長按不要") }
-    static var cand_added: String { s("已收录：%1$s", "Kept: %1$s", "已收錄：%1$s") }
-    static var cand_rej_closed: String { s("› 我不要的（%1$s）", "› Skipped (%1$s)", "› 我不要的（%1$s）") }
-    static var cand_rej_open: String { s("⌄ 我不要的（%1$s）", "⌄ Skipped (%1$s)", "⌄ 我不要的（%1$s）") }
-    static var cand_recall: String { s("收回候选", "Bring back", "收回候選") }
-    static var vocab_kept_head: String { s("我的常用词（%1$s）· 长按删除", "My words (%1$s) · long-press to delete", "我的常用詞（%1$s）· 長按刪除") }
-    static var vocab_del_confirm: String { s("删掉「%1$s」？", "Delete “%1$s”?", "刪掉「%1$s」？") }
-    static var hist_mode_en: String { s("结构化英文", "Polished English", "結構化英文") }
-    static var hist_mode_zh: String { s("整理中文", "Tidied Chinese", "整理中文") }
-    static var hist_mode_raw: String { s("逐字", "Verbatim", "逐字") }
-    static var tab_vocab: String { s("常用词", "Words", "常用詞") }
-    static var tab_settings: String { s("设置", "Settings", "設定") }
-    static var vocab_sub: String { s("你常说的人名、公司名、口头禅", "Names and phrases you use often", "你常說的人名、公司名、口頭禪") }
-    static var vocab_full: String { s("常用词最多 500 个，先删掉几个不用的再加", "Up to 500 terms - remove a few you don't use first", "常用詞最多 500 個，先刪掉幾個不用的再加") }
-    static var vocab_too_long: String { s("这个词太长了 —— 常用词是名字或短语，不是整句话", "Too long - terms are names or phrases, not whole sentences", "這個詞太長了 —— 常用詞是名字或短語，不是整句話") }
-    static var vocab_empty: String { s("还没有常用词。把你常说的人名、公司名、口头禅加进来，Transless 就会记住怎么听、怎么说。", "No personal terms yet. Add the names, companies and phrases you say often, and Transless will remember how to hear them and how to say them.", "還沒有常用詞。把你常說的人名、公司名、口頭禪加進來，Transless 就會記住怎麼聽、怎麼說。") }
-    static var home_vocab: String { s("常用词", "Personal terms", "常用詞") }
-    static var vocab_add: String { s("+ 添加", "+ Add", "＋ 新增") }
-    static var vocab_add_hint: String { s("人名、公司名，或你常说的话", "A name, a company, or a phrase you use often", "人名、公司名，或你常說的話") }
-    static var vocab_kind_both: String { s("听和说都用", "Both", "聽和說都用") }
-    static var vocab_kind_asr: String { s("只帮我听对", "Recognition only", "只幫我聽對") }
-    static var vocab_kind_style: String { s("只帮我说得像", "Wording only", "只幫我說得像") }
-    static var vocab_delete: String { s("删除", "Delete", "刪除") }
-    static var vocab_from_book: String { s("来自单词本", "From word book", "來自單詞本") }
-    static var err_mic_ask: String { s("还没给录音权限 —— 点一下允许就能用", "Microphone permission not granted yet - allow it to continue", "還沒給錄音權限 —— 點一下允許就能用") }
-    static var err_mic_denied: String { s("麦克风被关着了：去「设置 › Transless › 麦克风」打开", "Microphone is off: go to Settings > Transless > Microphone", "麥克風被關著了：去「設定 › Transless › 麥克風」打開") }
-    static var err_audio_session: String { s("录音没能开始 —— 如果正在通话、或有别的 App 在录音，先关掉再试", "Couldn't start recording - if you're on a call or another app is recording, close it and try again", "錄音沒能開始 —— 如果正在通話、或有別的 App 在錄音，先關掉再試") }
-    static var err_kind_blocked: String { s("这句没法处理，换个说法试试", "Can't process that - try rephrasing", "這句沒法處理，換個說法試試") }
-    static var err_kind_auth: String { s("登录过期了，重新登录一下", "Session expired - please sign in again", "登錄過期了，重新登錄一下") }
-    static var err_kind_upstream: String { s("服务器那边没响应，等一下再试", "The server didn't respond - try again in a moment", "伺服器那邊沒響應，等一下再試") }
-    static var err_tts_failed: String { s("没能朗读出来，文字还留着，点一下重试", "Couldn't read it aloud - the text is still here, tap to retry", "沒能朗讀出來，文字還留著，點一下重試") }
-    static var err_engine: String { s("录音没能开始，再试一次；还不行就重开一次 App", "Couldn't start recording - try again, or reopen the app", "錄音沒能開始，再試一次；還不行就重開一次 App") }
-    static var kb_need_standby: String { s("Transless 没在后台了。打开一次 Transless 就好，不用再点任何开关。", "Transless isn't running. Just open Transless once — no switch to flip.", "Transless 沒在後臺了。打開一次 Transless 就好，不用再點任何開關。") }
-    static var kb_host_gone: String { s("Transless 被系统关掉了，打开它再点一次「键盘语音」", "Transless was closed by the system — open it and turn Keyboard Voice on again", "Transless 被系統關掉了，打開它再點一次「鍵盤語音」") }
-    static var kb_host_slow: String { s("等太久了，再说一次", "That took too long — try again", "等太久了，再說一次") }
-    static var kb_slow_retry: String { s("等太久了 · 刚才那段还在，点一下重发", "That took too long — your recording is still here, tap to resend", "等太久了 · 剛才那段還在，點一下重發") }
-    static var kb_empty_out: String { s("这段没听出内容 · 刚才那段还在，点一下重发", "Nothing came back from that — your recording is still here, tap to resend", "這段沒聽出內容 · 剛才那段還在，點一下重發") }
-    static var kb_empty_out_plain: String { s("这段没听出内容，再说一次", "Nothing came back from that — try again", "這段沒聽出內容，再說一次") }
-    static var kb_bad_result: String { s("结果没读懂 · 刚才那段还在，点一下重发", "Couldn't read the result — your recording is still here, tap to resend", "結果沒讀懂 · 剛才那段還在，點一下重發") }
-    static var kb_bad_result_plain: String { s("结果没读懂，再说一次", "Couldn't read the result — try again", "結果沒讀懂，再說一次") }
-    static var kb_standby_on: String { s("键盘语音 · 已开", "Keyboard Voice · On", "鍵盤語音 · 已開") }
-    static var kb_standby_off: String { s("键盘语音 · 未开", "Keyboard Voice · Off", "鍵盤語音 · 未開") }
-    static var kb_standby_why: String { s("打开后 Transless 会留在后台待命。没在说话时麦克风是关的，只有你按下键盘上的麦克风才会开。十分钟没用会自动关掉，每次说话都会续期。", "Transless stays ready in the background. The microphone is off unless you press the mic on the keyboard. It turns itself off after ten minutes idle, and every dictation extends it.", "打開後 Transless 會留在後臺待命。沒在說話時麥克風是關的，只有你按下鍵盤上的麥克風才會開。十分鐘沒用會自動關掉，每次說話都會續期。") }
-    static var st_listening_ios: String { s("听着呢 %d:%02d　·　说完再按一下红色按钮", "Listening %d:%02d　·　tap the red button when you're done", "聽著呢 %d:%02d　·　說完再按一下紅色按鈕") }
-    static var msg_update_unreachable: String { s("连不上更新服务器：%1$s\n稍后再试，或者去应用商店看看有没有新版。", "Can't reach the update server: %1$s\nTry again later, or check the App Store for updates.", "連不上更新伺服器：%1$s\n稍後再試，或者去應用商店看看有沒有新版。") }
-    static var msg_already_latest: String { s("已经是最新版了（%1$s）", "You're already on the latest version (%1$s)", "已經是最新版了（%1$s）") }
-    static var msg_new_version: String { s("发现新版 %1$s，下载中…", "Found version %1$s — downloading…", "發現新版 %1$s，下載中…") }
-    static var msg_downloading: String { s("下载中… %1$s%%", "Downloading… %1$s%%", "下載中… %1$s%%") }
-    static var msg_update_failed: String { s("更新失败：%1$s\n稍后再试一次。", "Update failed: %1$s\nPlease try again later.", "更新失敗：%1$s\n稍後再試一次。") }
-    static var msg_dl_done: String { s("下载完成 %1$s，正在打开安装界面", "Downloaded %1$s — opening the installer", "下載完成 %1$s，正在打開安裝界面") }
-    static var msg_hw_missing: String { s("手写没装上", "Handwriting isn't installed", "手寫沒裝上") }
-    static var msg_speak_failed: String { s("朗读失败：%1$s", "Couldn't read it aloud: %1$s", "朗讀失敗：%1$s") }
-    static var msg_mic_open_failed: String { s("打不开麦克风：%1$s", "Can't open the microphone: %1$s", "打不開麥克風：%1$s") }
-    static var prefs_title: String { s("设置", "Settings", "設定") }
-    static var kb_retry_hint: String { s("没传上去 · 再点一下", "Not sent · tap again", "沒傳上去 · 再點一下") }
-    static var home_try_speak: String { s("随手翻译", "Translate as you go", "隨手翻譯") }
-    static var ios_step_add: String { s("在系统设置里添加 Transless 键盘", "Add the Transless keyboard in Settings", "在系統設定裡添加 Transless 鍵盤") }
-    static var ios_step_full: String { s("打开「允许完全访问」（联网要用）", "Turn on Allow Full Access (needed for network)", "打開「允許完全訪問」（聯網要用）") }
-    static var ios_update_note: String { s("iOS 通过 TestFlight 更新", "Updates arrive through TestFlight", "iOS 通過 TestFlight 更新") }
-    static var rec_log_empty: String { s("还没有记录", "Nothing recorded yet", "還沒有記錄") }
-    static var prefs_soon: String { s("设置项还在做，下一版给你", "Settings are coming in the next version", "設定項還在做，下一版給你") }
-    static var prefs_entry: String { s("设置", "Settings", "設定") }
-    static var prefs_g_ime: String { s("输入法", "Keyboard", "輸入法") }
-    static var prefs_g_pref: String { s("偏好", "Preferences", "偏好") }
-    static var prefs_g_diag: String { s("诊断", "Diagnostics", "診斷") }
-    static var prefs_g_about: String { s("关于", "About", "關於") }
-    static var prefs_ime_on: String { s("已经是当前输入法", "Currently in use", "已經是當前輸入法") }
-    static var prefs_ime_off: String { s("还没设为当前输入法", "Not your keyboard yet", "還沒設為當前輸入法") }
-    static var prefs_diag_sub: String { s("看最近几次录音为什么没转出来", "Why recent recordings did not come through", "看最近幾次錄音為什麼沒轉出來") }
-    static var prefs_about: String { s("关于 Transless", "About Transless", "關於 Transless") }
-    static var prefs_check_update: String { s("检查更新", "Check for updates", "檢查更新") }
-    static var prefs_copy: String { s("复制", "Copy", "複製") }
-    static var msg_no_input_conn: String { s("输入框没连上，先点一下输入框再试", "Tap the text field once, then try again", "輸入框沒連上，先點一下輸入框再試") }
-    static var msg_send_not_supported: String { s("这个 App 不让输入法代发，请点它自己的发送键", "This app doesn't let keyboards send — tap its own send button", "這個 App 不讓輸入法代發，請點它自己的發送鍵") }
-    static var msg_send_unknown_fail: String { s("没转出来，原因不明。设置 › 录音诊断 里有详细记录", "Couldn't transcribe. See Settings → Recording log for details", "沒轉出來，原因不明。設定 › 錄音診斷 裡有詳細記錄") }
-    static var msg_send_wechat: String { s("微信要先开「回车键发送消息」：我 › 设置 › 聊天", "Turn on \"Enter key sends messages\" in WeChat: Me → Settings → Chats", "微信要先開「回車鍵發送消息」：我 › 設定 › 聊天") }
-    static var msg_mic_not_ready: String { s("麦克风没就绪，再点一次", "Microphone isn't ready — tap again", "麥克風沒就緒，再點一次") }
-    static var msg_max_len: String { s("说满 %1$s 秒，这一段先帮你整理了", "Hit the %1$s-second limit — cleaning up what you said so far", "說滿 %1$s 秒，這一段先幫你整理了") }
-    static var msg_mic_lost: String { s("麦克风断了（%1$s），先把已录到的转出来", "Microphone dropped (%1$s) — transcribing what was captured", "麥克風斷了（%1$s），先把已錄到的轉出來") }
-    static var msg_no_audio: String { s("没录到声音：%1$s", "No audio captured: %1$s", "沒錄到聲音：%1$s") }
-    static var msg_not_heard: String { s("没听清，再说一次", "Didn't catch that — say it again", "沒聽清，再說一次") }
-    static var kb_chip_zh: String { s("中", "ZH", "中") }
-    static var kb_chip_voice: String { s("语音", "Voice", "語音") }
-    static var msg_cancelled: String { s("已取消", "Cancelled", "已取消") }
-    static var msg_nothing_recorded: String { s("没录到", "Nothing recorded", "沒錄到") }
-    static var msg_failed: String { s("失败：%1$s", "Failed: %1$s", "失敗：%1$s") }
-    static var perm_title: String { s("权限", "Permissions", "權限") }
-    static var cancel: String { s("取消", "Cancel", "取消") }
-    static var nothing_to_speak: String { s("还没有可朗读的内容", "Nothing to read aloud yet", "還沒有可朗讀的內容") }
-    static var ios_setup_title: String { s("权限与自测", "Permissions & self-test", "權限與自測") }
-    static var ios_step1: String { s("第 1 步 · 允许麦克风", "Step 1 · Allow microphone", "第 1 步 · 允許麥克風") }
-    static var ios_step1_why: String { s("只用要一次。语音识别在后端做，不用额外授权。", "Once only. Speech recognition runs on the server, so no extra permission is needed.", "只用要一次。語音識別在後端做，不用額外授權。") }
-    static var ios_allow_mic: String { s("允许麦克风", "Allow microphone", "允許麥克風") }
-    static var ios_step2: String { s("自测 · 后端通不通", "Self-test · Is the backend reachable?", "自測 · 後端通不通") }
-    static var ios_test_once: String { s("测一次", "Run test", "測一次") }
-    static var lang_follow_system: String { s("跟随系统", "Follow system", "跟隨系統") }
-    static var lang_title: String { s("界面语言", "App language", "界面語言") }
-    static var rec_log_title: String { s("录音诊断", "Recording log", "錄音診斷") }
-    static var kb_translate: String { s("翻译", "Translate", "翻譯") }
-    static var kb_transcribe: String { s("转写", "Transcribe", "轉寫") }
-    static var kb_history: String { s("历史", "History", "歷史") }
-    static var kb_type: String { s("⌨  打字", "⌨  Type", "⌨  打字") }
-    static var kb_speak: String { s("朗读", "Speak", "朗讀") }
-    static var kb_send: String { s("发送", "Send", "發送") }
-    static var kb_stop: String { s("■ 停", "■ Stop", "■ 停") }
-    static var tone_casual: String { s("随意", "Casual", "隨意") }
-    static var tone_work: String { s("工作", "Work", "工作") }
-    static var tone_email: String { s("邮件", "Email", "郵件") }
-    static var kb_back: String { s("‹ 返回", "‹ Back", "‹ 返回") }
-    static var kb_pinyin: String { s("拼音", "Pinyin", "拼音") }
-    static var kb_wubi: String { s("五笔", "Wubi", "五筆") }
-    static var kb_hand: String { s("手写", "Handwriting", "手寫") }
-    static var kb_english: String { s("英文", "English", "英文") }
-    static var kb_pinyin_s: String { s("拼", "PY", "拼") }
-    static var kb_wubi_s: String { s("五", "WB", "五") }
-    static var kb_hand_s: String { s("写", "HW", "寫") }
-    static var kb_done: String { s("完成", "Done", "完成") }
-    static var kb_space: String { s("空格", "Space", "空格") }
-    static var kb_polish: String { s("整理", "Clean up", "整理") }
-    static var kb_verbatim: String { s("逐字", "Verbatim", "逐字") }
-    static var kb_resend: String { s("重新上屏", "Insert again", "重新上屏") }
-    static var kb_undo: String { s("撤销", "Undo", "撤銷") }
-    static var kb_clear: String { s("清空", "Clear", "清空") }
-    static var kb_delete: String { s("删除", "Delete", "刪除") }
-    static var hist_title: String { s("  历史记录", "  History", "  歷史記錄") }
-    static var hist_empty: String { s("还没有记录 · 说一句就会自动存下来", "Nothing yet · Everything you say gets saved here", "還沒有記錄 · 說一句就會自動存下來") }
-    static var rec_empty: String { s("还没有录音记录。", "No recordings yet.", "還沒有錄音記錄。") }
-    static var dict_title: String { s("查词", "Look up", "查詞") }
-    static var dict_hint: String { s("说一个词，或拼给它听", "Say a word, or spell it out", "說一個詞，或拼給它聽") }
-    static var dict_recent: String { s("最近查过", "Recent", "最近查過") }
-    static var dict_example: String { s("例句", "Example", "例句") }
-    static var dict_collocation: String { s("搭配", "Collocations", "搭配") }
-    static var wb_added: String { s("已加入", "Added", "已加入") }
-    static var hist_tab_wordbook: String { s("单词本", "Wordbook", "單詞本") }
-    static var lang_recent: String { s("最近用过", "Recent", "最近用過") }
-    static var lang_all: String { s("全部语言", "All languages", "全部語言") }
-    static var p_tone: String { s("语气", "Tone", "語氣") }
-    static var p_lang: String { s("译成", "To", "譯成") }
-    static var p_style: String { s("方式", "Mode", "方式") }
-    static var home_try_sub: String { s("开口即译，不用找键盘", "Speak and it translates - no keyboard hunting", "開口即譯，不用找鍵盤") }
-    static var try_title_zh: String { s("随手转写", "Quick transcribe", "隨手轉寫") }
-    static var swipe_back_hint: String { s("‹ 从这条边往回滑", "‹ Swipe back from this edge", "‹ 從這條邊往回滑") }
-    static var home_ime_on: String { s("输入法 · 已启用", "Keyboard · on", "輸入法 · 已啟用") }
-    static var home_ime_off: String { s("设为输入法", "Set as keyboard", "設為輸入法") }
-    static var ex_style_menu_title: String { s("方式", "Style", "方式") }
-    static var ex_tone_menu_title: String { s("语气", "Tone", "語氣") }
-    static var ex_tone_pick: String { s("语气：点一下展开，直接挑一档。", "Tone: tap to open the list and pick one.", "語氣：點一下展開，直接挑一檔。") }
-    static var err_no_speech: String { s("没听到你说话，再说一次", "I didn't hear anything - say it again", "沒聽到你說話，再說一次") }
-    static var ok: String { s("确定", "OK", "確定") }
-    static var account_edit: String { s("点这里填写", "Tap to fill in", "點這裡填寫") }
-    static var account_none: String { s("未登录", "Not signed in", "未登入") }
-    static var account_page: String { s("我的账户", "My account", "我的帳戶") }
-    static var account_signout: String { s("退出登录", "Sign out", "登出") }
-    static var account_signout_ask: String { s("确定要退出登录吗？下次要重新收验证码。", "Sign out? You\\'ll need a new code to sign back in.", "確定要登出嗎？下次要重新收驗證碼。") }
-    static var account_title: String { s("账户", "Account", "帳戶") }
-    static var act_manual: String { s("请手动开启", "Turn on manually", "請手動開啟") }
-    static var full_note: String { s("在设置里打开就行。开好之后这一行不会变绿 —— iOS 不让 App 查这个状态，以键盘里的提示为准。", "Just switch it on in Settings. This line won't turn green afterwards — iOS doesn't let the app read that state. The keyboard will tell you.", "在設定裡打開就行。開好之後這一行不會變綠 —— iOS 不讓 App 查這個狀態，以鍵盤裡的提示為準。") }
-    static var home_wordbook: String { s("单词本", "Word book", "單詞本") }
-    static var home_wordbook_soon: String { s("单词本下个版本上线", "Word book is coming next version", "單詞本下個版本上線") }
-    static var kb_keep: String { s("收藏", "Save", "收藏") }
-    static var kb_kept: String { s("已收", "Saved", "已收") }
-    static var login_checking: String { s("正在验证…", "Checking…", "正在驗證…") }
-    static var login_code_ph: String { s("6 位验证码", "6-digit code", "6 位驗證碼") }
-    static var login_do: String { s("登录", "Sign in", "登入") }
-    static var login_email_ph: String { s("邮箱地址", "Email address", "電郵地址") }
-    static var login_gate_go: String { s("去登录", "Sign in", "去登入") }
-    static var login_gate_ime: String { s("登录后才能把 Transless 设成输入法。随手翻译不用登录，一直都能用。", "Sign in to set Transless as your keyboard. Translate as you go never needs an account.", "登入後才能把 Transless 設成輸入法。隨手翻譯不用登入，一直都能用。") }
-    static var login_gate_later: String { s("以后再说", "Not now", "以後再說") }
-    static var login_gate_wordbook: String { s("登录后才能用单词本。随手翻译不用登录，一直都能用。", "Sign in to use the word book. Translate as you go never needs an account.", "登入後才能用單詞本。隨手翻譯不用登入，一直都能用。") }
-    static var login_gate_hotkey: String { s("登录后才能用热键在任何地方说话上屏。随手翻译不用登录，一直都能用。", "Sign in to talk into any app with the hotkey. Translate as you go never needs an account.", "登錄後才能用熱鍵在任何地方說話上屏。隨手翻譯不用登錄，一直都能用。") }
-    static var login_mainland_only: String { s("目前手机号登录只支持中国内地号码，海外请用邮箱", "Phone sign-in currently supports mainland China numbers only — please use email", "目前手機號登入只支援中國內地號碼，海外請用電郵") }
-    static var login_need_code: String { s("填一下收到的验证码", "Enter the code you received", "填一下收到的驗證碼") }
-    static var login_need_email: String { s("填一个邮箱地址", "Enter an email address", "填一個電郵地址") }
-    static var login_note: String { s("没注册过的手机号会自动创建账号。我们只用它做登录，不会发广告。", "A new number gets an account automatically. We only use it to sign you in — no marketing.", "沒註冊過的手機號會自動建立帳號。我們只用它做登入，不會發廣告。") }
-    static var login_note_mail: String { s("没注册过的邮箱会自动创建账号。我们只用它做登录，不会发广告。", "A new email gets an account automatically. We only use it to sign you in — no marketing.", "沒註冊過的電郵會自動建立帳號。我們只用它做登入，不會發廣告。") }
-    static var login_phone_ph: String { s("手机号", "Phone number", "手機號") }
-    static var login_send_again: String { s("重新获取", "Send again", "重新獲取") }
-    static var login_send_code: String { s("获取验证码", "Send code", "獲取驗證碼") }
-    static var login_sending: String { s("正在发送…", "Sending…", "正在傳送…") }
-    static var login_sent: String { s("验证码已发出，注意查收短信", "Code sent — check your SMS", "驗證碼已發出，注意查收簡訊") }
-    static var login_sent_mail: String { s("验证码已发到邮箱，注意查收（也看一下垃圾邮件）", "Code sent to your email — check spam too", "驗證碼已發到電郵，注意查收（也看一下垃圾郵件）") }
-    static var login_tab_email: String { s("邮箱", "Email", "電郵") }
-    static var login_tab_phone: String { s("手机号", "Phone", "手機號") }
-    static var login_too_often: String { s("发得太频繁了，%1$d 秒后再试", "Too many requests — try again in %1$ds", "發得太頻繁了，%1$d 秒後再試") }
-    static var login_wait: String { s("%1$d 秒后可重发", "Resend in %1$ds", "%1$d 秒後可重發") }
-    static var login_why: String { s("登录之后才能把 Transless 设为输入法，也方便你换手机时找回设置。", "Sign in to set Transless as your keyboard — it also keeps your settings when you switch phones.", "登入之後才能把 Transless 設為輸入法，也方便你換手機時找回設定。") }
-    static var prefs_privacy: String { s("隐私政策", "Privacy Policy", "私隱政策") }
-    static var profile_birth: String { s("出生日期（选填）", "Date of birth (optional)", "出生日期（選填）") }
-    static var profile_country: String { s("国家/地区", "Country", "國家/地區") }
-    static var profile_day: String { s("日", "Day", "日") }
-    static var profile_done: String { s("完成", "Done", "完成") }
-    static var profile_email: String { s("邮箱", "Email", "郵箱") }
-    static var profile_job: String { s("职业", "Occupation", "職業") }
-    static var profile_month: String { s("月", "Month", "月") }
-    static var profile_nick: String { s("昵称", "Nickname", "暱稱") }
-    static var profile_nick_ph: String { s("怎么称呼你", "What should we call you", "怎麼稱呼你") }
-    static var profile_region: String { s("省份/州", "State / Province", "省份/州") }
-    static var profile_sub: String { s("起个昵称，以后界面上就显示它，不用挂着一长串邮箱。", "Pick a nickname — it shows up instead of your full email.", "起個暱稱，以後介面上就顯示它，不用掛著一長串郵箱。") }
-    static var profile_title: String { s("完善资料", "Set up your profile", "完善資料") }
-    static var profile_year: String { s("年", "Year", "年") }
-    static var save: String { s("保存", "Save", "儲存") }
-    static var try_bigtext: String { s("大字", "Big text", "大字") }
-    static var try_recent: String { s("最近", "Recent", "最近") }
-    static var try_empty_guide: String { s("点一下上面的麦克风，说一句中文\n比如：帮我订一张明天去香港的高铁票", "Tap the mic above and say a sentence\ne.g. Book me a train ticket to Hong Kong tomorrow", "點一下上面的麥克風，說一句中文\n比如：幫我訂一張明天去香港的高鐵票") }
-    static var try_cont_on: String { s("连续模式：说一句出一句，说完点停止", "Continuous mode: speak, and each sentence comes back. Tap to stop.", "連續模式：說一句出一句，說完點停止") }
-    static var try_continuous: String { s("连续", "Continuous", "連續") }
-    static var try_dir_me: String { s("⇄ 我说", "⇄ Me", "⇄ 我說") }
-    static var try_dir_them: String { s("⇄ 对方说", "⇄ Them", "⇄ 對方說") }
-    static var try_reverse_on: String { s("反向：对方说外语，译成你的语言", "Reverse: they speak, you read it in your language", "反向：對方說外語，譯成你的語言") }
-    static var account_signout_done: String { s("已退出登录", "Signed out", "已登出") }
-    static var f2f_empty: String { s("把手机转给对方看", "Turn the phone to show them", "把手機轉給對方看") }
-    static var f2f_soon: String { s("面对面翻译（即将上线）", "Face-to-Face (coming soon)", "面對面翻譯（即將推出）") }
-    static var f2f_title: String { s("面对面翻译", "Face-to-Face", "面對面翻譯") }
-    static var f2f_wip: String { s("这个功能还没做完，正在做。\n\n现在要面对面用，先在「随手翻译」里说一句，再点【大字】把结果转给对方看。", "This isn't finished yet — we're building it.\n\nTo use it face-to-face today: say something in Quick Translate, then tap Big Text and turn the phone to show them.", "這個功能還沒做完，正在做。\n\n現在要面對面用，先在「隨手翻譯」裡說一句，再點【大字】把結果轉給對方看。") }
-    static var f2f_place: String { s("把手机放在两人中间", "Put the phone between the two of you", "把手機放在兩人中間") }
-    static var f2f_take_turns: String { s("轮流对着它说", "Take turns speaking to it", "輪流對著它說") }
-    static var f2f_tap_speak: String { s("按一下说话", "Tap to speak", "按一下說話") }
-    static var f2f_listening: String { s("正在听…", "Listening…", "正在聽…") }
-    static var hist_screen_title: String { s("说话记录", "Speech Log", "說話記錄") }
-    static var hist_chip_en: String { s("结构化英文", "Structured English", "結構化英文") }
-    static var hist_chip_zh: String { s("整理中文", "Tidied Chinese", "整理中文") }
-    static var hist_today: String { s("今天", "Today", "今天") }
-    static var hist_delete_ask: String { s("删掉这一条？", "Delete this one?", "刪掉這一條？") }
-    static var kpi_u_words: String { s("词", "words", "詞") }
-    static var kpi_u_hours: String { s("小时", "h", "小時") }
-    static var kpi_u_min: String { s("分钟", "min", "分鐘") }
-    static var kpi_u_chars: String { s("字", "chars", "字") }
-    static var kpi_nodata: String { s("还没有数据", "No data yet", "還沒有數據") }
-    static var kpi_under_min: String { s("不到 1 分钟", "Under 1 min", "不到 1 分鐘") }
-    static var f2f_more_langs: String { s("更多语言…", "More languages…", "更多語言…") }
-    static var f2f_more_langs_hint: String { s("现在先支持这 9 种", "These 9 for now", "現在先支持這 9 種") }
-    static var hist_yesterday: String { s("昨天", "Yesterday", "昨天") }
-    static var hist_monthday: String { s("%d月%d日", "%d/%d", "%d月%d日") }
-    static var kb_tap_speak: String { s("点一下\n开始说", "Tap to\nspeak", "點一下\n開始說") }
-    static var kb_tap_stop: String { s("说完了\n点这里", "Done?\nTap here", "說完了\n點這裡") }
-    static var msg_cant_record: String { s("这台机器录不了音", "This device can't record audio", "這台機器錄不了音") }
-    static var msg_mic_denied_forever: String { s("录音权限被拒了，系统不会再问 —— 去「设置 › 应用 › Transless › 权限」打开麦克风", "Microphone access was denied and the system won't ask again — turn it on in Settings › Apps › Transless › Permissions", "錄音權限被拒了，系統不會再問 —— 去「設定 → 應用程式 → Transless → 權限」打開麥克風") }
-    static var msg_need_mic: String { s("还没给录音权限 —— 点一下允许就能试", "Microphone access isn't on yet — tap Allow to try it", "還沒給錄音權限 —— 點一下允許就能試") }
-    static var profile_birth_none: String { s("选填", "Optional", "選填") }
-    static var try_big_close: String { s("关闭", "Close", "關閉") }
-    static var try_big_empty: String { s("还没有内容\n点一下就能说", "Nothing yet\nTap to speak", "還沒有內容\n點一下就能說") }
-    static var try_big_speaking: String { s("正在朗读…", "Speaking…", "正在朗讀…") }
-    static var try_big_tap: String { s("点一下就能说 · 按返回键退出", "Tap anywhere to speak · Back to exit", "點一下就能說 · 按返回鍵退出") }
-    static var try_dir_auto_me: String { s("自动判为：你在说", "Detected: you're speaking", "自動判為：你在說") }
-    static var try_dir_auto_them: String { s("自动判为：对方在说", "Detected: they're speaking", "自動判為：對方在說") }
-    static var try_dir_unknown: String { s("没判出是谁在说，先按【你在说】翻的。不对就点上面的 ⇄", "Couldn't tell who spoke — translated as you. Tap ⇄ above to switch.", "沒判出是誰在說，先按【你在說】翻的。不對就點上面的 ⇄") }
-    static var try_dir_unknown_tap: String { s("没判出是谁在说，先按【你在说】翻的 —— 点这里改成【对方在说】", "Couldn't tell who spoke — translated as you. Tap here to switch to them.", "沒判出是誰在說，先按【你在說】翻的 —— 點這裡改成【對方在說】") }
-    static var try_empty: String { s("没听到声音，再试一次", "Didn't catch that — try again", "沒聽到聲音，再試一次") }
-    static var try_hint: String { s("点一下麦克风开始说，说完再点一下", "Tap the mic to start, tap again when you're done", "點一下麥克風開始說，說完再點一下") }
-    static var try_listening: String { s("在听…", "Listening…", "在聽…") }
-    static var try_reverse: String { s("⇄ 对方说", "⇄ They speak", "⇄ 對方說") }
-    static var try_speak_timeout: String { s("朗读没回来，已经放开麦克风了。再点一次试试。", "Playback didn't come back — the mic is free again. Tap once more.", "朗讀沒回來，已經放開麥克風了。再點一次試試。") }
-    static var try_title: String { s("随手翻译", "Quick Translate", "隨手翻譯") }
-    static var try_tone_prefix: String { s("语气：", "Tone: ", "語氣：") }
-    static var try_working: String { s("正在识别…", "Working…", "正在辨識…") }
-    static var wb_front: String { s("正面显示", "Show front", "正面顯示") }
-    static var try_reverse_tap: String { s("反向：对方说外语，译成你的语言 —— 点这里改回", "Reverse: they speak, you read it in your language — tap to undo", "反向：對方說外語，譯成你的語言 —— 點這裡改回") }
-    static var wb_added_on: String { s("收于 %1$s", "Added %1$s", "收於 %1$s") }
-    static var wb_back: String { s("返回", "Back", "返回") }
-    static var wb_count: String { s("共 %1$d 条，今天要复习 %2$d 条", "%1$d saved · %2$d due today", "共 %1$d 條，今天要複習 %2$d 條") }
-    static var wb_delete: String { s("删掉这条", "Delete", "刪掉這條") }
-    static var wb_delete_ask: String { s("删掉之后复习进度也没了，确定吗？", "Deleting also clears its review progress. Sure?", "刪掉之後複習進度也沒了，確定嗎？") }
-    static var wb_dupe: String { s("已经在单词本里了", "Already in your word book", "已經在單詞本裡了") }
-    static var wb_empty: String { s("还没收东西。用随手翻译说一句，出结果后点 + 就收进来了。", "Nothing yet. Say something in Translate as you go, then tap + on the result.", "還沒收東西。用隨手翻譯說一句，出結果後點 + 就收進來了。") }
-    static var wb_en: String { s("英文", "English", "英文") }
-    static var wb_front_en: String { s("英文", "English", "英文") }
-    static var wb_front_fmt: String { s("正面显示：%1$s", "Card front: %1$s", "正面顯示：%1$s") }
-    static var wb_front_zh: String { s("中文", "Chinese", "中文") }
-    static var wb_got: String { s("想起来了", "Got it", "想起來了") }
-    static var wb_graduated: String { s("熟了", "Learned", "熟了") }
-    static var wb_missed: String { s("没想起来", "Missed it", "沒想起來") }
-    static var wb_nogroup: String { s("键盘里收的词现在同步不过来（App Group 没配好）。", "Words saved from the keyboard can't sync yet (App Group not set up).", "鍵盤裡收的詞現在同步不過來（App Group 沒配好）。") }
-    static var wb_on: String { s("收进来的日期", "Saved on", "收進來的日期") }
-    static var wb_progress: String { s("记住 %1$d 次 · 跨 %2$d 天", "%1$d hits · %2$d days", "記住 %1$d 次 · 跨 %2$d 天") }
-    static var wb_progress_label: String { s("复习进度", "Progress", "複習進度") }
-    static var wb_review_done: String { s("今天没有要复习的了。", "Nothing due today.", "今天沒有要複習的了。") }
-    static var wb_review_n: String { s("复习（%1$d）", "Review (%1$d)", "複習（%1$d）") }
-    static var wb_save_failed: String { s("没收成功，再试一次", "Couldn\\'t save, try again", "沒收成功，再試一次") }
-    static var wb_saved: String { s("已收进单词本", "Saved to word book", "已收進單詞本") }
-    static var wb_show: String { s("翻面看答案", "Show answer", "翻面看答案") }
-    static var wb_title: String { s("单词本", "Word book", "單詞本") }
-    static var wb_tone: String { s("语气", "Tone", "語氣") }
-    static var wb_zh: String { s("你当时说的", "What you said", "你當時說的") }
-    static var tab_f2f: String { s("面对面", "Face-to-face", "面對面") }
-    static var ime_pill_on: String { s("输入法 · 已启用", "Keyboard · On", "輸入法 · 已啟用") }
-    static var ime_pill_off: String { s("设为输入法", "Set as keyboard", "設為輸入法") }
-    static var hist_tab_records: String { s("记录", "Records", "記錄") }
-    static var wb_add: String { s("+ 单词本", "+ Word book", "+ 單詞本") }
-    static var wb_added_tag: String { s("✓ 已加入", "✓ Added", "✓ 已加入") }
-    static var wb_kind_word: String { s("词", "Words", "詞") }
-    static var wb_kind_phrase: String { s("词组", "Phrases", "詞組") }
-    static var wb_kind_sentence: String { s("句子", "Sentences", "句子") }
-    static var wb_clear_ask: String { s("清空单词本？收藏的词和复习进度都会没。", "Clear the word book? Saved items and their review progress will be gone.", "清空單詞本？收藏的詞和複習進度都會沒。") }
+    static var ui_lang: String { s(["zh": "zh", "en": "en", "hant": "zh", "ja": "言語", "de": "Sprache", "es": "Idioma", "ar": "zh"]) }
+    static var home_login: String { s(["zh": "注册 / 登录", "en": "Sign in", "hant": "註冊 / 登錄", "ja": "サインイン", "de": "Anmelden", "es": "Iniciar sesión", "ar": "تسجيل الدخول"]) }
+    static var home_set_ime: String { s(["zh": "设为当前输入法", "en": "Set as keyboard", "hant": "設為當前輸入法", "ja": "キーボードに設定", "de": "Als Tastatur festlegen", "es": "Configurar como teclado", "ar": "تعيين كلوحة مفاتيح"]) }
+    static var login_next_ver: String { s(["zh": "登录功能下一版做", "en": "Sign-in arrives in the next version", "hant": "登錄功能下一版做", "ja": "サインインは次版で対応", "de": "Anmeldung kommt in der nächsten Version", "es": "El inicio de sesión llegará en la próxima versión", "ar": "تسجيل الدخول في الإصدار القادم"]) }
+    static var step_mic: String { s(["zh": "允许录音", "en": "Allow microphone", "hant": "允許錄音", "ja": "マイクを許可", "de": "Mikrofon erlauben", "es": "Permitir micrófono", "ar": "السماح بالميكروفون"]) }
+    static var step_enable: String { s(["zh": "启用输入法", "en": "Enable keyboard", "hant": "啟用輸入法", "ja": "キーボードを有効化", "de": "Tastatur aktivieren", "es": "Activar teclado", "ar": "تفعيل لوحة المفاتيح"]) }
+    static var step_default: String { s(["zh": "设为默认", "en": "Make it default", "hant": "設為預設", "ja": "デフォルトに設定", "de": "Als Standard festlegen", "es": "Establecer como predeterminado", "ar": "تعيين كافتراضي"]) }
+    static var act_allow: String { s(["zh": "去允许 ›", "en": "Allow ›", "hant": "去允許 ›", "ja": "許可へ ›", "de": "Erlauben ›", "es": "Permitir ›", "ar": "السماح ›"]) }
+    static var act_enable: String { s(["zh": "去启用 ›", "en": "Enable ›", "hant": "去啟用 ›", "ja": "有効化へ ›", "de": "Aktivieren ›", "es": "Activar ›", "ar": "تفعيل ›"]) }
+    static var act_settings: String { s(["zh": "去设置 ›", "en": "Settings ›", "hant": "去設定 ›", "ja": "設定へ ›", "de": "Einstellungen ›", "es": "Ajustes ›", "ar": "الإعدادات ›"]) }
+    static var done_allowed: String { s(["zh": "已允许", "en": "Allowed", "hant": "已允許", "ja": "許可済み", "de": "Erlaubt", "es": "Permitido", "ar": "تم السماح"]) }
+    static var done_enabled: String { s(["zh": "已启用", "en": "Enabled", "hant": "已啟用", "ja": "有効化済み", "de": "Aktiviert", "es": "Activado", "ar": "تم التفعيل"]) }
+    static var done_default: String { s(["zh": "已是默认", "en": "Default", "hant": "已是預設", "ja": "デフォルトです", "de": "Standard", "es": "Predeterminado", "ar": "افتراضي"]) }
+    static var setup_hint: String { s(["zh": "三步做完就能在任何输入框里说话", "en": "Three steps, then just talk in any text field", "hant": "三步做完就能在任何輸入框裡說話", "ja": "3ステップで、どの入力欄でも話せるようになります", "de": "Drei Schritte, dann kannst du in jedem Textfeld sprechen", "es": "Tres pasos y luego habla en cualquier campo de texto", "ar": "ثلاث خطوات ثم تحدث في أي حقل نصي"]) }
+    static var ai_notice: String { s(["zh": "⚠️ 译文由 AI 生成，可能有错，发送前请自行核对。", "en": "⚠️ Translations are AI-generated and may be wrong. Check before you send.", "hant": "⚠️ 譯文由 AI 生成，可能有錯，發送前請自行核對。", "ja": "⚠️ 翻訳はAI生成のため誤りがある場合があります。送信前にご確認ください。", "de": "⚠️ Übersetzungen sind KI-generiert und können Fehler enthalten. Prüfe sie vor dem Senden.", "es": "⚠️ Las traducciones son generadas por IA y pueden contener errores. Revísalas antes de enviar.", "ar": "⚠️ الترجمة مولّدة بالذكاء الاصطناعي وقد تحتوي أخطاء. تحقق قبل الإرسال."]) }
+    static var check_update: String { s(["zh": " · 检查更新", "en": " · Check for updates", "hant": " · 檢查更新", "ja": "・アップデートを確認", "de": " · Nach Updates suchen", "es": " · Buscar actualizaciones", "ar": " · التحقق من التحديثات"]) }
+    static var checking: String { s(["zh": "检查中…", "en": "Checking…", "hant": "檢查中…", "ja": "確認中…", "de": "Suche…", "es": "Buscando…", "ar": "جارٍ التحقق…"]) }
+    static var ex_translate: String { s(["zh": "翻译：直接说话，出目标语言的干净短消息。语气和目标语言在下面那排选。", "en": "Translate: just speak, and get a clean short message in the target language. Pick the tone and target language in the row below.", "hant": "翻譯：直接說話，出目標語言的乾淨短消息。語氣和目標語言在下面那排選。", "ja": "翻译：直接说话，出目标语言的干净短消息。语气和目标语言在下面那排选。", "de": "Übersetzen: Sprich einfach, du bekommst eine saubere kurze Nachricht in der Zielsprache. Ton und Zielsprache wählst du in der Reihe darunter.", "es": "Traduce: solo habla y obtén un mensaje corto y limpio en el idioma de destino. Elige el tono y el idioma de destino en la fila de abajo.", "ar": "الترجمة: تحدث فقط، وستحصل على رسالة قصيرة وواضحة باللغة الهدف. اختر النبرة واللغة الهدف في الصف أدناه."]) }
+    static var ex_transcribe: String { s(["zh": "转写：不翻译，保留你说的那个语言。下面可选「整理」（去口水话、该分点就分点）或「逐字」（一个字不改）。", "en": "Transcribe: no translation — you get back the language you spoke. Below, pick Clean up (drops filler, splits into points where it helps) or Verbatim (nothing changed).", "hant": "轉寫：不翻譯，保留你說的那個語言。下面可選「整理」（去口水話、該分點就分點）或「逐字」（一個字不改）。", "ja": "文字起こし：翻訳せず、話した言語のまま出力。下で「整理」（不要な言葉を削除、必要に応じて箇条書き）または「逐語」（一字も変えない）を選択。", "de": "Transkribieren: Keine Übersetzung – du bekommst die Sprache, die du gesprochen hast. Unten kannst du „Aufräumen“ (entfernt Füllwörter, teilt in Punkte) oder „Wörtlich“ (nichts geändert) wählen.", "es": "Transcribir: sin traducción — recibes el idioma que hablaste. Abajo, elige Limpiar (quita muletillas, divide en puntos donde ayuda) o Textual (sin cambios).", "ar": "نسخ صوتي: بدون ترجمة — تحصل على اللغة التي تحدثت بها. أدناه اختر «تنظيم» (يحذف الحشو ويقسم إلى نقاط عند الحاجة) أو «حرفي» (بدون أي تغيير)."]) }
+    static var ex_history: String { s(["zh": "历史：之前上屏过的内容都在这里，删没了可以回来重新复制。", "en": "History: everything you've inserted lives here — if you delete it, come back and copy it again.", "hant": "歷史：之前上屏過的內容都在這裡，刪沒了可以回來重新複製。", "ja": "履歴：これまでに挿入した内容がすべてここにあります。削除しても、戻って再コピーできます。", "de": "Verlauf: Alles, was du eingefügt hast, ist hier – wenn du es löschst, komm zurück und kopiere es erneut.", "es": "Historial: todo lo que has insertado vive aquí — si lo borras, vuelve y cópialo de nuevo.", "ar": "السجل: كل ما أدخلته موجود هنا — إذا حذفته، عد وانسخه مرة أخرى."]) }
+    static var ex_polish: String { s(["zh": "整理：滤掉「嗯、那个、就是说」这类口水话，说了几件事就分几条，但不翻译，你说什么语言就出什么语言。", "en": "Clean up: drops filler like um and you know, splits several points into separate lines — but does not translate. You get back the language you spoke.", "hant": "整理：濾掉「嗯、那個、就是說」這類口水話，說了幾件事就分幾條，但不翻譯，你說什麼語言就出什麼語言。", "ja": "整理：”えっと”“あの”“つまり”などのつなぎ言葉を除去し、複数の要点は別々の行に分けます。ただし翻訳はしません。話した言語のまま出力されます。", "de": "Aufräumen: entfernt Füllwörter wie ähm und weißt du, teilt mehrere Punkte in separate Zeilen auf – übersetzt aber nicht. Du bekommst die Sprache zurück, die du gesprochen hast.", "es": "Ordenar: elimina muletillas como este y sabes, divide varios puntos en líneas separadas, pero no traduce. Recibes el idioma que hablaste.", "ar": "تنقية: يحذف كلمات الحشو مثل «امم» و«يعني»، ويقسم النقاط إلى أسطر منفصلة — لكنه لا يترجم. تحصل على اللغة التي تحدثت بها."]) }
+    static var ex_verbatim: String { s(["zh": "逐字：听到什么写什么，一个字不改、不整理、不翻译。", "en": "Verbatim: exactly what you said — nothing changed, cleaned up or translated.", "hant": "逐字：聽到什麼寫什麼，一個字不改、不整理、不翻譯。", "ja": "逐語：聞こえたままを書き起こします。一字も変えず、整理も翻訳もしません。", "de": "Wörtlich: Genau was du gesagt hast – nichts geändert, aufgeräumt oder übersetzt.", "es": "Texto literal: exactamente lo que dijiste, sin cambios, sin limpiar ni traducir.", "ar": "حرفي: بالضبط ما قلته — بدون تغيير أو تنظيف أو ترجمة."]) }
+    static var ex_mic: String { s(["zh": "点一下开始说，说完再点一下停。中途停顿思考没关系，不会自动截断。单次最长 %1$@ 秒，最后 %2$@ 秒圆圈里会倒数，到点会自动帮你整理这一段。", "en": "Tap once to start talking, tap again to stop. Pausing to think is fine — it won't cut you off. Up to %1$@ seconds per take; the last %2$@ seconds count down inside the circle, and it wraps up on its own at the end.", "hant": "點一下開始說，說完再點一下停。中途停頓思考沒關係，不會自動截斷。單次最長 %1$@ 秒，最後 %2$@ 秒圓圈裡會倒數，到點會自動幫你整理這一段。", "ja": "タップして話し始め、もう一度タップして停止。考え中の間も自動で切れません。1回あたり最大%1$@秒、最後の%2$@秒は円の中でカウントダウンされ、時間になると自動でこの部分を整理します。", "de": "Tippe einmal, um zu sprechen, tippe erneut, um zu stoppen. Pausen zum Nachdenken sind okay – es schneidet dich nicht ab. Bis zu %1$@ Sekunden pro Aufnahme; die letzten %2$@ Sekunden zählen im Kreis herunter, und es beendet automatisch.", "es": "Toca para empezar a hablar, toca de nuevo para detener. Pausar para pensar está bien: no te corta. Hasta %1$@ segundos por toma; los últimos %2$@ segundos cuentan regresivamente dentro del círculo y se envuelve solo al final.", "ar": "اضغط مرة لبدء التحدث، واضغط مرة أخرى للتوقف. التوقف للتفكير لا بأس به — لن يقطعك. حتى %1$@ ثانية لكل جلسة؛ آخر %2$@ ثوانٍ تُعد تنازليًا داخل الدائرة، وينتهي تلقائيًا في النهاية."]) }
+    static var ex_type: String { s(["zh": "打字：内置键盘，拼音/五笔/英文/手写四档，用来改错字。不会把你切到别的输入法。", "en": "Type: the built-in keyboard — Pinyin, Wubi, English and handwriting — for fixing a wrong character. It never switches you to another keyboard.", "hant": "打字：內置鍵盤，拼音/五筆/英文/手寫四檔，用來改錯字。不會把你切到別的輸入法。", "ja": "タイプ：内蔵キーボード（ピンイン、五筆、英語、手書きの4モード）で誤字を修正。他のキーボードに切り替わることはありません。", "de": "Tippen: Die eingebaute Tastatur – Pinyin, Wubi, Englisch und Handschrift – zum Korrigieren eines falschen Zeichens. Sie wechselt dich nie zu einer anderen Tastatur.", "es": "Escribir: el teclado integrado — pinyin, wubi, inglés y escritura a mano — para corregir un carácter equivocado. Nunca te cambia a otro teclado.", "ar": "كتابة: لوحة المفاتيح المدمجة — بينيين، ووبي، والإنجليزية، والكتابة اليدوية — لتصحيح حرف خاطئ. لا يحولك أبدًا إلى لوحة مفاتيح أخرى."]) }
+    static var ex_speak: String { s(["zh": "朗读：把刚上屏的那段念出来。中文用中文女声，英文用 Andrew。", "en": "Read aloud: plays back what was just inserted. A Chinese voice for Chinese, Andrew for English.", "hant": "朗讀：把剛上屏的那段念出來。中文用中文女聲，英文用 Andrew。", "ja": "読み上げ：挿入したばかりの内容を読み上げます。中国語は中国語の女性音声、英語はAndrewです。", "de": "Vorlesen: Spielt den gerade eingefügten Text ab. Eine chinesische Stimme für Chinesisch, Andrew für Englisch.", "es": "Leer en voz alta: reproduce lo que se acaba de insertar. Una voz china para chino, Andrew para inglés.", "ar": "قراءة بصوت عالٍ: تشغيل ما تم إدراجه للتو. صوت صيني للصينية، و‎Andrew‎ للإنجليزية."]) }
+    static var ex_backspace: String { s(["zh": "退格：点一下删一个字，长按连删，1.2 秒后按词删。有选中就整段删。", "en": "Backspace: one tap deletes one character; hold to repeat, and after 1.2 seconds it deletes whole words. If something is selected, it goes all at once.", "hant": "退格：點一下刪一個字，長按連刪，1.2 秒後按詞刪。有選中就整段刪。", "ja": "バックスペース：1回タップで1文字削除、長押しで連続削除、1.2秒後は単語単位で削除。選択中は一括削除。", "de": "Rücktaste: Ein Tippen löscht ein Zeichen; gedrückt halten wiederholt, und nach 1,2 Sekunden löscht es ganze Wörter. Wenn etwas ausgewählt ist, wird alles auf einmal gelöscht.", "es": "Retroceso: un toque borra un carácter; mantén pulsado para repetir, y después de 1,2 segundos borra palabras completas. Si hay algo seleccionado, se borra todo de una vez.", "ar": "مسافة للخلف: نقرة تحذف حرفًا، والضغط المطول يحذف بشكل متكرر، وبعد ‎1.2‎ ثانية يحذف كلمات كاملة. إذا كان هناك تحديد، يُحذف كله دفعة واحدة."]) }
+    static var ex_send: String { s(["zh": "发送：相当于按输入框右边那个发送键。个别 App 不支持时，会退回按一下回车。", "en": "Send: same as tapping the send button in the app. Where that isn't supported, it falls back to pressing Enter.", "hant": "發送：相當於按輸入框右邊那個發送鍵。個別 App 不支持時，會退回按一下回車。", "ja": "送信：アプリの送信ボタンをタップするのと同じ。非対応のアプリではEnterキーを押す動作にフォールバック。", "de": "Senden: wie das Tippen auf die Senden-Taste in der App. Wo das nicht unterstützt wird, fällt es auf das Drücken der Eingabetaste zurück.", "es": "Enviar: igual que tocar el botón de enviar en la app. Si no es compatible, se reduce a pulsar Intro.", "ar": "إرسال: مثل الضغط على زر الإرسال في التطبيق. إذا لم يكن مدعومًا، يتراجع إلى الضغط على ‎Enter‎."]) }
+    static var ex_tone_casual: String { s(["zh": "随意：熟人之间的口气，短、放松，可以用缩写。", "en": "Casual: how you'd talk to someone you know — short, relaxed, contractions are fine.", "hant": "隨意：熟人之間的口氣，短、放鬆，可以用縮寫。", "ja": "カジュアル：知り合いへの話し方——短く、リラックス、省略形もOK。", "de": "Locker: wie du mit jemandem redest, den du kennst – kurz, entspannt, Abkürzungen sind okay.", "es": "Casual: como hablarías con alguien conocido: breve, relajado, se permiten contracciones.", "ar": "غير رسمي: أسلوب الحديث مع معارفك — قصير، مريح، ويسمح بالاختصارات."]) }
+    static var ex_tone_work: String { s(["zh": "工作：发给同事或对接人的直接消息（Slack / 微信 / Teams），专业但不端着。", "en": "Work: a direct message to a colleague or counterpart (Slack, WeChat, Teams) — professional without being stiff.", "hant": "工作：發給同事或對接人的直接消息（Slack / 微信 / Teams），專業但不端著。", "ja": "仕事：同僚や取引先への直接メッセージ（Slack／WeChat／Teams）——堅苦しくなくプロフェッショナルに。", "de": "Arbeit: eine direkte Nachricht an einen Kollegen oder Ansprechpartner (Slack, WeChat, Teams) – professionell, aber nicht steif.", "es": "Trabajo: un mensaje directo a un colega o interlocutor (Slack, WeChat, Teams): profesional sin ser rígido.", "ar": "عمل: رسالة مباشرة لزميل أو جهة تواصل (‎Slack / WeChat / Teams‎) — احترافية دون تكلف."]) }
+    static var ex_tone_email: String { s(["zh": "邮件：邮件正文，也用于给客户、监管、审计的正式书面沟通。完整句子、措辞精确，不加称呼和落款（除非你自己说了）。", "en": "Email: the body of an email, and formal written contact with clients, regulators or auditors. Full sentences, precise wording, no greeting or sign-off unless you said one.", "hant": "郵件：郵件正文，也用於給客戶、監管、審計的正式書面溝通。完整句子、措辭精確，不加稱呼和落款（除非你自己說了）。", "ja": "メール：メール本文、および顧客・規制当局・監査人への正式な文書連絡。完全な文、正確な表現。挨拶や署名は含めない（自分で指定しない限り）。", "de": "E-Mail: der Text einer E-Mail und formelle schriftliche Kommunikation mit Kunden, Aufsichtsbehörden oder Prüfern. Vollständige Sätze, präzise Formulierungen, keine Anrede oder Grußformel, außer du hast eine genannt.", "es": "Correo: el cuerpo de un correo y contacto formal con clientes, reguladores o auditores. Frases completas, redacción precisa, sin saludo ni despedida a menos que tú lo hayas dicho.", "ar": "بريد إلكتروني: نص البريد، وتواصل رسمي مع العملاء أو الجهات التنظيمية أو المدققين. جمل كاملة، وصياغة دقيقة، دون تحية أو توقيع إلا إذا أضفتها."]) }
+    static var ex_mic_ios: String { s(["zh": "点一下开始说，说完再点一下停。中途停顿思考没关系，不会自动截断。", "en": "Tap once to start talking, tap again to stop. Pausing to think is fine — it won't cut you off.", "hant": "點一下開始說，說完再點一下停。中途停頓思考沒關係，不會自動截斷。", "ja": "タップで話し始め、もう一度タップで停止。考え中の間は自動で切れないので大丈夫。", "de": "Tippe einmal, um zu sprechen, tippe erneut, um zu stoppen. Eine Pause zum Nachdenken ist in Ordnung – es bricht nicht ab.", "es": "Toca una vez para empezar a hablar, toca de nuevo para detener. Hacer una pausa para pensar está bien: no te cortará.", "ar": "اضغط مرة للبدء في التحدث، واضغط مرة أخرى للتوقف. التوقف للتفكير لا بأس به — لن يقطعك."]) }
+    static var ex_tone_cycle: String { s(["zh": "语气：随意 / 工作 / 邮件三档，点一下轮换。", "en": "Tone: Casual, Work or Email — tap to cycle.", "hant": "語氣：隨意 / 工作 / 郵件三檔，點一下輪換。", "ja": "トーン：カジュアル／仕事／メールをタップで切り替え。", "de": "Ton: Locker, Arbeit oder E-Mail – tippen zum Wechseln.", "es": "Tono: Casual, Trabajo o Correo: toca para alternar.", "ar": "النبرة: غير رسمي / عمل / بريد إلكتروني — اضغط للتبديل."]) }
+    static var ex_lang_pick: String { s(["zh": "翻译成哪种语言。", "en": "Which language to translate into.", "hant": "翻譯成哪種語言。", "ja": "翻訳先の言語を選択。", "de": "In welche Sprache übersetzt werden soll.", "es": "Idioma al que traducir.", "ar": "إلى أي لغة تريد الترجمة."]) }
+    static var ex_speak_ios: String { s(["zh": "朗读：把刚出的那段念出来。中文用中文女声，英文用 Andrew。", "en": "Read aloud: plays back what just came out. A Chinese voice for Chinese, Andrew for English.", "hant": "朗讀：把剛出的那段念出來。中文用中文女聲，英文用 Andrew。", "ja": "読み上げ：生成されたテキストを再生。中国語は中国語の女性音声、英語はAndrew。", "de": "Vorlesen: spielt das gerade Erzeugte ab. Eine chinesische Stimme für Chinesisch, Andrew für Englisch.", "es": "Leer en voz alta: reproduce lo que acaba de salir. Una voz china para chino, Andrew para inglés.", "ar": "قراءة: تشغيل ما تم إنتاجه للتو. صوت صيني للصينية، و‎Andrew‎ للإنجليزية."]) }
+    static var st_recognizing: String { s(["zh": "识别中…", "en": "Transcribing…", "hant": "識別中…", "ja": "文字起こし中…", "de": "Transkribiere…", "es": "Transcribiendo…", "ar": "جارٍ النسخ…"]) }
+    static var st_polishing: String { s(["zh": "整理中…", "en": "Cleaning up…", "hant": "整理中…", "ja": "整理中…", "de": "Bereinige…", "es": "Puliendo…", "ar": "جارٍ التنقيح…"]) }
+    static var st_translating: String { s(["zh": "整理并译成英文…", "en": "Cleaning up and translating…", "hant": "整理並譯成英文…", "ja": "整理して英語に翻訳中…", "de": "Bereinige und übersetze…", "es": "Puliendo y traduciendo…", "ar": "جارٍ التنقيح والترجمة إلى الإنجليزية…"]) }
+    static var st_inserting: String { s(["zh": "上屏…", "en": "Inserting…", "hant": "上屏…", "ja": "入力中…", "de": "Füge ein…", "es": "Insertando…", "ar": "جارٍ الإدراج…"]) }
+    static var st_testing: String { s(["zh": "测试中…", "en": "Testing…", "hant": "測試中…", "ja": "テスト中…", "de": "Teste…", "es": "Probando…", "ar": "جارٍ الاختبار…"]) }
+    static var btn_got_it: String { s(["zh": "知道了", "en": "Got it", "hant": "知道了", "ja": "了解", "de": "Verstanden", "es": "Entendido", "ar": "فهمت"]) }
+    static var lbl_translate_to: String { s(["zh": "翻译成", "en": "Translate into", "hant": "翻譯成", "ja": "翻訳先", "de": "Übersetzen in", "es": "Traducir a", "ar": "ترجم إلى"]) }
+    static var mic_allowed: String { s(["zh": "麦克风：已允许 ✓", "en": "Microphone: allowed ✓", "hant": "麥克風：已允許 ✓", "ja": "マイク：許可済み ✓", "de": "Mikrofon: erlaubt ✓", "es": "Micrófono: permitido ✓", "ar": "الميكروفون: مسموح ✓"]) }
+    static var mic_not_allowed: String { s(["zh": "麦克风：还没允许", "en": "Microphone: not allowed yet", "hant": "麥克風：還沒允許", "ja": "マイク：未許可", "de": "Mikrofon: noch nicht erlaubt", "es": "Micrófono: aún no permitido", "ar": "الميكروفون: غير مسموح بعد"]) }
+    static var kb_tr_before: String { s(["zh": "译光标前的中文", "en": "Translate the text before the cursor", "hant": "譯光標前的中文", "ja": "カーソル前のテキストを翻訳", "de": "Übersetze den Text vor dem Cursor", "es": "Traducir el texto antes del cursor", "ar": "ترجم النص قبل المؤشر"]) }
+    static var kb_nothing_before: String { s(["zh": "光标前没有内容", "en": "Nothing before the cursor", "hant": "光標前沒有內容", "ja": "カーソル前に入力なし", "de": "Nichts vor dem Cursor", "es": "No hay nada antes del cursor", "ar": "لا يوجد نص قبل المؤشر"]) }
+    static var kb_no_pass: String { s(["zh": "这个版本有问题，请重新安装一次", "en": "Something's wrong with this version — please reinstall", "hant": "這個版本有問題，請重新安裝一次", "ja": "このバージョンに問題があります。再インストールしてください", "de": "Mit dieser Version stimmt etwas nicht – bitte neu installieren", "es": "Algo falla en esta versión; reinstala la app", "ar": "هذه النسخة بها مشكلة، يرجى إعادة التثبيت"]) }
+    static var kb_type_plain: String { s(["zh": "打字", "en": "Type", "hant": "打字", "ja": "入力", "de": "Tippen", "es": "Escribir", "ar": "اكتب"]) }
+    static var kb_rec_failed_tap: String { s(["zh": "录音失败 · 上面是现场，可长按复制；点一下收起", "en": "Recording failed — details above, tap to dismiss", "hant": "錄音失敗 · 上面是現場，可長按複製；點一下收起", "ja": "録音失敗 — 詳細は上記、長押しでコピー、タップで閉じる", "de": "Aufnahme fehlgeschlagen – Details oben, tippen zum Schließen", "es": "Grabación fallida: detalles arriba, toca para descartar", "ar": "فشل التسجيل — التفاصيل أعلاه، اضغط للإغلاق"]) }
+    static var kb_rec_failed_retry: String { s(["zh": "录音失败 · 上次的音频还在，点一下重试", "en": "Recording failed — last audio kept, tap to retry", "hant": "錄音失敗 · 上次的音頻還在，點一下重試", "ja": "録音失敗 — 前回の音声は保持、タップで再試行", "de": "Aufnahme fehlgeschlagen – letzte Audio behalten, tippen zum Wiederholen", "es": "Grabación fallida: se conservó el último audio, toca para reintentar", "ar": "فشل التسجيل — الصوت السابق محفوظ، اضغط لإعادة المحاولة"]) }
+    static var kb_rec_failed_plain: String { s(["zh": "录音失败，点一下收起", "en": "Recording failed, tap to dismiss", "hant": "錄音失敗，點一下收起", "ja": "録音失敗、タップで閉じる", "de": "Aufnahme fehlgeschlagen, tippen zum Schließen", "es": "Grabación fallida, toca para descartar", "ar": "فشل التسجيل، اضغط للإغلاق"]) }
+    static var kb_lang_pick: String { s(["zh": "选语言", "en": "Language", "hant": "選語言", "ja": "言語", "de": "Sprache", "es": "Idioma", "ar": "اللغة"]) }
+    static var kb_preparing: String { s(["zh": "准备中…", "en": "Preparing…", "hant": "準備中…", "ja": "準備中…", "de": "Vorbereiten…", "es": "Preparando…", "ar": "جارٍ التحضير…"]) }
+    static var kb_rearming: String { s(["zh": "重新架引擎…", "en": "Re-arming…", "hant": "重新架引擎…", "ja": "再設定中…", "de": "Neu bewaffnen…", "es": "Reactivando…", "ar": "جارٍ إعادة التهيئة…"]) }
+    static var kb_resending: String { s(["zh": "重发中…", "en": "Resending…", "hant": "重發中…", "ja": "再送信中…", "de": "Erneut senden…", "es": "Reenviando…", "ar": "جارٍ الإرسال…"]) }
+    static var ready_title: String { s(["zh": "准备好了", "en": "You're all set", "hant": "準備好了", "ja": "準備完了", "de": "Du bist bereit", "es": "Todo listo", "ar": "أنت جاهز"]) }
+    static var ready_body: String { s(["zh": "到任何 App 里切到 Transless 键盘，按麦克风开始说", "en": "Switch to the Transless keyboard in any app and tap the mic", "hant": "到任何 App 裡切到 Transless 鍵盤，按麥克風開始說", "ja": "任意のアプリでTranslessキーボードに切り替え、マイクをタップして話してください", "de": "Wechsle in einer beliebigen App zur Transless-Tastatur und tippe auf das Mikrofon", "es": "Cambia al teclado Transless en cualquier app y toca el micrófono", "ar": "بدّل إلى لوحة مفاتيح ‎Transless‎ في أي تطبيق واضغط على الميكروفون"]) }
+    static var err_polish_timeout: String { s(["zh": "整理超时，先给你逐字稿", "en": "Organising timed out — showing the raw transcript", "hant": "整理超時，先給你逐字稿", "ja": "整理がタイムアウトしました。原文を表示します。", "de": "Bearbeitung hat Zeitüberschreitung — zeige das rohe Transkript", "es": "La organización expiró; mostrando la transcripción sin editar", "ar": "انتهت مهلة التنظيم — عرض النص الحرفي"]) }
+    static var kb_need_full_short: String { s(["zh": "设置 › 通用 › 键盘 › Transless 开启「允许完全访问」", "en": "Settings › General › Keyboard › Transless › Allow Full Access", "hant": "設定 › 通用 › 鍵盤 › Transless 開啟「允許完全訪問」", "ja": "設定 › 一般 › キーボード › Transless › フルアクセスを許可", "de": "Einstellungen › Allgemein › Tastatur › Transless › Vollzugriff erlauben", "es": "Ajustes › General › Teclado › Transless › Permitir acceso completo", "ar": "الإعدادات › عام › لوحة المفاتيح › ‎Transless‎ › السماح بالوصول الكامل"]) }
+    static var kb_history_none: String { s(["zh": "还没有记录", "en": "Nothing yet", "hant": "還沒有記錄", "ja": "履歴はまだありません", "de": "Noch nichts", "es": "Aún no hay nada", "ar": "لا شيء بعد"]) }
+    static var kb_jumped_hint: String { s(["zh": "已跳到 Transless 录音，说完点左上角返回", "en": "Recording in Transless - tap the back arrow when done", "hant": "已跳到 Transless 錄音，說完點左上角返回", "ja": "Translessで録音中です。終わったら左上の戻るをタップ", "de": "Aufnahme in Transless – tippe auf den Zurück-Pfeil, wenn du fertig bist", "es": "Grabando en Transless; toca la flecha atrás al terminar", "ar": "جارٍ التسجيل في ‎Transless‎ — اضغط السهم الخلفي عند الانتهاء"]) }
+    static var kb_jump_failed: String { s(["zh": "这次没出稿，点这里看原因", "en": "No text this time - tap for details", "hant": "這次沒出稿，點這裡看原因", "ja": "テキストが生成されませんでした。詳細はこちら", "de": "Diesmal kein Text – tippe für Details", "es": "No hubo texto esta vez; toca para ver detalles", "ar": "لا نص هذه المرة — اضغط للتفاصيل"]) }
+    static var rec_r0_title: String { s(["zh": "正在准备…", "en": "Getting ready...", "hant": "正在準備…", "ja": "準備中…", "de": "Vorbereiten…", "es": "Preparando…", "ar": "جارٍ التحضير…"]) }
+    static var rec_r0_cancel: String { s(["zh": "取消", "en": "Cancel", "hant": "取消", "ja": "キャンセル", "de": "Abbrechen", "es": "Cancelar", "ar": "إلغاء"]) }
+    static var rec_r1_title: String { s(["zh": "正在为键盘录音", "en": "Recording for the keyboard", "hant": "正在為鍵盤錄音", "ja": "キーボード用に録音中", "de": "Aufnahme für die Tastatur", "es": "Grabando para el teclado", "ar": "التسجيل للوحة المفاتيح"]) }
+    static var rec_r1_hint: String { s(["zh": "说完点停止", "en": "Tap stop when you're done", "hant": "說完點停止", "ja": "終わったら停止をタップ", "de": "Tippe auf Stopp, wenn du fertig bist", "es": "Toca Detener cuando termines", "ar": "اضغط إيقاف عند الانتهاء"]) }
+    static var rec_r1_stop: String { s(["zh": "停止", "en": "Stop", "hant": "停止", "ja": "停止", "de": "Stopp", "es": "Detener", "ar": "إيقاف"]) }
+    static var rec_r2_title: String { s(["zh": "正在出稿…", "en": "Working on it...", "hant": "正在出稿…", "ja": "処理中…", "de": "Arbeite daran…", "es": "Procesando…", "ar": "جارٍ المعالجة…"]) }
+    static var rec_r3_title: String { s(["zh": "好了，点左上角回去", "en": "Done - tap the back arrow to return", "hant": "好了，點左上角回去", "ja": "完了しました。左上の戻るをタップ", "de": "Fertig – tippe auf den Zurück-Pfeil", "es": "Listo; toca la flecha atrás para volver", "ar": "تم — اضغط السهم الخلفي للعودة"]) }
+    static var rec_r3_hint: String { s(["zh": "英文已经准备好，回到刚才那个输入框就会上屏", "en": "Your English is ready - go back and it will be inserted", "hant": "英文已經準備好，回到剛才那個輸入框就會上屏", "ja": "英語の準備ができました。元の入力欄に戻ると挿入されます。", "de": "Dein Englisch ist fertig — geh zurück, es wird eingefügt", "es": "Tu inglés está listo; vuelve al campo de entrada y se insertará", "ar": "الإنجليزية جاهزة — ارجع إلى حقل الإدخال السابق وسيتم إدراجها"]) }
+    static var rec_r4_title: String { s(["zh": "这次没成", "en": "That didn't work", "hant": "這次沒成", "ja": "失敗しました", "de": "Das hat nicht geklappt", "es": "No funcionó", "ar": "لم ينجح ذلك"]) }
+    static var rec_r4_detail: String { s(["zh": "坏在这一步：%@", "en": "Where it broke: %@", "hant": "壞在這一步：%@", "ja": "失敗箇所: %@", "de": "Wo es scheiterte: %@", "es": "Se interrumpió en: %@", "ar": "حدث الخطأ في: %@"]) }
+    static var rec_r4_retry: String { s(["zh": "再试一次", "en": "Try again", "hant": "再試一次", "ja": "再試行", "de": "Nochmal versuchen", "es": "Intentar de nuevo", "ar": "إعادة المحاولة"]) }
+    static var rec_tail_warn: String { s(["zh": "还剩 %@ 秒", "en": "%@s left", "hant": "還剩 %@ 秒", "ja": "残り %@ 秒", "de": "%@s übrig", "es": "Quedan %@ s", "ar": "متبقٍ %@ ثانية"]) }
+    static var err_expired: String { s(["zh": "这次等太久过期了，再说一次", "en": "That request expired - say it again", "hant": "這次等太久過期了，再說一次", "ja": "リクエストが期限切れになりました。もう一度話してください", "de": "Die Anfrage ist abgelaufen – sag es nochmal", "es": "La solicitud caducó; dilo de nuevo", "ar": "انتهت مهلة الطلب — أعد المحاولة"]) }
+    static var err_open_app_failed: String { s(["zh": "打不开 Transless，去设置里给键盘开「完全访问」", "en": "Can't open Transless - enable Full Access for the keyboard", "hant": "打不開 Transless，去設定裡給鍵盤開「完全訪問」", "ja": "Translessを開けません。設定でキーボードのフルアクセスを有効にしてください", "de": "Transless kann nicht geöffnet werden – aktiviere Vollzugriff für die Tastatur", "es": "No se puede abrir Transless; activa Acceso completo para el teclado en Ajustes", "ar": "تعذر فتح ‎Transless‎ — فعّل الوصول الكامل في الإعدادات"]) }
+    static var kb_cancelled: String { s(["zh": "已取消，可以重新说", "en": "Cancelled - say it again", "hant": "已取消，可以重新說", "ja": "キャンセルしました。もう一度話せます", "de": "Abgebrochen – sag es nochmal", "es": "Cancelado, dilo de nuevo", "ar": "تم الإلغاء - قل ذلك مرة أخرى"]) }
+    static var ok_copied: String { s(["zh": "已复制，可以去任何地方粘贴", "en": "Copied - paste it anywhere", "hant": "已複製，可以去任何地方粘貼", "ja": "コピーしました。どこにでも貼り付けられます", "de": "Kopiert – füge es überall ein", "es": "Copiado, pégalo donde quieras", "ar": "تم النسخ - الصقه في أي مكان"]) }
+    static var err_timeout: String { s(["zh": "等太久了，再说一次试试", "en": "Took too long - try again", "hant": "等太久了，再說一次試試", "ja": "時間がかかりすぎました。もう一度お試しください", "de": "Zu lange gedauert – versuch es nochmal", "es": "Tardó demasiado, inténtalo de nuevo", "ar": "استغرق الأمر وقتًا طويلاً - حاول مرة أخرى"]) }
+    static var err_unauthorized: String { s(["zh": "登录过期了，重新登录一下", "en": "Session expired - please sign in again", "hant": "登錄過期了，重新登錄一下", "ja": "セッションが切れました。もう一度サインインしてください", "de": "Sitzung abgelaufen – bitte neu anmelden", "es": "Sesión expirada, inicia sesión de nuevo", "ar": "انتهت الجلسة - يرجى تسجيل الدخول مرة أخرى"]) }
+    static var err_quota: String { s(["zh": "今天的次数用完了", "en": "You've used up today's quota", "hant": "今天的次數用完了", "ja": "今日の利用回数を使い切りました", "de": "Tageskontingent aufgebraucht", "es": "Agotaste la cuota de hoy", "ar": "لقد استنفدت حصتك اليومية"]) }
+    static var err_http: String { s(["zh": "服务器没响应，等一下再试", "en": "Server didn't respond - try again in a moment", "hant": "伺服器沒響應，等一下再試", "ja": "サーバーが応答しませんでした。しばらくしてからもう一度お試しください", "de": "Server hat nicht geantwortet – warte kurz und versuch es nochmal", "es": "El servidor no respondió, inténtalo en un momento", "ar": "لم يستجب الخادم - حاول مرة أخرى بعد قليل"]) }
+    static var err_network: String { s(["zh": "网络连不上，检查一下网络", "en": "Can't reach the network - check your connection", "hant": "網絡連不上，檢查一下網絡", "ja": "ネットワークに接続できません。接続を確認してください", "de": "Keine Internetverbindung – prüfe deine Verbindung", "es": "No se pudo conectar, revisa tu conexión", "ar": "لا يمكن الوصول إلى الشبكة - تحقق من اتصالك"]) }
+    static var err_ourbug: String { s(["zh": "出了点问题，这条没发出去", "en": "Something went wrong - it wasn't sent", "hant": "出了點問題，這條沒發出去", "ja": "問題が発生しました。送信されませんでした", "de": "Etwas ist schiefgelaufen – es wurde nicht gesendet", "es": "Algo salió mal, no se envió", "ar": "حدث خطأ ما - لم يتم الإرسال"]) }
+    static var err_empty: String { s(["zh": "没听清，再说一次", "en": "Didn't catch that - say it again", "hant": "沒聽清，再說一次", "ja": "聞き取れませんでした。もう一度話してください", "de": "Nicht verstanden – sag es nochmal", "es": "No te escuché, dilo de nuevo", "ar": "لم أسمع ذلك - قل ذلك مرة أخرى"]) }
+    static var err_other: String { s(["zh": "出了点问题，再试一次", "en": "Something went wrong - try again", "hant": "出了點問題，再試一次", "ja": "問題が発生しました。もう一度お試しください", "de": "Etwas ist schiefgelaufen – versuch es nochmal", "es": "Algo salió mal, inténtalo de nuevo", "ar": "حدث خطأ ما - حاول مرة أخرى"]) }
+    static var err_zh_unreadable: String { s(["zh": "这次没整理好 —— 再说一次试试", "en": "Could not format that - try saying it again", "hant": "這次沒整理好 —— 再說一次試試", "ja": "整理できませんでした。もう一度話してみてください", "de": "Konnte das nicht formatieren – versuch es nochmal zu sagen", "es": "No se pudo formatear, inténtalo de nuevo", "ar": "تعذر تنسيق ذلك - حاول قوله مرة أخرى"]) }
+    static var err_speak_failed: String { s(["zh": "没能朗读出来，文字还在，点一下重试", "en": "Couldn't read it aloud - your text is still here, tap to retry", "hant": "沒能朗讀出來，文字還在，點一下重試", "ja": "読み上げられませんでした。テキストは残っています。タップして再試行してください", "de": "Konnte nicht vorgelesen werden – dein Text ist noch da, tippe zum erneuten Versuch", "es": "No se pudo leer en voz alta; el texto sigue aquí, toca para reintentar", "ar": "تعذّر النطق بصوت عالٍ — النص ما زال هنا، انقر لإعادة المحاولة"]) }
+    static var retry_badge: String { s(["zh": "没传上去 · 再点一下", "en": "Not sent · tap again", "hant": "沒傳上去 · 再點一下", "ja": "未送信・もう一度タップ", "de": "Nicht gesendet · tippe erneut", "es": "No enviado · toca de nuevo", "ar": "لم يتم الإرسال · انقر مرة أخرى"]) }
+    static var mode_switched: String { s(["zh": "已切到：%1$@", "en": "Switched to: %1$@", "hant": "已切到：%1$@", "ja": "%1$@に切り替えました", "de": "Gewechselt zu: %1$@", "es": "Cambiado a: %1$@", "ar": "تم التبديل إلى: %1$@"]) }
+    static var tone_switched: String { s(["zh": "语气：%1$@", "en": "Tone: %1$@", "hant": "語氣：%1$@", "ja": "トーン：%1$@", "de": "Tonfall: %1$@", "es": "Tono: %1$@", "ar": "النغمة: %1$@"]) }
+    static var ime_enabled_not_default: String { s(["zh": "Transless 已经装好了，还不是默认输入法 —— 点这里切换", "en": "Transless is installed but not your default keyboard - tap to switch", "hant": "Transless 已經裝好了，還不是預設輸入法 —— 點這裡切換", "ja": "Translessはインストール済みですが、デフォルトのキーボードではありません。タップして切り替え", "de": "Transless ist installiert, aber nicht deine Standard-Tastatur – tippe zum Wechseln", "es": "Transless está instalado pero no es tu teclado predeterminado: toca para cambiar", "ar": "‎Transless‎ مثبت لكنه ليس لوحة المفاتيح الافتراضية - انقر للتبديل"]) }
+    static var home_stats_empty: String { s(["zh": "说几句试试，这里会记下你说了多少", "en": "Say a few things - your numbers will show up here", "hant": "說幾句試試，這裡會記下你說了多少", "ja": "何か話してみてください。ここにあなたの統計が表示されます", "de": "Sag ein paar Dinge – deine Zahlen erscheinen hier", "es": "Di algunas cosas, aquí verás tus números", "ar": "قل بضع جمل - ستظهر أرقامك هنا"]) }
+    static var home_stats_footnote: String { s(["zh": "按平均打字 %1$@ 词/分钟算", "en": "Based on average typing speed of %1$@ words per minute", "hant": "按平均打字 %1$@ 詞/分鐘算", "ja": "平均タイピング速度 %1$@ 語/分に基づく", "de": "Basierend auf durchschnittlicher Tippgeschwindigkeit von %1$@ Wörtern pro Minute", "es": "Según velocidad promedio de escritura de %1$@ palabras por minuto", "ar": "استنادًا إلى متوسط سرعة الكتابة %1$@ كلمة في الدقيقة"]) }
+    static var tab_home: String { s(["zh": "首页", "en": "Home", "hant": "首頁", "ja": "ホーム", "de": "Start", "es": "Inicio", "ar": "الرئيسية"]) }
+    static var tab_history: String { s(["zh": "历史", "en": "History", "hant": "歷史", "ja": "履歴", "de": "Verlauf", "es": "Historial", "ar": "السجل"]) }
+    static var tab_wordbook: String { s(["zh": "单词本", "en": "Wordbook", "hant": "單詞本", "ja": "単語帳", "de": "Wörterbuch", "es": "Diccionario", "ar": "دفتر الكلمات"]) }
+    static var tab_me: String { s(["zh": "我的", "en": "Me", "hant": "我的", "ja": "マイ", "de": "Ich", "es": "Yo", "ar": "أنا"]) }
+    static var tab_history_soon: String { s(["zh": "历史现在在键盘里看，这一屏还在做", "en": "History lives in the keyboard for now - this screen is on the way", "hant": "歷史現在在鍵盤裡看，這一屏還在做", "ja": "履歴は現在キーボードで確認できます。この画面は準備中です", "de": "Verlauf ist vorerst in der Tastatur – dieser Bildschirm kommt bald", "es": "El historial está en el teclado por ahora, esta pantalla está en camino", "ar": "السجل موجود في لوحة المفاتيح حاليًا - هذه الشاشة قيد التطوير"]) }
+    static var ime_switch_here: String { s(["zh": "点这里切换", "en": "Tap to switch", "hant": "點這裡切換", "ja": "タップして切り替え", "de": "Tippe zum Wechseln", "es": "Toca para cambiar", "ar": "انقر للتبديل"]) }
+    static var ime_not_default_line1: String { s(["zh": "Transless 已经装好了，还不是默认输入法", "en": "Transless is installed but not your default keyboard", "hant": "Transless 已經裝好了，還不是預設輸入法", "ja": "Translessはインストール済みですが、デフォルトのキーボードではありません", "de": "Transless ist installiert, aber nicht deine Standard-Tastatur", "es": "Transless está instalado pero no es tu teclado predeterminado", "ar": "‎Transless‎ مثبت لكنه ليس لوحة المفاتيح الافتراضية"]) }
+    static var kb_retry_a11y: String { s(["zh": "麦克风。上一句还在，没传上去。轻点重试。要说新的一句，用底部 Speak。", "en": "Microphone. Your last sentence is kept but was not sent. Tap to retry. To say something new, use Speak below.", "hant": "麥克風。上一句還在，沒傳上去。輕點重試。要說新的一句，用底部 Speak。", "ja": "マイク。前の文は保持されていますが送信されませんでした。タップして再試行。新しい文を言うには、下の「話す」を使用してください。", "de": "Mikrofon. Dein letzter Satz ist noch da, wurde aber nicht gesendet. Tippe, um es erneut zu versuchen. Für etwas Neues nutze unten „Sprechen“.", "es": "Micrófono. Tu última frase se conserva, pero no se envió. Toca para reintentar. Para decir algo nuevo, usa Hablar abajo.", "ar": "ميكروفون. جملتك الأخيرة محفوظة لكنها لم تُرسل. اضغط لإعادة المحاولة. لقول جملة جديدة، استخدم \"تحدث\" بالأسفل."]) }
+    static var kb_retrying: String { s(["zh": "正在再试…", "en": "Retrying…", "hant": "正在再試…", "ja": "再試行中…", "de": "Wird erneut versucht …", "es": "Reintentando…", "ar": "إعادة المحاولة…"]) }
+    static var kb_retry_gone: String { s(["zh": "那段音频已经不在了，只能再说一次", "en": "That audio is gone - please say it again", "hant": "那段音訊已經不在了，只能再說一次", "ja": "その音声はもうないので、もう一度話してください", "de": "Diese Aufnahme ist weg – bitte sag es noch einmal.", "es": "Ese audio ya no está; vuelve a decirlo", "ar": "لم يعد هذا الصوت متاحًا - يرجى قوله مرة أخرى"]) }
+    static var f2f_back: String { s(["zh": "‹ 返回", "en": "‹ Back", "hant": "‹ 返回", "ja": "‹ 戻る", "de": "‹ Zurück", "es": "‹ Atrás", "ar": "‹ رجوع"]) }
+    static var f2f_hint_1: String { s(["zh": "把手机放在两人中间", "en": "Put the phone between you", "hant": "把手機放在兩人中間", "ja": "携帯を二人の間に置いてください", "de": "Leg das Handy zwischen euch.", "es": "Pon el teléfono entre ustedes", "ar": "ضع الهاتف بينكما"]) }
+    static var f2f_hint_2: String { s(["zh": "轮流对着它说", "en": "Take turns speaking to it", "hant": "輪流對著它說", "ja": "交代でそれに向かって話してください", "de": "Sprecht abwechselnd hinein.", "es": "Hablen por turnos", "ar": "تحدثا إليه بالتناوب"]) }
+    static var f2f_speak: String { s(["zh": "按一下说话", "en": "Tap to speak", "hant": "按一下說話", "ja": "タップして話す", "de": "Tippen zum Sprechen", "es": "Toca para hablar", "ar": "اضغط للتحدث"]) }
+    static var f2f_zh: String { s(["zh": "中文", "en": "Chinese", "hant": "中文", "ja": "中国語", "de": "Chinesisch", "es": "Chino", "ar": "الصينية"]) }
+    static var hist_clear_ask: String { s(["zh": "清空之后就找不回来了，确定吗？", "en": "This cannot be undone. Clear everything?", "hant": "清空之後就找不回來了，確定嗎？", "ja": "消去すると元に戻せません。すべて消去しますか？", "de": "Das lässt sich nicht rückgängig machen. Alles löschen?", "es": "Esto no se puede deshacer. ¿Borrar todo?", "ar": "لا يمكن التراجع عن هذا. مسح كل شيء؟"]) }
+    static var hist_copy: String { s(["zh": "复制译文", "en": "Copy translation", "hant": "複製譯文", "ja": "翻訳をコピー", "de": "Übersetzung kopieren", "es": "Copiar traducción", "ar": "نسخ الترجمة"]) }
+    static var hist_resend: String { s(["zh": "重新翻译", "en": "Translate again", "hant": "重新翻譯", "ja": "再翻訳", "de": "Erneut übersetzen", "es": "Traducir de nuevo", "ar": "إعادة الترجمة"]) }
+    static var hist_d_orig: String { s(["zh": "你说的", "en": "What you said", "hant": "你說的", "ja": "あなたが話した内容", "de": "Was du gesagt hast", "es": "Lo que dijiste", "ar": "ما قلته"]) }
+    static var hist_d_out: String { s(["zh": "译文", "en": "Translation", "hant": "譯文", "ja": "翻訳", "de": "Übersetzung", "es": "Traducción", "ar": "الترجمة"]) }
+    static var hist_resent: String { s(["zh": "重新翻译好了", "en": "Re-translated", "hant": "重新翻譯好了", "ja": "再翻訳しました", "de": "Erneut übersetzt", "es": "Re-traducido", "ar": "أُعيدت الترجمة"]) }
+    static var kpi_words: String { s(["zh": "翻译的词", "en": "Words translated", "hant": "翻譯的詞", "ja": "翻訳した単語", "de": "Übersetzte Wörter", "es": "Palabras traducidas", "ar": "الكلمات المترجمة"]) }
+    static var kpi_saved: String { s(["zh": "省下时间", "en": "Time saved", "hant": "省下時間", "ja": "節約時間", "de": "Zeit gespart", "es": "Tiempo ahorrado", "ar": "الوقت الموفر"]) }
+    static var kpi_spoken: String { s(["zh": "累计说话", "en": "Time spoken", "hant": "累計說話", "ja": "通話時間", "de": "Sprechzeit", "es": "Tiempo hablado", "ar": "وقت التحدث"]) }
+    static var kpi_chars: String { s(["zh": "说了多少字", "en": "Characters spoken", "hant": "說了多少字", "ja": "発話文字数", "de": "Gesprochene Zeichen", "es": "Caracteres hablados", "ar": "عدد الأحرف المنطوقة"]) }
+    static var cand_head: String { s(["zh": "新发现的（%1$@）· 点一下收录，长按不要", "en": "New words (%1$@) · tap to keep, long-press to skip", "hant": "新發現的（%1$@）· 點一下收錄，長按不要", "ja": "新しい単語（%1$@）・タップで保存、長押しでスキップ", "de": "Neue Wörter (%1$@) · Tippen zum Übernehmen, lang drücken zum Überspringen", "es": "Palabras nuevas (%1$@) · toca para guardar, mantén para omitir", "ar": "كلمات جديدة (%1$@) · اضغط للاحتفاظ، اضغط مطولاً للتخطي"]) }
+    static var cand_added: String { s(["zh": "已收录：%1$@", "en": "Kept: %1$@", "hant": "已收錄：%1$@", "ja": "保存済み：%1$@", "de": "Übernommen: %1$@", "es": "Guardadas: %1$@", "ar": "تم الاحتفاظ: %1$@"]) }
+    static var cand_rej_closed: String { s(["zh": "› 我不要的（%1$@）", "en": "› Skipped (%1$@)", "hant": "› 我不要的（%1$@）", "ja": "› スキップ済み（%1$@）", "de": "› Übersprungen (%1$@)", "es": "› Omitidas (%1$@)", "ar": "› تم تخطيها (%1$@)"]) }
+    static var cand_rej_open: String { s(["zh": "⌄ 我不要的（%1$@）", "en": "⌄ Skipped (%1$@)", "hant": "⌄ 我不要的（%1$@）", "ja": "⌄ スキップ済み（%1$@）", "de": "⌄ Übersprungen (%1$@)", "es": "⌄ Omitidas (%1$@)", "ar": "⌄ تم تخطيها (%1$@)"]) }
+    static var cand_recall: String { s(["zh": "收回候选", "en": "Bring back", "hant": "收回候選", "ja": "候補を戻す", "de": "Zurückholen", "es": "Recuperar", "ar": "استرجاع"]) }
+    static var vocab_kept_head: String { s(["zh": "我的常用词（%1$@）· 长按删除", "en": "My words (%1$@) · long-press to delete", "hant": "我的常用詞（%1$@）· 長按刪除", "ja": "マイ単語（%1$@）・長押しで削除", "de": "Meine Wörter (%1$@) · Lang drücken zum Löschen", "es": "Mis palabras (%1$@) · mantén para eliminar", "ar": "كلماتي (%1$@) · اضغط مطولاً للحذف"]) }
+    static var vocab_del_confirm: String { s(["zh": "删掉「%1$@」？", "en": "Delete “%1$@”?", "hant": "刪掉「%1$@」？", "ja": "「%1$@」を削除しますか？", "de": "„%1$@“ löschen?", "es": "¿Eliminar «%1$@»?", "ar": "حذف \"%1$@\"؟"]) }
+    static var hist_mode_en: String { s(["zh": "结构化英文", "en": "Polished English", "hant": "結構化英文", "ja": "整った英語", "de": "Aufpoliertes Englisch", "es": "Inglés pulido", "ar": "الإنجليزية المصقولة"]) }
+    static var hist_mode_zh: String { s(["zh": "整理中文", "en": "Tidied Chinese", "hant": "整理中文", "ja": "整った中国語", "de": "Aufgeräumtes Chinesisch", "es": "Chino ordenado", "ar": "الصينية المرتبة"]) }
+    static var hist_mode_raw: String { s(["zh": "逐字", "en": "Verbatim", "hant": "逐字", "ja": "原文のまま", "de": "Wörtlich", "es": "Literal", "ar": "حرفي"]) }
+    static var tab_vocab: String { s(["zh": "常用词", "en": "Custom Terms", "hant": "常用詞", "ja": "カスタム用語", "de": "Eigene Begriffe", "es": "Términos personalizados", "ar": "المصطلحات المخصصة"]) }
+    static var tab_settings: String { s(["zh": "设置", "en": "Settings", "hant": "設定", "ja": "設定", "de": "Einstellungen", "es": "Ajustes", "ar": "الإعدادات"]) }
+    static var vocab_sub: String { s(["zh": "你常说的人名、公司名、口头禅", "en": "Names and phrases you use often", "hant": "你常說的人名、公司名、口頭禪", "ja": "よく言う名前、会社名、口癖", "de": "Namen und Ausdrücke, die du oft benutzt", "es": "Nombres y frases que usas a menudo", "ar": "أسماء وعبارات تستخدمها كثيرًا"]) }
+    static var vocab_full: String { s(["zh": "常用词最多 500 个，先删掉几个不用的再加", "en": "Up to 500 terms - remove a few you don't use first", "hant": "常用詞最多 500 個，先刪掉幾個不用的再加", "ja": "よく使う語は最大500件です。使わないものを削除してから追加してください", "de": "Bis zu 500 Begriffe – entferne zuerst ein paar ungenutzte", "es": "Hasta 500 términos: elimina algunos que no uses primero", "ar": "حتى ‎500‎ مصطلح - احذف بعضًا لا تستخدمها أولاً"]) }
+    static var vocab_too_long: String { s(["zh": "这个词太长了 —— 常用词是名字或短语，不是整句话", "en": "Too long - terms are names or phrases, not whole sentences", "hant": "這個詞太長了 —— 常用詞是名字或短語，不是整句話", "ja": "長すぎます。よく使う語は名前やフレーズであり、文全体ではありません", "de": "Zu lang – Begriffe sind Namen oder Ausdrücke, keine ganzen Sätze", "es": "Demasiado largo: los términos son nombres o frases, no oraciones completas", "ar": "طويل جدًا - المصطلحات أسماء أو عبارات، وليست جملًا كاملة"]) }
+    static var vocab_empty: String { s(["zh": "还没有常用词。把你常说的人名、公司名、口头禅加进来，Transless 就会记住怎么听、怎么说。", "en": "No personal terms yet. Add the names, companies and phrases you say often, and Transless will remember how to hear them and how to say them.", "hant": "還沒有常用詞。把你常說的人名、公司名、口頭禪加進來，Transless 就會記住怎麼聽、怎麼說。", "ja": "まだよく使う語がありません。よく言う名前、会社名、口癖を追加すると、Translessが聞き取りと発話を覚えます。", "de": "Noch keine persönlichen Begriffe. Füge Namen, Firmen und Ausdrücke hinzu, die du oft sagst, und Transless merkt sich, wie es sie hört und sagt.", "es": "Aún no hay términos personales. Agrega los nombres, empresas y frases que dices a menudo, y Transless recordará cómo escucharlos y decirlos.", "ar": "لا توجد مصطلحات شخصية بعد. أضف الأسماء والشركات والعبارات التي تقولها كثيرًا، وسيتذكر ‎Transless‎ كيف يسمعها وكيف يقولها."]) }
+    static var home_vocab: String { s(["zh": "常用词", "en": "Personal terms", "hant": "常用詞", "ja": "よく使う語", "de": "Persönliche Begriffe", "es": "Términos personales", "ar": "المصطلحات الشخصية"]) }
+    static var vocab_add: String { s(["zh": "+ 添加", "en": "+ Add", "hant": "＋ 新增", "ja": "+ 追加", "de": "+ Hinzufügen", "es": "+ Agregar", "ar": "+ إضافة"]) }
+    static var vocab_add_hint: String { s(["zh": "人名、公司名，或你常说的话", "en": "A name, a company, or a phrase you use often", "hant": "人名、公司名，或你常說的話", "ja": "名前、会社名、またはよく言うフレーズ", "de": "Ein Name, eine Firma oder ein Ausdruck, den du oft benutzt", "es": "Un nombre, una empresa o una frase que uses a menudo", "ar": "اسم أو شركة أو عبارة تستخدمها كثيرًا"]) }
+    static var vocab_kind_both: String { s(["zh": "听和说都用", "en": "Both", "hant": "聽和說都用", "ja": "両方", "de": "Beides", "es": "Ambos", "ar": "كلاهما"]) }
+    static var vocab_kind_asr: String { s(["zh": "只帮我听对", "en": "Recognition only", "hant": "只幫我聽對", "ja": "聞き取りのみ", "de": "Nur fürs Hören", "es": "Solo reconocimiento", "ar": "للتعرف فقط"]) }
+    static var vocab_kind_style: String { s(["zh": "只帮我说得像", "en": "Wording only", "hant": "只幫我說得像", "ja": "発話のみ", "de": "Nur fürs Formulieren", "es": "Solo redacción", "ar": "للصياغة فقط"]) }
+    static var vocab_delete: String { s(["zh": "删除", "en": "Delete", "hant": "刪除", "ja": "削除", "de": "Löschen", "es": "Eliminar", "ar": "حذف"]) }
+    static var vocab_from_book: String { s(["zh": "来自单词本", "en": "From word book", "hant": "來自單詞本", "ja": "単語帳から", "de": "Aus dem Wörterbuch", "es": "Del libro de palabras", "ar": "من دفتر الكلمات"]) }
+    static var err_mic_ask: String { s(["zh": "还没给录音权限 —— 点一下允许就能用", "en": "Microphone permission not granted yet - allow it to continue", "hant": "還沒給錄音權限 —— 點一下允許就能用", "ja": "マイクの許可がまだです。許可すると利用できます", "de": "Mikrofonberechtigung fehlt – erlaube sie, um fortzufahren", "es": "Permiso de micrófono no otorgado: permite el acceso para continuar", "ar": "إذن الميكروفون غير ممنوح بعد - اسمح للمتابعة"]) }
+    static var err_mic_denied: String { s(["zh": "麦克风被关着了：去「设置 › Transless › 麦克风」打开", "en": "Microphone is off: go to Settings > Transless > Microphone", "hant": "麥克風被關著了：去「設定 › Transless › 麥克風」打開", "ja": "マイクがオフです：「設定 › Transless › マイク」でオンにしてください。", "de": "Mikrofon ist aus: Gehe zu Einstellungen > Transless > Mikrofon und schalte es ein.", "es": "El micrófono está apagado: ve a Configuración > Transless > Micrófono", "ar": "الميكروفون مغلق: انتقل إلى الإعدادات > ‎Transless‎ > الميكروفون"]) }
+    static var err_audio_session: String { s(["zh": "录音没能开始 —— 如果正在通话、或有别的 App 在录音，先关掉再试", "en": "Couldn't start recording - if you're on a call or another app is recording, close it and try again", "hant": "錄音沒能開始 —— 如果正在通話、或有別的 App 在錄音，先關掉再試", "ja": "録音を開始できませんでした。通話中または別のアプリが録音中の場合は、終了して再試行してください", "de": "Aufnahme konnte nicht starten – wenn du telefonierst oder eine andere App aufnimmt, schließe sie und versuche es erneut", "es": "No se pudo iniciar la grabación: si estás en una llamada o otra app está grabando, ciérrala e inténtalo de nuevo", "ar": "تعذر بدء التسجيل - إذا كنت في مكالمة أو تطبيق آخر يسجل، أغلقه وحاول مجددًا"]) }
+    static var err_kind_blocked: String { s(["zh": "这句没法处理，换个说法试试", "en": "Can't process that - try rephrasing", "hant": "這句沒法處理，換個說法試試", "ja": "この文は処理できません。別の言い方で試してください", "de": "Das kann ich nicht verarbeiten – versuche es anders zu formulieren", "es": "No se puede procesar eso: intenta reformularlo", "ar": "لا يمكن معالجة ذلك - حاول إعادة الصياغة"]) }
+    static var err_kind_auth: String { s(["zh": "登录过期了，重新登录一下", "en": "Session expired - please sign in again", "hant": "登錄過期了，重新登錄一下", "ja": "セッションが切れました。再度サインインしてください", "de": "Sitzung abgelaufen – bitte melde dich erneut an", "es": "La sesión expiró: inicia sesión de nuevo", "ar": "انتهت الجلسة - يرجى تسجيل الدخول مرة أخرى"]) }
+    static var err_kind_upstream: String { s(["zh": "服务器那边没响应，等一下再试", "en": "The server didn't respond - try again in a moment", "hant": "伺服器那邊沒響應，等一下再試", "ja": "サーバーが応答しませんでした。しばらくして再試行してください", "de": "Der Server hat nicht geantwortet – versuche es gleich noch einmal", "es": "El servidor no respondió: inténtalo de nuevo en un momento", "ar": "لم يستجب الخادم - حاول مرة أخرى بعد قليل"]) }
+    static var err_tts_failed: String { s(["zh": "没能朗读出来，文字还在，点一下重试", "en": "Couldn't read it aloud - your text is still here, tap to retry", "hant": "沒能朗讀出來，文字還在，點一下重試", "ja": "読み上げられませんでした。テキストは残っています。タップして再試行してください", "de": "Konnte nicht vorgelesen werden – dein Text ist noch da, tippe zum erneuten Versuch", "es": "No se pudo leer en voz alta; el texto sigue aquí, toca para reintentar", "ar": "تعذّر النطق بصوت عالٍ — النص ما زال هنا، انقر لإعادة المحاولة"]) }
+    static var err_engine: String { s(["zh": "录音没能开始，再试一次；还不行就重开一次 App", "en": "Couldn't start recording - try again, or reopen the app", "hant": "錄音沒能開始，再試一次；還不行就重開一次 App", "ja": "録音を開始できませんでした。再試行するか、アプリを再起動してください", "de": "Aufnahme konnte nicht starten – versuche es erneut oder starte die App neu", "es": "No se pudo iniciar la grabación: inténtalo de nuevo o reinicia la app", "ar": "تعذر بدء التسجيل - حاول مجددًا، أو أعد فتح التطبيق"]) }
+    static var kb_need_standby: String { s(["zh": "Transless 没在后台了。打开一次 Transless 就好，不用再点任何开关。", "en": "Transless isn't running. Just open Transless once — no switch to flip.", "hant": "Transless 沒在後臺了。打開一次 Transless 就好，不用再點任何開關。", "ja": "Transless がバックグラウンドにありません。Transless を一度開くだけで、スイッチを操作する必要はありません。", "de": "Transless läuft nicht im Hintergrund. Öffne Transless einmal – kein Schalter nötig.", "es": "Transless no está en segundo plano. Solo ábrelo una vez, no hay que activar nada.", "ar": "‎Transless‎ لا يعمل. افتح ‎Transless‎ مرة واحدة فقط — لا حاجة لأي مفتاح."]) }
+    static var kb_host_gone: String { s(["zh": "Transless 被系统关掉了，打开它再点一次「键盘语音」", "en": "Transless was closed by the system — open it and turn Keyboard Voice on again", "hant": "Transless 被系統關掉了，打開它再點一次「鍵盤語音」", "ja": "Transless がシステムによって終了されました。開いて「キーボード音声」をもう一度タップしてください", "de": "Transless wurde vom System beendet – öffne es und aktiviere Tastatur-Sprache erneut", "es": "El sistema cerró Transless. Ábrelo y activa Teclado por voz de nuevo", "ar": "أغلق النظام ‎Transless‎ — افتحه وشغّل ‎Keyboard Voice‎ مرة أخرى"]) }
+    static var wb_card_failed: String { s(["zh": "这条的卡片还没取到（不影响收藏）", "en": "Couldn't load this card (your saved item is fine)", "hant": "這條的卡片還沒取到（不影響收藏）", "ja": "このカードを取得できませんでした（保存済みの項目には影響ありません）", "de": "Karte konnte nicht geladen werden (dein Eintrag ist sicher)", "es": "No se pudo cargar esta tarjeta (tu elemento guardado está bien)", "ar": "تعذّر تحميل هذه البطاقة (العنصر المحفوظ سليم)"]) }
+    static var wb_card_loading: String { s(["zh": "正在取卡片…", "en": "Loading card…", "hant": "正在取卡片…", "ja": "カードを読み込み中…", "de": "Karte wird geladen …", "es": "Cargando tarjeta…", "ar": "جارٍ تحميل البطاقة…"]) }
+    static var wb_card_retry: String { s(["zh": "再试一次", "en": "Try again", "hant": "再試一次", "ja": "再試行", "de": "Erneut versuchen", "es": "Reintentar", "ar": "إعادة المحاولة"]) }
+    static var wb_card_senses: String { s(["zh": "释义", "en": "Meanings", "hant": "釋義", "ja": "意味", "de": "Bedeutungen", "es": "Significados", "ar": "المعاني"]) }
+    static var wb_card_examples: String { s(["zh": "例句", "en": "Examples", "hant": "例句", "ja": "例文", "de": "Beispiele", "es": "Ejemplos", "ar": "أمثلة"]) }
+    static var wb_card_collocations: String { s(["zh": "常见搭配", "en": "Collocations", "hant": "常見搭配", "ja": "よく使う組み合わせ", "de": "Kollokationen", "es": "Colocaciones", "ar": "المتلازمات اللفظية"]) }
+    static var wb_card_breakdown: String { s(["zh": "结构拆解", "en": "How it's built", "hant": "結構拆解", "ja": "構造の解説", "de": "Aufbau", "es": "Cómo se forma", "ar": "البنية"]) }
+    static var wb_card_alternatives: String { s(["zh": "换个说法", "en": "Other ways to say it", "hant": "換個說法", "ja": "別の言い方", "de": "Andere Formulierungen", "es": "Otras formas de decirlo", "ar": "صيغ أخرى"]) }
+    static var wb_card_keys: String { s(["zh": "可以拆下来用的", "en": "Worth reusing", "hant": "可以拆下來用的", "ja": "再利用できる表現", "de": "Wiederverwendbar", "es": "Vale la pena reutilizar", "ar": "جدير بالاستخدام"]) }
+    static var prefs_version: String { s(["zh": "版本 %1$@", "en": "Version %1$@", "hant": "版本 %1$@", "ja": "バージョン %1$@", "de": "Version %1$@", "es": "Versión %1$@", "ar": "الإصدار %‎1‎$@"]) }
+    static var home_slogan: String { s(["zh": "让世界听懂你", "en": "No Language In Between", "hant": "讓世界聽懂你", "ja": "世界に、あなたが伝わる。", "de": "No Language In Between", "es": "No Language In Between", "ar": "No Language In Between"]) }
+    static var err_mic_silent: String { s(["zh": "没收到麦克风的声音。把 Transless 打开一次再试", "en": "No sound reached the microphone. Open Transless once and try again", "hant": "沒收到麥克風的聲音。把 Transless 打開一次再試", "ja": "マイクに音が届きませんでした。Translessを一度開いてからもう一度お試しください。", "de": "Kein Ton erreichte das Mikrofon. Öffne Transless einmal und versuche es erneut.", "es": "No llegó sonido al micrófono. Abre Transless una vez e inténtalo de nuevo.", "ar": "لم يصل أي صوت إلى الميكروفون. افتح ‎Transless‎ مرة واحدة ثم حاول مجددًا"]) }
+    static var kb_host_slow: String { s(["zh": "等太久了，再说一次", "en": "That took too long — try again", "hant": "等太久了，再說一次", "ja": "時間がかかりすぎました。もう一度お試しください", "de": "Das hat zu lange gedauert – versuch es nochmal", "es": "Tardó demasiado. Inténtalo de nuevo", "ar": "استغرق ذلك وقتًا طويلاً — حاول مرة أخرى"]) }
+    static var kb_slow_retry: String { s(["zh": "等太久了 · 刚才那段还在，点一下重发", "en": "That took too long — your recording is still here, tap to resend", "hant": "等太久了 · 剛才那段還在，點一下重發", "ja": "時間がかかりすぎました。録音はまだありますので、タップして再送信してください", "de": "Das hat zu lange gedauert – deine Aufnahme ist noch da, tippe zum erneuten Senden", "es": "Tardó demasiado: la grabación sigue aquí, toca para reenviar", "ar": "استغرق ذلك وقتًا طويلًا — تسجيلك ما زال هنا، اضغط لإعادة الإرسال"]) }
+    static var kb_empty_out: String { s(["zh": "这段没听出内容 · 刚才那段还在，点一下重发", "en": "Nothing came back from that — your recording is still here, tap to resend", "hant": "這段沒聽出內容 · 剛才那段還在，點一下重發", "ja": "内容が聞き取れませんでした。録音はまだありますので、タップして再送信してください", "de": "Nichts zurückbekommen – deine Aufnahme ist noch da, tippe zum erneuten Senden", "es": "No se obtuvo respuesta: la grabación sigue aquí, toca para reenviar", "ar": "لم يُستخرج محتوى من ذلك — تسجيلك ما زال هنا، اضغط لإعادة الإرسال"]) }
+    static var kb_empty_out_plain: String { s(["zh": "这段没听出内容，再说一次", "en": "Nothing came back from that — try again", "hant": "這段沒聽出內容，再說一次", "ja": "内容が聞き取れませんでした。もう一度お試しください", "de": "Nichts zurückbekommen – versuch es nochmal", "es": "No se obtuvo respuesta, inténtalo de nuevo", "ar": "لم يُستخرج محتوى من ذلك — حاول مرة أخرى"]) }
+    static var kb_bad_result: String { s(["zh": "结果没读懂 · 刚才那段还在，点一下重发", "en": "Couldn't read the result — your recording is still here, tap to resend", "hant": "結果沒讀懂 · 剛才那段還在，點一下重發", "ja": "結果を読み取れませんでした。録音はまだありますので、タップして再送信してください", "de": "Ergebnis nicht lesbar – deine Aufnahme ist noch da, tippe zum erneuten Senden", "es": "No se pudo leer el resultado: la grabación sigue aquí, toca para reenviar", "ar": "تعذّرت قراءة النتيجة — تسجيلك ما زال هنا، اضغط لإعادة الإرسال"]) }
+    static var kb_bad_result_plain: String { s(["zh": "结果没读懂，再说一次", "en": "Couldn't read the result — try again", "hant": "結果沒讀懂，再說一次", "ja": "結果を読み取れませんでした。もう一度お試しください", "de": "Ergebnis nicht lesbar – versuch es nochmal", "es": "No se pudo leer el resultado, inténtalo de nuevo", "ar": "تعذّرت قراءة النتيجة — حاول مرة أخرى"]) }
+    static var kb_standby_on: String { s(["zh": "键盘语音 · 已开", "en": "Keyboard Voice · On", "hant": "鍵盤語音 · 已開", "ja": "キーボード音声 · オン", "de": "Tastatur-Sprache · An", "es": "Teclado por voz · Activado", "ar": "‎Keyboard Voice‎ · تشغيل"]) }
+    static var kb_standby_off: String { s(["zh": "键盘语音 · 未开", "en": "Keyboard Voice · Off", "hant": "鍵盤語音 · 未開", "ja": "キーボード音声 · オフ", "de": "Tastatur-Sprache · Aus", "es": "Teclado por voz · Desactivado", "ar": "‎Keyboard Voice‎ · إيقاف"]) }
+    static var kb_standby_why: String { s(["zh": "打开后 Transless 会留在后台待命。没在说话时麦克风是关的，只有你按下键盘上的麦克风才会开。十分钟没用会自动关掉，每次说话都会续期。", "en": "Transless stays ready in the background. The microphone is off unless you press the mic on the keyboard. It turns itself off after ten minutes idle, and every dictation extends it.", "hant": "打開後 Transless 會留在後臺待命。沒在說話時麥克風是關的，只有你按下鍵盤上的麥克風才會開。十分鐘沒用會自動關掉，每次說話都會續期。", "ja": "開くと Transless はバックグラウンドで待機します。話していないときはマイクはオフで、キーボードのマイクを押したときだけオンになります。10分間使用しないと自動でオフになり、話すたびに延長されます。", "de": "Transless bleibt im Hintergrund bereit. Das Mikrofon ist aus, außer du drückst das Mikro auf der Tastatur. Nach zehn Minuten ohne Nutzung schaltet es sich aus; jede Diktat verlängert die Zeit.", "es": "Transless permanece listo en segundo plano. El micrófono está apagado salvo que pulses el micrófono del teclado. Se apaga solo tras diez minutos de inactividad, y cada dictado lo renueva.", "ar": "يبقى ‎Transless‎ جاهزًا في الخلفية. الميكروفون مغلق ما لم تضغط عليه على لوحة المفاتيح. يُغلق تلقائيًا بعد عشر دقائق من الخمول، وكل إملاء يمدد الوقت."]) }
+    static var st_listening_ios: String { s(["zh": "听着呢 %d:%02d　·　说完再按一下红色按钮", "en": "Listening %d:%02d　·　tap the red button when you're done", "hant": "聽著呢 %d:%02d　·　說完再按一下紅色按鈕", "ja": "聞いています %d:%02d　·　終わったら赤いボタンをタップ", "de": "Höre zu %d:%02d　·　Tippe auf den roten Knopf, wenn du fertig bist", "es": "Escuchando %d:%02d · toca el botón rojo al terminar", "ar": "الاستماع %‎d:%02d‎ · اضغط الزر الأحمر عند الانتهاء"]) }
+    static var msg_update_unreachable: String { s(["zh": "连不上更新服务器：%1$@\n稍后再试，或者去应用商店看看有没有新版。", "en": "Can't reach the update server: %1$@\nTry again later, or check the App Store for updates.", "hant": "連不上更新伺服器：%1$@\n稍後再試，或者去應用商店看看有沒有新版。", "ja": "更新サーバーに接続できません：%1$@\n後でもう一度お試しいただくか、App Storeでアップデートをご確認ください。", "de": "Update-Server nicht erreichbar: %1$@\nVersuche es später erneut oder prüfe den App Store auf Updates.", "es": "No se puede conectar con el servidor de actualizaciones: %1$@\nInténtalo de nuevo más tarde o revisa la tienda de aplicaciones por si hay una versión nueva.", "ar": "تعذر الوصول إلى خادم التحديث: %1$@\nحاول مرة أخرى لاحقًا، أو تحقق من متجر التطبيقات للحصول على تحديثات."]) }
+    static var msg_already_latest: String { s(["zh": "已经是最新版了（%1$@）", "en": "You're already on the latest version (%1$@)", "hant": "已經是最新版了（%1$@）", "ja": "すでに最新版です（%1$@）", "de": "Du hast bereits die neueste Version (%1$@)", "es": "Ya tienes la última versión (%1$@)", "ar": "أنت بالفعل على أحدث إصدار (%1$@)"]) }
+    static var msg_new_version: String { s(["zh": "发现新版 %1$@，下载中…", "en": "Found version %1$@ — downloading…", "hant": "發現新版 %1$@，下載中…", "ja": "新しいバージョン %1$@ が見つかりました。ダウンロード中…", "de": "Version %1$@ gefunden – wird heruntergeladen…", "es": "Versión %1$@ encontrada. Descargando…", "ar": "تم العثور على الإصدار %1$@ — جارٍ التنزيل…"]) }
+    static var msg_downloading: String { s(["zh": "下载中… %1$@%%", "en": "Downloading… %1$@%%", "hant": "下載中… %1$@%%", "ja": "ダウンロード中… %1$@%%", "de": "Wird heruntergeladen… %1$@%%", "es": "Descargando… %1$@%%", "ar": "جارٍ التنزيل… %1$@%%‎"]) }
+    static var msg_update_failed: String { s(["zh": "更新失败：%1$@\n稍后再试一次。", "en": "Update failed: %1$@\nPlease try again later.", "hant": "更新失敗：%1$@\n稍後再試一次。", "ja": "更新に失敗しました：%1$@\nしばらくしてからもう一度お試しください。", "de": "Update fehlgeschlagen: %1$@\nBitte versuch es später noch einmal.", "es": "Error al actualizar: %1$@\nInténtalo de nuevo más tarde.", "ar": "فشل التحديث: %1$@ يرجى المحاولة لاحقًا."]) }
+    static var msg_dl_done: String { s(["zh": "下载完成 %1$@，正在打开安装界面", "en": "Downloaded %1$@ — opening the installer", "hant": "下載完成 %1$@，正在打開安裝界面", "ja": "ダウンロード完了 %1$@。インストーラーを開いています", "de": "Download abgeschlossen %1$@ – Installationsfenster wird geöffnet", "es": "Descarga completada %1$@. Abriendo el instalador", "ar": "تم تنزيل %1$@ — فتح المثبت"]) }
+    static var msg_hw_missing: String { s(["zh": "手写没装上", "en": "Handwriting isn't installed", "hant": "手寫沒裝上", "ja": "手書き入力がインストールされていません", "de": "Handschrift ist nicht installiert", "es": "La escritura a mano no está instalada", "ar": "الكتابة اليدوية غير مثبتة"]) }
+    static var msg_mic_open_failed: String { s(["zh": "打不开麦克风：%1$@", "en": "Can't open the microphone: %1$@", "hant": "打不開麥克風：%1$@", "ja": "マイクを開けません：%1$@", "de": "Mikrofon kann nicht geöffnet werden: %1$@", "es": "No se puede abrir el micrófono: %1$@", "ar": "تعذر فتح الميكروفون: %1$@"]) }
+    static var prefs_title: String { s(["zh": "设置", "en": "Settings", "hant": "設定", "ja": "設定", "de": "Einstellungen", "es": "Ajustes", "ar": "الإعدادات"]) }
+    static var kb_retry_hint: String { s(["zh": "没传上去 · 再点一下", "en": "Not sent · tap again", "hant": "沒傳上去 · 再點一下", "ja": "送信されていません · もう一度タップ", "de": "Nicht gesendet · Tippe erneut", "es": "No se envió · toca de nuevo", "ar": "لم يُرسل · اضغط مرة أخرى"]) }
+    static var home_try_speak: String { s(["zh": "随手翻译", "en": "Translate as you go", "hant": "隨手翻譯", "ja": "その場で翻訳", "de": "Übersetze nebenbei", "es": "Traduce sobre la marcha", "ar": "ترجم أثناء التنقل"]) }
+    static var ios_step_add: String { s(["zh": "在系统设置里添加 Transless 键盘", "en": "Add the Transless keyboard in Settings", "hant": "在系統設定裡添加 Transless 鍵盤", "ja": "設定で Transless キーボードを追加", "de": "Füge die Transless-Tastatur in den Einstellungen hinzu", "es": "Añade el teclado Transless en Ajustes", "ar": "أضف لوحة مفاتيح ‎Transless‎ في الإعدادات"]) }
+    static var ios_step_full: String { s(["zh": "打开「允许完全访问」（联网要用）", "en": "Turn on Allow Full Access (needed for network)", "hant": "打開「允許完全訪問」（聯網要用）", "ja": "「フルアクセスを許可」をオンにする（ネットワークに必要）", "de": "Aktiviere „Vollzugriff“ (für Netzwerk nötig)", "es": "Activa Acceso total (necesario para la red)", "ar": "فعّل ‎Allow Full Access‎ (مطلوب للشبكة)"]) }
+    static var ios_update_note: String { s(["zh": "iOS 通过 TestFlight 更新", "en": "Updates arrive through TestFlight", "hant": "iOS 通過 TestFlight 更新", "ja": "iOS は TestFlight で更新", "de": "Updates kommen über TestFlight", "es": "Las actualizaciones llegan por TestFlight", "ar": "تصل التحديثات عبر ‎TestFlight‎"]) }
+    static var rec_log_empty: String { s(["zh": "还没有记录", "en": "Nothing recorded yet", "hant": "還沒有記錄", "ja": "記録はまだありません", "de": "Noch nichts aufgezeichnet", "es": "Aún no hay registros", "ar": "لا توجد تسجيلات بعد"]) }
+    static var prefs_soon: String { s(["zh": "设置项还在做，下一版给你", "en": "Settings are coming in the next version", "hant": "設定項還在做，下一版給你", "ja": "設定項目は準備中です。次のバージョンで提供します", "de": "Einstellungen kommen in der nächsten Version", "es": "Los ajustes llegarán en la próxima versión", "ar": "الإعدادات قادمة في الإصدار التالي"]) }
+    static var prefs_entry: String { s(["zh": "设置", "en": "Settings", "hant": "設定", "ja": "設定", "de": "Einstellungen", "es": "Ajustes", "ar": "الإعدادات"]) }
+    static var prefs_g_ime: String { s(["zh": "输入法", "en": "Keyboard", "hant": "輸入法", "ja": "キーボード", "de": "Tastatur", "es": "Teclado", "ar": "لوحة المفاتيح"]) }
+    static var prefs_g_pref: String { s(["zh": "偏好", "en": "Preferences", "hant": "偏好", "ja": "設定", "de": "Optionen", "es": "Preferencias", "ar": "التفضيلات"]) }
+    static var prefs_g_diag: String { s(["zh": "诊断", "en": "Diagnostics", "hant": "診斷", "ja": "診断", "de": "Diagnose", "es": "Diagnóstico", "ar": "التشخيص"]) }
+    static var prefs_g_about: String { s(["zh": "关于", "en": "About", "hant": "關於", "ja": "情報", "de": "Über", "es": "Acerca de", "ar": "حول"]) }
+    static var prefs_ime_on: String { s(["zh": "已经是当前输入法", "en": "Currently in use", "hant": "已經是當前輸入法", "ja": "現在使用中", "de": "Wird gerade verwendet", "es": "En uso actualmente", "ar": "قيد الاستخدام حاليًا"]) }
+    static var prefs_ime_off: String { s(["zh": "还没设为当前输入法", "en": "Not your keyboard yet", "hant": "還沒設為當前輸入法", "ja": "まだ使用中ではありません", "de": "Noch nicht deine Tastatur", "es": "Aún no es tu teclado", "ar": "ليست لوحة مفاتيحك بعد"]) }
+    static var prefs_diag_sub: String { s(["zh": "看最近几次录音为什么没转出来", "en": "Why recent recordings did not come through", "hant": "看最近幾次錄音為什麼沒轉出來", "ja": "最近の録音が文字化けしなかった理由", "de": "Warum letzte Aufnahmen nicht durchkamen", "es": "Por qué no se transcribieron grabaciones recientes", "ar": "لماذا لم تُنقل التسجيلات الأخيرة"]) }
+    static var prefs_about: String { s(["zh": "关于 Transless", "en": "About Transless", "hant": "關於 Transless", "ja": "Transless について", "de": "Über Transless", "es": "Acerca de Transless", "ar": "حول ‎Transless‎"]) }
+    static var prefs_check_update: String { s(["zh": "检查更新", "en": "Check for updates", "hant": "檢查更新", "ja": "アップデートを確認", "de": "Nach Updates suchen", "es": "Buscar actualizaciones", "ar": "التحقق من التحديثات"]) }
+    static var prefs_copy: String { s(["zh": "复制", "en": "Copy", "hant": "複製", "ja": "コピー", "de": "Kopieren", "es": "Copiar", "ar": "نسخ"]) }
+    static var msg_no_input_conn: String { s(["zh": "输入框没连上，先点一下输入框再试", "en": "Tap the text field once, then try again", "hant": "輸入框沒連上，先點一下輸入框再試", "ja": "テキストフィールドをタップしてから再試行してください", "de": "Tippe einmal ins Textfeld, dann versuch es nochmal", "es": "Toca el campo de texto una vez y vuelve a intentar", "ar": "انقر على حقل النص مرة واحدة ثم حاول مجددًا"]) }
+    static var msg_send_not_supported: String { s(["zh": "这个 App 不让输入法代发，请点它自己的发送键", "en": "This app doesn't let keyboards send — tap its own send button", "hant": "這個 App 不讓輸入法代發，請點它自己的發送鍵", "ja": "このアプリはキーボードからの送信を許可していません。アプリの送信ボタンをタップしてください", "de": "Diese App lässt keine Tastatur senden – tippe auf ihren eigenen Senden-Button", "es": "Esta app no permite que el teclado envíe: toca su propio botón de enviar", "ar": "هذا التطبيق لا يسمح للوحات المفاتيح بالإرسال — انقر على زر الإرسال الخاص به"]) }
+    static var msg_send_unknown_fail: String { s(["zh": "没转出来，原因不明。设置 › 录音诊断 里有详细记录", "en": "Couldn't transcribe. See Settings › Recording log for details", "hant": "沒轉出來，原因不明。設定 › 錄音診斷 裡有詳細記錄", "ja": "文字起こしできませんでした。詳細は設定 › 録音ログをご覧ください", "de": "Transkription fehlgeschlagen. Details findest du unter Einstellungen › Aufnahmeprotokoll", "es": "No se pudo transcribir. Consulta Configuración › Registro de grabación para más detalles.", "ar": "تعذّر النسخ الصوتي. انظر الإعدادات › سجل التسجيل للتفاصيل"]) }
+    static var msg_send_process_fail: String { s(["zh": "这次没处理成功，详细记录在 设置 › 录音诊断", "en": "Processing failed. See Settings › Recording log for details", "hant": "這次沒處理成功，詳細記錄在 設定 › 錄音診斷", "ja": "処理に失敗しました。詳細は設定 › 録音ログをご覧ください", "de": "Verarbeitung fehlgeschlagen. Details unter Einstellungen › Aufnahmeprotokoll", "es": "No se procesó. Consulta Ajustes › Registro de grabación para más detalles", "ar": "لم تنجح المعالجة. التفاصيل في الإعدادات › سجل التسجيل"]) }
+    static var msg_send_wechat: String { s(["zh": "微信要先开「回车键发送消息」：我 › 设置 › 聊天", "en": "Turn on \"Enter key sends messages\" in WeChat: Me › Settings › Chats", "hant": "微信要先開「回車鍵發送消息」：我 › 設定 › 聊天", "ja": "微信で「Enterキーで送信」をオンにしてください：私 › 設定 › チャット", "de": "Aktiviere „Enter zum Senden“ in WeChat: Ich › Einstellungen › Chats", "es": "Activa «Enviar con Enter» en WeChat: Yo › Configuración › Chats.", "ar": "فعّل «إرسال بمفتاح الإدخال» في ‎WeChat‎: أنا › الإعدادات › المحادثات"]) }
+    static var msg_mic_not_ready: String { s(["zh": "麦克风没就绪，再点一次", "en": "Microphone isn't ready — tap again", "hant": "麥克風沒就緒，再點一次", "ja": "マイクが準備できていません。もう一度タップしてください", "de": "Mikrofon ist nicht bereit – tippe nochmal", "es": "El micrófono no está listo: toca de nuevo", "ar": "الميكروفون غير جاهز — انقر مجددًا"]) }
+    static var msg_max_len: String { s(["zh": "说满 %1$@ 秒，这一段先帮你整理了", "en": "Hit the %1$@-second limit — cleaning up what you said so far", "hant": "說滿 %1$@ 秒，這一段先幫你整理了", "ja": "%1$@秒に達しました。ここまでの内容を整理しました", "de": "Die %1$@-Sekunden-Grenze erreicht – räume auf, was du gesagt hast", "es": "Alcanzaste el límite de %1$@ segundos: se organizó lo que dijiste hasta ahora", "ar": "وصلت إلى حد %1$@ ثانية — تنظيف ما قلته حتى الآن"]) }
+    static var msg_mic_lost: String { s(["zh": "麦克风断了（%1$@），先把已录到的转出来", "en": "Microphone dropped (%1$@) — transcribing what was captured", "hant": "麥克風斷了（%1$@），先把已錄到的轉出來", "ja": "マイクが切断されました（%1$@）。録音済みの内容を文字化します", "de": "Mikrofon unterbrochen (%1$@) – transkribiere, was aufgenommen wurde", "es": "Se perdió el micrófono (%1$@): se transcribe lo capturado", "ar": "انقطع الميكروفون (%1$@) — نقل ما تم تسجيله"]) }
+    static var msg_no_audio: String { s(["zh": "没录到声音：%1$@", "en": "No audio captured: %1$@", "hant": "沒錄到聲音：%1$@", "ja": "音声が録音されませんでした：%1$@", "de": "Kein Ton aufgenommen: %1$@", "es": "No se capturó audio: %1$@", "ar": "لم يتم التقاط صوت: %1$@"]) }
+    static var msg_not_heard: String { s(["zh": "没听清，再说一次", "en": "Didn't catch that — say it again", "hant": "沒聽清，再說一次", "ja": "聞き取れませんでした。もう一度話してください", "de": "Nicht verstanden – sag es nochmal", "es": "No se entendió: dilo de nuevo", "ar": "لم أسمع جيدًا — قل ذلك مرة أخرى"]) }
+    static var kb_chip_zh: String { s(["zh": "中", "en": "ZH", "hant": "中", "ja": "中", "de": "ZH", "es": "ZH", "ar": "ZH"]) }
+    static var kb_chip_voice: String { s(["zh": "语音", "en": "Voice", "hant": "語音", "ja": "音声", "de": "Stimme", "es": "Voz", "ar": "صوت"]) }
+    static var msg_cancelled: String { s(["zh": "已取消", "en": "Cancelled", "hant": "已取消", "ja": "キャンセルしました", "de": "Abgebrochen", "es": "Cancelado", "ar": "تم الإلغاء"]) }
+    static var msg_nothing_recorded: String { s(["zh": "没录到", "en": "Nothing recorded", "hant": "沒錄到", "ja": "録音されていません", "de": "Nichts aufgenommen", "es": "No se grabó nada", "ar": "لم يتم تسجيل شيء"]) }
+    static var msg_failed: String { s(["zh": "失败：%1$@", "en": "Failed: %1$@", "hant": "失敗：%1$@", "ja": "失敗：%1$@", "de": "Fehlgeschlagen: %1$@", "es": "Error: %1$@", "ar": "فشل: %1$@"]) }
+    static var perm_title: String { s(["zh": "权限", "en": "Permissions", "hant": "權限", "ja": "権限", "de": "Berechtigungen", "es": "Permisos", "ar": "الأذونات"]) }
+    static var cancel: String { s(["zh": "取消", "en": "Cancel", "hant": "取消", "ja": "キャンセル", "de": "Abbrechen", "es": "Cancelar", "ar": "إلغاء"]) }
+    static var nothing_to_speak: String { s(["zh": "还没有可朗读的内容", "en": "Nothing to read aloud yet", "hant": "還沒有可朗讀的內容", "ja": "読み上げる内容はまだありません", "de": "Noch nichts zum Vorlesen", "es": "Aún no hay contenido para leer en voz alta", "ar": "لا يوجد ما يُقرأ بصوت عالٍ بعد"]) }
+    static var ios_setup_title: String { s(["zh": "权限与自测", "en": "Permissions & self-test", "hant": "權限與自測", "ja": "権限とセルフテスト", "de": "Berechtigungen & Selbsttest", "es": "Permisos y autocomprobación", "ar": "الأذونات والاختبار الذاتي"]) }
+    static var ios_step1: String { s(["zh": "第 1 步 · 允许麦克风", "en": "Step 1 · Allow microphone", "hant": "第 1 步 · 允許麥克風", "ja": "ステップ1・マイクを許可", "de": "Schritt 1 · Mikrofon erlauben", "es": "Paso 1 · Permitir micrófono", "ar": "الخطوة ‎1‎ · السماح بالميكروفون"]) }
+    static var ios_step1_why: String { s(["zh": "只用要一次。语音识别在后端做，不用额外授权。", "en": "Once only. Speech recognition runs on the server, so no extra permission is needed.", "hant": "只用要一次。語音識別在後端做，不用額外授權。", "ja": "一度だけです。音声認識はサーバー側で行うため、追加の許可は不要です。", "de": "Nur einmal. Die Spracherkennung läuft auf dem Server, daher ist keine zusätzliche Berechtigung nötig.", "es": "Solo una vez. El reconocimiento de voz se realiza en el servidor, no se necesita permiso adicional.", "ar": "مرة واحدة فقط. يتم التعرف على الكلام على الخادم، لذا لا حاجة لإذن إضافي."]) }
+    static var ios_allow_mic: String { s(["zh": "允许麦克风", "en": "Allow microphone", "hant": "允許麥克風", "ja": "マイクを許可", "de": "Mikrofon erlauben", "es": "Permitir micrófono", "ar": "السماح بالميكروفون"]) }
+    static var ios_step2: String { s(["zh": "自测 · 后端通不通", "en": "Self-test · Is the backend reachable?", "hant": "自測 · 後端通不通", "ja": "セルフテスト・バックエンドに接続できますか？", "de": "Selbsttest · Ist der Backend erreichbar?", "es": "Autocomprobación · ¿El backend está accesible?", "ar": "اختبار ذاتي · هل الخادم متاح؟"]) }
+    static var ios_test_once: String { s(["zh": "测一次", "en": "Run test", "hant": "測一次", "ja": "テストを実行", "de": "Test ausführen", "es": "Ejecutar prueba", "ar": "تشغيل الاختبار"]) }
+    static var lang_follow_system: String { s(["zh": "跟随系统", "en": "Follow system", "hant": "跟隨系統", "ja": "システムに従う", "de": "System folgen", "es": "Seguir sistema", "ar": "اتباع النظام"]) }
+    static var lang_title: String { s(["zh": "界面语言", "en": "App language", "hant": "界面語言", "ja": "アプリの言語", "de": "App-Sprache", "es": "Idioma de la app", "ar": "لغة التطبيق"]) }
+    static var rec_log_title: String { s(["zh": "录音诊断", "en": "Recording log", "hant": "錄音診斷", "ja": "録音診断", "de": "Aufnahmeprotokoll", "es": "Registro de grabación", "ar": "سجل التسجيل"]) }
+    static var kb_translate: String { s(["zh": "翻译", "en": "Translate", "hant": "翻譯", "ja": "翻訳", "de": "Übersetzen", "es": "Traducir", "ar": "ترجمة"]) }
+    static var kb_transcribe: String { s(["zh": "转写", "en": "Transcribe", "hant": "轉寫", "ja": "文字起こし", "de": "Transkribieren", "es": "Transcribir", "ar": "نسخ صوتي"]) }
+    static var kb_history: String { s(["zh": "历史", "en": "History", "hant": "歷史", "ja": "履歴", "de": "Verlauf", "es": "Historial", "ar": "السجل"]) }
+    static var kb_type: String { s(["zh": "⌨  打字", "en": "⌨  Type", "hant": "⌨  打字", "ja": "⌨ 入力", "de": "⌨  Tippen", "es": "⌨  Escribir", "ar": "⌨  كتابة"]) }
+    static var kb_speak: String { s(["zh": "朗读", "en": "Speak", "hant": "朗讀", "ja": "読み上げ", "de": "Vorlesen", "es": "Leer en voz alta", "ar": "قراءة"]) }
+    static var kb_send: String { s(["zh": "发送", "en": "Send", "hant": "發送", "ja": "送信", "de": "Senden", "es": "Enviar", "ar": "إرسال"]) }
+    static var kb_stop: String { s(["zh": "■ 停", "en": "■ Stop", "hant": "■ 停", "ja": "■ 停止", "de": "■ Stopp", "es": "■ Detener", "ar": "■ إيقاف"]) }
+    static var tone_casual: String { s(["zh": "随意", "en": "Casual", "hant": "隨意", "ja": "カジュアル", "de": "Locker", "es": "Informal", "ar": "عادي"]) }
+    static var tone_work: String { s(["zh": "工作", "en": "Work", "hant": "工作", "ja": "仕事", "de": "Arbeit", "es": "Trabajo", "ar": "عمل"]) }
+    static var tone_email: String { s(["zh": "邮件", "en": "Email", "hant": "郵件", "ja": "メール", "de": "E-Mail", "es": "Correo", "ar": "بريد إلكتروني"]) }
+    static var kb_back: String { s(["zh": "‹ 返回", "en": "‹ Back", "hant": "‹ 返回", "ja": "‹ 戻る", "de": "‹ Zurück", "es": "‹ Volver", "ar": "‹ رجوع"]) }
+    static var kb_pinyin: String { s(["zh": "拼音", "en": "Pinyin", "hant": "拼音", "ja": "ピンイン", "de": "Pinyin", "es": "Pinyin", "ar": "بينيين"]) }
+    static var kb_wubi: String { s(["zh": "五笔", "en": "Wubi", "hant": "五筆", "ja": "五筆", "de": "Wubi", "es": "Wubi", "ar": "ووبي"]) }
+    static var kb_hand: String { s(["zh": "手写", "en": "Handwriting", "hant": "手寫", "ja": "手書き", "de": "Handschrift", "es": "Escritura a mano", "ar": "كتابة يدوية"]) }
+    static var kb_english: String { s(["zh": "英文", "en": "English", "hant": "英文", "ja": "英語", "de": "Englisch", "es": "Inglés", "ar": "الإنجليزية"]) }
+    static var kb_pinyin_s: String { s(["zh": "拼", "en": "PY", "hant": "拼", "ja": "拼", "de": "PY", "es": "PY", "ar": "‎PY‎"]) }
+    static var kb_wubi_s: String { s(["zh": "五", "en": "WB", "hant": "五", "ja": "五", "de": "WB", "es": "WB", "ar": "‎WB‎"]) }
+    static var kb_hand_s: String { s(["zh": "写", "en": "HW", "hant": "寫", "ja": "書", "de": "HW", "es": "HW", "ar": "‎HW‎"]) }
+    static var kb_done: String { s(["zh": "完成", "en": "Done", "hant": "完成", "ja": "完了", "de": "Fertig", "es": "Listo", "ar": "تم"]) }
+    static var kb_space: String { s(["zh": "空格", "en": "Space", "hant": "空格", "ja": "スペース", "de": "Leerzeichen", "es": "Espacio", "ar": "مسافة"]) }
+    static var kb_polish: String { s(["zh": "整理", "en": "Clean up", "hant": "整理", "ja": "整理", "de": "Aufräumen", "es": "Pulir", "ar": "تنقيح"]) }
+    static var kb_verbatim: String { s(["zh": "逐字", "en": "Verbatim", "hant": "逐字", "ja": "そのまま", "de": "Wörtlich", "es": "Literal", "ar": "حرفيًا"]) }
+    static var kb_resend: String { s(["zh": "重新上屏", "en": "Insert again", "hant": "重新上屏", "ja": "再挿入", "de": "Erneut einfügen", "es": "Insertar de nuevo", "ar": "إدراج مجددًا"]) }
+    static var kb_undo: String { s(["zh": "撤销", "en": "Undo", "hant": "撤銷", "ja": "元に戻す", "de": "Rückgängig", "es": "Deshacer", "ar": "تراجع"]) }
+    static var kb_clear: String { s(["zh": "清空", "en": "Clear", "hant": "清空", "ja": "クリア", "de": "Leeren", "es": "Borrar", "ar": "مسح"]) }
+    static var kb_delete: String { s(["zh": "删除", "en": "Delete", "hant": "刪除", "ja": "削除", "de": "Entfernen", "es": "Eliminar", "ar": "حذف"]) }
+    static var hist_title: String { s(["zh": "  历史记录", "en": "  History", "hant": "  歷史記錄", "ja": "履歴", "de": "Verlauf", "es": "Historial", "ar": "السجل"]) }
+    static var hist_empty: String { s(["zh": "还没有记录 · 说一句就会自动存下来", "en": "Nothing yet · Everything you say gets saved here", "hant": "還沒有記錄 · 說一句就會自動存下來", "ja": "まだありません。話すと自動で保存されます。", "de": "Noch nichts · Alles, was du sagst, wird hier gespeichert", "es": "Nada aún · Todo lo que digas se guarda aquí", "ar": "لا شيء بعد · كل ما تقوله يُحفظ هنا تلقائيًا"]) }
+    static var rec_empty: String { s(["zh": "还没有录音记录。", "en": "No recordings yet.", "hant": "還沒有錄音記錄。", "ja": "録音はまだありません。", "de": "Noch keine Aufnahmen.", "es": "Aún no hay grabaciones.", "ar": "لا توجد تسجيلات بعد."]) }
+    static var dict_title: String { s(["zh": "查词", "en": "Look up", "hant": "查詞", "ja": "調べる", "de": "Nachschlagen", "es": "Buscar", "ar": "بحث"]) }
+    static var dict_hint: String { s(["zh": "说一个词，或拼给它听", "en": "Say a word, or spell it out", "hant": "說一個詞，或拼給它聽", "ja": "単語を話すか、スペルを入力してください", "de": "Sag ein Wort oder buchstabiere es", "es": "Di una palabra o deletréala", "ar": "قل كلمة أو اتهجّها"]) }
+    static var dict_recent: String { s(["zh": "最近查过", "en": "Recent", "hant": "最近查過", "ja": "最近調べた", "de": "Zuletzt", "es": "Recientes", "ar": "الأخيرة"]) }
+    static var dict_example: String { s(["zh": "例句", "en": "Example", "hant": "例句", "ja": "例文", "de": "Beispiel", "es": "Ejemplo", "ar": "مثال"]) }
+    static var dict_collocation: String { s(["zh": "搭配", "en": "Collocations", "hant": "搭配", "ja": "コロケーション", "de": "Kollokationen", "es": "Colocaciones", "ar": "متلازمات"]) }
+    static var wb_added: String { s(["zh": "已加入", "en": "Added", "hant": "已加入", "ja": "追加済み", "de": "Hinzugefügt", "es": "Añadido", "ar": "تمت الإضافة"]) }
+    static var hist_tab_wordbook: String { s(["zh": "单词本", "en": "Wordbook", "hant": "單詞本", "ja": "単語帳", "de": "Wortschatz", "es": "Libro de palabras", "ar": "دفتر الكلمات"]) }
+    static var lang_recent: String { s(["zh": "最近用过", "en": "Recent", "hant": "最近用過", "ja": "最近使用", "de": "Zuletzt", "es": "Recientes", "ar": "الأخيرة"]) }
+    static var lang_all: String { s(["zh": "全部语言", "en": "All languages", "hant": "全部語言", "ja": "すべての言語", "de": "Alle Sprachen", "es": "Todos los idiomas", "ar": "كل اللغات"]) }
+    static var p_tone: String { s(["zh": "语气", "en": "Tone", "hant": "語氣", "ja": "トーン", "de": "Ton", "es": "Tono", "ar": "النبرة"]) }
+    static var p_lang: String { s(["zh": "译成", "en": "To", "hant": "譯成", "ja": "へ", "de": "Zu", "es": "A", "ar": "إلى"]) }
+    static var p_style: String { s(["zh": "方式", "en": "Mode", "hant": "方式", "ja": "モード", "de": "Modus", "es": "Modo", "ar": "الوضع"]) }
+    static var home_try_sub: String { s(["zh": "开口即译，不用找键盘", "en": "Speak and it translates - no keyboard hunting", "hant": "開口即譯，不用找鍵盤", "ja": "話すだけで翻訳、キーボード探し不要", "de": "Sprich und es übersetzt – kein Tastensuchen", "es": "Habla y traduce, sin buscar el teclado", "ar": "تحدث وسيُترجم - لا حاجة للبحث عن لوحة المفاتيح"]) }
+    static var try_title_zh: String { s(["zh": "随手转写", "en": "Quick transcribe", "hant": "隨手轉寫", "ja": "クイック文字起こし", "de": "Schnell transkribieren", "es": "Transcripción rápida", "ar": "نسخ سريع"]) }
+    static var swipe_back_hint: String { s(["zh": "‹ 从这条边往回滑", "en": "‹ Swipe back from this edge", "hant": "‹ 從這條邊往回滑", "ja": "‹ この端から戻るにはスワイプします", "de": "‹ Von dieser Kante zurückwischen", "es": "‹ Desliza hacia atrás desde este borde.", "ar": "‹ اسحب للرجوع من هذه الحافة"]) }
+    static var home_ime_on: String { s(["zh": "输入法 · 已启用", "en": "Keyboard · on", "hant": "輸入法 · 已啟用", "ja": "キーボード · オン", "de": "Tastatur · an", "es": "Teclado · activado", "ar": "لوحة المفاتيح · مفعّلة"]) }
+    static var home_ime_off: String { s(["zh": "设为输入法", "en": "Set as keyboard", "hant": "設為輸入法", "ja": "キーボードに設定", "de": "Als Tastatur festlegen", "es": "Configurar como teclado", "ar": "تعيين كلوحة مفاتيح"]) }
+    static var ex_style_menu_title: String { s(["zh": "方式", "en": "Style", "hant": "方式", "ja": "スタイル", "de": "Stil", "es": "Estilo", "ar": "النمط"]) }
+    static var ex_tone_menu_title: String { s(["zh": "语气", "en": "Tone", "hant": "語氣", "ja": "トーン", "de": "Ton", "es": "Tono", "ar": "النبرة"]) }
+    static var ex_tone_pick: String { s(["zh": "语气：点一下展开，直接挑一档。", "en": "Tone: tap to open the list and pick one.", "hant": "語氣：點一下展開，直接挑一檔。", "ja": "トーン：タップしてリストを開き、1つ選んでください。", "de": "Ton: Tippen zum Öffnen, eine Stufe wählen.", "es": "Tono: toca para abrir la lista y elige uno.", "ar": "النبرة: اضغط لفتح القائمة واختر واحدة."]) }
+    static var err_no_speech: String { s(["zh": "没听到你说话，再说一次", "en": "I didn't hear anything - say it again", "hant": "沒聽到你說話，再說一次", "ja": "音声が聞こえませんでした。もう一度話してください", "de": "Ich habe nichts gehört – sag es nochmal", "es": "No se captó audio, dilo de nuevo", "ar": "لم أسمع شيئًا - قل ذلك مرة أخرى"]) }
+    static var ok: String { s(["zh": "确定", "en": "OK", "hant": "確定", "ja": "OK", "de": "OK", "es": "OK", "ar": "موافق"]) }
+    static var account_edit: String { s(["zh": "点这里填写", "en": "Tap to fill in", "hant": "點這裡填寫", "ja": "タップして入力", "de": "Tippen zum Ausfüllen", "es": "Toca para completar", "ar": "اضغط للتعبئة"]) }
+    static var account_none: String { s(["zh": "未登录", "en": "Not signed in", "hant": "未登入", "ja": "未サインイン", "de": "Nicht angemeldet", "es": "No has iniciado sesión", "ar": "غير مسجّل الدخول"]) }
+    static var account_page: String { s(["zh": "我的账户", "en": "My account", "hant": "我的帳戶", "ja": "マイアカウント", "de": "Mein Konto", "es": "Mi cuenta", "ar": "حسابي"]) }
+    static var account_signout: String { s(["zh": "退出登录", "en": "Sign out", "hant": "登出", "ja": "サインアウト", "de": "Abmelden", "es": "Cerrar sesión", "ar": "تسجيل الخروج"]) }
+    static var account_signout_ask: String { s(["zh": "确定要退出登录吗？下次要重新收验证码。", "en": "Sign out? You\\'ll need a new code to sign back in.", "hant": "確定要登出嗎？下次要重新收驗證碼。", "ja": "サインアウトしますか？再度サインインには新しいコードが必要です。", "de": "Abmelden? Du brauchst dann einen neuen Code.", "es": "¿Cerrar sesión? Necesitarás un nuevo código para volver a entrar.", "ar": "تسجيل الخروج؟ ستحتاج إلى رمز جديد لتسجيل الدخول مرة أخرى."]) }
+    static var account_title: String { s(["zh": "账户", "en": "Account", "hant": "帳戶", "ja": "アカウント", "de": "Konto", "es": "Cuenta", "ar": "الحساب"]) }
+    static var act_manual: String { s(["zh": "请手动开启", "en": "Turn on manually", "hant": "請手動開啟", "ja": "手動でオンにする", "de": "Manuell einschalten", "es": "Actívalo manualmente", "ar": "فعّله يدويًا"]) }
+    static var full_note: String { s(["zh": "在设置里打开就行。开好之后这一行不会变绿 —— iOS 不让 App 查这个状态，以键盘里的提示为准。", "en": "Just switch it on in Settings. This line won't turn green afterwards — iOS doesn't let the app read that state. The keyboard will tell you.", "hant": "在設定裡打開就行。開好之後這一行不會變綠 —— iOS 不讓 App 查這個狀態，以鍵盤裡的提示為準。", "ja": "設定でオンにしてください。オンにしてもこの行は緑になりません — iOSはアプリにその状態を読み取らせないためです。キーボードの表示を確認してください。", "de": "Einfach in den Einstellungen einschalten. Danach wird diese Zeile nicht grün – iOS erlaubt der App nicht, den Status zu lesen. Die Tastatur zeigt es dir.", "es": "Solo actívalo en Ajustes. Esta línea no se pondrá verde después — iOS no permite que la app lea ese estado. El teclado te lo indicará.", "ar": "فقط فعّله في الإعدادات. بعد التفعيل، لن يتحول هذا السطر إلى الأخضر - لا يسمح ‎iOS‎ للتطبيق بقراءة هذه الحالة. ستُخبرك لوحة المفاتيح."]) }
+    static var home_wordbook: String { s(["zh": "单词本", "en": "Word book", "hant": "單詞本", "ja": "単語帳", "de": "Wortliste", "es": "Libro de palabras", "ar": "دفتر الكلمات"]) }
+    static var home_wordbook_soon: String { s(["zh": "单词本下个版本上线", "en": "Word book is coming next version", "hant": "單詞本下個版本上線", "ja": "単語帳は次回バージョンで提供予定", "de": "Wortliste kommt im nächsten Update", "es": "El libro de palabras estará en la próxima versión", "ar": "دفتر الكلمات سيأتي في الإصدار القادم"]) }
+    static var kb_keep: String { s(["zh": "收藏", "en": "Save to Wordbook", "hant": "收藏", "ja": "単語帳に保存", "de": "Im Wörterbuch speichern", "es": "Guardar en el cuaderno", "ar": "حفظ في دفتر الكلمات"]) }
+    static var kb_kept: String { s(["zh": "已收", "en": "Saved", "hant": "已收", "ja": "保存済み", "de": "Gespeichert", "es": "Guardado", "ar": "تم الحفظ"]) }
+    static var login_checking: String { s(["zh": "正在验证…", "en": "Checking…", "hant": "正在驗證…", "ja": "確認中…", "de": "Prüfe…", "es": "Verificando…", "ar": "جارٍ التحقق…"]) }
+    static var login_code_ph: String { s(["zh": "6 位验证码", "en": "6-digit code", "hant": "6 位驗證碼", "ja": "6桁のコード", "de": "6-stelliger Code", "es": "Código de 6 dígitos", "ar": "رمز من ‎6‎ أرقام"]) }
+    static var login_do: String { s(["zh": "登录", "en": "Sign in", "hant": "登入", "ja": "ログイン", "de": "Anmelden", "es": "Iniciar sesión", "ar": "تسجيل الدخول"]) }
+    static var login_email_ph: String { s(["zh": "邮箱地址", "en": "Email address", "hant": "電郵地址", "ja": "メールアドレス", "de": "E-Mail-Adresse", "es": "Correo electrónico", "ar": "البريد الإلكتروني"]) }
+    static var login_gate_go: String { s(["zh": "去登录", "en": "Sign in", "hant": "去登入", "ja": "ログイン", "de": "Anmelden", "es": "Iniciar sesión", "ar": "تسجيل الدخول"]) }
+    static var login_gate_ime: String { s(["zh": "登录后才能把 Transless 设成输入法。随手翻译不用登录，一直都能用。", "en": "Sign in to set Transless as your keyboard. Translate as you go never needs an account.", "hant": "登入後才能把 Transless 設成輸入法。隨手翻譯不用登入，一直都能用。", "ja": "Translessをキーボードに設定するにはログインが必要です。その場で翻訳する機能はログイン不要でいつでも使えます。", "de": "Melde dich an, um Transless als Tastatur einzurichten. Übersetzen unterwegs braucht kein Konto.", "es": "Inicia sesión para configurar Transless como teclado. Traducir al instante no requiere cuenta.", "ar": "سجّل الدخول لتعيين ‎Transless‎ كلوحة مفاتيح. الترجمة الفورية لا تتطلب حسابًا."]) }
+    static var login_gate_later: String { s(["zh": "以后再说", "en": "Not now", "hant": "以後再說", "ja": "今はしない", "de": "Später", "es": "Ahora no", "ar": "ليس الآن"]) }
+    static var login_gate_wordbook: String { s(["zh": "登录后才能用单词本。随手翻译不用登录，一直都能用。", "en": "Sign in to use the word book. Translate as you go never needs an account.", "hant": "登入後才能用單詞本。隨手翻譯不用登入，一直都能用。", "ja": "単語帳を使うにはログインが必要です。その場で翻訳する機能はログイン不要でいつでも使えます。", "de": "Melde dich an, um das Wortbuch zu nutzen. Übersetzen unterwegs braucht kein Konto.", "es": "Inicia sesión para usar el libro de palabras. Traducir al instante no requiere cuenta.", "ar": "سجّل الدخول لاستخدام دفتر الكلمات. الترجمة الفورية لا تتطلب حسابًا."]) }
+    static var login_gate_hotkey: String { s(["zh": "登录后才能用热键在任何地方说话上屏。随手翻译不用登录，一直都能用。", "en": "Sign in to talk into any app with the hotkey. Translate as you go never needs an account.", "hant": "登錄後才能用熱鍵在任何地方說話上屏。隨手翻譯不用登錄，一直都能用。", "ja": "ホットキーでどのアプリでも音声入力するにはログインが必要です。その場で翻訳する機能はログイン不要でいつでも使えます。", "de": "Melde dich an, um mit dem Tastenkürzel in jeder App zu sprechen. Übersetzen unterwegs braucht kein Konto.", "es": "Inicia sesión para hablar en cualquier app con la tecla de acceso rápido. Traducir al instante no requiere cuenta.", "ar": "سجّل الدخول للتحدث في أي تطبيق عبر المفتاح السريع. الترجمة الفورية لا تتطلب حسابًا."]) }
+    static var login_mainland_only: String { s(["zh": "目前手机号登录只支持中国内地号码，海外请用邮箱", "en": "Phone sign-in currently supports mainland China numbers only — please use email", "hant": "目前手機號登入只支援中國內地號碼，海外請用電郵", "ja": "現在、電話番号でのログインは中国本土の番号のみ対応しています。海外の方はメールをご利用ください", "de": "Telefonanmeldung unterstützt derzeit nur Festland-China-Nummern – nutze bitte E-Mail", "es": "El inicio de sesión por teléfono solo admite números de China continental; usa el correo si estás fuera", "ar": "تسجيل الدخول بالهاتف يدعم حاليًا أرقام الصين فقط — يُرجى استخدام البريد الإلكتروني"]) }
+    static var login_need_code: String { s(["zh": "填一下收到的验证码", "en": "Enter the code you received", "hant": "填一下收到的驗證碼", "ja": "受け取ったコードを入力してください", "de": "Gib den erhaltenen Code ein", "es": "Ingresa el código que recibiste", "ar": "أدخل الرمز الذي استلمته"]) }
+    static var login_need_email: String { s(["zh": "填一个邮箱地址", "en": "Enter an email address", "hant": "填一個電郵地址", "ja": "メールアドレスを入力してください", "de": "Gib eine E-Mail-Adresse ein", "es": "Ingresa una dirección de correo", "ar": "أدخل عنوان بريد إلكتروني"]) }
+    static var login_note: String { s(["zh": "没注册过的手机号会自动创建账号。我们只用它做登录，不会发广告。", "en": "A new number gets an account automatically. We only use it to sign you in — no marketing.", "hant": "沒註冊過的手機號會自動建立帳號。我們只用它做登入，不會發廣告。", "ja": "未登録の電話番号は自動的にアカウントが作成されます。ログインのみに使用し、広告は送信しません。", "de": "Eine neue Nummer erhält automatisch ein Konto. Wir nutzen sie nur zur Anmeldung – keine Werbung.", "es": "Un número nuevo crea una cuenta automáticamente. Solo lo usamos para iniciar sesión; sin publicidad.", "ar": "الرقم الجديد يُنشئ حسابًا تلقائيًا. نستخدمه فقط لتسجيل الدخول — لا رسائل تسويقية."]) }
+    static var login_note_mail: String { s(["zh": "没注册过的邮箱会自动创建账号。我们只用它做登录，不会发广告。", "en": "A new email gets an account automatically. We only use it to sign you in — no marketing.", "hant": "沒註冊過的電郵會自動建立帳號。我們只用它做登入，不會發廣告。", "ja": "未登録のメールアドレスは自動的にアカウントが作成されます。ログインのみに使用し、広告は送信しません。", "de": "Eine neue E-Mail erhält automatisch ein Konto. Wir nutzen sie nur zur Anmeldung – keine Werbung.", "es": "Un correo nuevo crea una cuenta automáticamente. Solo lo usamos para iniciar sesión; sin publicidad.", "ar": "البريد الجديد يُنشئ حسابًا تلقائيًا. نستخدمه فقط لتسجيل الدخول — لا رسائل تسويقية."]) }
+    static var login_phone_ph: String { s(["zh": "手机号", "en": "Phone number", "hant": "手機號", "ja": "電話番号", "de": "Telefonnummer", "es": "Número de teléfono", "ar": "رقم الهاتف"]) }
+    static var login_send_again: String { s(["zh": "重新获取", "en": "Send again", "hant": "重新獲取", "ja": "再送信", "de": "Erneut senden", "es": "Enviar de nuevo", "ar": "إعادة الإرسال"]) }
+    static var login_send_code: String { s(["zh": "获取验证码", "en": "Send code", "hant": "獲取驗證碼", "ja": "コードを送信", "de": "Code senden", "es": "Enviar código", "ar": "إرسال الرمز"]) }
+    static var login_sending: String { s(["zh": "正在发送…", "en": "Sending…", "hant": "正在傳送…", "ja": "送信中…", "de": "Senden…", "es": "Enviando…", "ar": "جارٍ الإرسال…"]) }
+    static var login_sent: String { s(["zh": "验证码已发出，注意查收短信", "en": "Code sent — check your SMS", "hant": "驗證碼已發出，注意查收簡訊", "ja": "コードを送信しました。SMSを確認してください", "de": "Code gesendet – prüfe deine SMS", "es": "Código enviado; revisa tu SMS", "ar": "تم إرسال الرمز — تحقق من رسائلك النصية"]) }
+    static var login_sent_mail: String { s(["zh": "验证码已发到邮箱，注意查收（也看一下垃圾邮件）", "en": "Code sent to your email — check spam too", "hant": "驗證碼已發到電郵，注意查收（也看一下垃圾郵件）", "ja": "コードをメールに送信しました。迷惑メールも確認してください", "de": "Code an deine E-Mail gesendet – prüfe auch den Spam", "es": "Código enviado a tu correo; revisa también el spam", "ar": "تم إرسال الرمز إلى بريدك — تحقق من البريد المزعج أيضًا"]) }
+    static var login_tab_email: String { s(["zh": "邮箱", "en": "Email", "hant": "電郵", "ja": "メール", "de": "E-Mail", "es": "Correo", "ar": "البريد الإلكتروني"]) }
+    static var login_tab_phone: String { s(["zh": "手机号", "en": "Phone", "hant": "手機號", "ja": "電話番号", "de": "Telefon", "es": "Teléfono", "ar": "الهاتف"]) }
+    static var login_too_often: String { s(["zh": "发得太频繁了，%1$d 秒后再试", "en": "Too many requests — try again in %1$ds", "hant": "發得太頻繁了，%1$d 秒後再試", "ja": "送信が多すぎます。%1$d秒後にお試しください", "de": "Zu viele Anfragen – versuche es in %1$d s erneut", "es": "Demasiadas solicitudes; intenta de nuevo en %1$d s", "ar": "طلبات كثيرة — حاول بعد ‎%1$d ثانية"]) }
+    static var login_wait: String { s(["zh": "%1$d 秒后可重发", "en": "Resend in %1$ds", "hant": "%1$d 秒後可重發", "ja": "%1$d秒後に再送信できます", "de": "Erneut senden in %1$d s", "es": "Reenviar en %1$d s", "ar": "إعادة الإرسال بعد ‎%1$d ثانية"]) }
+    static var login_why: String { s(["zh": "登录之后才能把 Transless 设为输入法，也方便你换手机时找回设置。", "en": "Sign in to set Transless as your keyboard — it also keeps your settings when you switch phones.", "hant": "登入之後才能把 Transless 設為輸入法，也方便你換手機時找回設定。", "ja": "Translessをキーボードに設定するにはログインが必要です。機種変更時にも設定を復元できます。", "de": "Melde dich an, um Transless als Tastatur einzurichten – das behält auch deine Einstellungen beim Gerätewechsel.", "es": "Inicia sesión para configurar Transless como teclado; también conserva tus ajustes al cambiar de teléfono.", "ar": "سجّل الدخول لتعيين ‎Transless‎ كلوحة مفاتيح — كما يحفظ إعداداتك عند تغيير هاتفك."]) }
+    static var prefs_privacy: String { s(["zh": "隐私政策", "en": "Privacy Policy", "hant": "私隱政策", "ja": "プライバシーポリシー", "de": "Datenschutzerklärung", "es": "Política de privacidad", "ar": "سياسة الخصوصية"]) }
+    static var profile_birth: String { s(["zh": "出生日期（选填）", "en": "Date of birth (optional)", "hant": "出生日期（選填）", "ja": "生年月日（任意）", "de": "Geburtsdatum (optional)", "es": "Fecha de nacimiento (opcional)", "ar": "تاريخ الميلاد (اختياري)"]) }
+    static var profile_country: String { s(["zh": "国家/地区", "en": "Country", "hant": "國家/地區", "ja": "国", "de": "Land", "es": "País", "ar": "البلد"]) }
+    static var profile_day: String { s(["zh": "日", "en": "Day", "hant": "日", "ja": "日", "de": "Tag", "es": "Día", "ar": "يوم"]) }
+    static var profile_done: String { s(["zh": "完成", "en": "Done", "hant": "完成", "ja": "完了", "de": "Fertig", "es": "Listo", "ar": "تم"]) }
+    static var profile_email: String { s(["zh": "邮箱", "en": "Email address", "hant": "郵箱", "ja": "メールアドレス", "de": "E-Mail-Adresse", "es": "Correo electrónico", "ar": "عنوان البريد الإلكتروني"]) }
+    static var profile_job: String { s(["zh": "职业", "en": "Occupation", "hant": "職業", "ja": "職業", "de": "Beruf", "es": "Ocupación", "ar": "المهنة"]) }
+    static var profile_month: String { s(["zh": "月", "en": "Month", "hant": "月", "ja": "月", "de": "Monat", "es": "Mes", "ar": "الشهر"]) }
+    static var profile_nick: String { s(["zh": "昵称", "en": "Nickname", "hant": "暱稱", "ja": "ニックネーム", "de": "Spitzname", "es": "Apodo", "ar": "الاسم المستعار"]) }
+    static var profile_nick_ph: String { s(["zh": "怎么称呼你", "en": "What should we call you", "hant": "怎麼稱呼你", "ja": "お名前は？", "de": "Wie sollen wir dich nennen?", "es": "¿Cómo te llamamos?", "ar": "كيف نناديك؟"]) }
+    static var profile_region: String { s(["zh": "省份/州", "en": "State / Province", "hant": "省份/州", "ja": "都道府県", "de": "Bundesland / Provinz", "es": "Estado / Provincia", "ar": "الولاية / المقاطعة"]) }
+    static var profile_sub: String { s(["zh": "起个昵称，以后界面上就显示它，不用挂着一长串邮箱。", "en": "Pick a nickname — it shows up instead of your full email.", "hant": "起個暱稱，以後介面上就顯示它，不用掛著一長串郵箱。", "ja": "ニックネームを設定すると、画面にメールアドレスの代わりに表示されます。", "de": "Wähl einen Spitznamen – er wird auf der Oberfläche angezeigt statt deiner vollen E-Mail.", "es": "Elige un apodo: se mostrará en la interfaz en lugar de tu correo completo.", "ar": "اختر اسمًا مستعارًا ليظهر في الواجهة بدل بريدك الإلكتروني الكامل."]) }
+    static var profile_title: String { s(["zh": "完善资料", "en": "Set up your profile", "hant": "完善資料", "ja": "プロフィール設定", "de": "Profil einrichten", "es": "Configura tu perfil", "ar": "إعداد الملف الشخصي"]) }
+    static var profile_year: String { s(["zh": "年", "en": "Year", "hant": "年", "ja": "年", "de": "Jahr", "es": "Año", "ar": "السنة"]) }
+    static var save: String { s(["zh": "保存", "en": "Save", "hant": "儲存", "ja": "保存", "de": "Speichern", "es": "Guardar", "ar": "حفظ"]) }
+    static var try_bigtext: String { s(["zh": "大字", "en": "Big text", "hant": "大字", "ja": "大きな文字", "de": "Großer Text", "es": "Texto grande", "ar": "نص كبير"]) }
+    static var try_recent: String { s(["zh": "最近", "en": "Recent", "hant": "最近", "ja": "最近", "de": "Zuletzt", "es": "Reciente", "ar": "الأخيرة"]) }
+    static var try_empty_guide: String { s(["zh": "点一下上面的麦克风，说一句话\n比如：帮我订一张明天去香港的高铁票", "en": "Tap the mic above and say a sentence\ne.g. Book me a train ticket to Hong Kong tomorrow", "hant": "點一下上面的麥克風，說一句話\n比如：幫我訂一張明天去香港的高鐵票", "ja": "上のマイクをタップして、話しかけてください。\n例：明日香港行きの列車のチケットを予約してください。", "de": "Tippe auf das Mikrofon oben und sag einen Satz\nz. B. Buch mir ein Zugticket nach Hongkong für morgen", "es": "Toca el micrófono de arriba y di una frase.\nPor ejemplo: Reserva un billete de tren a Hong Kong para mañana.", "ar": "اضغط على الميكروفون أعلاه وقل جملة\nمثال: احجز لي تذكرة قطار إلى هونغ كونغ غدًا"]) }
+    static var try_cont_on: String { s(["zh": "连续模式：说一句出一句，说完点停止", "en": "Continuous mode: speak, and each sentence comes back. Tap to stop.", "hant": "連續模式：說一句出一句，說完點停止", "ja": "連続モード：話すと各文が翻訳されます。停止をタップ", "de": "Dauermodus: Sprich, jeder Satz kommt zurück. Tippen zum Stoppen.", "es": "Modo continuo: habla y cada frase aparece. Toca para detener.", "ar": "الوضع المستمر: تحدث وستظهر كل جملة، ثم اضغط للإيقاف."]) }
+    static var try_continuous: String { s(["zh": "连续", "en": "Continuous", "hant": "連續", "ja": "連続", "de": "Dauermodus", "es": "Continuo", "ar": "مستمر"]) }
+    static var try_dir_me: String { s(["zh": "⇄ 我说", "en": "⇄ Me", "hant": "⇄ 我說", "ja": "⇄ 自分", "de": "⇄ Ich", "es": "⇄ Yo", "ar": "⇄ أنا"]) }
+    static var try_dir_them: String { s(["zh": "⇄ 对方说", "en": "⇄ Them", "hant": "⇄ 對方說", "ja": "⇄ 相手", "de": "⇄ Gegenüber", "es": "⇄ Ellos", "ar": "⇄ الطرف الآخر"]) }
+    static var try_reverse_on: String { s(["zh": "反向：对方说外语，译成你的语言", "en": "Reverse: they speak, you read it in your language", "hant": "反向：對方說外語，譯成你的語言", "ja": "逆モード：相手が話し、あなたの言語で表示", "de": "Umgekehrt: Das Gegenüber spricht eine Fremdsprache, du liest es in deiner Sprache", "es": "Invertido: ellos hablan, tú lo lees en tu idioma.", "ar": "عكسي: يتحدث الطرف الآخر بلغة أجنبية وتقرأها بلغتك"]) }
+    static var account_signout_done: String { s(["zh": "已退出登录", "en": "Signed out", "hant": "已登出", "ja": "ログアウトしました", "de": "Abgemeldet", "es": "Sesión cerrada", "ar": "تم تسجيل الخروج"]) }
+    static var f2f_empty: String { s(["zh": "把手机转给对方看", "en": "Turn the phone to show them", "hant": "把手機轉給對方看", "ja": "電話を相手に向けて見せてください", "de": "Dreh das Telefon, um es dem Gegenüber zu zeigen", "es": "Gira el teléfono para mostrárselo", "ar": "أدر الهاتف ليراه الطرف الآخر"]) }
+    static var f2f_soon: String { s(["zh": "面对面翻译（即将上线）", "en": "Face-to-Face (coming soon)", "hant": "面對面翻譯（即將推出）", "ja": "対面翻訳（近日公開）", "de": "Face-to-Face (bald verfügbar)", "es": "Cara a cara (próximamente)", "ar": "وجهًا لوجه (قريبًا)"]) }
+    static var f2f_title: String { s(["zh": "面对面翻译", "en": "Face-to-Face", "hant": "面對面翻譯", "ja": "対面翻訳", "de": "Von Angesicht zu Angesicht", "es": "Cara a cara", "ar": "مواجهة لوجه"]) }
+    static var f2f_wip: String { s(["zh": "这个功能还没做完，正在做。\n\n现在要面对面用，先在「随手翻译」里说一句，再点【大字】把结果转给对方看。", "en": "This isn't finished yet — we're building it.\n\nTo use it face-to-face today: say something in Quick Translate, then tap Big Text and turn the phone to show them.", "hant": "這個功能還沒做完，正在做。\n\n現在要面對面用，先在「隨手翻譯」裡說一句，再點【大字】把結果轉給對方看。", "ja": "この機能はまだ開発中です。\n\n今すぐ対面で使うには、「クイック翻訳」で話してから「大文字」をタップして結果を相手に見せてください。", "de": "Das ist noch nicht fertig – wir arbeiten daran.\n\nFür den Einsatz von Angesicht zu Angesicht: Sag etwas in Schnellübersetzung, tippe auf Großtext und dreh das Handy, um es dem Gegenüber zu zeigen.", "es": "Esto no está terminado; lo estamos construyendo.\n\nPara usarlo cara a cara hoy: di algo en Traducción Rápida, luego toca Texto Grande y gira el teléfono para mostrarlo.", "ar": "هذه الميزة لم تكتمل بعد — نحن نعمل عليها.\n\nلاستخدامها الآن: قل شيئًا في الترجمة السريعة، ثم اضغط على النص الكبير وأدر الهاتف ليراه الطرف الآخر."]) }
+    static var f2f_place: String { s(["zh": "把手机放在两人中间", "en": "Put the phone between the two of you", "hant": "把手機放在兩人中間", "ja": "スマホを二人の間に置く", "de": "Leg das Handy zwischen euch", "es": "Pon el teléfono entre los dos", "ar": "ضع الهاتف بينكما"]) }
+    static var f2f_take_turns: String { s(["zh": "轮流对着它说", "en": "Take turns speaking to it", "hant": "輪流對著它說", "ja": "交代で話しかける", "de": "Sprecht abwechselnd hinein", "es": "Hablen por turnos", "ar": "تحدثا إليه بالتناوب"]) }
+    static var f2f_tap_speak: String { s(["zh": "按一下说话", "en": "Tap to speak", "hant": "按一下說話", "ja": "タップして話す", "de": "Zum Sprechen tippen", "es": "Toca para hablar", "ar": "اضغط للتحدث"]) }
+    static var f2f_listening: String { s(["zh": "正在听…", "en": "Listening…", "hant": "正在聽…", "ja": "聞いています…", "de": "Hört zu …", "es": "Escuchando…", "ar": "جارٍ الاستماع…"]) }
+    static var hist_screen_title: String { s(["zh": "说话记录", "en": "Speech Log", "hant": "說話記錄", "ja": "発話履歴", "de": "Sprechverlauf", "es": "Registro de voz", "ar": "سجل الكلام"]) }
+    static var hist_chip_en: String { s(["zh": "结构化英文", "en": "Structured English", "hant": "結構化英文", "ja": "構造化英語", "de": "Strukturiertes Englisch", "es": "Inglés estructurado", "ar": "الإنجليزية المنظمة"]) }
+    static var hist_chip_zh: String { s(["zh": "整理中文", "en": "Tidied Chinese", "hant": "整理中文", "ja": "整理済み中国語", "de": "Aufgeräumtes Chinesisch", "es": "Chino ordenado", "ar": "الصينية المرتبة"]) }
+    static var hist_today: String { s(["zh": "今天", "en": "Today", "hant": "今天", "ja": "今日", "de": "Heute", "es": "Hoy", "ar": "اليوم"]) }
+    static var hist_delete_ask: String { s(["zh": "删掉这一条？", "en": "Delete this one?", "hant": "刪掉這一條？", "ja": "これを削除しますか？", "de": "Diesen Eintrag löschen?", "es": "¿Eliminar este?", "ar": "حذف هذا العنصر؟"]) }
+    static var kpi_u_words: String { s(["zh": "词", "en": "words", "hant": "詞", "ja": "語", "de": "Wörter", "es": "palabras", "ar": "كلمات"]) }
+    static var kpi_u_hours: String { s(["zh": "小时", "en": "h", "hant": "小時", "ja": "時間", "de": "Std.", "es": "h", "ar": "ساعة"]) }
+    static var kpi_u_min: String { s(["zh": "分钟", "en": "min", "hant": "分鐘", "ja": "分", "de": "Min.", "es": "min", "ar": "دقيقة"]) }
+    static var kpi_u_chars: String { s(["zh": "字", "en": "chars", "hant": "字", "ja": "文字", "de": "Zeichen", "es": "caracteres", "ar": "حروف"]) }
+    static var kpi_nodata: String { s(["zh": "还没有数据", "en": "No data yet", "hant": "還沒有數據", "ja": "データはまだありません", "de": "Noch keine Daten", "es": "Sin datos aún", "ar": "لا توجد بيانات بعد"]) }
+    static var kpi_under_min: String { s(["zh": "不到 1 分钟", "en": "Under 1 min", "hant": "不到 1 分鐘", "ja": "1分未満", "de": "Unter 1 Min.", "es": "Menos de 1 min", "ar": "أقل من دقيقة"]) }
+    static var f2f_more_langs: String { s(["zh": "更多语言…", "en": "More languages…", "hant": "更多語言…", "ja": "その他の言語…", "de": "Weitere Sprachen …", "es": "Más idiomas…", "ar": "المزيد من اللغات…"]) }
+    static var f2f_more_langs_hint: String { s(["zh": "现在先支持这 9 种", "en": "These 9 for now", "hant": "現在先支持這 9 種", "ja": "今はこの9言語のみ", "de": "Vorerst diese 9", "es": "Estos 9 por ahora", "ar": "هذه ‎9‎ لغات حاليًا"]) }
+    static var hist_yesterday: String { s(["zh": "昨天", "en": "Yesterday", "hant": "昨天", "ja": "昨日", "de": "Gestern", "es": "Ayer", "ar": "أمس"]) }
+    static var hist_monthday: String { s(["zh": "%d月%d日", "en": "%d/%d", "hant": "%d月%d日", "ja": "%d月%d日", "de": "%d.%d.", "es": "%d/%d", "ar": "‎%d‎/‎%d‎"]) }
+    static var kb_tap_speak: String { s(["zh": "点一下\n开始说", "en": "Tap to\nspeak", "hant": "點一下\n開始說", "ja": "タップして\n話す", "de": "Tippen,\num zu sprechen", "es": "Toca para\nhablar", "ar": "اضغط للبدء\nبالتحدث"]) }
+    static var kb_tap_stop: String { s(["zh": "说完了\n点这里", "en": "Done?\nTap here", "hant": "說完了\n點這裡", "ja": "話し終えたら\nここをタップ", "de": "Fertig?\nHier tippen", "es": "¿Terminaste?\nToca aquí", "ar": "انتهيت؟\nاضغط هنا"]) }
+    static var msg_cant_record: String { s(["zh": "这台机器录不了音", "en": "This device can't record audio", "hant": "這台機器錄不了音", "ja": "この端末では録音できません", "de": "Dieses Gerät kann keine Audiodaten aufnehmen", "es": "Este dispositivo no puede grabar audio", "ar": "هذا الجهاز لا يمكنه تسجيل الصوت"]) }
+    static var msg_mic_denied_forever: String { s(["zh": "录音权限被拒了，系统不会再问 —— 去「设置 › 应用 › Transless › 权限」打开麦克风", "en": "Microphone access was denied and the system won't ask again — turn it on in Settings › Apps › Transless › Permissions", "hant": "錄音權限被拒了，系統不會再問 —— 去「設定 › 應用程式 › Transless › 權限」打開麥克風", "ja": "マイクのアクセスが拒否され、システムは再度尋ねません — 設定 › アプリ › Transless › 権限 でマイクをオンにしてください", "de": "Mikrofonzugriff wurde verweigert und das System fragt nicht erneut — aktiviere es unter Einstellungen › Apps › Transless › Berechtigungen", "es": "Se denegó el acceso al micrófono y el sistema no volverá a preguntar. Actívalo en Configuración › Apps › Transless › Permisos.", "ar": "تم رفض إذن الميكروفون ولن يطلب النظام مرة أخرى — فعّله في الإعدادات › التطبيقات › ‎Transless‎ › الأذونات"]) }
+    static var msg_need_mic: String { s(["zh": "还没给录音权限 —— 点一下允许就能试", "en": "Microphone access isn't on yet — tap Allow to try it", "hant": "還沒給錄音權限 —— 點一下允許就能試", "ja": "マイクの許可がまだです — 許可をタップしてお試しください", "de": "Mikrofonzugriff ist noch nicht erlaubt – tippe auf Erlauben, um es zu testen", "es": "El acceso al micrófono no está activado: toca Permitir para probarlo", "ar": "الوصول إلى الميكروفون غير مفعّل — اضغط \"السماح\" للتجربة"]) }
+    static var profile_birth_none: String { s(["zh": "选填", "en": "Optional", "hant": "選填", "ja": "任意", "de": "Optional", "es": "Opcional", "ar": "اختياري"]) }
+    static var try_big_close: String { s(["zh": "关闭", "en": "Close", "hant": "關閉", "ja": "閉じる", "de": "Schließen", "es": "Cerrar", "ar": "إغلاق"]) }
+    static var try_big_empty: String { s(["zh": "还没有内容\n点一下就能说", "en": "Nothing yet\nTap to speak", "hant": "還沒有內容\n點一下就能說", "ja": "まだ何もありません\nタップして話す", "de": "Noch nichts da\nTippen zum Sprechen", "es": "Aún no hay contenido\nToca para hablar", "ar": "لا يوجد محتوى بعد\nاضغط للتحدث"]) }
+    static var try_big_speaking: String { s(["zh": "正在朗读…", "en": "Speaking…", "hant": "正在朗讀…", "ja": "読み上げ中…", "de": "Spricht …", "es": "Hablando…", "ar": "جارٍ القراءة…"]) }
+    static var try_big_tap: String { s(["zh": "点一下就能说 · 按返回键退出", "en": "Tap anywhere to speak · Back to exit", "hant": "點一下就能說 · 按返回鍵退出", "ja": "タップして話す · 戻るキーで終了", "de": "Tippen zum Sprechen · Zurück zum Beenden", "es": "Toca para hablar · Retroceso para salir", "ar": "اضغط للتحدث · اضغط زر الرجوع للخروج"]) }
+    static var try_dir_auto_me: String { s(["zh": "自动判为：你在说", "en": "Detected: you're speaking", "hant": "自動判為：你在說", "ja": "自動判定：あなたが話しています", "de": "Erkannt: Du sprichst", "es": "Detectado: estás hablando", "ar": "التقدير: أنت تتحدث"]) }
+    static var try_dir_auto_them: String { s(["zh": "自动判为：对方在说", "en": "Detected: they're speaking", "hant": "自動判為：對方在說", "ja": "自動判定：相手が話しています", "de": "Erkannt: Gegenüber spricht", "es": "Detectado: la otra persona está hablando", "ar": "التقدير: الطرف الآخر يتحدث"]) }
+    static var try_dir_unknown: String { s(["zh": "没判出是谁在说，先按【你在说】翻的。不对就点上面的 ⇄", "en": "Couldn't tell who spoke — translated as you. Tap ⇄ above to switch.", "hant": "沒判出是誰在說，先按【你在說】翻的。不對就點上面的 ⇄", "ja": "話者を判定できませんでした — あなたの発言として翻訳しました。上の ⇄ をタップして切り替えてください", "de": "Konnte nicht erkennen, wer spricht – als du übersetzt. Tippe oben auf ⇄, falls falsch.", "es": "No se pudo detectar quién habla: se tradujo como tú. Toca ⇄ arriba para cambiar.", "ar": "تعذّر تحديد المتحدث — تُرجم كأنك أنت. اضغط ⇄ بالأعلى للتبديل."]) }
+    static var try_dir_unknown_tap: String { s(["zh": "没判出是谁在说，先按【你在说】翻的 —— 点这里改成【对方在说】", "en": "Couldn't tell who spoke — translated as you. Tap here to switch to them.", "hant": "沒判出是誰在說，先按【你在說】翻的 —— 點這裡改成【對方在說】", "ja": "話者を判定できませんでした — あなたの発言として翻訳しました。ここをタップして相手の発言に切り替えます", "de": "Konnte nicht erkennen, wer spricht – als du übersetzt. Tippe hier, um auf Gegenüber zu wechseln.", "es": "No se pudo detectar quién habla: se tradujo como tú. Toca aquí para cambiar a la otra persona.", "ar": "تعذّر تحديد المتحدث — تُرجم كأنك أنت. اضغط هنا للتبديل إلى الطرف الآخر."]) }
+    static var try_empty: String { s(["zh": "没听到声音，再试一次", "en": "Didn't catch that — try again", "hant": "沒聽到聲音，再試一次", "ja": "音声が聞き取れませんでした — もう一度お試しください", "de": "Nichts gehört – versuch es noch mal", "es": "No se captó el audio: inténtalo de nuevo", "ar": "لم نسمع صوتًا — حاول مرة أخرى"]) }
+    static var try_hint: String { s(["zh": "点一下麦克风开始说，说完再点一下", "en": "Tap the mic to start, tap again when you're done", "hant": "點一下麥克風開始說，說完再點一下", "ja": "マイクをタップして話し始め、終わったらもう一度タップ", "de": "Tippe auf das Mikrofon zum Starten, tippe erneut, wenn du fertig bist", "es": "Toca el micrófono para empezar, toca de nuevo al terminar", "ar": "اضغط على الميكروفون للبدء، ثم اضغط مرة أخرى عند الانتهاء"]) }
+    static var try_listening: String { s(["zh": "在听…", "en": "Listening…", "hant": "在聽…", "ja": "聞き取り中…", "de": "Hört zu …", "es": "Escuchando…", "ar": "جارٍ الاستماع…"]) }
+    static var try_reverse: String { s(["zh": "⇄ 对方说", "en": "⇄ They speak", "hant": "⇄ 對方說", "ja": "⇄ 相手が話す", "de": "⇄ Gegenüber spricht", "es": "⇄ Ellos hablan", "ar": "⇄ الطرف الآخر يتحدث"]) }
+    static var try_speak_timeout: String { s(["zh": "朗读没回来，已经放开麦克风了。再点一次试试。", "en": "Playback didn't come back — the mic is free again. Tap once more.", "hant": "朗讀沒回來，已經放開麥克風了。再點一次試試。", "ja": "読み上げが戻りませんでした — マイクは解放されています。もう一度タップしてください", "de": "Wiedergabe kam nicht zurück – das Mikrofon ist wieder frei. Tippe noch einmal.", "es": "La reproducción no regresó: el micrófono está libre. Toca una vez más.", "ar": "لم يعد التشغيل — الميكروفون متاح الآن. اضغط مرة أخرى."]) }
+    static var try_title: String { s(["zh": "随手翻译", "en": "Quick Translate", "hant": "隨手翻譯", "ja": "クイック翻訳", "de": "Schnellübersetzung", "es": "Traducción rápida", "ar": "ترجمة سريعة"]) }
+    static var try_tone_prefix: String { s(["zh": "语气：", "en": "Tone: ", "hant": "語氣：", "ja": "トーン：", "de": "Tonfall: ", "es": "Tono: ", "ar": "النبرة: "]) }
+    static var try_working: String { s(["zh": "正在识别…", "en": "Working…", "hant": "正在辨識…", "ja": "認識中…", "de": "Erkennt …", "es": "Reconociendo…", "ar": "جارٍ المعالجة…"]) }
+    static var wb_front: String { s(["zh": "正面显示", "en": "Show front", "hant": "正面顯示", "ja": "表面を表示", "de": "Vorderseite zeigen", "es": "Mostrar frente", "ar": "إظهار الوجه الأمامي"]) }
+    static var try_reverse_tap: String { s(["zh": "反向：对方说外语，译成你的语言 —— 点这里改回", "en": "Reverse: they speak, you read it in your language — tap to undo", "hant": "反向：對方說外語，譯成你的語言 —— 點這裡改回", "ja": "逆方向：相手が外国語を話し、あなたが自分の言語で読む — タップで元に戻す", "de": "Umgekehrt: Gegenüber spricht Fremdsprache, du liest in deiner Sprache – tippen zum Rückgängigmachen", "es": "Invertido: ellos hablan, tú lees en tu idioma: toca para deshacer", "ar": "عكسي: الطرف الآخر يتحدث بلغة أجنبية وتقرأها بلغتك — اضغط للتراجع"]) }
+    static var wb_added_on: String { s(["zh": "收于 %1$@", "en": "Added %1$@", "hant": "收於 %1$@", "ja": "%1$@ に追加", "de": "Hinzugefügt %1$@", "es": "Añadido %1$@", "ar": "أُضيف في %1$@"]) }
+    static var wb_back: String { s(["zh": "返回", "en": "Back", "hant": "返回", "ja": "戻る", "de": "Zurück", "es": "Atrás", "ar": "رجوع"]) }
+    static var wb_count: String { s(["zh": "共 %1$d 条，今天要复习 %2$d 条", "en": "%1$d saved · %2$d due today", "hant": "共 %1$d 條，今天要複習 %2$d 條", "ja": "合計 %1$d 件、今日の復習 %2$d 件", "de": "%1$d gespeichert · %2$d heute fällig", "es": "%1$d guardadas · %2$d para repasar hoy", "ar": "%1$d محفوظة · %2$d مستحقة اليوم"]) }
+    static var wb_delete: String { s(["zh": "删掉这条", "en": "Delete", "hant": "刪掉這條", "ja": "削除", "de": "Löschen", "es": "Eliminar", "ar": "حذف"]) }
+    static var wb_delete_ask: String { s(["zh": "删掉之后复习进度也没了，确定吗？", "en": "Deleting also clears its review progress. Sure?", "hant": "刪掉之後複習進度也沒了，確定嗎？", "ja": "削除すると復習の進捗も消えます。よろしいですか？", "de": "Löschen entfernt auch den Lernfortschritt. Sicher?", "es": "Eliminar también borra su progreso de repaso. ¿Seguro?", "ar": "سيؤدي الحذف إلى مسح تقدم المراجعة أيضًا. هل أنت متأكد؟"]) }
+    static var wb_dupe: String { s(["zh": "已经在单词本里了", "en": "Already in your word book", "hant": "已經在單詞本裡了", "ja": "単語帳にあります", "de": "Schon in deinem Wortschatz", "es": "Ya está en tu cuaderno de palabras", "ar": "موجود بالفعل في دفتر الكلمات"]) }
+    static var wb_empty: String { s(["zh": "还没收东西。用随手翻译说一句，出结果后点 + 就收进来了。", "en": "Nothing yet. Say something in Translate as you go, then tap + on the result.", "hant": "還沒收東西。用隨手翻譯說一句，出結果後點 + 就收進來了。", "ja": "まだ何もありません。翻訳しながら話しかけて、結果の＋をタップすると追加されます。", "de": "Noch nichts gesammelt. Sag etwas in Übersetzen nebenbei und tippe auf + beim Ergebnis.", "es": "Aún no hay nada. Di algo en Traducción instantánea y toca + en el resultado.", "ar": "لا شيء بعد. قل شيئًا في الترجمة الفورية، ثم اضغط + على النتيجة."]) }
+    static var wb_en: String { s(["zh": "英文", "en": "English", "hant": "英文", "ja": "英語", "de": "Englisch", "es": "Inglés", "ar": "الإنجليزية"]) }
+    static var wb_front_en: String { s(["zh": "英文", "en": "English", "hant": "英文", "ja": "英語", "de": "Englisch", "es": "Inglés", "ar": "الإنجليزية"]) }
+    static var wb_front_fmt: String { s(["zh": "正面显示：%1$@", "en": "Card front: %1$@", "hant": "正面顯示：%1$@", "ja": "表面：%1$@", "de": "Vorderseite: %1$@", "es": "Frente de la tarjeta: %1$@", "ar": "وجه البطاقة: %1$@"]) }
+    static var wb_front_zh: String { s(["zh": "中文", "en": "Chinese", "hant": "中文", "ja": "中国語", "de": "Chinesisch", "es": "Chino", "ar": "الصينية"]) }
+    static var wb_got: String { s(["zh": "想起来了", "en": "I remembered", "hant": "想起來了", "ja": "思い出しました", "de": "Erinnert", "es": "Lo recordé", "ar": "تذكّرت"]) }
+    static var wb_no_card: String { s(["zh": "这条是早先收的，那时候还没有卡片", "en": "Saved before cards existed — no card for this one", "hant": "這條是早先收的，那時候還沒有卡片", "ja": "カード導入前に保存されたため、カードはありません", "de": "Vor Einführung der Karten gespeichert — keine Karte für dieses", "es": "Guardado antes de que existieran las tarjetas; sin tarjeta para este", "ar": "محفوظ قبل وجود البطاقات — لا توجد بطاقة لهذا"]) }
+    static var wb_graduated: String { s(["zh": "熟了", "en": "Learned", "hant": "熟了", "ja": "習得済み", "de": "Gelernt", "es": "Aprendida", "ar": "مُتقن"]) }
+    static var wb_missed: String { s(["zh": "没想起来", "en": "Missed it", "hant": "沒想起來", "ja": "思い出せなかった", "de": "Nicht gewusst", "es": "No la sabía", "ar": "لم أتذكره"]) }
+    static var wb_nogroup: String { s(["zh": "键盘里收的词现在同步不过来（App Group 没配好）。", "en": "Words saved from the keyboard can't sync yet (App Group not set up).", "hant": "鍵盤裡收的詞現在同步不過來（App Group 沒配好）。", "ja": "キーボードで保存した単語はまだ同期できません（App Groupが未設定です）。", "de": "Wörter aus der Tastatur können noch nicht synchronisiert werden (App-Gruppe nicht eingerichtet).", "es": "Las palabras guardadas desde el teclado aún no se sincronizan (App Group no configurado).", "ar": "لا يمكن مزامنة الكلمات المحفوظة من لوحة المفاتيح بعد (لم يتم إعداد مجموعة التطبيق)."]) }
+    static var wb_on: String { s(["zh": "收进来的日期", "en": "Saved on", "hant": "收進來的日期", "ja": "保存日", "de": "Gespeichert am", "es": "Guardada el", "ar": "تاريخ الحفظ"]) }
+    static var wb_progress: String { s(["zh": "记住 %1$d 次 · 跨 %2$d 天", "en": "%1$d hits · %2$d days", "hant": "記住 %1$d 次 · 跨 %2$d 天", "ja": "%1$d回正解 · %2$d日間", "de": "%1$d Treffer · %2$d Tage", "es": "%1$d aciertos · %2$d días", "ar": "%1$d إجابات صحيحة · %2$d أيام"]) }
+    static var wb_progress_label: String { s(["zh": "复习进度", "en": "Progress", "hant": "複習進度", "ja": "進捗", "de": "Fortschritt", "es": "Progreso", "ar": "التقدم"]) }
+    static var wb_review_done: String { s(["zh": "今天没有要复习的了。", "en": "Nothing due today.", "hant": "今天沒有要複習的了。", "ja": "今日の復習はありません。", "de": "Heute nichts fällig.", "es": "Nada pendiente hoy.", "ar": "لا توجد مراجعات مستحقة اليوم."]) }
+    static var wb_review_n: String { s(["zh": "复习（%1$d）", "en": "Review (%1$d)", "hant": "複習（%1$d）", "ja": "復習（%1$d）", "de": "Wiederholen (%1$d)", "es": "Repasar (%1$d)", "ar": "مراجعة (%1$d)"]) }
+    static var wb_save_failed: String { s(["zh": "没收成功，再试一次", "en": "Couldn\\'t save, try again", "hant": "沒收成功，再試一次", "ja": "保存できませんでした。もう一度お試しください", "de": "Speichern fehlgeschlagen, versuch es nochmal", "es": "No se pudo guardar, inténtalo de nuevo", "ar": "لم يتم الحفظ، حاول مرة أخرى"]) }
+    static var wb_saved: String { s(["zh": "已收进单词本", "en": "Saved to word book", "hant": "已收進單詞本", "ja": "単語帳に保存しました", "de": "Im Wortschatz gespeichert", "es": "Guardada en el cuaderno", "ar": "تم الحفظ في دفتر الكلمات"]) }
+    static var wb_show: String { s(["zh": "翻面看答案", "en": "Show answer", "hant": "翻面看答案", "ja": "答えを表示", "de": "Antwort zeigen", "es": "Mostrar respuesta", "ar": "إظهار الإجابة"]) }
+    static var wb_title: String { s(["zh": "单词本", "en": "Word book", "hant": "單詞本", "ja": "単語帳", "de": "Wortschatz", "es": "Cuaderno de palabras", "ar": "دفتر الكلمات"]) }
+    static var wb_tone: String { s(["zh": "语气", "en": "Tone", "hant": "語氣", "ja": "トーン", "de": "Ton", "es": "Tono", "ar": "النبرة"]) }
+    static var wb_zh: String { s(["zh": "你当时说的", "en": "What you said", "hant": "你當時說的", "ja": "あなたが言ったこと", "de": "Was du gesagt hast", "es": "Lo que dijiste", "ar": "ما قلته"]) }
+    static var tab_f2f: String { s(["zh": "面对面", "en": "Face-to-face", "hant": "面對面", "ja": "対面", "de": "Gegenüber", "es": "Cara a cara", "ar": "وجهًا لوجه"]) }
+    static var ime_pill_on: String { s(["zh": "输入法 · 已启用", "en": "Keyboard · On", "hant": "輸入法 · 已啟用", "ja": "キーボード · オン", "de": "Tastatur · An", "es": "Teclado · Activado", "ar": "لوحة المفاتيح · مفعّلة"]) }
+    static var ime_pill_off: String { s(["zh": "设为输入法", "en": "Set as keyboard", "hant": "設為輸入法", "ja": "キーボードに設定", "de": "Als Tastatur festlegen", "es": "Configurar como teclado", "ar": "تعيين كلوحة مفاتيح"]) }
+    static var hist_tab_records: String { s(["zh": "记录", "en": "Records", "hant": "記錄", "ja": "履歴", "de": "Aufzeichnungen", "es": "Registros", "ar": "السجلات"]) }
+    static var wb_add: String { s(["zh": "+ 单词本", "en": "+ Word book", "hant": "+ 單詞本", "ja": "+ 単語帳", "de": "+ Wortschatz", "es": "+ Libro de palabras", "ar": "+ دفتر الكلمات"]) }
+    static var wb_added_tag: String { s(["zh": "✓ 已加入", "en": "✓ Added", "hant": "✓ 已加入", "ja": "✓ 追加済み", "de": "✓ Hinzugefügt", "es": "✓ Añadido", "ar": "✓ تمت الإضافة"]) }
+    static var wb_kind_word: String { s(["zh": "词", "en": "Word", "hant": "詞", "ja": "単語", "de": "Wort", "es": "Palabra", "ar": "كلمة"]) }
+    static var wb_kind_phrase: String { s(["zh": "词组", "en": "Phrases", "hant": "詞組", "ja": "フレーズ", "de": "Wendungen", "es": "Frases", "ar": "عبارات"]) }
+    static var wb_kind_sentence: String { s(["zh": "句子", "en": "Sentences", "hant": "句子", "ja": "文", "de": "Sätze", "es": "Oraciones", "ar": "جمل"]) }
+    static var wb_clear_ask: String { s(["zh": "清空单词本？收藏的词和复习进度都会没。", "en": "Clear the word book? Saved items and their review progress will be gone.", "hant": "清空單詞本？收藏的詞和複習進度都會沒。", "ja": "単語帳を空にしますか？保存した項目と復習の進捗が失われます。", "de": "Wortliste leeren? Gespeicherte Einträge und ihr Lernfortschritt gehen verloren.", "es": "¿Vaciar el libro de palabras? Se perderán los elementos guardados y su progreso de repaso.", "ar": "مسح دفتر الكلمات؟ ستُفقد العناصر المحفوظة وتقدّم مراجعتها."]) }
+
+    /// 首页 slogan，**按界面语言查表**（Kevin 2026-09-06 口径）。
+    ///
+    /// 🚨🚨 **不许改成 `L.home_slogan`** —— de/es 的 ui_i18n 里
+    ///    home_slogan 有译文，而口径是它们走英文原句。**读资源就违口径。**
+    /// 🚨 源头是 `i18n_map.slogan_for()`，三端同源。手改这里会被生成覆盖。
+    static var slogan: String {
+        switch code {
+        case "zh-Hans": return "让世界听懂你"
+        case "zh-Hant": return "讓世界聽懂你"
+        case "ja": return "言葉の壁をなくす。"
+        case "de": return "Deine Worte, jede Sprache."
+        case "es": return "Habla, y que te entiendan."
+        case "ar": return "بلا حواجز لغوية."
+        default: return "No Language In Between"   // 没列出来的语言退英文原句
+        }
+    }
+
+    /// 英文原句本身。给「上面那行是不是已经是英文」这种判断用。
+    /// 🚨 别在别处抄一份英文品牌语 —— 抄了就会漂。
+    static var sloganEn: String { "No Language In Between" }
 }
