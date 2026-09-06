@@ -69,28 +69,11 @@ def group_name():
     return m.group(1)
 
 
-def target_wants_group(target_name):
-    """这个 target 在 `project.yml` 里声明了 App Group 吗 —— **现读，不猜**。
-
-    🚨 2026-09-06：发版一直挂在「live 的描述文件不含 App Group」，
-       而 `project.yml` 里**只有 Transless 和 Keyboard 声明了
-       `application-groups`，LiveActivity 压根没有** ——
-       闸门把三个 target 一刀切，在拦一个不存在的问题。
-       （`dev_install.py` 那边同时打印着「LiveActivity.appex：不需要 App Group」，
-       同一件事两处判断相反。）
-    返回 None 表示**在工程文件里找不到这个 target** —— 那不叫"不需要"，
-    叫"判据没有依据"，调用方必须报错而不是放行。
-    """
-    import re
-    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "project.yml")
-    y = open(p, encoding="utf-8").read()
-    m = re.search(r"^  %s:[ 	]*$" % re.escape(target_name), y, re.M)
-    if not m:
-        return None
-    nxt = re.search(r"^  [A-Za-z_][A-Za-z0-9_]*:[ 	]*$", y[m.end():], re.M)
-    seg = y[m.end(): m.end() + (nxt.start() if nxt else len(y))]
-    return "com.apple.security.application-groups" in seg
-
+# 🚨 「要不要 App Group」的唯一真值在 `wants_app_group.py` ——
+#    发版闸门（workflow 里查归档产物的那道）也调同一份。
+#    2026-09-06 就是因为这个判断有两份、我只改了一份，
+#    发版往前走一步又撞上一模一样的第二道。
+from wants_app_group import wants as target_wants_group   # noqa: E402
 
 def token():
     import jwt  # pyjwt
