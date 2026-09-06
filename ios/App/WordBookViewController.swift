@@ -52,6 +52,18 @@ final class WordBookViewController: UIViewController {
 
     private var today: String { Srs.todayString() }
 
+    /// 进来就直接打开这一条的卡片（从「说话记录 · 单词本」那屏点进来时用）。
+    ///
+    /// 🚨 **不加这个的话卡片从他最常看的那一屏根本到不了** ——
+    ///    那屏的条目**一个手势都没挂**，点了什么都不会发生。
+    ///    「功能做出来了」和「他点得到」是两件事。
+    private var openId: String?
+
+    convenience init(open id: String) {
+        self.init()
+        self.openId = id
+    }
+
     // MARK: - 生命周期
 
     override func viewDidLoad() {
@@ -78,7 +90,13 @@ final class WordBookViewController: UIViewController {
             body.bottomAnchor.constraint(equalTo: scroll.bottomAnchor,
                                          constant: -20),
         ])
-        showList()
+        // 🚨 带着 id 进来就直接翻到那张卡片，别让他到了列表再找一遍。
+        if let want = openId,
+           let it = WordBook.list().first(where: { $0.id == want }) {
+            showDetail(it)
+        } else {
+            showList()
+        }
     }
 
     private func clearBody() {
@@ -120,7 +138,38 @@ final class WordBookViewController: UIViewController {
                 bigButton(String(format: L.wb_review_n, due),
                           #selector(tapReview)))
         }
-        for it in all { body.addArrangedSubview(card(it)) }
+        // 🚨🚨 Kevin 2026-09-05 08:39：「这个单词本还要做一个定期整理 organize
+        //    一下：按照翻译的东西（**词、词组、句子**等）去 organize 一下，
+        //    方便人去回看」。**这一屏一直是平铺的**，他 09-06 又问了一次。
+        //
+        // 🚨 判据本体是现成的 `WordKind.group` —— 它已经在「说话记录」那屏用了，
+        //    **偏偏这一屏没用**。又是「规矩只落在一个出口」。
+        //    别在这里重写一套分类，会跟那屏走散。
+        // 🚨 **空的那一段整段不出现**：`group` 只回非空的段，所以标题跟着内容走，
+        //    不是先摆三个标题再往里填。
+        for (kind, grp) in WordKind.group(all, en: { $0.en }) {
+            body.addArrangedSubview(sectionHeader(kindTitle(kind), grp.count))
+            for it in grp { body.addArrangedSubview(card(it)) }
+        }
+    }
+
+    /// 段标题文案 —— 放界面这一层，`WordKind` 只管判据。
+    /// 🚨 跟 `HistoryListViewController.kindTitle` 用**同一批串**，别另写文案。
+    private func kindTitle(_ k: WordKind.Kind) -> String {
+        switch k {
+        case .word: return L.wb_kind_word
+        case .phrase: return L.wb_kind_phrase
+        case .sentence: return L.wb_kind_sentence
+        }
+    }
+
+    private func sectionHeader(_ text: String, _ count: Int) -> UIView {
+        let l = UILabel()
+        l.text = text + "  " + String(count)
+        l.font = .systemFont(ofSize: 13, weight: .semibold)
+        l.textColor = Skin.dim
+        l.accessibilityIdentifier = "wb.section"
+        return l
     }
 
     /// 列表里的一条：进度点 + 中文原话 + 英文。
@@ -130,7 +179,7 @@ final class WordBookViewController: UIViewController {
         box.layer.cornerRadius = 14
         let col = UIStackView(arrangedSubviews: [
             label(progress(it), 11, Skin.accentHi),
-            label(it.zh, 15, Skin.text),
+            label(zhFace(it), 15, Skin.text),
             label(it.en, 14, Skin.dim),
         ])
         col.axis = .vertical
@@ -147,6 +196,10 @@ final class WordBookViewController: UIViewController {
         ])
         let tap = UITapGestureRecognizer(target: self, action: #selector(tapCard(_:)))
         box.addGestureRecognizer(tap)
+        // 🚨 **给行一个 id** —— 它一直有手势、能点，但没有标识，
+        //    自动化就抓不到它。表现是"卡片截不到图"，看起来像功能没做，
+        //    其实是**测试够不着**。「能点」和「能被找到」是两件事。
+        box.accessibilityIdentifier = "wb.row" 
         box.tag = abs(it.id.hashValue % 1_000_000)
         idByTag[box.tag] = it.id
         return box
@@ -199,8 +252,11 @@ final class WordBookViewController: UIViewController {
         body.addArrangedSubview(top)
 
         let zhFront = front == Self.frontZh
-        let faceUp = zhFront ? it.zh : it.en
-        let faceDown = zhFront ? it.en : it.zh
+        // 🚨 查词条目的 `zh` 是**空的**（身份只由词决定，释义只进 card）——
+        //    中文面要从 card 里取首义，不然复习卡会是一片空白。
+        let zhText = zhFace(it)
+        let faceUp = zhFront ? zhText : it.en
+        let faceDown = zhFront ? it.en : zhText
 
         let up = label(faceUp, 22, Skin.text)
         up.numberOfLines = 0
@@ -264,7 +320,7 @@ final class WordBookViewController: UIViewController {
         mode = .detail
         detailId = it.id
         clearBody()
-        addLine(L.wb_zh, it.zh, 18, Skin.text)
+        addLine(L.wb_zh, zhFace(it), 18, Skin.text)
         addLine(L.wb_en, it.en, 17, Skin.accentHi)
         if !it.tone.isEmpty { addLine(L.wb_tone, it.tone, 15, Skin.dim) }
         addLine(L.wb_on, String(format: L.wb_added_on, it.on), 15, Skin.dim)
@@ -272,10 +328,127 @@ final class WordBookViewController: UIViewController {
                 String(format: L.wb_progress, it.rev.n, it.rev.dayList.count),
                 15, Skin.dim)
 
+        renderCard(it)
+
         let del = bigButton(L.wb_delete, #selector(tapDelete))
         del.backgroundColor = Theme.danger
         body.addArrangedSubview(del)
         body.addArrangedSubview(bigButton(L.wb_back, #selector(showListAction)))
+    }
+
+    /// 这一条的中文面。
+    ///
+    /// 🚨 **查词条目的 `zh` 是空的**（2.1 09-06 规格：身份只由词决定，
+    ///    释义/例句/搭配只进 `card`）。直接显示 `it.zh` 的话，
+    ///    复习卡和列表会是一片空白 —— **看起来像数据丢了**。
+    /// 🚨 **一个出口**：列表 / 详情 / 复习卡三处都走这里。
+    ///    三处各写一次的话，改口径时必漏一个（今天已经栽过几次）。
+    private func zhFace(_ it: WordBookCore.Item) -> String {
+        if !it.zh.isEmpty { return it.zh }
+        let c = WordCard.parse(it.card)
+        return c.senses.first?.1 ?? ""
+    }
+
+    /// 画那张卡片。**空的就如实说"还没有"，不许画个空壳。**
+    ///
+    /// 🚨 Kevin 2026-09-06 连问三次「单词卡片在哪儿呢」。规格/契约/prompt/
+    ///    三端同步链全做了，**就是没人去画这一屏**。
+    /// 🚨 两种形态字段完全不同（查词 = 音标/释义/例句/搭配；
+    ///    句子 = 结构拆解/替代表达/关键搭配），`WordCard.Parsed` 里
+    ///    **用不上的那几组就是空的**，跳过即可。
+    private func renderCard(_ it: WordBookCore.Item) {
+        let c = WordCard.parse(it.card)
+        if c.isEmpty {
+            // 🚨 **点进去这一刻才取**（列表滚动绝不取 —— 那会为他根本没看的
+            //    条目烧一堆请求）。取到存回，下次不重取。
+            fetchCard(it)
+            return
+        }
+        if !c.phonetic.isEmpty || !c.pos.isEmpty {
+            // 🚨 卡片里存的是**收藏那一刻**的数据 —— 旧卡片带着斜杠，
+            //    不剥就显示成 `//…//`（Kevin 2026-09-06 报的）。
+            let ph = c.phonetic.trimmingCharacters(
+                in: CharacterSet(charactersIn: "/ "))
+            let head = [ph.isEmpty ? "" : "/" + ph + "/", c.pos]
+                .filter { !$0.isEmpty }.joined(separator: "   ")
+            body.addArrangedSubview(label(head, 14, Skin.dim))
+        }
+        // A · 查词
+        section(L.wb_card_senses, c.senses.map { s in
+            s.0.isEmpty ? s.1 : (s.0 + (s.1.isEmpty ? "" : "\n" + s.1))
+        })
+        section(L.wb_card_examples, c.examples.map { e in
+            e.0 + (e.1.isEmpty ? "" : "\n" + e.1)
+        })
+        section(L.wb_card_collocations, c.collocations)
+        // B · 句子 / 词组
+        section(L.wb_card_breakdown, c.breakdown.map { p in
+            let head = p.part + (p.role.isEmpty ? "" : "  · " + p.role)
+            return head + (p.note.isEmpty ? "" : "\n" + p.note)
+        })
+        section(L.wb_card_alternatives, c.alternatives.map { a in
+            a.en + (a.when.isEmpty ? "" : "\n" + a.when)
+        })
+        section(L.wb_card_keys, c.keys.map { k in
+            k.0 + (k.1.isEmpty ? "" : "  " + k.1)
+        })
+    }
+
+    /// 现取这一条的卡片。**只在详情页、只在没有卡片时调。**
+    ///
+    /// 🚨 **不许一直转圈**：转圈是没有终点的状态，他分不出「还在取」
+    ///    和「已经死了」，只能干等或者退出去。失败要**落终态 + 给重试**。
+    private func fetchCard(_ it: WordBookCore.Item) {
+        let loading = label(L.wb_card_loading, 13, Skin.dim)
+        loading.numberOfLines = 0
+        body.addArrangedSubview(loading)
+
+        Backend.card(en: it.en, zh: it.zh, tone: it.tone) { [weak self] r in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                // 🚨 **他可能已经翻走了**。回来时还停在这一条才重画 ——
+                //    否则会把这条的卡片画到另一条的详情页上。
+                //    （判据挂在 `detailId` 上，不是"这个页面还活着"。）
+                guard self.mode == .detail, self.detailId == it.id else { return }
+                switch r {
+                case .success(let json):
+                    WordBook.setCard(id: it.id, card: json)
+                    // 重画整页 —— 取到之后这一条已经变了，
+                    // 拿旧的 `it` 继续画会漏掉刚存进去的卡片。
+                    if let fresh = WordBook.list().first(where: { $0.id == it.id }) {
+                        self.showDetail(fresh)
+                    }
+                case .failure(let f):
+                    KbBridge.note("取卡片失败：\(f)")
+                    loading.text = L.wb_card_failed
+                    let again = self.bigButton(L.wb_card_retry,
+                                               #selector(self.tapRetryCard))
+                    self.body.addArrangedSubview(again)
+                }
+            }
+        }
+    }
+
+    /// 重试：**把这一条重新走一遍详情**，不另写一条取数路径。
+    @objc private func tapRetryCard() {
+        guard let it = WordBook.list().first(where: { $0.id == detailId })
+        else { return }
+        showDetail(it)
+    }
+
+    /// 卡片里的一段。🚨 **空的整段不出现** —— 先摆标题再填内容的话，
+    /// 没数据时会留下一排孤零零的标题（2.1 的坏样本打的就是这个写法）。
+    private func section(_ title: String, _ rows: [String]) {
+        guard !rows.isEmpty else { return }
+        let t = label(title, 13, Skin.dim)
+        t.accessibilityIdentifier = "wb.card.section"
+        body.addArrangedSubview(t)
+        for r in rows {
+            let l = label(r, 15, Skin.text)
+            l.numberOfLines = 0
+            l.accessibilityIdentifier = "wb.card.row"
+            body.addArrangedSubview(l)
+        }
     }
 
     @objc private func tapDelete() {
