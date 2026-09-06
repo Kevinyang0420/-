@@ -44,12 +44,23 @@ enum DictParse {
         //    旧的    ->  "example_en" / "example_zh"          两个平铺字段
         //    🚨 旧结构**不能删** —— 缓存里存着按旧结构存下来的条目，
         //       只认新的会让老缓存整条解不出（表现是"以前查过的词打不开了"）。
-        var exEn = (o["example_en"] as? String) ?? ""
-        var exZh = (o["example_zh"] as? String) ?? ""
-        if exEn.isEmpty, let arr = o["examples"] as? [[String: Any]],
-           let first = arr.first {
-            exEn = (first["en"] as? String) ?? ""
-            exZh = (first["zh"] as? String) ?? ""
+        // 🚨🚨 **收全，不许只取第一条。**（2026-09-06）
+        //    原来是 `arr.first` —— 后端返回五条，界面只显示一条，
+        //    收藏进单词本也只存得下一条。**存储那半是被这里喂成单条的**，
+        //    所以只改存储没有用。
+        //    `[已实测·2.1 对照]` 安卓一直是整个数组（`WordCard.java:64`），
+        //    **这是 iOS 独有的缺口**。
+        var exs: [(String, String)] = []
+        // 旧结构那对平铺字段当**第一条** —— 缓存里存着按旧结构存下的条目，
+        // 不认它会让"以前查过的词打不开"。
+        let oldEn = (o["example_en"] as? String) ?? ""
+        let oldZh = (o["example_zh"] as? String) ?? ""
+        if !oldEn.isEmpty || !oldZh.isEmpty { exs.append((oldEn, oldZh)) }
+        for e in (o["examples"] as? [[String: Any]]) ?? [] {
+            let en = (e["en"] as? String) ?? ""
+            let zh = (e["zh"] as? String) ?? ""
+            if en.isEmpty, zh.isEmpty { continue }
+            exs.append((en, zh))
         }
 
         // 🚨🚨 **不许拿第一条义项的词性当整卡词性。**
@@ -72,8 +83,7 @@ enum DictParse {
                          phonetic: ph,
                          pos: pos,
                          senses: ss,
-                         exampleEn: exEn,
-                         exampleZh: exZh,
+                         examples: exs,
                          collocations: (o["collocations"] as? [String]) ?? [])
     }
 }

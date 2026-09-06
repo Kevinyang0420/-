@@ -98,8 +98,11 @@ RULES, each one is there because it was asked for:
    the meaning but still does not dare use the word.
    Keep the en line to one clear phrase, not a paragraph.
 
-3. **1 to 2 examples**, each with its Chinese. A definition does not show usage;
+3. **2 to 3 examples**, each with its Chinese. A definition does not show usage;
    a sentence does. Use the word the way a working professional would meet it.
+   🚨 Two is the floor, not the target. **One example is not enough** — one
+   sentence shows one usage, and a word he saved is a word he'll meet again
+   in a different shape.
 
 4. 🚨 **2 to 3 collocations** — this one is specifically for his job.
    In business English, WHAT A WORD PAIRS WITH beats the ninth dictionary sense

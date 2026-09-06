@@ -407,12 +407,21 @@ final class DictViewController: UIViewController {
         }
 
         // ⑥ 例句 / 搭配 各加微型标题
-        cardCol.addArrangedSubview(microTitle(L.dict_example))
-        let ex = UILabel()
-        ex.numberOfLines = 0
-        ex.attributedText = pair(e.exampleEn, e.exampleZh, minor: false)
-        cardCol.addArrangedSubview(ex)
-        cardCol.setCustomSpacing(Self.gapGroup, after: ex)
+        // 🚨 **画全部例句**（2026-09-06）。原来只画 `e.exampleEn` 一条，
+        //    而后端给的是多条 —— Kevin 那张卡上就一句。
+        if !e.examples.isEmpty {
+            cardCol.addArrangedSubview(microTitle(L.dict_example))
+            for (i, one) in e.examples.enumerated() {
+                let ex = UILabel()
+                ex.numberOfLines = 0
+                ex.accessibilityIdentifier = "dict.example"
+                ex.attributedText = pair(one.0, one.1, minor: false)
+                cardCol.addArrangedSubview(ex)
+                // 例句之间留行距，最后一条后面留组距
+                cardCol.setCustomSpacing(
+                    i == e.examples.count - 1 ? Self.gapGroup : 10, after: ex)
+            }
+        }
 
         cardCol.addArrangedSubview(microTitle(L.dict_collocation))
         let chips = UIStackView(arrangedSubviews:

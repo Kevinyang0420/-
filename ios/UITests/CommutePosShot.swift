@@ -57,5 +57,14 @@ final class CommutePosShot: XCTestCase {
             + "｜标题=\(labels) —— 他看到的就是「只给了动词」")
         XCTAssertTrue(labels.contains { $0.contains("n") },
                       "🚨 分节里没有名词那节：\(labels)")
+
+        // 🚨 **例句要 2 条以上**（2.1 方案）。改之前这里只会有 1 条 ——
+        //    根因在 `DictParse` 的 `arr.first`，后端给多条只留一条。
+        //    判据数的是**屏幕上的例句控件**，不是"页面里有没有例句两个字"。
+        let exs = app.descendants(matching: .any)
+            .matching(identifier: "dict.example")
+        XCTAssertGreaterThanOrEqual(exs.count, 2,
+            "🚨 屏幕上只有 \(exs.count) 条例句 —— 他说的「没有例句，什么都没了」"
+            + "就是这个方向")
     }
 }

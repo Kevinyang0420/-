@@ -30,9 +30,38 @@ struct DictEntry {
     /// 词性，作**一次**小标题（Grok ②：`adj.` 重复三次是噪音）。
     let pos: String
     let senses: [DictSense]
-    let exampleEn: String
-    let exampleZh: String
+    /// **全部例句**（英, 中）。
+    ///
+    /// 🚨 2026-09-06 之前这里是**单数**两个字段，而解析层 `arr.first`
+    ///    只取第一条 —— 后端给多条，界面只显示一条，收藏进单词本也只存得下一条。
+    ///    Kevin：「这个单词**没有例句，什么都没了**呀」。
+    var examples: [(String, String)] = []
+
+    /// 兼容老调用点：第一条例句。**新代码请直接用 `examples`。**
+    var exampleEn: String { examples.first?.0 ?? "" }
+    var exampleZh: String { examples.first?.1 ?? "" }
     let collocations: [String]
+
+    init(word: String, phonetic: String, pos: String, senses: [DictSense],
+         examples: [(String, String)], collocations: [String]) {
+        self.word = word
+        self.phonetic = phonetic
+        self.pos = pos
+        self.senses = senses
+        self.examples = examples
+        self.collocations = collocations
+    }
+
+    /// 只有一条例句时的便利写法 —— **假数据和老调用点用**。
+    /// 🚨 真实解析走上面那个（收全），别拿这个入口去喂后端数据，
+    ///    那等于把「只留一条」这个 bug 换个地方再犯一次。
+    init(word: String, phonetic: String, pos: String, senses: [DictSense],
+         exampleEn: String, exampleZh: String, collocations: [String]) {
+        let ex = (exampleEn.isEmpty && exampleZh.isEmpty)
+            ? [] : [(exampleEn, exampleZh)]
+        self.init(word: word, phonetic: phonetic, pos: pos, senses: senses,
+                  examples: ex, collocations: collocations)
+    }
 
     /// **拿去显示的音标** —— 已经剥掉两边的斜杠。
     ///

@@ -320,9 +320,17 @@ final class WordBookViewController: UIViewController {
         mode = .detail
         detailId = it.id
         clearBody()
-        addLine(L.wb_zh, zhFace(it), 18, Skin.text)
-        addLine(L.wb_en, it.en, 17, Skin.accentHi)
-        if !it.tone.isEmpty { addLine(L.wb_tone, it.tone, 15, Skin.dim) }
+        // 🚨 **「你当时想说 · 语气」放最上面**（2.1 方案，Kevin 09-06 点名要求
+        //    单词本这屏也照方案做）。这是**词典没有、我们独有**的一块：
+        //    词典不知道用户为什么查一个词，我们知道 —— 他收藏它是因为
+        //    当时想说这句话、用的是这个语气。
+        //    🚨 `zh` 和 `tone` **本来就在 `Item` 里**，不用新存字段。
+        //    原来这两样是分开两块、中间还隔着英文和收藏日期，看不出关联。
+        let saidLine = originLine(it)
+        if !saidLine.isEmpty {
+            addLine(L.wb_zh, saidLine, 17, Skin.text)
+        }
+        addLine(L.wb_en, it.en, 18, Skin.accentHi)
         addLine(L.wb_on, String(format: L.wb_added_on, it.on), 15, Skin.dim)
         addLine(L.wb_progress_label,
                 String(format: L.wb_progress, it.rev.n, it.rev.dayList.count),
@@ -343,6 +351,18 @@ final class WordBookViewController: UIViewController {
     ///    复习卡和列表会是一片空白 —— **看起来像数据丢了**。
     /// 🚨 **一个出口**：列表 / 详情 / 复习卡三处都走这里。
     ///    三处各写一次的话，改口径时必漏一个（今天已经栽过几次）。
+    /// 「你当时想说」那一行 —— 原话 + 语气，拼成一句。
+    ///
+    /// 🚨 两样都可能为空：查词来的条目 `zh` 是空串（他没说话，是直接查的词），
+    ///    语气也可能没选。**都空就整行不画**，不许留一个空标签在那儿。
+    private func originLine(_ it: WordBookCore.Item) -> String {
+        let said = zhFace(it)
+        let tone = it.tone.trimmingCharacters(in: .whitespaces)
+        if said.isEmpty { return tone.isEmpty ? "" : L.wb_tone + "：" + tone }
+        if tone.isEmpty { return said }
+        return said + "　·　" + L.wb_tone + "：" + tone
+    }
+
     private func zhFace(_ it: WordBookCore.Item) -> String {
         if !it.zh.isEmpty { return it.zh }
         let c = WordCard.parse(it.card)
@@ -409,10 +429,6 @@ final class WordBookViewController: UIViewController {
         })
     }
 
-    /// 现取这一条的卡片。**只在详情页、只在没有卡片时调。**
-    ///
-    /// 🚨 **不许一直转圈**：转圈是没有终点的状态，他分不出「还在取」
-    ///    和「已经死了」，只能干等或者退出去。失败要**落终态 + 给重试**。
     /// 这张**已存的**卡片需不需要重新取一次。
     ///
     /// 🚨 他手机上那张 commute 是今天早些时候存的，里面**根本没有义项级词性**。
@@ -424,6 +440,10 @@ final class WordBookViewController: UIViewController {
         return !PosGrouping.hasAnyPos(c.senses.map { $0.2 })
     }
 
+    /// 现取这一条的卡片。**只在详情页、只在没有卡片时（或缺词性时）调。**
+    ///
+    /// 🚨 **不许一直转圈**：转圈是没有终点的状态，他分不出「还在取」
+    ///    和「已经死了」，只能干等或者退出去。失败要**落终态 + 给重试**。
     private func fetchCard(_ it: WordBookCore.Item) {
         let loading = label(L.wb_card_loading, 13, Skin.dim)
         loading.numberOfLines = 0
@@ -438,7 +458,15 @@ final class WordBookViewController: UIViewController {
                 guard self.mode == .detail, self.detailId == it.id else { return }
                 switch r {
                 case .success(let json):
-                    WordBook.setCard(id: it.id, card: json)
+                    // 🚨🚨 **重取会拿新数据整份替换这张卡，笔记必须先接住。**
+                    //    `note` 是卡片上**唯一不是后端给的**字段 ——
+                    //    不搬回去的话，他写的笔记会在某次重取时悄悄消失，
+                    //    **不报错**，等他下次打开才发现，那时已经不知道何时丢的。
+                    //    （2.1 方案原话：「这是卡片上唯一不会被重取覆盖的字段」）
+                    WordBook.setCard(
+                        id: it.id,
+                        card: WordCard.merged(fromServer: json,
+                                              keepingNoteOf: it.card))
                     // 重画整页 —— 取到之后这一条已经变了，
                     // 拿旧的 `it` 继续画会漏掉刚存进去的卡片。
                     if let fresh = WordBook.list().first(where: { $0.id == it.id }) {

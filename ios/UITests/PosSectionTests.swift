@@ -67,3 +67,63 @@ final class PosSectionTests: XCTestCase {
                        "🚨 单词性的词冒出了别的词性：\(uniq)")
     }
 }
+
+/// **例句要收全** —— 2.1 2026-09-06 指出的根因层：`DictParse` 原来 `arr.first`
+/// 只取第一条，后端给多条，界面只显示一条、收藏也只存得下一条。
+///
+/// 🚨 2.1 点出：**现有自测样本全都只有一条例句**，所以"解析多条对不对"
+///    从来没被测过。改错了没人拦 —— 这条就是补那个缺口。
+final class MultiExampleTests: XCTestCase {
+
+    private func parse(_ w: String, _ j: String) -> DictEntry? {
+        return DictParse.entry(word: w, raw: j)
+    }
+
+    /// 三条例句要全部解出来。
+    func testAllExamplesParsed() {
+        let e = parse("commute", """
+        {"word":"commute","senses":[{"pos":"v.","en":"a","zh":"甲"}],
+         "examples":[{"en":"one","zh":"一"},{"en":"two","zh":"二"},
+                     {"en":"three","zh":"三"}]}
+        """)
+        XCTAssertEqual(e?.examples.count, 3,
+                       "🚨 只解出 \(e?.examples.count ?? -1) 条 —— "
+                       + "改回 `arr.first` 这条必须红")
+        XCTAssertEqual(e?.examples.first?.0, "one")
+        XCTAssertEqual(e?.examples.last?.0, "three")
+    }
+
+    /// 🚨 旧结构那对平铺字段仍要认，当**第一条**。
+    ///    缓存里存着按旧结构存下的条目，不认它会让"以前查过的词打不开"。
+    func testLegacyFlatExampleStillWorks() {
+        let e = parse("take", """
+        {"word":"take","senses":[{"en":"a","zh":"甲"}],
+         "example_en":"Take your time.","example_zh":"慢慢来。"}
+        """)
+        XCTAssertEqual(e?.examples.count, 1, "🚨 老结构的例句读不出来了")
+        XCTAssertEqual(e?.exampleEn, "Take your time.",
+                       "🚨 兼容取值坏了 —— 老调用点会拿到空串")
+    }
+
+    /// 反向对照：一条都没有时不许凭空造出一条空的。
+    func testNoExamplesStaysEmpty() {
+        let e = parse("x", """
+        {"word":"x","senses":[{"en":"a","zh":"甲"}]}
+        """)
+        XCTAssertEqual(e?.examples.count, 0,
+                       "🚨 没有例句却造出了 \(e?.examples.count ?? -1) 条空的")
+    }
+
+    /// 收藏往返：三条存下去，读回来还是三条。
+    func testExamplesSurviveSaveAndLoad() {
+        let e = parse("commute", """
+        {"word":"commute","senses":[{"pos":"v.","en":"a","zh":"甲"}],
+         "examples":[{"en":"one","zh":"一"},{"en":"two","zh":"二"},
+                     {"en":"three","zh":"三"}]}
+        """)!
+        let back = WordCard.parse(WordCard.fromDict(e))
+        XCTAssertEqual(back.examples.count, 3,
+                       "🚨 落盘一轮只剩 \(back.examples.count) 条 —— "
+                       + "单词本读的正是这份数据")
+    }
+}

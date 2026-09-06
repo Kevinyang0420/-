@@ -1052,6 +1052,29 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                         + "{\"en\":\"springing back into shape\",\"zh\":\"回弹的\"}],"
                         + "\"examples\":[{\"en\":\"A resilient economy.\",\"zh\":\"有韧性的经济。\"}],"
                         + "\"collocations\":[\"resilient system\",\"highly resilient\"]}")
+                // 🚨 **commute：义项级词性的样本**（2026-09-06）。
+                //    Kevin 报「单词本里只有一个动词」→ 改完又报「连动词也没了」。
+                //    两幕是同一条链：词性被当成整卡级的，而它是义项级的。
+                //    这条种的是**新格式**（每条 sense 自带 pos），
+                //    单词本里应当分成 `v.` 和 `n.` 两节。
+                _ = WordBook.add(
+                    zh: "", en: "commute", span: "full", tone: "",
+                    today: Srs.todayString(),
+                    card: "{\"kind\":\"word\",\"phonetic\":\"k\u{0259}\u{02C8}mju\u{02D0}t\","
+                        + "\"senses\":["
+                        + "{\"pos\":\"v.\",\"en\":\"to travel regularly between home and work\","
+                        + "\"zh\":\"通勤\"},"
+                        + "{\"pos\":\"v.\",\"en\":\"to reduce a legal punishment\","
+                        + "\"zh\":\"减刑\"},"
+                        + "{\"pos\":\"n.\",\"en\":\"the journey between home and work\","
+                        + "\"zh\":\"通勤路程\"}]}")
+                // 🚨 **老格式那张**（senses 里没有 pos）—— 他手机上那张就是这样。
+                //    代码改对了、这张卡还是没有词性，所以要能被认出来去重取。
+                _ = WordBook.add(
+                    zh: "", en: "legacyword", span: "full", tone: "",
+                    today: Srs.todayString(),
+                    card: "{\"kind\":\"word\",\"phonetic\":\"le\u{0261}\u{0259}si\",\"pos\":\"v.\","
+                        + "\"senses\":[{\"en\":\"old shape\",\"zh\":\"旧格式\"}]}")
                 // B · 句子来的（结构拆解 / 换个说法 / 可以拆下来用的）
                 _ = WordBook.add(
                     zh: "下周一开会把时间线再确认一下",

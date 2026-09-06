@@ -45,6 +45,12 @@ enum WordCard {
         var senses: [(String, String, String)] = []
         var examples: [(String, String)] = []    // (例句英, 例句中)
         var collocations: [String] = []
+        /// **他自己写的笔记。**
+        ///
+        /// 🚨🚨 卡片上**唯一不是后端给的**字段，也是唯一**重取时必须留住**的。
+        ///    其余字段重取一次就被新数据整份替换，笔记不行 —— 那是他写的东西，
+        ///    丢了不报错，等他下次打开才发现，而那时已经不知道什么时候丢的。
+        var note = ""
         // B · 句子/词组
         var breakdown: [Part] = []
         var alternatives: [Alt] = []
@@ -60,6 +66,36 @@ enum WordCard {
     /// 把 `DictEntry` 存成卡片 JSON（形态 A）。
     ///
     /// 🚨 **在收藏那一刻调**，别等点进去再查 —— 那时那份数据已经不在手上了。
+    /// 把笔记写进一张**已有的**卡片 JSON，其余字段原样不动。
+    ///
+    /// 🚨 单独一个入口，而不是让 `fromDict` 收 note ——
+    ///    `fromDict` 的输入是**后端返回的词条**，那里面本来就没有笔记。
+    ///    混在一起的话，每次重取都要记得把 note 传进去，**迟早漏一次**。
+    static func withNote(_ card: String, note: String) -> String {
+        var o = (try? JSONSerialization.jsonObject(
+            with: Data(card.utf8))) as? [String: Any] ?? [:]
+        if o.isEmpty { o["kind"] = "word" }
+        if note.isEmpty { o.removeValue(forKey: "note") } else { o["note"] = note }
+        guard let d = try? JSONSerialization.data(withJSONObject: o),
+              let s = String(data: d, encoding: .utf8) else { return card }
+        return s
+    }
+
+    /// **重取回来的新卡片 + 旧卡片里的笔记** —— 合并成要落盘的那一份。
+    ///
+    /// 🚨 抽成一个函数，是为了让**界面和判据用同一份逻辑**。
+    ///    写在界面里的话，判据只能另写一遍合并 —— 那测的是判据自己，
+    ///    不是真正跑的那段（今天这个形状已经栽过好几次）。
+    static func merged(fromServer: String, keepingNoteOf old: String) -> String {
+        let kept = noteOf(old)
+        return kept.isEmpty ? fromServer : withNote(fromServer, note: kept)
+    }
+
+    /// 从一张卡片 JSON 里取出笔记（取不到就是空串）。
+    static func noteOf(_ card: String) -> String {
+        return parse(card).note
+    }
+
     static func fromDict(_ e: DictEntry) -> String {
         var o: [String: Any] = [
             "kind": "word",
@@ -70,8 +106,11 @@ enum WordCard {
             "senses": e.senses.map { ["en": $0.en, "zh": $0.zh, "pos": $0.pos] },
             "collocations": e.collocations,
         ]
-        if !e.exampleEn.isEmpty || !e.exampleZh.isEmpty {
-            o["examples"] = [["en": e.exampleEn, "zh": e.exampleZh]]
+        // 🚨 **存全部例句**。原来这里写死取第一条 —— 但那只是下游后果，
+        //    真正的第一刀在 `DictParse` 的 `arr.first`（已改成收全）。
+        //    **只改这一环没用**，两处都要动。
+        if !e.examples.isEmpty {
+            o["examples"] = e.examples.map { ["en": $0.0, "zh": $0.1] }
         }
         guard let d = try? JSONSerialization.data(withJSONObject: o),
               let s = String(data: d, encoding: .utf8) else { return "" }
@@ -99,6 +138,7 @@ enum WordCard {
                                (s["zh"] as? String) ?? ""))
         }
         p.collocations = (o["collocations"] as? [String]) ?? []
+        p.note = (o["note"] as? String) ?? ""
 
         for b in (o["breakdown"] as? [[String: Any]]) ?? [] {
             p.breakdown.append(Part(part: (b["part"] as? String) ?? "",

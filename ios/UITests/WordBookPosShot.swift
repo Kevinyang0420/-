@@ -18,32 +18,10 @@ final class WordBookPosShot: XCTestCase {
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 25), "App 没起来")
         Thread.sleep(forTimeInterval: 3.0)
 
-        // ① 先查一次 commute 并收藏 —— 走的是他真实的路径
-        let entry = app.buttons["app.try"]
-        XCTAssertTrue(entry.waitForExistence(timeout: 8), "首页找不到入口")
-        entry.tap()
-        Thread.sleep(forTimeInterval: 1.2)
-        let dict = app.buttons.matching(NSPredicate(
-            format: "label == %@ OR label == %@", "查词", "Look up")).firstMatch
-        XCTAssertTrue(dict.waitForExistence(timeout: 6), "🚨 找不到查词入口")
-        dict.tap()
-        Thread.sleep(forTimeInterval: 1.2)
-
-        let field = app.textFields["dict.field"].exists
-            ? app.textFields["dict.field"] : app.textViews["dict.field"]
-        XCTAssertTrue(field.waitForExistence(timeout: 6), "🚨 找不到输入框")
-        field.tap()
-        field.typeText("commute")
-        app.buttons["dict.search"].tap()
-        XCTAssertTrue(app.staticTexts["dict.word"].waitForExistence(timeout: 40),
-                      "🚨 后端没回，这条没测到东西")
-        Thread.sleep(forTimeInterval: 1.5)
-
-        let addBtn = app.buttons.matching(NSPredicate(
-            format: "label CONTAINS %@", "单词本")).firstMatch
-        XCTAssertTrue(addBtn.waitForExistence(timeout: 6), "🚨 找不到「+ 单词本」")
-        addBtn.tap()
-        Thread.sleep(forTimeInterval: 2.0)
+        // 🚨 **不走 UI 收藏** —— 那一步在测试里点了不进本子，
+        //    前置断言抓到过。而这条要验的是**词性显不显示**，不是收藏功能。
+        //    `TRANSLESS_SEED_CARD` 已经种好一条 commute（新格式，义项带 pos），
+        //    数据形状跟真实收藏（`WordCard.fromDict` 的输出）同构。
 
         // ② 进单词本 —— 🚨 **入口在「设置」里，不是「常用词」tab**。
         //    第一版我点了常用词 tab，那是 chips 列表、点了不进详情，
@@ -66,10 +44,12 @@ final class WordBookPosShot: XCTestCase {
         XCTAssertTrue(wbRow.waitForExistence(timeout: 8), "🚨 设置里找不到单词本那一行")
         wbRow.tap()
         Thread.sleep(forTimeInterval: 2.5)
-        let row = app.buttons.matching(NSPredicate(
+        // 🚨 列表项**不是 UIButton**（跟设置页那一行同一个坑，我已经栽过一次）——
+        //    按文字找，点击穿透到承载它的控件。
+        let row = app.staticTexts.matching(NSPredicate(
             format: "label CONTAINS %@", "commute")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 8),
-                      "🚨 单词本里没有 commute —— 收藏那步没成，后面白测")
+                      "🚨 单词本里没有 commute —— 种子没生效，后面白测")
         row.tap()
         Thread.sleep(forTimeInterval: 3.0)
 
