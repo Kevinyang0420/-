@@ -42,13 +42,19 @@ import urllib.request
 API = "https://api.appstoreconnect.apple.com/v1"
 
 #: (落盘名, 描述文件名, 期望的 bundle id)
+# 第四项 = 这个 target 在 `project.yml` 里叫什么。
+# 🚨 **App Group 要不要，不在这张表里手写** —— 从 project.yml 现读（见
+#    `target_wants_group`）。手写就是第二个配置点，而这个脚本存在的理由
+#    正是消灭第二个配置点（描述文件曾经既在 secret 里又在苹果那边）。
 WANT = [
-    ("app", "Transless AppStore", "com.kevin.transless"),
-    ("kb", "Transless Keyboard AppStore", "com.kevin.transless.keyboard"),
+    ("app", "Transless AppStore", "com.kevin.transless", "Transless"),
+    ("kb", "Transless Keyboard AppStore", "com.kevin.transless.keyboard",
+     "Keyboard"),
     # 🚨 LiveActivity（灵动岛那一条）—— 2026-09-05 加。
     #    它以前不在这张表里，是因为那个目录从没被推到仓库、
     #    发版构建里根本没有这个 target。推上去之后 Archive 立刻要它。
-    ("live", "Transless Live AppStore", "com.kevin.transless.liveactivity"),
+    ("live", "Transless Live AppStore", "com.kevin.transless.liveactivity",
+     "LiveActivity"),
 ]
 
 #: 🚨 组名。**唯一真值在 `Shared/KbBridge.swift`**，这里从那个文件读，不写死。
@@ -61,6 +67,29 @@ def group_name():
     if not m:
         sys.exit("FAIL: KbBridge.swift 里读不到 group —— 组名的唯一真值不见了")
     return m.group(1)
+
+
+def target_wants_group(target_name):
+    """这个 target 在 `project.yml` 里声明了 App Group 吗 —— **现读，不猜**。
+
+    🚨 2026-09-06：发版一直挂在「live 的描述文件不含 App Group」，
+       而 `project.yml` 里**只有 Transless 和 Keyboard 声明了
+       `application-groups`，LiveActivity 压根没有** ——
+       闸门把三个 target 一刀切，在拦一个不存在的问题。
+       （`dev_install.py` 那边同时打印着「LiveActivity.appex：不需要 App Group」，
+       同一件事两处判断相反。）
+    返回 None 表示**在工程文件里找不到这个 target** —— 那不叫"不需要"，
+    叫"判据没有依据"，调用方必须报错而不是放行。
+    """
+    import re
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "project.yml")
+    y = open(p, encoding="utf-8").read()
+    m = re.search(r"^  %s:[ 	]*$" % re.escape(target_name), y, re.M)
+    if not m:
+        return None
+    nxt = re.search(r"^  [A-Za-z_][A-Za-z0-9_]*:[ 	]*$", y[m.end():], re.M)
+    seg = y[m.end(): m.end() + (nxt.start() if nxt else len(y))]
+    return "com.apple.security.application-groups" in seg
 
 
 def token():
@@ -111,7 +140,7 @@ def main():
     print("组名（取自 KbBridge.swift）：%s" % grp)
 
     bad = []
-    for tag, name, want_bid in WANT:
+    for tag, name, want_bid, target_name in WANT:
         st, res = api("/profiles?filter[name]=" + urllib.parse.quote(name))
         if st != 200:
             sys.exit("FAIL: 取描述文件失败 %s %s" % (st, str(res)[:200]))
@@ -134,9 +163,21 @@ def main():
             bad.append("%s 的描述文件对应 %s，应为 %s（两份取反了？）"
                        % (tag, bid, want_bid))
         # 🚨 这条就是 2026-08-28 抓到"CI 用了旧描述文件"的那条判据。
-        if grp not in groups:
-            bad.append("%s 的描述文件**不含 App Group %s** —— "
-                       "装到手机上键盘语音会静默失效" % (tag, grp))
+        #    **要不要 App Group 按 project.yml 现读**，不是三个 target 一刀切。
+        wants = target_wants_group(target_name)
+        if wants is None:
+            bad.append("project.yml 里找不到 target「%s」—— 这条判据没有依据，"
+                       "不许当成\"不需要\"放行" % target_name)
+        elif wants and grp not in groups:
+            bad.append("%s 的描述文件**不含 App Group %s**（project.yml 里它声明了）"
+                       " —— 装到手机上键盘语音会静默失效" % (tag, grp))
+        elif not wants and grp in groups:
+            # 反向也要能红：工程没声明、描述文件却有，说明两边已经不同源
+            bad.append("%s 在 project.yml 里没声明 App Group，描述文件里却有 %s"
+                       " —— 两边不同源了" % (tag, grp))
+        else:
+            print("      App Group 判据：project.yml %s，描述文件 %s ✓"
+                  % ("要" if wants else "不要", "有" if grp in groups else "没有"))
         # 名字要回传给导出那步（两个 target 各挂各的，只能靠名字点名）
         gh_env = os.environ.get("GITHUB_ENV")
         if gh_env:
