@@ -961,29 +961,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                 },
                 "com.kevin.transless.debug.pipshow" as CFString, nil, .deliverImmediately)
         }
-        // 🚨🚨 **就地架引擎的观察者，启动时无条件注册。**
-        //    Kevin 09-06 真机 FAIL：在 Transless 里点我们的键盘，
-        //    键盘去"拉起主 App"架引擎 —— **跳转本身**就让键盘失焦、
-        //    系统切回默认输入法，他还得手工切回来。
-        //    主 App 明明就在前台，这一跳是纯损失。
-        //
-        //    🚨 **不能挂在 `KbVoiceHost.observe()` 上**：那个只在
-        //    `setStandby(true)` 里注册，而这条要用的场景恰恰是
-        //    **待机关着、引擎没架** —— 挂在那儿等于永远收不到，
-        //    并且不报错，表现成"发了没反应"。
-        // 🚨 **用 AppDelegate 自己的 token，绝不借 `KbVoiceHost` 那个。**
-        //    `setStandby(false)` 会 `stopObserving(KbVoiceHost 的 token)`，
-        //    而它撤的是**整个 token 下的全部观察者** —— 借它的话，
-        //    待机一关这条通道就被连坐掉，而这条要用的场景恰恰是待机关着。
-        //    （源码里前人已经为自检/长录通道记过同一个坑。）
-        KbBridge.observeArmNow(Unmanaged.passUnretained(self).toOpaque()) {
-            _, _, _, _, _ in
-            DispatchQueue.main.async {
-                KbBridge.note("收到就地架引擎（键盘在我们自己 App 里按的，没有跳转）")
-                (UIApplication.shared.delegate as? AppDelegate)?
-                    .handleArmURL(returnAfter: false)
-            }
-        }
         switch ProcessInfo.processInfo.environment["TRANSLESS_RECURL"] {
         case "long": KbVoiceHost.shared.runLongRec()
         case "1": KbVoiceHost.shared.runSelfTest()
@@ -1028,6 +1005,34 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ app: UIApplication,
                      didFinishLaunchingWithOptions o: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // 🚨🚨 **这一段 09-06 挂错过一次，就挂在 `fire()` 里** ——
+        //    而 `fire()` 只在某条启动路径上跑，于是观察者**大部分启动都没注册上**，
+        //    表现成「键盘发了通知没人接」。上面那条注释写的就是同一件事：
+        //    **启动期的初始化要挂在启动上**。我照着它下面又犯了一次。
+        //    是模拟器那道闸门（`run_armnow_sim.py` 数痕迹）把它抓出来的。
+        // 🚨🚨 **就地架引擎的观察者，启动时无条件注册。**
+        //    Kevin 09-06 真机 FAIL：在 Transless 里点我们的键盘，
+        //    键盘去"拉起主 App"架引擎 —— **跳转本身**就让键盘失焦、
+        //    系统切回默认输入法，他还得手工切回来。
+        //    主 App 明明就在前台，这一跳是纯损失。
+        //
+        //    🚨 **不能挂在 `KbVoiceHost.observe()` 上**：那个只在
+        //    `setStandby(true)` 里注册，而这条要用的场景恰恰是
+        //    **待机关着、引擎没架** —— 挂在那儿等于永远收不到，
+        //    并且不报错，表现成"发了没反应"。
+        // 🚨 **用 AppDelegate 自己的 token，绝不借 `KbVoiceHost` 那个。**
+        //    `setStandby(false)` 会 `stopObserving(KbVoiceHost 的 token)`，
+        //    而它撤的是**整个 token 下的全部观察者** —— 借它的话，
+        //    待机一关这条通道就被连坐掉，而这条要用的场景恰恰是待机关着。
+        //    （源码里前人已经为自检/长录通道记过同一个坑。）
+        KbBridge.observeArmNow(Unmanaged.passUnretained(self).toOpaque()) {
+            _, _, _, _, _ in
+            DispatchQueue.main.async {
+                KbBridge.note("收到就地架引擎（键盘在我们自己 App 里按的，没有跳转）")
+                (UIApplication.shared.delegate as? AppDelegate)?
+                    .handleArmURL(returnAfter: false)
+            }
+        }
         // 🚨🚨 **必须挂在启动上，不能挂在 `applyDebugEnv`**（2026-09-05 栽过）。
         //    `applyDebugEnv` 是随手翻译那屏 `viewDidAppear` 里调的 ——
         //    语言用例根本不进那一屏，于是重置**从没执行**：
