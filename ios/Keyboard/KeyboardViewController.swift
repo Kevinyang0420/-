@@ -58,7 +58,22 @@ final class KeyboardViewController: UIInputViewController {
     }
 
     private let tones = Prompts.all
-    private let toneLabels = Prompts.all.map(Prompts.label)
+    /// 语气档的显示名。**每次读都算**，不缓存。
+    ///
+    /// 🚨🚨 原来是 `private let`（实例初始化时算一次）。主 App 没事 ——
+    ///    `Lang.set` 之后紧跟 `rebuildUI()`，整个 rootViewController 重建。
+    ///    **但 `rebuildUI()` 只动主 App 的窗口，而键盘扩展是另一个进程。**
+    ///    用户在 App 里把界面语言切成日语、再切到键盘，
+    ///    只要键盘进程还活着，语气条上显示的就还是切换前那套。
+    ///
+    /// 🚨 **修法比验它便宜**：这条要真机上让键盘进程跨越一次语言切换才复现，
+    ///    而改成计算属性的成本是"每次读重算三个元素"。
+    ///    **能用结构消掉的，别留着靠测试去守。**
+    ///
+    /// 🚨 同族：生成器里 `L.code` 也专门写过「必须是计算属性，不能是 `static let`
+    ///    —— `static let` 每进程只算一次，切完语言要等重启才变」。
+    ///    **同一条道理在这个文件里没落地。**
+    private var toneLabels: [String] { Prompts.all.map(Prompts.label) }
     private var tone = Prompts.normalize(KbBridge.prefs.string(forKey: "vime.tone"))
 
     private let hintLabel = UILabel()
@@ -476,6 +491,7 @@ final class KeyboardViewController: UIInputViewController {
         tabTranslate.setTitle(L.kb_translate, for: .normal)
         tabTranscribe.setTitle(L.kb_transcribe, for: .normal)
         langButton.setTitle(langTitle() + " ▾", for: .normal)
+        histButton.accessibilityIdentifier = "kb.hist"     // UITest 用
         histButton.setTitle(L.kb_history, for: .normal)
         for b in [tabTranslate, langButton, tabTranscribe, histButton] {
             b.titleLabel?.font = .systemFont(ofSize: 13)
@@ -1918,6 +1934,17 @@ final class KeyboardViewController: UIInputViewController {
     @objc private func pickVerbatim() { setMode(.raw) }
 
     private func setMode(_ m: Backend.Mode) {
+        // 🚨 **切档先把浮层收掉**（Kevin 2026-09-06）。
+        //    面板钉在语言按钮上，切到转写时那个按钮隐藏、宽度塌成 0，
+        //    面板没人收就跟着塌掉的锚点挪到左边。
+        //    🚨 挂在 `setMode` 这**一个**出口上 —— 四个 `pickXxx` 各写一遍的话，
+        //       以后加一个档位就漏一处。
+        // 🚨 **在键盘上这一行目前是防御性的，没被真实验证过**：
+        //    实测键盘的面板是全宽浮层(0,706,440,250)，一开就盖住整个顶排，
+        //    转写钮 isHittable=false —— 用户根本点不到档位。
+        //    看 `UITests/KbPanelDismiss.swift`：那条用例盯的是“盖住”这个事实，
+        //    面板变小、顶排露出来时它会红，提醒回来真验这一行。
+        dismissPanels()
         mode = m
         KbBridge.prefs.set(m.rawValue, forKey: "vime.mode")
         paintMode()
@@ -2050,6 +2077,7 @@ final class KeyboardViewController: UIInputViewController {
             list.bottomAnchor.constraint(equalTo: scroll.bottomAnchor),
             list.widthAnchor.constraint(equalTo: scroll.widthAnchor),
         ])
+        panel.accessibilityIdentifier = "kb.lang.panel"    // UITest 用
         langPanel = panel
     }
 
@@ -2096,6 +2124,19 @@ final class KeyboardViewController: UIInputViewController {
             b.setBackgroundImage(nil, for: .normal)
             b.backgroundColor = Theme.kbKey
         }
+    }
+
+    /// 收掉键盘上所有浮层。**切档时必须调。**
+    ///
+    /// 🚨 Kevin 2026-09-06 在**随手翻译**上撞到这个（切到转写、语言菜单还开着
+    ///    而且挪到了左边），并让我查"其他地方是不是也有"。
+    ///    查出来：**键盘上同样有，而且是两个面板**（语言 + 历史）。
+    ///    如果只修他指出来的那一处，他明天会在键盘上再撞一次。
+    private func dismissPanels() {
+        langPanel?.removeFromSuperview()
+        langPanel = nil
+        historyPanel?.removeFromSuperview()
+        historyPanel = nil
     }
 
     private func paintMode() {
@@ -2356,6 +2397,7 @@ final class KeyboardViewController: UIInputViewController {
             list.bottomAnchor.constraint(equalTo: scroll.bottomAnchor),
             list.widthAnchor.constraint(equalTo: scroll.widthAnchor),
         ])
+        panel.accessibilityIdentifier = "kb.hist.panel"    // UITest 用
         historyPanel = panel
     }
 
