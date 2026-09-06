@@ -3166,7 +3166,19 @@ final class KeyboardViewController: UIInputViewController {
                 //    （分享扩展全靠它），**公开 API**，我今天挖的 15 条里一条没碰过。
                 //    在这一刻调，正好对应 Kevin 看到的 Typeless 现象：
                 //    「闪出来，接着马上关掉，又切回微信」。
-                if let ctx = self.extensionContext {
+                // 🚨🚨 **宿主就是我们自己的主 App 时，不许收键盘。**
+                //    Kevin 2026-09-06：「在咱们 Transless 主 App 里…点了一下
+                //    我们自己的输入法…架起主引擎之后就突然闪退回默认输入法了」。
+                //    `completeRequest` 的语义是「把用户送回宿主」——
+                //    在微信里这是对的（他要回微信），
+                //    **但他人已经在 Transless 里了，这一步是纯损失**：
+                //    键盘被收掉，系统就退回默认输入法，他还得手动切回来。
+                //    🚨 判据要**两个宿主都测**：在 Transless 里不许掉出去、
+                //       在微信里保持原行为。只测一个必然改坏另一个。
+                if KbBridge.hostForeground {
+                    KbBridge.note("回宿主：主App就在前台 → **不调 completeRequest**"
+                                  + "（他要去的地方他已经在了）")
+                } else if let ctx = self.extensionContext {
                     KbBridge.note("回宿主：拉起主App的同时调 completeRequest")
                     ctx.completeRequest(returningItems: nil) { ok in
                         KbBridge.note("回宿主：completeRequest 回调 ok=" + String(ok))

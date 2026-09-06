@@ -86,6 +86,8 @@ enum KbBridge {
     // ------------------------------------------------------------ 键名
 
     private enum K {
+        /// 主 App 前台时间戳。**跟 `beat` 分开** —— 一个是引擎在跑，一个是人在这屏。
+        static let fg = "kb.hostfg.at"
         static let beat = "kb.host.beatAt"        // 主 App 心跳（Double，秒）
         static let cmdSeq = "kb.cmd.seq"          // 命令序号（Int，只增）
         static let cmdAct = "kb.cmd.action"       // "start" / "stop" / "cancel"
@@ -1170,6 +1172,36 @@ enum KbBridge {
         return KbProtocol.hostAlive(beatAt: s.double(forKey: K.beat),
                                     now: Date().timeIntervalSince1970,
                                     staleAfter: staleAfter)
+    }
+
+    /// **主 App 此刻在不在前台。**
+    ///
+    /// 🚨🚨 **这是跟 `hostAlive` 完全不同的一件事，别复用它。**
+    ///    `hostAlive` 看的是心跳，而心跳只有引擎进了待命/托管之后才开始写
+    ///    —— 用户第一次打开主 App、引擎还没架时它**必然是 false**，
+    ///    而那恰恰是「主 App 就在前台」的时刻。
+    ///    Kevin 2026-09-06 撞的就是这个：在我们自己 App 里点键盘，
+    ///    键盘以为宿主不在、去"拉起主 App"并把自己收掉，系统退回默认输入法。
+    ///
+    /// 判据跟心跳同一套：主 App 前台时每 `beatEvery` 秒刷一次，
+    /// 超过 `staleAfter` 秒没刷就当它不在前台了（进后台会主动清）。
+    static var hostForeground: Bool {
+        if let f = fakeHost { return f == "fg" }
+        guard let s = store else { return false }
+        return KbProtocol.hostAlive(beatAt: s.double(forKey: K.fg),
+                                    now: Date().timeIntervalSince1970,
+                                    staleAfter: staleAfter)
+    }
+
+    /// 主 App 进前台时刷一次。
+    static func markForeground() {
+        store?.set(Date().timeIntervalSince1970, forKey: K.fg)
+    }
+
+    /// 主 App 进后台时立刻清 —— 不清的话键盘会在接下来 `staleAfter` 秒里
+    /// 以为它还在前台，那几秒里点键盘就不会去拉起它了。
+    static func clearForeground() {
+        store?.removeObject(forKey: K.fg)
     }
 
     /// 主 App 报一次「我还在」。

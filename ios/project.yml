@@ -56,8 +56,8 @@ targets:
         #    后者只管我们自己的 view controller，管不到系统在我们周围怎么画。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260906.1191"
-        CFBundleVersion: "1191"
+        CFBundleShortVersionString: "20260906.1192"
+        CFBundleVersion: "1192"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -231,8 +231,8 @@ targets:
         #    后者只管我们自己的 view controller，管不到系统在我们周围怎么画。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260906.1191"
-        CFBundleVersion: "1191"
+        CFBundleShortVersionString: "20260906.1192"
+        CFBundleVersion: "1192"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -289,6 +289,11 @@ targets:
       #    在测试里另抄一份数字就是同源自比：写死 31 的实现照样绿。
       #    `Langs.g.swift` 是生成的纯数据，编两份没有副作用。
       - path: Shared/Langs.g.swift
+      # 🚨 判「宿主活着/在前台」的纯逻辑，判据直接喂它、不用起模拟器。
+      # 🚨 **文件末尾还有一条同名的，那条属于另一个 target** ——
+      #    我一度以为重复了、删掉这条，UITests 当场编译失败。
+      #    「清单里有」不等于「这个 target 里有」，别按文件名去重。
+      - path: Shared/KbProtocol.swift
       - path: Shared/WordCard.swift
       # WordCard.fromDict 要它 —— DictEntry 也是纯模型
       - path: Shared/DictEntry.swift
@@ -350,8 +355,8 @@ targets:
       path: LiveActivity/Info.plist
       properties:
         CFBundleDisplayName: Transless 录音状态
-        CFBundleShortVersionString: "20260906.1191"
-        CFBundleVersion: "1191"
+        CFBundleShortVersionString: "20260906.1192"
+        CFBundleVersion: "1192"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
@@ -383,8 +388,8 @@ targets:
         #    用它做的外观判断就不能代表真键盘。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260906.1191"
-        CFBundleVersion: "1191"
+        CFBundleShortVersionString: "20260906.1192"
+        CFBundleVersion: "1192"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -424,8 +429,8 @@ targets:
       path: Keyboard/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260906.1191"
-        CFBundleVersion: "1191"
+        CFBundleShortVersionString: "20260906.1192"
+        CFBundleVersion: "1192"
         # 🚨🚨 **键盘扩展自己也要声明支持哪些语言**（2026-08-28 补）。
         #    Kevin 真机截图：主 App 是中文，**键盘里全是英文**
         #    （Translate / Transcribe / History / Casual / Work / Email…）。

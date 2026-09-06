@@ -1491,6 +1491,21 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             forName: UIApplication.didBecomeActiveNotification,
             object: nil, queue: .main) { _ in
             KbVoiceHost.shared.foregroundAt = Date()
+            // 🚨🚨 **把"主 App 在前台"写进共享区，给键盘看**（2026-09-06）。
+            //    Kevin：「在咱们 Transless 主 App 里…点了一下我们自己的输入法…
+            //    架起主引擎之后就突然闪退回默认输入法了」。
+            //    键盘原来只有 `hostAlive`（看心跳）可用，而**心跳要等引擎进待命
+            //    才开始写** —— 他第一次打开 App 时必然为假，于是键盘以为宿主不在、
+            //    去"拉起主 App"并把自己收掉，系统就退回默认输入法。
+            //    **这两件事必须分开记**：一个是"引擎在跑"，一个是"人在这屏"。
+            KbBridge.markForeground()
+        }
+        // 🚨 进后台**立刻清**：不清的话键盘会在接下来 6 秒里以为主 App 还在前台，
+        //    那几秒内点键盘就不会去拉起它 —— 变成另一个方向的坏。
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil, queue: .main) { _ in
+            KbBridge.clearForeground()
         }
         NotificationCenter.default.addObserver(
             forName: UIApplication.didBecomeActiveNotification,
