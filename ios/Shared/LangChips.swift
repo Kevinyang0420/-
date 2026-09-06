@@ -33,6 +33,27 @@ enum LangChips {
                                 .withAlphaComponent(0.22)).cgColor
         b.backgroundColor = .clear          // 🚨 不填充 —— 跟列表行的关键区别
         b.accessibilityIdentifier = "lang.chip"
+        // 🚨🚨 **把「选中」暴露给辅助功能** —— 换实现时漏掉的一整块。
+        //    语言选择器原来是系统 `UIMenu`，`state = .on` 会让 a11y 树里
+        //    出现 `selected == true`；2026-09-05 换成自绘面板之后
+        //    **没有任何地方再设它** —— 于是：
+        //    ① VoiceOver 用户听不出哪门语言是选中的；
+        //    ② `LangSectionStyle.testRecentIsChipsNotRows` 那条
+        //       `selected == true` 的判据**变成量不到的空判据**，
+        //       它自己的报错里就写着「0=谓词量不到（判据没用）」。
+        //    **换实现时判据跟着废掉，比判据写错更隐蔽** —— 它不报错，只是不再守任何东西。
+        //
+        // 🚨🚨 **用 `accessibilityTraits`，不要用 `isSelected`。**
+        //    我第一版写的是 `b.isSelected = selected` —— a11y 是通了，
+        //    但 UIKit 把系统的**选中态蓝底**画了上去：那个 chip 当场变成亮蓝填充。
+        //    Kevin 今晚刚为「你什么时候让你给我改底色」发过火，
+        //    而这是我**为了修判据顺手改掉了配色**。
+        //    `.selected` trait 只进辅助功能树，一个像素都不动。
+        if selected {
+            b.accessibilityTraits.insert(.selected)
+        } else {
+            b.accessibilityTraits.remove(.selected)
+        }
         return b
     }
 
