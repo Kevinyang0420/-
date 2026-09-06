@@ -31,7 +31,9 @@ final class JapaneseUiShot: XCTestCase {
         // 🚨 随手翻译那屏 —— 2.1 报安卓在日语界面下语气档显示成「トーン：工作」
         //    （框架日语了、只有档位的值还是中文）。iOS 读代码看是走 `Prompts.label` 的，
         //    **但读代码不算，去看真屏幕。**
-        if app.staticTexts["随手翻译"].waitForExistence(timeout: 3) {
+        // 🚨 按标识，不按文案 —— 这一屏本来就是在**别的语言**下截图，
+        //    钉中文文案在这儿尤其没道理。
+        if app.buttons["app.try"].waitForExistence(timeout: 3) {
             app.staticTexts["随手翻译"].tap()
         } else if app.buttons.element(boundBy: 0).exists {
             // 日语界面下那句已经不叫「随手翻译」了 —— **按文案找必漂**，

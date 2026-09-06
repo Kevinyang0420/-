@@ -34,29 +34,60 @@ final class UiLangSwitch: XCTestCase {
         a.name = n; a.lifetime = .keepAlways; add(a)
     }
 
+
+    /// 那颗主入口**当前显示的文字**。
+    ///
+    /// 🚨 `app.buttons["app.try"].label` 是**空的** —— 它是自绘视图，
+    ///    文字在子标签里（09-07 实测：断言当场红在「基线读到空文案」）。
+    ///    读不到就如实返回空串，让判据自己红，不要静默退回按文案找。
+    private func ctaText(_ app: XCUIApplication) -> String {
+        let b = app.buttons["app.try"]
+        if !b.label.isEmpty { return b.label }
+        let inner = b.staticTexts.allElementsBoundByIndex
+            .map { $0.label }.filter { !$0.isEmpty }
+        return inner.first ?? ""
+    }
+
     /// 系统语言保持中文，App 内切 English → 三屏都要变；再切回来 → 都要变回去。
     func testSwitchAndSwitchBack() throws {
         let app = TestApp.launch(nil, env: ["TRANSLESS_UILANG_RESET": "1"])
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 25), "App 没起来")
         Thread.sleep(forTimeInterval: 3.0)
 
-        // 基线：中文
-        XCTAssertTrue(has(app, "随手翻译", 10),
-                      "🚨 基线不是中文，后面的对比不成立")
+        // 🚨🚨 **不再钉死具体文案**（09-07 改）。
+        //    原来三条断言写的都是「随手翻译」—— Kevin 09-07 把它改名成
+        //    「随便说点啥」之后，第 52 行那条 `XCTAssertFalse(has(…"随手翻译"…))`
+        //    **因为错误的原因通过了**：文案是被改名改没的，不是切了语言。
+        //    这条断言从此测不出它本来要测的东西，而且**没有任何东西会报错**。
+        //
+        //    改成读**同一个标识**（`app.try`，不随文案和语言变）的 label：
+        //    切语言前后**必须不同**，切回来**必须回到原值**。
+        //    这样任何改名都不会让它假绿，而"永远返回英文"的写死实现仍然会红。
+        let cta = app.buttons["app.try"]
+        XCTAssertTrue(cta.waitForExistence(timeout: 10),
+                      "🚨 首页找不到那颗主入口（标识 app.try）")
+        let zhLabel = ctaText(app)
+        XCTAssertFalse(zhLabel.isEmpty, "🚨 基线读到空文案，后面的对比不成立")
         shot("01_中文基线")
 
         pick("English", app)
-        // ① 首页要变 —— **不是只有设置页那一行**
-        XCTAssertTrue(has(app, "Translate as you go", 8),
-                      "🚨 切成 English 之后首页还是中文（这正是他报的现象）")
-        XCTAssertFalse(has(app, "随手翻译", 1), "🚨 中文文案还在")
+        Thread.sleep(forTimeInterval: 1.5)
+        let enLabel = ctaText(app)
+        XCTAssertNotEqual(enLabel, zhLabel,
+                          "🚨 切成 English 之后首页没变（这正是他报的现象）"
+                          + "｜前=\(zhLabel) 后=\(enLabel)")
+        // 英文界面下这颗按钮不该还是中文 —— 用字符集判，不钉具体词。
+        XCTAssertFalse(enLabel.unicodeScalars.contains {
+            (0x4E00...0x9FFF).contains($0.value) },
+            "🚨 英文界面下主入口仍是中文：\(enLabel)")
         shot("02_英文_首页")
 
         // 🚨 ② 反向控制：切回中文必须变回去。
         //    没有这一条的话，"永远返回英文"的写死实现也会全绿。
         pick("简体中文", app)
-        XCTAssertTrue(has(app, "随手翻译", 8),
-                      "🚨 切回简体中文之后没变回来")
+        Thread.sleep(forTimeInterval: 1.5)
+        XCTAssertEqual(ctaText(app), zhLabel,
+                       "🚨 切回简体中文之后没变回来")
         shot("03_切回中文")
     }
 

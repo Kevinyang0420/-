@@ -97,6 +97,20 @@ enum WordCard {
     }
 
     static func fromDict(_ e: DictEntry) -> String {
+        // 🚨🚨 **句子卡原样返回，别往下走**（1.1/2.3 09-07 提醒，安卓已中招）。
+        //    下面那段把 `kind` **写死成 `"word"`**，而且只序列化词的字段 ——
+        //    句子从这儿过一趟，`breakdown`/`alternatives`/`keys` **整组丢失**，
+        //    存进单词本后点开是空的，**而且存的时候一声不吭**。
+        //
+        //    🚨 我这轮的收藏路径走的是 `card: e.raw`，**没经过这里**，
+        //    所以现在没有现存 bug —— 但这个函数还有第二个调用点
+        //    （`WordBookViewController` 的重取），而且以后还会有第三个。
+        //    **在函数自己这儿挡住，比要求每个调用点记得绕开可靠。**
+        if !e.raw.isEmpty,
+           let o = (try? JSONSerialization.jsonObject(with: Data(e.raw.utf8)))
+            as? [String: Any], CardSections.isSentence(o) {
+            return e.raw
+        }
         var o: [String: Any] = [
             "kind": "word",
             "phonetic": e.phonetic,

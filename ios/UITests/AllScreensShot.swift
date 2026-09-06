@@ -49,6 +49,19 @@ final class AllScreensShot: XCTestCase {
 
     /// 按可见文字点一个按钮；点不到就**如实返回 false**，不假装点了。
     @discardableResult
+    /// 按 **accessibilityIdentifier** 点 —— 不随文案和语言变。
+    ///
+    /// 🚨 `tapText` 那个是按**可见文案**找的：Kevin 09-07 把「随手翻译」
+    ///    改名成「随便说点啥」，那一处 `if tapText(...)` 当场走了 else ——
+    ///    **只是少了一张图，没有任何东西报错**，靠截图做的验收就这么悄悄变薄了。
+    private func tapRef(_ id: String) -> Bool {
+        let b = app.buttons[id]
+        if b.waitForExistence(timeout: 4), b.isHittable { b.tap(); return true }
+        let o = app.otherElements[id]
+        if o.exists, o.isHittable { o.tap(); return true }
+        return false
+    }
+
     private func tapText(_ s: String) -> Bool {
         let b = app.buttons[s]
         if b.waitForExistence(timeout: 4), b.isHittable { b.tap(); return true }
@@ -74,7 +87,9 @@ final class AllScreensShot: XCTestCase {
         //    不能按"它应该在哪"去猜**。安卓完全没有这一屏，他今天第二次问了。
         _ = tab(0)
         Thread.sleep(forTimeInterval: 1.0)
-        if tapText("随手翻译") {
+        // 🚨 **别再按文案定位**：改名之后这个 `if` 会走 else，
+        //    只是少一张图、**没有任何东西报错**（0 09-07 点名）。
+        if tapRef("app.try") {
             shot("06_随手翻译")
             let dict = app.navigationBars.buttons["查词"]
             if dict.waitForExistence(timeout: 4), dict.isHittable {
