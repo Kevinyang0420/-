@@ -164,7 +164,21 @@ def main():
         # 名字要回传给导出那步（两个 target 各挂各的，只能靠名字点名）
         gh_env = os.environ.get("GITHUB_ENV")
         if gh_env:
-            var = "PROF_APP_NAME" if tag == "app" else "PROF_KB_NAME"
+            # 🚨🚨 **一个 target 一个变量。**
+            #    原来写的是「app 用 PROF_APP_NAME，其余都用 PROF_KB_NAME」——
+            #    而 WANT 里有三个 target，**live 是最后一个，把 kb 那份覆盖了**，
+            #    导出时键盘被配上了 Live 的描述文件：
+            #      Provisioning profile "Transless Live AppStore" has app ID
+            #      "...liveactivity", which does not match the bundle ID
+            #      "...keyboard"
+            #    **两个变量装三个值，多出来的那个必然吃掉一个**，
+            #    而且它不报错、要等到导出那一步才炸。
+            var = {"app": "PROF_APP_NAME", "kb": "PROF_KB_NAME",
+                   "live": "PROF_LIVE_NAME"}.get(tag)
+            if var is None:
+                bad.append("tag「%s」没有对应的环境变量名 —— "
+                           "新加 target 就要在这里登记，不许默默共用别人的" % tag)
+                continue
             with open(gh_env, "a", encoding="utf-8") as f:
                 f.write("%s=%s\n" % (var, pname))
 
