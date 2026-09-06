@@ -26,6 +26,10 @@ enum LangPanel {
     static func make(current: String,
                      onPick: @escaping (String) -> Void) -> UIView {
         let panel = UIView()
+        // 🚨 UITest 要能指着它问「你还在不在」。
+        //    没这个标识的话，判据只能挂在截图上 —— 那种判据不会自己红。
+        //    键盘和主 App 共用这个 make，一处加、两屏都有。
+        panel.accessibilityIdentifier = "lang.panel"
         // 🚨🚨 **照抄语气那个下拉框，不是重新设计**（Kevin 2026-09-06 01:40）：
         //    「翻译的下拉框跟语气的下拉框、目标语言的下拉框不是一个，
         //      能不能统一都用语气的这个下拉框，看上去高级一点」
