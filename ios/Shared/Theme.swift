@@ -299,6 +299,29 @@ enum Theme {
         return img.withRenderingMode(.alwaysTemplate)
     }
 
+    /// 查词页那个圆钮的**放大镜** —— Kevin 2026-09-06 01:1x：
+    /// 「我刚才说的那个查词的 icon，为什么我现在看我的 iOS 还是这一个 icon，没有更新呢？」
+    ///
+    /// 🚨 **盒子跟 `micGlyph` 完全一样**（`size * 0.60`），所以按钮尺寸、
+    ///    位置、tint 一个都不用动 —— 只换里面那个符号。
+    /// 🚨 符号本身**不铺满盒子**：麦克风是竖长条，36pt 高看着正好；
+    ///    放大镜是圆的，36pt 宽会顶到 42pt 圆钮的边。所以符号按 0.62 收一档
+    ///    再居中 —— **盒子不变、符号视觉重量对齐**。
+    static func searchGlyph(_ size: CGFloat) -> UIImage? {
+        let side = size * 0.60
+        let cfg = UIImage.SymbolConfiguration(pointSize: side * 0.62,
+                                              weight: .semibold)
+        guard let sym = UIImage(systemName: "magnifyingglass",
+                                withConfiguration: cfg) else { return nil }
+        let r = UIGraphicsImageRenderer(size: CGSize(width: side, height: side))
+        let img = r.image { _ in
+            let w = sym.size.width, h = sym.size.height
+            sym.draw(in: CGRect(x: (side - w) / 2, y: (side - h) / 2,
+                                width: w, height: h))
+        }
+        return img.withRenderingMode(.alwaysTemplate)
+    }
+
     /// 朗读键的小喇叭 —— **自己画的单色图形**，不是 emoji。
     ///
     /// 🚨 Kevin 2026-08-22：「那个朗读的小图标（小喇叭）跟这个紫色色调有点冲」。
