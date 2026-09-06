@@ -1039,6 +1039,18 @@ enum KbBridge {
         return Date().timeIntervalSince1970 - t < maxAge
     }
 
+    /// **把存货丢掉**（Kevin 2026-09-06 要的「按叉退出」，失败态那一档）。
+    ///
+    /// 🚨 只清"还有存货"这个标记，不去删音频文件本身 ——
+    ///    `hasRetryAudio` 判的就是这个标记，清了它角标就灭、重发路就断。
+    ///    文件留着无害（下一轮录音会覆盖），而删文件多一条会失败的 IO。
+    /// 🚨 幂等：没存货时调它是空操作，不许报错也不许留痕。
+    static func dropRetryAudio() {
+        guard let s = store else { return }
+        s.removeObject(forKey: "kb.retry.at")
+        s.synchronize()
+    }
+
     /// 环境变量那条只探一次（每次键盘露面都刷会把痕迹刷爆）。
     static var probedEnvOnce = false
 

@@ -118,6 +118,8 @@ enum L {
     static var kb_preparing: String { s(["zh": "准备中…", "en": "Preparing…", "hant": "準備中…", "ja": "準備中…", "de": "Vorbereiten…", "es": "Preparando…", "ar": "جارٍ التحضير…"]) }
     static var kb_rearming: String { s(["zh": "重新架引擎…", "en": "Re-arming…", "hant": "重新架引擎…", "ja": "再設定中…", "de": "Neu bewaffnen…", "es": "Reactivando…", "ar": "جارٍ إعادة التهيئة…"]) }
     static var kb_resending: String { s(["zh": "重发中…", "en": "Resending…", "hant": "重發中…", "ja": "再送信中…", "de": "Erneut senden…", "es": "Reenviando…", "ar": "جارٍ الإرسال…"]) }
+    static var kb_discarded: String { s(["zh": "已丢掉那段录音", "en": "Recording discarded", "hant": "已丟掉那段錄音"]) }
+    static var kb_cancel_a11y: String { s(["zh": "放弃这一轮", "en": "Discard this recording", "hant": "放棄這一輪"]) }
     static var kb_waiting_secs: String { s(["zh": "处理中… 已等 %1$@ 秒", "en": "Working… %1$@ s", "hant": "處理中… 已等 %1$@ 秒"]) }
     static var ready_title: String { s(["zh": "准备好了", "en": "You're all set", "hant": "準備好了", "ja": "準備完了", "de": "Du bist bereit", "es": "Todo listo", "ar": "أنت جاهز"]) }
     static var ready_body: String { s(["zh": "到任何 App 里切到 Transless 键盘，按麦克风开始说", "en": "Switch to the Transless keyboard in any app and tap the mic", "hant": "到任何 App 裡切到 Transless 鍵盤，按麥克風開始說", "ja": "任意のアプリでTranslessキーボードに切り替え、マイクをタップして話してください", "de": "Wechsle in einer beliebigen App zur Transless-Tastatur und tippe auf das Mikrofon", "es": "Cambia al teclado Transless en cualquier app y toca el micrófono", "ar": "بدّل إلى لوحة مفاتيح ‎Transless‎ في أي تطبيق واضغط على الميكروفون"]) }

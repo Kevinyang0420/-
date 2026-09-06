@@ -212,6 +212,22 @@ final class KeyboardViewController: UIInputViewController {
     private static let micLift: CGFloat = 8
 
     /// 麦克风右上角那枚琥珀叹号。有存货没传上去时亮。
+    /// **放弃这一轮**（Kevin 2026-09-06 要的「按叉退出」）。
+    ///
+    /// 🚨 三态同一个语义：录音中 / 处理中 / 失败态，点下去都是「这一段不要了」。
+    ///    不做二次确认 —— 存货本来就 10 分钟自动作废，**"稍后再说"已经存在了
+    ///    （不点就是稍后再说）**，点 ✕ 的人是"我确定不要了"。
+    /// 🚨 键盘里弹不了 `UIAlertController`（没有可 present 的层级）→ 做不了撤销条
+    ///    → **只能靠布局防误触**：36×36 比麦克风小一圈、跟它留 8pt 间隙、用次要色。
+    /// 🚨 放**左边**：右上角被琥珀叹号占着，一个是"还能救"、一个是"不要了"，
+    ///    挨在一起必然点错。
+    /// ✕ 的边长。比麦克风（88）小一圈 —— 视觉上就不是主操作。
+    static let kCancelSide: CGFloat = 36
+    /// ✕ 跟麦克风之间的间隙。🚨 **不许为 0** —— 不可撤销的键贴着主键放必然误触。
+    static let kCancelGap: CGFloat = 8
+
+    private let cancelButton = UIButton(type: .system)
+
     private let retryBadge = UILabel()
     /// 角标亮时圆钮下面那行「没传上去 · 再点一下」。
     private let retryHint = UILabel()
@@ -484,6 +500,32 @@ final class KeyboardViewController: UIInputViewController {
         mBot.isActive = true
         micTopC = mTop
         micBotC = mBot
+
+        // ── ✕ 放弃这一轮：圆钮**左侧**，间隙 8pt ─────────────────
+        // 🚨 尺寸 36（麦克风 88），次要色 —— 它不是要被点的那个键。
+        //    间隙写成常量是因为**判据要量它**（规格第 6 条坏样本：贴着放必须红）。
+        cancelButton.setTitle("✕", for: .normal)
+        cancelButton.titleLabel?.font = .systemFont(ofSize: 20, weight: .medium)
+        cancelButton.setTitleColor(Theme.kbHint, for: .normal)
+        cancelButton.backgroundColor = Theme.key
+        cancelButton.layer.cornerRadius = Self.kCancelSide / 2
+        cancelButton.accessibilityIdentifier = "kb.cancel"
+        cancelButton.accessibilityLabel = L.kb_cancel_a11y
+        cancelButton.isHidden = true
+        cancelButton.translatesAutoresizingMaskIntoConstraints = false
+        cancelButton.addTarget(self, action: #selector(tapCancel),
+                               for: .touchUpInside)
+        micWrap.addSubview(cancelButton)
+        NSLayoutConstraint.activate([
+            cancelButton.widthAnchor.constraint(
+                equalToConstant: Self.kCancelSide),
+            cancelButton.heightAnchor.constraint(
+                equalToConstant: Self.kCancelSide),
+            cancelButton.centerYAnchor.constraint(
+                equalTo: micButton.centerYAnchor),
+            cancelButton.trailingAnchor.constraint(
+                equalTo: micButton.leadingAnchor, constant: -Self.kCancelGap),
+        ])
 
         // ── 重试角标：贴在圆钮右上角 ──────────────────────────────
         // 🚨 **琥珀不是红**（他指定 #F0B429）：红＝出错了，琥珀＝等你一下。
@@ -968,6 +1010,63 @@ final class KeyboardViewController: UIInputViewController {
     ///    所以显示/隐藏都不会让面板长个（他点名：一长就把宿主的内容顶跑）。
     /// 🚨 **平时圆钮居中，失败时圆+字当一整块居中**（圆往上让 10）——
     ///    不许永久上移。
+    /// ✕ 该不该出现。**跟角标同一个出口刷新**（`refreshRetryBadge` 里调）——
+    /// 分开写两个刷新点，迟早有一个状态漏掉。
+    ///
+    /// 🚨 判据（规格）：空闲无存货不出现；录音中 / 处理中 / 失败态都要出现。
+    /// **放弃这一轮** —— 录音中 / 处理中 / 失败态，三态一个语义。
+    ///
+    /// 丢音频 → 取消在飞的请求 → 回空闲 → 给一句反馈。
+    /// **不上屏、不进历史、不留存货。**
+    ///
+    /// 🚨 判据（规格 1–3）：点完输入框**一个字都不许多**、历史里没有这一条、
+    ///    在飞的后台请求真的被取消（不是界面回了、请求还在跑）。
+    /// 🚨 判据 4 的反面也要守住：**不点** ✕ 的路不许被改坏 ——
+    ///    这个方法只在被点时执行，不碰任何"没点"的路径。
+    @objc private func tapCancel() {
+        // 失败态的文案跟前两态**不一样**：那是"存好的那段删了"，不是"这一轮没了"。
+        let hadStock = KbBridge.hasRetryAudio()
+
+        // 🚨 跟 `tapMic` 里那条取消分支**同一套动作**，顺序也一样 ——
+        //    差一步就会留下"界面回了、请求还在跑"或"停了但又插了一次字"。
+        cancelBgArm("他按了 ✕，放弃这一轮")
+        pollTimer?.invalidate()
+        pollTimer = nil
+        if remoteSeq >= 0 {
+            KbBridge.send("cancel")
+            remoteSeq = -1
+        }
+        // 🚨 高-4 的同一条：**先推代次再 stop** —— `stop()` 会触发 `onWav`，
+        //    顺序反了那条回调仍属于"本代"，照样会把字插进去。
+        //    而"点了取消却插了字"正是他最不能接受的那种失败。
+        localEpoch += 1
+        localArmed = false
+        if localMode {
+            localVoice.stop()
+            localMode = false
+        }
+
+        // 丢掉存货：他说的第 2 条「上传不成功…也没有退出录音的入口」。
+        KbBridge.dropRetryAudio()
+        forceRetryDropped = true      // 调试开关那一路也要跟着灭，否则判据验不了
+
+        KbBridge.note("他按了 ✕ 放弃这一轮（原相位="
+                      + String(describing: phase) + "，有存货=" + String(hadStock) + "）")
+        setPhase(.idle, hint: hadStock ? L.kb_discarded : L.kb_cancelled)
+        refreshRetryBadge()   // 唯一出口：角标灭掉，✕ 自己也跟着收起
+    }
+
+    /// 强制点亮的那面角标**已经被明确丢弃过**了吗。
+    /// 🚨 只影响调试开关那一路，真实存货走 `KbBridge.hasRetryAudio()`，不受它影响。
+    private var forceRetryDropped = false
+
+    private func refreshCancelButton() {
+        let hasStock = !retryBadge.isHidden
+        cancelButton.isHidden = !(phase == .listening
+                                  || phase == .thinking
+                                  || hasStock)
+    }
+
     private func refreshRetryBadge() {
         // 🚨 调试开关 `kb_force_retry`：强制点亮角标，**只为我自己截图验收 UI**
         //    （两态高度一样 / 失败整块居中 / 琥珀不用红 / Speak 不变灰）。
@@ -982,8 +1081,16 @@ final class KeyboardViewController: UIInputViewController {
         //    真机上用户设不了 env（只有 simctl/Xcode 启动能注入），泄不了也误触不了。
         let forceEnv = ProcessInfo.processInfo
             .environment["TRANSLESS_KB_FORCE_RETRY"] == "1"
-        let on = KbBridge.hasRetryAudio() || KbBridge.flag("kb_force_retry") || forceEnv
+        // 🚨 强制开关是**「初始点亮」，不是「永远点亮」**。
+        //    恒真的话，任何"把角标灭掉"的功能在模拟器上都验不了 ——
+        //    ✕ 那条判据第一次跑就红在这儿：丢弃完了角标照样亮。
+        //    **一个测试开关让一整类判据失效，比没有开关更糟。**
+        let forced = (KbBridge.flag("kb_force_retry") || forceEnv)
+            && !forceRetryDropped
+        let on = KbBridge.hasRetryAudio() || forced
         retryBadge.isHidden = !on
+        // 🚨 ✕ 的可见性跟着一起刷 —— 同一个出口，不另开一个刷新点。
+        refreshCancelButton()
         retryHint.isHidden = !on
         micTopC?.constant = -Self.micLift - (on ? Self.micRetryLift : 0)
         micBotC?.constant = -Self.micLift - (on ? Self.micRetryLift : 0)
