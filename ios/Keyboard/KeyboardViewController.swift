@@ -234,6 +234,49 @@ final class KeyboardViewController: UIInputViewController {
     /// 进入 thinking 的时刻 —— 用来判"是不是卡死了"。
     private var thinkingSince = Date()
 
+    /// 「处理中」秒表 —— Kevin 2026-09-06：录 120 秒之后
+    /// **只看到一个转圈，分不出「在传 / 在转 / 卡住」**。
+    /// 有个秒数在动，「还活着」和「卡死了」就分得开。
+    private var thinkTicker: Timer?
+    /// 上一次**由秒表自己写进去**的那句话。
+    /// 🚨 它的用途是「别覆盖别人」：`hintLabel` 有 9 个写入点，
+    ///    其中几个是在 thinking 期间写**错误提示**的。
+    ///    秒表发现当前文本不是自己上次写的那句，就立刻交出控制权 ——
+    ///    不然用户刚看到的报错会被「处理中…」盖掉，
+    ///    **那是把一个有用的信息换成一个没用的**。
+    private var thinkHintOwned = ""
+
+    private func startThinkTicker() {
+        stopThinkTicker()
+        let t = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            guard self.phase == .thinking else { self.stopThinkTicker(); return }
+            if !self.thinkHintOwned.isEmpty,
+               self.hintLabel.text != self.thinkHintOwned {
+                self.stopThinkTicker()      // 别人写了，交出去
+                return
+            }
+            let n = Int(Date().timeIntervalSince(self.thinkingSince))
+            // 🚨 前 3 秒不打扰：让 `setPhase` 传进来的那句（比如「重发中…」）
+            //    有机会被看见。3 秒之内也没人会怀疑卡住。
+            guard n >= 3 else { return }
+            let line = L.fill(L.kb_waiting_secs, String(n))
+            self.thinkHintOwned = line
+            self.hintLabel.text = line
+        }
+        // 🚨 `.common` 模式：默认的 `.default` 在滚动时会停，
+        //    而他正是在等结果时最可能去滑别的东西 —— 那时秒表停住，
+        //    看起来就跟卡死一模一样。
+        RunLoop.main.add(t, forMode: .common)
+        thinkTicker = t
+    }
+
+    private func stopThinkTicker() {
+        thinkTicker?.invalidate()
+        thinkTicker = nil
+        thinkHintOwned = ""
+    }
+
     // MARK: - 界面
 
     override func viewDidLoad() {
@@ -2617,6 +2660,9 @@ final class KeyboardViewController: UIInputViewController {
         // 🚨 M1 + 高-2：🔊 的三个属性走**同一个出口**，见 `paintSpeakButton()`。
         paintSpeakButton()
         hintLabel.text = hint
+        // 🚨 秒表挂在 `setPhase` 这**一个**出口上 —— 进 thinking 就开、
+        //    离开就停。44 个调用点各写一遍必漏一处。
+        if p == .thinking { startThinkTicker() } else { stopThinkTicker() }
         switch p {
         case .idle:
             micButton.setTitle("", for: .normal)
