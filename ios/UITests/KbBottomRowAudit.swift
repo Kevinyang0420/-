@@ -46,9 +46,8 @@ final class KbBottomRowAudit: XCTestCase {
         let a = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         a.name = "键盘底排现状"; a.lifetime = .keepAlways; add(a)
 
-        // 🚨 **故意让它红一次**，好把量到的值打出来 —— 量尺用例的产出是**数据**，
-        //    绿不绿不重要。等拿到数、方案定了，这条再改成真正的回归判据。
-        // ── 判据（方案乙）──────────────────────────────
+        // ── 判据（Kevin 2026-09-05 23:5x 定案：牙缝 20 → 12）────────
+        // 🚨 这条已经**不是量尺**了，是回归判据 —— 方案定了，它该绿。
         // 🚨 每条都能失败：数字写死在这里，改回现状任何一条都会红。
         XCTAssertEqual(w.count, 4, "🚨 只量到 \(report) —— 量不全就不算验过")
         XCTAssertEqual(w["删除"] ?? 0, 88, accuracy: 1,
@@ -58,11 +57,27 @@ final class KbBottomRowAudit: XCTestCase {
         XCTAssertEqual(w["朗读"] ?? 0, 88, accuracy: 1,
             "🚨 朗读应为 88（现状 117）—— 他要求「朗读调小」，\(report)")
 
-        // 🚨🚨 **乙的那一条：删除↔发送要拉开** —— 这是直接治「经常点错」的。
-        //    判据用**两键之间的空隙**，不是"我设了 setCustomSpacing"：
-        //    设了不等于生效（`bottom.spacing` 是整行统一的，会盖掉它）。
-        let gap = (x["发送"] ?? 0) - ((x["删除"] ?? 0) + (w["删除"] ?? 0))
-        XCTAssertEqual(gap, 20, accuracy: 2,
-            "🚨 删除↔发送的空隙是 \(Int(gap))，应为 20 —— 是不是被 bottom.spacing 盖掉了？")
+        // 🚨🚨 **三处缝必须一样宽** —— Kevin 骂的就是"四个间隙里只有一处是 20"，
+        //    眼睛把那个空洞读成「少了一颗键」。
+        //    判据用**两键之间的空隙**，不是"我设了 spacing"：设了不等于生效
+        //    （`setCustomSpacing` 和 `bottom.spacing` 会互相盖）。
+        //
+        // 🚨 **判据挂在三处、不是只挂出事那一处**：只查删除↔发送的话，
+        //    有人把另外两处改成 8 也照样绿 —— 而那正好又造出一个独大的缝。
+        func gapAfter(_ left: String, _ right: String) -> CGFloat {
+            ((x[right] ?? 0) - ((x[left] ?? 0) + (w[left] ?? 0)))
+        }
+        let gaps = [("打字", "朗读"), ("朗读", "删除"), ("删除", "发送")]
+            .map { (l, r) in (l + "↔" + r, gapAfter(l, r)) }
+        for (name, g) in gaps {
+            XCTAssertEqual(g, 12, accuracy: 2,
+                "🚨 \(name) 的空隙是 \(Int(g))，应为 12。三处必须一样宽 —— "
+                + "他骂的是「四个间隙里只有一处是 20」。\(report)")
+        }
+        // 反向控制：三处**互相**也要相等（上面三条都过还不够 ——
+        // 万一 accuracy 放宽了，这条用差值再卡一次）。
+        let spread = (gaps.map { $0.1 }.max() ?? 0) - (gaps.map { $0.1 }.min() ?? 0)
+        XCTAssertLessThanOrEqual(spread, 2,
+            "🚨 三处缝最宽和最窄差了 \(Int(spread))pt —— 只要有一处比旁边宽一截就是洞")
     }
 }
