@@ -118,6 +118,9 @@ enum L {
     static var kb_preparing: String { s(["zh": "准备中…", "en": "Preparing…", "hant": "準備中…", "ja": "準備中…", "de": "Vorbereiten…", "es": "Preparando…", "ar": "جارٍ التحضير…"]) }
     static var kb_rearming: String { s(["zh": "重新架引擎…", "en": "Re-arming…", "hant": "重新架引擎…", "ja": "再設定中…", "de": "Neu bewaffnen…", "es": "Reactivando…", "ar": "جارٍ إعادة التهيئة…"]) }
     static var kb_resending: String { s(["zh": "重发中…", "en": "Resending…", "hant": "重發中…", "ja": "再送信中…", "de": "Erneut senden…", "es": "Reenviando…", "ar": "جارٍ الإرسال…"]) }
+    static var again_translate: String { s(["zh": "再次翻译", "en": "Translate again", "hant": "再次翻譯"]) }
+    static var again_doing: String { s(["zh": "再译一次…", "en": "Translating again…", "hant": "再譯一次…"]) }
+    static var again_no_source: String { s(["zh": "还没有可以重译的原话", "en": "Nothing to translate yet", "hant": "還沒有可以重譯的原話"]) }
     static var kb_discarded: String { s(["zh": "已丢掉那段录音", "en": "Recording discarded", "hant": "已丟掉那段錄音", "ja": "録音を破棄しました", "de": "Aufnahme verworfen", "es": "Grabación descartada", "ar": "تم تجاهل التسجيل"]) }
     static var kb_cancel_a11y: String { s(["zh": "放弃这一轮", "en": "Discard this recording", "hant": "放棄這一輪", "ja": "この録音を破棄", "de": "Diese Aufnahme verwerfen", "es": "Descartar esta grabación", "ar": "تجاهل هذا التسجيل"]) }
     static var kb_waiting_secs: String { s(["zh": "处理中… 已等 %1$@ 秒", "en": "Working… %1$@ s", "hant": "處理中… 已等 %1$@ 秒", "ja": "処理中… %1$@ 秒経過", "de": "Wird verarbeitet… %1$@ s", "es": "Procesando… %1$@ s", "ar": "جارٍ المعالجة… %1$@‎ ثانية"]) }

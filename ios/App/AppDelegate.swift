@@ -3545,6 +3545,16 @@ final class MainViewController: UIViewController {
     private let keepButton = UIButton(type: .system)
     /// 这一句的**中文原话**。收藏要拿它当复习卡正面。
     private var lastZh = ""
+
+    /// **再次翻译** —— 改了目标语言之后，不用再说一遍。
+    ///
+    /// 🚨 用**已转写的原文**（`lastZh`）重发，**不重录、不重新识别**。
+    ///    重新识别的话同一段音频两次转写可能不同，他会看到中文版和日文版
+    ///    对不上、**以为翻译不稳**，其实是识别在飘。
+    ///    **重译是"同一个输入的第二个输出"，不是"第二次输入"。**
+    private let againButton = UIButton(type: .system)
+    /// 重译在飞的代次 —— **防连点**（他快点五次只该发一个请求）。
+    private var againEpoch = -1
     /// 反向翻译：**对方**说外语 → 译成我的语言（界面语言那一档）。
     /// 正向是我说话 → 译成 `lang`（给对方看）。
     private let revButton = UIButton(type: .system)
@@ -3777,6 +3787,18 @@ final class MainViewController: UIViewController {
         //    留着 addTarget 的话，点一下会既弹菜单又走老路径。
         refreshLangPanel()
 
+        // 🚨 **样式照抄 `speakButton`，不新造颜色/形状**（规格点名：
+        //    「样式用已有的按钮样式，不许新造」—— 版式不归我定）。
+        againButton.setTitle(L.again_translate, for: .normal)
+        againButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        againButton.setTitleColor(Theme.text, for: .normal)
+        againButton.backgroundColor = Theme.key
+        againButton.layer.cornerRadius = 16
+        againButton.accessibilityIdentifier = "app.again"
+        againButton.isHidden = true
+        againButton.addTarget(self, action: #selector(tapAgain),
+                              for: .touchUpInside)
+
         speakButton.setTitle(L.kb_speak, for: .normal)
         // 🚨 单色喇叭贴在文字左边（原来是彩色 emoji，跟主题冲）
         speakButton.setImage(Theme.speakGlyph(17), for: .normal)
@@ -3840,7 +3862,7 @@ final class MainViewController: UIViewController {
         contButton.isHidden = true
 
         [modeStack, subStack, hintLabel, heardLabel, paramRow, paramSep, resultView, micButton,
-         toneButton, langButton, speakButton, bigButton, keepButton,
+         toneButton, langButton, againButton, speakButton, bigButton, keepButton,
          revButton, contButton].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview($0)
@@ -3977,7 +3999,7 @@ final class MainViewController: UIViewController {
         // 🚨 立体感统一在这儿走一遍，别在每个控件后面各写一行 —— 漏一个就少一个阴影，
         //    而"少了一个"是看不出来的（跟安卓 Theme.elevateAll 同一套做法）。
         for v in [tabTranslate, tabTranscribe, modeZhButton, modeRawButton,
-                  toneButton, langButton, speakButton, bigButton] {
+                  toneButton, langButton, againButton, speakButton, bigButton] {
             v.layer.cornerRadius = Theme.rKey
             Theme.elevate(v, 3)
         }
@@ -4472,6 +4494,10 @@ final class MainViewController: UIViewController {
         if isTranslate {
             paramRow.addArrangedSubview(toneButton)
             paramRow.addArrangedSubview(langButton)
+            // 🚨 **紧挨目标语言选择器**（规格指定的位置）——
+            //    他改完语言，手就在这儿，重译按钮该在手边。
+            //    有结果才显示（`paintOutputButtons` 管显隐）。
+            paramRow.addArrangedSubview(againButton)
         } else {
             // 🚨 转写档只有一项 —— 用两侧的空占位把它挤到**正中**，
             //    而不是让 `fillEqually` 把它拉成整行宽。
@@ -5057,6 +5083,50 @@ final class MainViewController: UIViewController {
         }
     }
 
+    /// 点「再次翻译」：拿**当前**目标语言和语气，把**上一次的原话**重发一遍。
+    @objc private func tapAgain() {
+        let zh = lastZh.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !zh.isEmpty else {
+            // 🚨 不静默 return —— 那是"点了没反应"，他最烦这个
+            hintLabel.text = L.again_no_source
+            return
+        }
+        // 🚨 **防连点**：在飞时直接忽略，并且按钮已经置灰（见 `paintOutputButtons`）。
+        guard againEpoch != epoch else { return }
+        againEpoch = epoch
+        let fLang = langNow
+        let fMode: Backend.Mode = (reversed && mode == .raw) ? .en : mode
+        let fTone = tone
+        let ep = epoch
+        paintOutputButtons()
+        hintLabel.text = L.again_doing
+        Backend.polish(text: zh, tone: fTone, mode: fMode, lang: fLang) {
+            [weak self] r in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                // 跟主流程同一道代次闸：上一轮在飞的结果不许写进新一轮
+                guard ep == self.epoch else { return }
+                self.againEpoch = -1
+                switch r {
+                case .success(let en):
+                    // 🚨 **历史各记一条** —— 中译和日译是两个产出，
+                    //    合成一条会让先译的那个消失。走跟主流程同一个出口。
+                    self.commitResult(zh: zh, out: en)
+                    self.lines = [en]
+                    self.paintLines()
+                    self.hintLabel.text = ""
+                case .failure(let e):
+                    // 🚨🚨 **失败不许清掉已有结果。**
+                    //    他点一下、网络不好连原来的也没了 —— **比没这个按钮更糟**。
+                    //    只在提示行说一句，`lastOut`/`lines` 一个字都不动。
+                    self.logFailure("\(e)", step: "再次翻译")
+                    self.hintLabel.text = e.userText
+                }
+                self.paintOutputButtons()
+            }
+        }
+    }
+
     /// 切正向/反向。**录音中不许切** —— 这一次录的是谁的话，
     /// 中途改了的话发出去的目标语言跟界面显示的对不上。
     @objc private func tapReverse() {
@@ -5118,6 +5188,13 @@ final class MainViewController: UIViewController {
         let canBig = !bigTextNow().isEmpty
         speakButton.isHidden = !hasText
         speakButton.isEnabled = canSpeak
+        // 🚨 「再次翻译」跟朗读/收藏**同一套显隐**（规格点名沿用 `hasText`）——
+        //    有结果才出现；在飞时置灰防连点，但**不隐藏**（隐藏会跳版）。
+        againButton.isHidden = !hasText || lastZh.isEmpty
+        let canAgain = hasText && !lastZh.isEmpty
+            && phase == .idle && againEpoch != epoch
+        againButton.isEnabled = canAgain
+        againButton.alpha = canAgain ? 1.0 : 0.45
         // 🚨 **alpha 必须跟着 isEnabled 一起恢复**。
         //    `setPhase` 非 idle 时把它压到 0.45，而这里是唯一的恢复点 ——
         //    不写这一行，按钮**永远灰着**（能点，但看着像坏的）。
