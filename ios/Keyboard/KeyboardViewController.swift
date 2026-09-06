@@ -507,7 +507,11 @@ final class KeyboardViewController: UIInputViewController {
         cancelButton.setTitle("✕", for: .normal)
         cancelButton.titleLabel?.font = .systemFont(ofSize: 20, weight: .medium)
         cancelButton.setTitleColor(Theme.kbHint, for: .normal)
-        cancelButton.backgroundColor = Theme.key
+        // 🚨 **键盘里不许用深色专用色**（`Theme.key` 那一族）——
+        //    键盘要同时压在浅色和深色宿主上，写死深色的话在浅色 App 里
+        //    就是 Kevin 骂过的那句「你现在键盘的颜色淡成什么样子了？别人能用吗？」
+        //    用随宿主适配的 `kbKey` / `kbHint`。配色闸门当场把我这行拦下了。
+        cancelButton.backgroundColor = Theme.kbKey
         cancelButton.layer.cornerRadius = Self.kCancelSide / 2
         cancelButton.accessibilityIdentifier = "kb.cancel"
         cancelButton.accessibilityLabel = L.kb_cancel_a11y

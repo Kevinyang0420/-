@@ -461,6 +461,28 @@ jobs:
 
       # 🚨 **不管闸门过没过都要留**（`if: always()`）——
       #    最值钱的正是**失败那次**的原始输出，那才是坏样本。
+      # 🚨🚨 **「进了 App Store Connect」≠「TestFlight 里装得到」。**
+      #    2026-09-06 实撞：构建 1177.1 processingState 已经是 VALID，
+      #    而 Kevin 的 TestFlight 里仍然只有 08-28 那个 734 ——
+      #    因为**没有人把它加进测试组**，这一步链路上从来没有过。
+      #    今天这条链上同一形状出现了四次：
+      #      CI 绿了 ≠ 包上去了 · UPLOAD SUCCEEDED ≠ 进了 ASC
+      #      进了 ASC ≠ 处理完 · 处理完 ≠ 装得到  ← 就是这一步
+      - name: 加入 TestFlight 测试组（否则装不到）
+        if: ${{ inputs.upload }}
+        env:
+          KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+          KEY_B64: ${{ secrets.ASC_API_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          WANT_BUILD=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" \
+            "$RUNNER_TEMP/ipacheck/Payload/Transless.app/Info.plist")
+          ASC_KEY_ID="${KEY_ID}" ASC_ISSUER_ID="${ISSUER_ID}" \
+            ASC_KEY_B64="${KEY_B64}" WANT_BUILD="${WANT_BUILD}" \
+            "$RUNNER_TEMP/pvenv/bin/python" \
+            "${GITHUB_WORKSPACE}/ios/ci_testflight_assign.py"
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
