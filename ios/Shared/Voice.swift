@@ -604,10 +604,20 @@ final class Voice: NSObject {
         hbFrames = 0
         hbNext = 0
         Voice.recEnter()
-        node.installTap(onBus: 0, bufferSize: 2048, format: inFormat) { [weak self] buf, _ in
+        // 🚨 **参数和闭包签名一律写死类型** —— 不是风格，是修 CI 编译失败。
+        //    2026-09-06 CI（macos-15 / Xcode 16）在这一行报
+        //    「unable to type-check this expression in reasonable time」，
+        //    而同一份代码在他 Mac（Xcode 26.5）上 Debug 和 Release 都编得过 ——
+        //    **本机编过 ≠ CI 编得过**，类型检查器的求解预算逐版本不同。
+        //    留白的地方全在这一行：`0`/`2048` 两个字面量要推数值类型，
+        //    闭包两个参数要从重载里反推。写死之后求解空间基本清零。
+        let tapBus: AVAudioNodeBus = 0
+        let tapFrames: AVAudioFrameCount = 2048
+        node.installTap(onBus: tapBus, bufferSize: tapFrames, format: inFormat) { [weak self] (buf: AVAudioPCMBuffer, _: AVAudioTime) in
             guard let self = self else { return }
             let ratio = Voice.SAMPLE_RATE / inFormat.sampleRate
-            let cap = AVAudioFrameCount(Double(buf.frameLength) * ratio + 16)
+            let scaled: Double = Double(buf.frameLength) * ratio + 16
+            let cap = AVAudioFrameCount(scaled)
             guard let out = AVAudioPCMBuffer(pcmFormat: outFormat, frameCapacity: cap) else { return }
             var err: NSError?
             var supplied = false
@@ -685,8 +695,10 @@ final class Voice: NSObject {
             //    「代码里有这个变量」和「这条路上会算它」是两回事。
             var s0: Double = 0
             for i in 0..<n { let v = Double(ch[0][i]); s0 += v * v }
-            let lv = Float(min(1.0,
-                ((s0 / Double(n)).squareRoot() / 32768.0).squareRoot() * 1.9))
+            let mean0: Double = s0 / Double(n)
+            let rms0: Double = mean0.squareRoot() / 32768.0
+            let curved0: Double = rms0.squareRoot() * 1.9
+            let lv = Float(min(1.0, curved0))
             self.onLevel?(lv)
             // 🚨 顺手统计这一段的峰值/本底 —— 判「有没有人说话」要挂在
             //    **音频本身**上，不能挂在后端返回的文字上（模型对同一段静音
@@ -718,8 +730,9 @@ final class Voice: NSObject {
                 let v = Double(ch[0][i])
                 sum += v * v
             }
-            let rms = (sum / Double(n)).squareRoot() / 32768.0
-            let level = Float(min(1.0, rms.squareRoot() * 1.9))
+            let rms: Double = (sum / Double(n)).squareRoot() / 32768.0
+            let curved: Double = rms.squareRoot() * 1.9
+            let level = Float(min(1.0, curved))
             let frameMs = n * 1000 / Int(Voice.SAMPLE_RATE)
 
             // 整场到顶：收工（`stop()` 会把最后这段交出去）。
