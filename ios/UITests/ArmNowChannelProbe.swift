@@ -36,6 +36,14 @@ final class ArmNowChannelProbe: XCTestCase {
         let app = XCUIApplication(bundleIdentifier: "com.kevin.transless")
         // 🚨 **不设 `TRANSLESS_NO_ARM`** —— 那个会拦掉架引擎，
         //    正好把要测的东西关掉，测出来的绿是假的。
+        //
+        // 🚨🚨 **先杀掉再起，逼出「引擎没在跑」的冷起点。**
+        //    第一轮跑完痕迹是「架引擎：**本来就架着**（引擎在跑）→ 当成功」——
+        //    引擎是上一轮探针留下的。那样测的是"标记补一下"，
+        //    **不是**他出问题的那个场景（引擎没起、需要真架一次）。
+        //    用例之间共享持久状态 = 没有确定的起点，这个坑这个项目里记过两次。
+        app.terminate()
+        Thread.sleep(forTimeInterval: 2.0)
         app.launch()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 25), "App 没起来")
         // 等 `didFinishLaunching` 把观察者注册上。
