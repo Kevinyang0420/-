@@ -56,8 +56,8 @@ targets:
         #    后者只管我们自己的 view controller，管不到系统在我们周围怎么画。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260906.1176"
-        CFBundleVersion: "1176"
+        CFBundleShortVersionString: "20260906.1177"
+        CFBundleVersion: "1177.1"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -85,6 +85,24 @@ targets:
         #    把他从微信劫持到短信。顺序在 `KbVoiceHost.guessBackOrder` 里定。
         LSApplicationQueriesSchemes: [weixin, wechat, lark, mqq, xhsdiscover, snssdk1128, taobao, tmall, alipay, openapp.jdmobile, tg, telegram, whatsapp, slack, msteams, ms-outlook, notion, instagram, twitter, googlechrome, youtube, sinaweibo, orpheus]
         NSMicrophoneUsageDescription: 用来听你说的中文，转成文字后整理并译成英文。
+        # 🚨🚨 **这三条缺一个，包就传不上 TestFlight**（2026-09-06 实撞两次）。
+        #    苹果邮件原文（构建 1173 / 1175 各一封）：
+        #      ITMS-90683: Missing purpose string in Info.plist
+        #      The Info.plist file for the "Transless.app" bundle should contain
+        #      a NSCameraUsageDescription key…
+        #      "If you're using external libraries or SDKs, they may reference APIs
+        #       that require a purpose string. **While your app might not use these
+        #       APIs, a purpose string is still required.**"
+        #
+        #    🚨 **失败的方式极其隐蔽**：altool 打的是 `UPLOAD SUCCEEDED with no errors`、
+        #    退出码 0，CI 那边看到的是"上传成功"，而构建**根本不进 App Store Connect**。
+        #    唯一的证据是苹果发到账号邮箱的那封信 —— 日志里一个字都没有。
+        #    我为此白等了两轮共 85 分钟的轮询，还一度去查一个不存在的上传问题。
+        #
+        #    🚨 `NSSpeechRecognitionUsageDescription` 原来**只在键盘那边有、主 App 没有**
+        #    —— 又一处"同一件事两边不一致"，顺手补齐。
+        NSCameraUsageDescription: 本 App 不拍照也不录像。此项由所依赖的系统媒体框架接口触发，苹果要求即使不使用也须声明。
+        NSSpeechRecognitionUsageDescription: 把你说的话转成文字，只在你按下麦克风时进行。
         # 🚨 声明支持 iPad（TARGETED_DEVICE_FAMILY "1,2"）就**必须给 iPad 全四个方向**，
         #    否则上传 App Store 直接被拒：
         #    `Invalid bundle. The "UIInterfaceOrientationPortrait" orientations were
@@ -213,8 +231,8 @@ targets:
         #    后者只管我们自己的 view controller，管不到系统在我们周围怎么画。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260906.1176"
-        CFBundleVersion: "1176"
+        CFBundleShortVersionString: "20260906.1177"
+        CFBundleVersion: "1177.1"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -326,8 +344,8 @@ targets:
       path: LiveActivity/Info.plist
       properties:
         CFBundleDisplayName: Transless 录音状态
-        CFBundleShortVersionString: "20260906.1176"
-        CFBundleVersion: "1176"
+        CFBundleShortVersionString: "20260906.1177"
+        CFBundleVersion: "1177.1"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
@@ -359,8 +377,8 @@ targets:
         #    用它做的外观判断就不能代表真键盘。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260906.1176"
-        CFBundleVersion: "1176"
+        CFBundleShortVersionString: "20260906.1177"
+        CFBundleVersion: "1177.1"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -400,8 +418,8 @@ targets:
       path: Keyboard/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260906.1176"
-        CFBundleVersion: "1176"
+        CFBundleShortVersionString: "20260906.1177"
+        CFBundleVersion: "1177.1"
         # 🚨🚨 **键盘扩展自己也要声明支持哪些语言**（2026-08-28 补）。
         #    Kevin 真机截图：主 App 是中文，**键盘里全是英文**
         #    （Translate / Transcribe / History / Casual / Work / Email…）。
