@@ -63,7 +63,8 @@ enum WordBook {
     ///    而不是拒绝。见 `store` 的注释。
     @discardableResult
     static func add(zh: String, en: String, span: String = "full",
-                    tone: String = "", today: String) -> String {
+                    tone: String = "", today: String,
+                    card: String = "") -> String {
         // 🚨 判据是**英文有没有内容**，不是"id 是不是空串" ——
         //    `WordId.make` 对空英文照样算得出非空哈希，
         //    原来那句 `id.isEmpty` 恒为假，空句子会被收进本子。
@@ -73,7 +74,8 @@ enum WordBook {
         if cur.contains(where: { $0.id == id }) { return "same" }
         let it = Item(id: id, zh: zh,
                       en: en.trimmingCharacters(in: .whitespacesAndNewlines),
-                      span: span, tone: tone, on: today, rev: Srs.Rev(today))
+                      span: span, tone: tone, on: today, rev: Srs.Rev(today),
+                      card: card)
         save(WordBookCore.insert(cur, it))
         // 🚨 收进本子的那一刻就把它流进常用词（跟安卓 `WordBook.add` 一样）。
         pushToVocab()
@@ -146,15 +148,33 @@ enum WordBook {
                         en: (o["en"] as? String) ?? "",
                         span: (o["span"] as? String) ?? "full",
                         tone: (o["tone"] as? String) ?? "",
-                        on: on, rev: rev)
+                        on: on, rev: rev,
+                        // 🚨 老条目没有这个键 —— 缺了就是空串，不是错误。
+                        //    详情页会按"还没有卡片"处理，不装作有。
+                        card: (o["card"] as? String) ?? "")
         }
+    }
+
+    /// 把取到的卡片写回某一条。**取到就存，下次不重取。**
+    ///
+    /// 🚨 句子不会变，所以缓存永久有效 —— 不设过期。
+    ///    重取一次不只是浪费，**两次结果可能不一样**，
+    ///    他会觉得「我收藏的那个解释变了」。
+    @discardableResult
+    static func setCard(id: String, card: String) -> Bool {
+        guard !card.isEmpty else { return false }
+        var cur = list()
+        guard let i = cur.firstIndex(where: { $0.id == id }) else { return false }
+        cur[i].card = card
+        save(cur)
+        return true
     }
 
     static func save(_ list: [Item]) {
         guard let s = store else { return }
         let arr: [[String: Any]] = list.map { x in
             ["id": x.id, "zh": x.zh, "en": x.en, "span": x.span,
-             "tone": x.tone, "on": x.on,
+             "tone": x.tone, "on": x.on, "card": x.card,
              "rev": ["n": x.rev.n, "due": x.rev.due, "last": x.rev.last,
                      "done": x.rev.done, "days": x.rev.dayList]]
         }
