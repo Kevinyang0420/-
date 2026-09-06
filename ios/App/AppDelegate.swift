@@ -3685,8 +3685,28 @@ final class MainViewController: UIViewController {
         toneButton.layer.cornerRadius = 16
         // 🚨 下拉菜单：`showsMenuAsPrimaryAction = true` 才是**点一下就弹**，
         //    不设的话要长按 —— 那等于没做（他要的正是"少点几下"）。
+        toneButton.accessibilityIdentifier = "app.tone"    // UITest 用
         toneButton.menu = toneMenu()
         toneButton.showsMenuAsPrimaryAction = true
+        // 🚨 **弹语气菜单之前先把自绘浮层收掉**（Kevin 2026-09-06 实机报）：
+        //    「语气点开之后有下拉菜单，然后语言这边又打开下拉菜单，
+        //      这两个菜单叠在一起了。不能叠在一起啊。」
+        //
+        //    🚨 根因是**两套实现的不对称**，实测读数：
+        //    · 语气 = 系统 `UIMenu`，弹出时系统盖一层遮罩**吞掉点击**
+        //      → 先开语气时，语言钮 `isHittable=false`，第二个根本开不了
+        //    · 语言 = 自绘面板，**不吞点击** → 它开着时照样点得到语气钮，
+        //      系统菜单就压上来 → 这才是他看到的那一幕
+        //    所以只有「先语言后语气」这一个方向会叠，修的就是这个方向。
+        //
+        //    🚨 他建议「把语气往里缩一缩」，实测缩不动：语气钮已经在最左
+        //    (20,182,200,44)，而系统菜单有自己的最小宽度、比按钮还宽，
+        //    位置和宽度都不归我管。**把两个浮层做成互斥才真解决**，
+        //    而且是他要的那个效果：不会同时在场，自然叠不起来。
+        //
+        //    挂 `.touchDown`：菜单在抬手时才弹，按下先到，面板先收掉。
+        toneButton.addTarget(self, action: #selector(dismissPanelsBeforeMenu),
+                             for: .touchDown)
 
         // 语言选择：跟语气并排，不藏进设置
         langButton.accessibilityIdentifier = "app.lang"     // UITest 用
@@ -3977,6 +3997,9 @@ final class MainViewController: UIViewController {
     ///    根因：面板钉在语言按钮上，切到转写时那个按钮被隐藏、宽度塌成 0，
     ///    **面板没人收，就跟着塌掉的锚点挪过去了**。
     /// 🚨 收成一个函数：切档的入口不止一个，各写一遍必漏。
+    /// 语气菜单要弹了 —— 先把自绘浮层收掉，别让两个下拉叠在一起。
+    @objc private func dismissPanelsBeforeMenu() { dismissPanels() }
+
     private func dismissPanels() {
         langPanel?.removeFromSuperview()
         langPanel = nil
