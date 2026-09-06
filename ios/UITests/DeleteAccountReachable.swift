@@ -50,7 +50,11 @@ final class DeleteAccountReachable: XCTestCase {
         // 那一屏该有的东西
         XCTAssertTrue(app.staticTexts["del.body"].waitForExistence(timeout: 6),
                       "🚨 没有说清后果 —— 只放一个红按钮不合格")
-        XCTAssertTrue(app.textFields["del.target"].exists, "🚨 没有账号输入框")
+        // 🚨 **这里故意断言"没有账号输入框"**：服务端源码写死验证码 target
+        //    只从他自己的账号行取，客户端传了也不算。留个框会让他以为
+        //    能删别人的号。我第一版有这个框，是照网页探针推错的。
+        XCTAssertFalse(app.textFields["del.target"].exists,
+                       "🚨 不该有账号输入框 —— 服务端不读它，留着会误导")
         XCTAssertTrue(app.buttons["del.send"].exists, "🚨 没有发送验证码")
         XCTAssertTrue(app.textFields["del.code"].exists, "🚨 没有验证码输入框")
         XCTAssertTrue(app.buttons["del.confirm"].exists, "🚨 没有确认删除")

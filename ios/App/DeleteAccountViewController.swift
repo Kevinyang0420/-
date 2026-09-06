@@ -10,12 +10,9 @@ import UIKit
 final class DeleteAccountViewController: UIViewController {
 
     private let stack = UIStackView()
-    private let targetField = UITextField()
     private let codeField = UITextField()
     private let hint = UILabel()
-
-    /// 账号类型。服务端认 `phone`（探针里 `sms` 是坏样本、会被拒）。
-    private let kind = "phone"
+    private var cancelBtn: UIButton?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -49,11 +46,11 @@ final class DeleteAccountViewController: UIViewController {
         body.accessibilityIdentifier = "del.body"
         stack.addArrangedSubview(body)
 
-        // ② 账号（预填他登录用的那个，省得他自己敲）
-        stack.addArrangedSubview(field(targetField, L.del_acct_target,
-                                       id: "del.target",
-                                       value: Auth.profile("account")))
-        targetField.keyboardType = .phonePad
+        // 🚨🚨 **这里没有"填账号"这一栏，是故意的。**
+        //    我第一版有 —— 而服务端源码写死：验证码的 target
+        //    **只从他自己的账号行取**，「不许客户端传 —— 让客户端指定 target
+        //    就等于送人一个接管账号的口子」。
+        //    留个输入框在这儿，他填了也没用，**还会以为能删别人的号**。
 
         // ③ 发码
         stack.addArrangedSubview(button(L.del_acct_send, id: "del.send",
@@ -68,7 +65,17 @@ final class DeleteAccountViewController: UIViewController {
         stack.addArrangedSubview(button(L.del_acct_confirm, id: "del.confirm",
                                         danger: true, #selector(tapConfirm)))
 
-        // ⑥ 提示行 —— 🚨 **每个结果都要能跟"没反应"分开**
+        // ⑥ 🚨 **撤销** —— 冷静期内他能反悔。
+        //    `del_acct_grace` 自己写着「7 天内你随时可以再登录一次来撤销」，
+        //    **承诺在文案里、按钮却没有** —— 跟 #72 本身一模一样的形状
+        //    （2.3 在安卓侧发现的，我这边同款）。
+        //    默认藏着，进页面查一次状态，`pending` 才露出来。
+        cancelBtn = button(L.del_acct_cancel, id: "del.cancel",
+                           danger: false, #selector(tapCancel))
+        cancelBtn?.isHidden = true
+        if let cb = cancelBtn { stack.addArrangedSubview(cb) }
+
+        // ⑦ 提示行 —— 🚨 **每个结果都要能跟"没反应"分开**
         hint.font = .systemFont(ofSize: 14)
         hint.textColor = Skin.dim
         hint.numberOfLines = 0
@@ -76,20 +83,42 @@ final class DeleteAccountViewController: UIViewController {
         stack.addArrangedSubview(hint)
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // 🚨 进来查一次：已经在冷静期里就把「撤销」露出来，
+        //    不用他"再登录一次"（那句话是给网页那条路写的）。
+        AccountDelete.status { [weak self] st in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                switch st {
+                case .pending(let d):
+                    self.cancelBtn?.isHidden = false
+                    // 🚨 用现成的 `del_acct_grace`，**不新加键** ——
+                    //    台账正在合并 `del_acct_*` / `acct_del_*` 两套，
+                    //    这时候再加一个键只会让合并更难。
+                    //    天数写在那句话里了（7 天），`d` 只留痕不上屏。
+                    KbBridge.note("删账号：冷静期还剩 \(d) 天")
+                    self.hint.text = L.del_acct_grace
+                case .notEnabled:
+                    self.hint.text = L.del_acct_off
+                default:
+                    self.cancelBtn?.isHidden = true
+                }
+            }
+        }
+    }
+
     // MARK: - 动作
 
     @objc private func tapSend() {
-        let t = (targetField.text ?? "").trimmingCharacters(in: .whitespaces)
-        guard !t.isEmpty else { hint.text = L.del_acct_target; return }
         hint.text = ""
-        AccountDelete.requestCode(kind: kind, target: t) { [weak self] r in
-            DispatchQueue.main.async { self?.show(r.map { _ in [:] },
-                                                 ok: L.del_acct_sent) }
+        // 🚨 发到哪由服务端决定（他账号行上的手机/邮箱），客户端不传目标。
+        AccountDelete.requestCode { [weak self] r in
+            DispatchQueue.main.async { self?.show(r, ok: L.del_acct_sent) }
         }
     }
 
     @objc private func tapConfirm() {
-        let t = (targetField.text ?? "").trimmingCharacters(in: .whitespaces)
         let c = (codeField.text ?? "").trimmingCharacters(in: .whitespaces)
         guard !c.isEmpty else { hint.text = L.del_acct_need_code; return }
         // 🚨 **确认一次**：这一步不可撤（虽然有 7 天冷静期，但那是账号级的，
@@ -102,11 +131,21 @@ final class DeleteAccountViewController: UIViewController {
                                   style: .destructive) { [weak self] _ in
             guard let self = self else { return }
             self.hint.text = ""
-            AccountDelete.confirm(kind: self.kind, target: t, code: c) { r in
+            AccountDelete.confirm(code: c) { r in
                 DispatchQueue.main.async { self.show(r, ok: L.del_acct_grace) }
             }
         })
         present(a, animated: true)
+    }
+
+    @objc private func tapCancel() {
+        hint.text = ""
+        AccountDelete.cancel { [weak self] r in
+            DispatchQueue.main.async {
+                self?.cancelBtn?.isHidden = true
+                self?.show(r, ok: L.del_acct_cancelled)
+            }
+        }
     }
 
     /// 🚨 **每一种结果都说人话**，不许静默。
