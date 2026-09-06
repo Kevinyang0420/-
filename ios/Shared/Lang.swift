@@ -22,7 +22,7 @@ enum Lang {
     static let en = "en"
     static let hant = "hant"
     // 🚨 Kevin 2026-09-06 两次点名要的四门。
-    //    `ar` **先进代码、不进选择器**（见 `selectable`）—— 它是 RTL，还没实测布局。
+    //    `ar` 的 RTL 已实测（布局自动镜像、chevron 方向已修），在 `selectable` 里正式可选。
     static let ja = "ja"
     static let de = "de"
     static let es = "es"
