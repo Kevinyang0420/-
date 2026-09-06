@@ -37,7 +37,9 @@ jobs:
     # 🚨 75 分钟：里面有一步要等苹果入库（实测 619 花了约 40 分钟）。
     #    原来 45 分钟会让"等入库"这一步撞上 job 超时，
     #    表现成"构建失败"而其实是包好好的。
-    timeout-minutes: 75
+    # 🚨 90 分钟：构建约 15 分钟 + 等苹果入库最多 52 分钟（见
+    #    `ci_verify_upload.py` 的 TRIES/WAIT），75 会卡满。
+    timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@v4

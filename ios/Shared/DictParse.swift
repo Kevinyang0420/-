@@ -9,7 +9,13 @@ import Foundation
 ///
 /// 🚨 **两种结构都要认**（2026-09-06 iOS 改用 `engine.LOOKUP_PROMPT` 之后）：
 /// ```
-/// engine ->  senses[{pos,en,zh,register}] / examples[{en,zh}] / phonetic "/juː/"
+/// engine ->  senses[{pos,en,zh,register}] / examples[{en,zh}] / phonetic "juː"
+/// ```
+/// 🚨 **新契约的音标不带斜杠**（`engine.LOOKUP_PROMPT` 明写
+///    "IPA WITHOUT slashes"，服务端出口还无条件 strip 一遍）。
+///    渲染时由 `phoneticForDisplay` 统一剥+包 —— **存量旧卡片带斜杠**，
+///    所以解析这一层两种都要认，测试夹具里那些 "/juː/" 是**存量形状，别改**。
+/// ```
 /// 旧的   ->  senses[{en,zh,register}] / pos / example_en / example_zh
 /// ```
 /// 旧的**不能删**：缓存里存着按旧结构存下来的条目，只认新的会让

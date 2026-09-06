@@ -3,7 +3,12 @@ import XCTest
 /// `parseDict` 必须**同时认两种结构**（2026-09-06 换 `engine.LOOKUP_PROMPT` 之后）。
 ///
 /// ```
-/// engine ->  "senses":[{pos,en,zh,register}], "examples":[{en,zh}], "phonetic":"/juː/"
+/// engine ->  "senses":[{pos,en,zh,register}], "examples":[{en,zh}], "phonetic":"juː"
+/// ```
+/// 🚨 新契约的音标**不带斜杠**。下面夹具里那些 `"/kwəʊˈteɪʃn/"` 是
+///    **存量旧卡片的形状** —— 他单词本里存着的就是带斜杠的老数据，
+///    测它们还能正确解析和显示，正是该测的，别为了"跟新契约一致"改掉。
+/// ```
 /// 旧的   ->  "senses":[{en,zh,register}], "pos":"n.", "example_en", "example_zh"
 /// ```
 ///
