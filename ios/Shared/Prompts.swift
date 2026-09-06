@@ -176,10 +176,13 @@ enum Prompts {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             return ask.isEmpty ? one : one + NL + NL + ask
         }
+        // 🚨🚨 2026-09-06 Kevin：「它只是分了点，但是没有分段，这个也不太行，也要分点加分段」「你现在 1、2、3 都是写在同一段，就很丑嘛」
+        //    条目之间**空一行**（NL+NL）。编号只是把它们切开，
+        //    空行才是把它们分开。`ask` 那里本来就是双换行，差的是条目之间。
         var lines: [String] = []
         if !lead.isEmpty { lines.append(lead + "：") }
         for (i, x) in texts.enumerated() { lines.append("\(i + 1). " + x) }
-        var out = lines.joined(separator: NL)
+        var out = lines.joined(separator: NL + NL)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         // 🚨 空行隔开，让它在视觉上**明确不属于那串编号**。
         if !ask.isEmpty { out += NL + NL + ask }
@@ -272,8 +275,54 @@ enum Prompts {
     }
 
     /// 🚨 提示词里禁了破折号，但模型照样吐（实测），所以代码里兜死。
+    /// 把匹配到的整段里的空格去掉（拼字母/拼数字共用）。
+    private static func joinSpaced(_ pattern: String, _ s: String) -> String {
+        guard let re = try? NSRegularExpression(pattern: pattern) else { return s }
+        let ns = s as NSString
+        var out = ""
+        var last = 0
+        for m in re.matches(in: s, range: NSRange(location: 0, length: ns.length)) {
+            out += ns.substring(with: NSRange(location: last,
+                                              length: m.range.location - last))
+            out += ns.substring(with: m.range).replacingOccurrences(of: " ", with: "")
+            last = m.range.location + m.range.length
+        }
+        out += ns.substring(from: last)
+        return out
+    }
+
+    /// 🚨 2026-09-05 补上三条**一直只存在于 engine.py、三端从来没实现过**的规则。
+    ///
+    /// Kevin 2026-08-25 专门为「用它填表单」做的这三条（engine.py 原注释：
+    /// 「Kevin 用它填表单（邮箱、账号），这种输入往往整句只有几个字母」），
+    /// 但后端不调 postprocess、三端各自的 postprocess 只做了破折号和空格
+    /// —— **那次改动在手机上一天都没生效过**。
+    ///
+    /// 🚨 门槛是**至少 3 个**连续单字母，不是 2 个：捷克语「a v」、波兰语
+    /// 「i w」这类**真正的单字母单词**满地都是，2 个就拼会把
+    /// `odpoledne a v kopii` 拼成 `odpoledne av kopii`（2026-09-05 用 138 条
+    /// 真实译文量出来的，改成 3 之后零误伤）。跟本文件 `SpellFold` 的
+    /// 「至少 3 段」口径一致。
     static func postprocess(_ input: String) -> String {
         var s = input
+        // 🚨 先拼字母再做标点：反过来的话破折号规则会先改掉空格，正则就匹配不上了
+        s = joinSpaced(#"(?<!\p{L})(?<![0-9])(?:[A-Za-z] ){2,}[A-Za-z](?!\p{L})(?![0-9])"#, s)
+        s = joinSpaced(#"(?<![0-9])(?<!\p{L})(?:[0-9] ){3,}[0-9](?![0-9])(?!\p{L})"#, s)
+        // 拼完再统一邮箱大小写 —— 拼合之后才认得出这是个邮箱
+        if let re = try? NSRegularExpression(
+            pattern: #"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"#) {
+            let ns = s as NSString
+            var out = ""
+            var last = 0
+            for m in re.matches(in: s, range: NSRange(location: 0, length: ns.length)) {
+                out += ns.substring(with: NSRange(location: last,
+                                                  length: m.range.location - last))
+                out += ns.substring(with: m.range).lowercased()
+                last = m.range.location + m.range.length
+            }
+            out += ns.substring(from: last)
+            s = out
+        }
         s = s.replacingOccurrences(of: " — ", with: "; ")
         s = s.replacingOccurrences(of: "—", with: "; ")
         s = s.replacingOccurrences(of: " – ", with: "; ")
@@ -317,6 +366,17 @@ enum Prompts {
         let a = renderPoints("{\"lead\":\"本周进度\",\"items\":[\"资料没齐\",\"周三再看\",\"发票要催\"]}", fallback: "【原话】")
         no("正常JSON", a)
         if !a.contains("1. ") || !a.contains("3. ") { bad.append("正常JSON：没编号 -> " + a) }
+        // 🚨🚨 分点**加分段**（Kevin 2026-09-06：「它只是分了点，但是没有分段，
+        //    这个也不太行，也要分点加分段」「1、2、3 都写在同一段，就很丑嘛」）。
+        //    原来只查「有没有编号」—— **单换行和双换行一律放行**，
+        //    也就是这条规矩以前根本没有闸门看着。
+        let NL2 = "\u{0A}\u{0A}"
+        if !a.contains("资料没齐" + NL2 + "2.") || !a.contains("周三再看" + NL2 + "3.") {
+            bad.append("条目之间没空行（分了点没分段）-> " + a)
+        }
+        if !a.contains("本周进度：" + NL2 + "1.") {
+            bad.append("lead 和第一条之间没空行 -> " + a)
+        }
 
         // ② 带 ``` 围栏（模型很常见）
         let b = renderPoints("```json\n{\"lead\":null,\"items\":[\"甲\",\"乙\",\"丙\"]}\n```", fallback: "【原话】")
