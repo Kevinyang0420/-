@@ -68,6 +68,27 @@ final class AccountViewController: UIViewController {
                                          Auth.profile(kv.id), kv.id))
         }
 
+        // 🚨🚨 **删除账号入口**（0 台账 #72，**卡 iOS 提交**）。
+        //    App Store 明确要求 App 内可达 —— 网页那条（已上线）不算。
+        //    而同步弹窗上早就印着承诺（`hs_ask_3`：「你删除账号时，
+        //    云端的记录会一并删掉」），**入口一个都没有**：
+        //    1.1 换十种说法 grep 三端，全部零命中；我自己也核了 iOS。
+        //    **承诺在界面上，兑现它的东西不存在。**
+        //
+        //    🚨 放在退出登录**上面**：删除比退出更重，但退出是更常用的那个，
+        //    所以退出留在最底下（拇指最容易够到），删除在它上面。
+        let del = UIButton(type: .system)
+        del.setTitle(L.del_acct_entry, for: .normal)
+        del.setTitleColor(Theme.danger, for: .normal)
+        del.titleLabel?.font = .systemFont(ofSize: 16)
+        del.backgroundColor = UIColor.white.withAlphaComponent(0.06)
+        del.layer.cornerRadius = 14
+        del.accessibilityIdentifier = "account.delete"
+        del.addTarget(self, action: #selector(openDelete), for: .touchUpInside)
+        del.translatesAutoresizingMaskIntoConstraints = false
+        del.heightAnchor.constraint(equalToConstant: 52).isActive = true
+        stack.addArrangedSubview(del)
+
         // 🚨 退出登录**在最底下、单独一个按钮、点了要确认**。
         //    Kevin 撞到的就是"点账户直接登出"。
         let out = UIButton(type: .system)
@@ -85,6 +106,11 @@ final class AccountViewController: UIViewController {
         stack.addArrangedSubview(out)
         stack.setCustomSpacing(40, after: stack.arrangedSubviews[
             max(0, stack.arrangedSubviews.count - 2)])
+    }
+
+    @objc private func openDelete() {
+        navigationController?.pushViewController(
+            DeleteAccountViewController(), animated: true)
     }
 
     private func label(for id: String) -> String {
