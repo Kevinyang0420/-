@@ -4559,6 +4559,15 @@ Backend.transcribe(wav: wav, rid: rid) { [weak self] t in
     private func done(seq: Int, kind: String, body: String) {
         // 🚨 出稿失败就把这段音频留着；成功就清掉。
         //    共享区那个标记是给键盘看的 —— 它据此把提示改成「再点一次直接重发」。
+        // 🚨 **这一段到底有没有人说话，只有宿主知道** —— 音频在主 App 里，
+        //    键盘扩展拿不到。在这个唯一出口把结论写进共享区给键盘用。
+        // 🚨 顺带把**真实数字**记进诊断日志：`SpeechPresence.minRatio`
+        //    现在是推出来的、**还没拿真样本标定过**。等 Kevin 真机上出现
+        //    一条静音和一条正常说话，回来照这些数把阈值改成量出来的。
+        let sp = voice.speech
+        KbBridge.setSpoke(SpeechPresence.spoke(sp))
+        KbBridge.note("这一段电平：" + sp.debugLine
+                      + " → 判定" + (SpeechPresence.spoke(sp) ? "说了话" : "没说话"))
         if kind == "error" {
             if lastWav != nil { KbBridge.setHasRetryAudio(true) }
         } else if kind == "text" {
