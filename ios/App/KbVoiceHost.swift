@@ -3713,22 +3713,7 @@ final class KbVoiceHost {
         // 🚨🚨 **接上分段：录满一段就立刻传，录音不中断。**
         //    接了它 `Voice` 才会把上限从 60 秒抬到 `MAX_DURATION_SEGMENTED`
         //    —— 没人收段就抬上限 ＝ 攒一个必然 504 的大包。
-        let sg = Segments(transcribe: { [weak self] wav, done in
-            // 🚨 **每段都计入本轮总量。** 分段是"边录边传"，
-            //    不在这里加的话，「出稿完成」那行只会有最后一段的量 ——
-            //    录 120 秒显示 60 秒。
-            //    🚨 挂在这里而不是 `onSegment`：静音段**不会**走到这个闭包
-            //    （`Segments.submit` 把它拦下了），而没送出去的段本来就不该算。
-            let dur = Double(max(0, wav.count - AudioStats.headerBytes))
-                / (Voice.SAMPLE_RATE * 2)
-            self?.tally.add(round: seq, sec: dur, bytes: wav.count)
-            Backend.transcribe(wav: wav) { r in
-                switch r {
-                case .success(let t): done(.success(t))
-                case .failure(let f): done(.failure(f))
-                }
-            }
-        })
+        let sg = makeSegments(seq: seq)
         segs = sg
         voice.onSegment = { [weak sg] w in
             sg?.submit(wav: w)
@@ -3889,6 +3874,33 @@ final class KbVoiceHost {
     ///   `begin()` 那条传 `nil` —— `Voice.stop()` 已经把尾巴从 `onSegment` 交过了，
     ///   **再交一次就是同一段音频转两次**（多一次 `/api/audio` + 多一次模型，实打实的钱）。
     /// - Returns: 走了分段这条就返回 true（调用方别再走整段上传那条）。
+    /// 建一个分段收集器 —— **两条起录路径共用这一个，绝不各写一份**。
+    ///
+    /// 🚨 2026-09-06 的教训：原来 `beginArmed` 和 `begin` **各建各的**，
+    ///    我给分段接「本轮音频总量」时只接了前者，而后者
+    ///    （`begin`，注释写着「这条成了唯一在走的路」）漏了 ——
+    ///    于是「出稿完成」那行从「写死 0」变成「永远是 0」，
+    ///    **同一个坏结果换了个原因，而且更难发现**：代码里明明有 `tally.sec`。
+    ///    收成一处之后，下一个往里加东西的人不会再漏。
+    private func makeSegments(seq: Int) -> Segments {
+        return Segments(transcribe: { [weak self] wav, done in
+            // 🚨 **每段都计入本轮总量。** 分段是"边录边传"，
+            //    不在这里加的话，「出稿完成」那行只会有最后一段的量 ——
+            //    录 120 秒显示 60 秒。
+            //    🚨 挂在这里而不是 `onSegment`：静音段**不会**走到这个闭包
+            //    （`Segments.submit` 把它拦下了），而没送出去的段本来就不该算。
+            let dur = Double(max(0, wav.count - AudioStats.headerBytes))
+                / (Voice.SAMPLE_RATE * 2)
+            self?.tally.add(round: seq, sec: dur, bytes: wav.count)
+            Backend.transcribe(wav: wav) { r in
+                switch r {
+                case .success(let t): done(.success(t))
+                case .failure(let f): done(.failure(f))
+                }
+            }
+        })
+    }
+
     /// **这一轮实际送出去的音频总量** —— 两条上传路径都往里加。
     ///
     /// 🚨 分段时是各段之和。只记最后一段的话，录 120 秒会显示 60 秒，
@@ -4194,14 +4206,7 @@ final class KbVoiceHost {
         //    今天路线定成「接受那一跳」之后，**这条成了唯一在走的路**，必须补。
         // 🚨 接上之后 `onWav` 会拿到**空 Data**，那是 Voice 的约定
         //    （「我这边完事了，结果去分段器取」）—— 下面的成功分支据此分流。
-        let sgB = Segments(transcribe: { wav, done in
-            Backend.transcribe(wav: wav) { r in
-                switch r {
-                case .success(let t): done(.success(t))
-                case .failure(let f): done(.failure(f))
-                }
-            }
-        })
+        let sgB = makeSegments(seq: seq)
         segs = sgB
         voice.onSegment = { [weak sgB] w in
             sgB?.submit(wav: w)
