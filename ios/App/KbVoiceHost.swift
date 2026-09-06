@@ -3713,7 +3713,15 @@ final class KbVoiceHost {
         // 🚨🚨 **接上分段：录满一段就立刻传，录音不中断。**
         //    接了它 `Voice` 才会把上限从 60 秒抬到 `MAX_DURATION_SEGMENTED`
         //    —— 没人收段就抬上限 ＝ 攒一个必然 504 的大包。
-        let sg = Segments(transcribe: { wav, done in
+        let sg = Segments(transcribe: { [weak self] wav, done in
+            // 🚨 **每段都计入本轮总量。** 分段是"边录边传"，
+            //    不在这里加的话，「出稿完成」那行只会有最后一段的量 ——
+            //    录 120 秒显示 60 秒。
+            //    🚨 挂在这里而不是 `onSegment`：静音段**不会**走到这个闭包
+            //    （`Segments.submit` 把它拦下了），而没送出去的段本来就不该算。
+            let dur = Double(max(0, wav.count - AudioStats.headerBytes))
+                / (Voice.SAMPLE_RATE * 2)
+            self?.tally.add(round: seq, sec: dur, bytes: wav.count)
             Backend.transcribe(wav: wav) { r in
                 switch r {
                 case .success(let t): done(.success(t))
@@ -3881,6 +3889,12 @@ final class KbVoiceHost {
     ///   `begin()` 那条传 `nil` —— `Voice.stop()` 已经把尾巴从 `onSegment` 交过了，
     ///   **再交一次就是同一段音频转两次**（多一次 `/api/audio` + 多一次模型，实打实的钱）。
     /// - Returns: 走了分段这条就返回 true（调用方别再走整段上传那条）。
+    /// **这一轮实际送出去的音频总量** —— 两条上传路径都往里加。
+    ///
+    /// 🚨 分段时是各段之和。只记最后一段的话，录 120 秒会显示 60 秒，
+    ///    而 60 这个数看起来完全正常，没有判据挡着就没人会怀疑。
+    private var tally = RoundTally()
+
     @discardableResult
     private func finishSegments(seq: Int, tail: Data?, tone: String,
                                 mode: Backend.Mode, lang: String) -> Bool {
@@ -4299,6 +4313,8 @@ final class KbVoiceHost {
                     KbBridge.note("起传（" + diag + "）")
                     RecLog.add(sec: secs, bytes: wav.count,
                                result: "已上传", detail: diag)
+                    // 🚨 计入本轮总量 —— 「出稿完成/失败」那两行要用它。
+                    self.tally.add(round: seq, sec: secs, bytes: wav.count)
                     self.uploadAndDeliver(seq: seq, wav: wav, tone: tone,
                                           mode: mode, lang: lang)
 }
@@ -4692,12 +4708,25 @@ Backend.transcribe(wav: wav, rid: rid) { [weak self] t in
                let j = try? JSONSerialization.jsonObject(with: d) as? [String: String],
                let out = j["out"], !out.isEmpty {
                 KbBridge.postPending(zh: j["zh"] ?? "", out: out)
-                RecLog.add(sec: 0, bytes: 0, result: "出稿完成",
-                           detail: String(out.prefix(60)))
+                // 🚨🚨 **这一行正是他复制出来会看到的那行**（0 从他手机上那份
+                //    诊断查出来的：每一行都是 `0.0s 0KB`，连成功那次也是）。
+                //    写死 0 的话，这份诊断分不出「麦克风没收到」和
+                //    「收到了但没转出」—— 而那是它存在的唯一理由。
+                RecLog.add(sec: tally.sec, bytes: tally.bytes,
+                           result: "出稿完成",
+                           detail: "送出 " + String(tally.parts) + " 段｜"
+                                   + String(out.prefix(60)))
             } else {
                 // 🚨 失败也要落诊断，别静默 —— 他点「录音诊断」要看得见为什么没出稿
-                RecLog.add(sec: 0, bytes: 0, result: "出稿失败",
-                           detail: String(body.prefix(120)))
+                // 🚨 失败这行更要有数：**「一个字节都没传出去」和
+                //    「传了 120 秒但没转出来」是两种毛病**，修法完全不同，
+                //    而写死 0 的时候它们长得一模一样。
+                RecLog.add(sec: tally.sec, bytes: tally.bytes,
+                           result: "出稿失败",
+                           detail: (tally.isEmpty
+                                    ? "本轮一个字节都没送出｜"
+                                    : "送出 " + String(tally.parts) + " 段｜")
+                                   + String(body.prefix(120)))
                 KbBridge.note("跳转路径出稿失败：" + String(body.prefix(80)))
                 // 🚨 H6：**失败也要送回去让他看见**。否则他看到的永远是
                 //    「按了、跳过去、跳回来、什么都没发生」——

@@ -89,9 +89,10 @@ enum RecLog {
         f.dateFormat = "MM-dd HH:mm:ss"
         return items().reversed().map { it in
             let when = f.string(from: Date(timeIntervalSince1970: it.t))
-            let body = it.d.isEmpty ? it.r : "\(it.r)：\(it.d)"
-            return String(format: "%@  %.1fs %dKB  %@",
-                          when, it.sec, it.bytes / 1024, body)
+            // 🚨 格式只有一份，在 `RecLine` —— 判据挂在那儿才测得到
+            //    「他粘出来的文本里到底有没有数」。
+            return RecLine.render(when: when, sec: it.sec, bytes: it.bytes,
+                                  result: it.r, detail: it.d)
         }.joined(separator: "\n")
     }
 

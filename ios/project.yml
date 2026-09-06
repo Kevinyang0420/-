@@ -260,6 +260,10 @@ targets:
       # 🚨 它最危险的一条是「别人写了就交出去」—— 坏了会把错误提示
       #    盖成「处理中…」，屏幕上有字、完全不报错。必须有判据挡着。
       - path: Shared/ThinkHint.swift
+      # 同理：这一轮送出去的音频总量。纯值类型，判「分段有没有累加」
+      - path: Shared/RoundTally.swift
+      # 同理：录音诊断**一行**的格式。判据要挂在他粘出来的文本上
+      - path: Shared/RecLine.swift
       # 同理：单词本卡片的解析。纯解析，不碰存储也不碰界面
       - path: Shared/WordCard.swift
       # WordCard.fromDict 要它 —— DictEntry 也是纯模型
