@@ -88,6 +88,14 @@ jobs:
 
 
       # ---- 生成 Secrets.swift（与现有流程同一套逻辑，单一来源）----
+      # 🚨 包戳：**跟 mac.py 共用 ios/gen_buildstamp.py 那一份模板**。
+      #    2026-09-06 之前这个文件只在 Mac 上生成，CI 从来没有它 →
+      #    一路 `cannot find 'BuildStamp' in scope`，而本机编得过。
+      #    别把模板抄到这里来 —— 那就是同一规矩两处实现。
+      - name: 生成 BuildStamp.swift（包戳，与 mac.py 同一个生成器）
+        run: |
+          python3 ios/gen_buildstamp.py "ci-$(date +%m%d-%H%M%S)"
+          grep -q "enum BuildStamp" ios/Shared/BuildStamp.swift
       - name: 生成 Secrets.swift
         working-directory: ios
         env:
