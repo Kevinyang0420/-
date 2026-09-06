@@ -290,7 +290,15 @@ final class DictViewController: UIViewController {
                 guard let self = self else { return }
                 switch r {
                 case .success(let e): self.render(e)
-                case .failure(let f): self.showErr(f.userText)
+                case .failure(let f):
+                    // 🚨🚨 **失败必须留痕**（09-07 撞的）：他看到「出了点问题，
+                    //    再试一次」，而痕迹里只有「查词打后端：…」，之后一片空白 ——
+                    //    我在设备上**查不出为什么**，只能猜（我先猜了 token 上限，
+                    //    改完照样红）。
+                    //    Kevin 的规矩：诊断记了但没有查看入口 = 等于没记；
+                    //    这里是更前一步 —— **根本没记**。
+                    KbBridge.note("查词失败：" + String("\(f)".prefix(160)))
+                    self.showErr(f.userText)
                 }
             }
         }

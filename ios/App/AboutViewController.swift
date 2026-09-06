@@ -83,11 +83,23 @@ final class AboutViewController: UIViewController {
         let nUI = Lang.selectable.filter { $0 != Lang.sys }.count
         add(text(L.fill(L.about_langs_translate, String(nTranslate)),
                  15, .regular, Skin.dim), id: "about.langs.translate")
-        // 列前 9 个的自称，再加「…等 N 种」
-        let sample = GenLangs.langs.prefix(9).map { $0.label }.joined(separator: "  ·  ")
+        // 列前 9 个的自称，再加「…还有 N 种」
+        // 🚨🚨 **这里传的是「剩余数」，不是总数**（2.1 09-07 在 PC 的关于页
+        //    截图上发现的，iOS 同款）。原来传 `nTranslate`，于是这一屏写着：
+        //        「可翻译成 31 种语言，包括：」＋ 列 9 个 ＋「…等 31 种」
+        //    德语更明显：`und 31 weitere`＝「还有 31 种」——
+        //    **读者会以为一共 40 种（9+31）**。
+        //    数字本身没算错，是**它回答的问题跟这句话问的不是同一个**。
+        let listed = 9
+        let sample = GenLangs.langs.prefix(listed).map { $0.label }
+            .joined(separator: "  ·  ")
         add(text(sample, 15, .regular, Skin.text), id: "about.langs.sample")
-        add(text(L.fill(L.about_langs_more, String(nTranslate)),
-                 14, .regular, Skin.dim))
+        // 🚨 剩余数为 0 时整行不画 —— 语言少于 9 门时「还有 0 种」很蠢。
+        let rest = max(0, nTranslate - listed)
+        if rest > 0 {
+            add(text(L.fill(L.about_langs_more, String(rest)),
+                     14, .regular, Skin.dim), id: "about.langs.more")
+        }
         add(text(L.fill(L.about_langs_ui, String(nUI)), 15, .regular, Skin.dim),
             id: "about.langs.ui")
         gap(4)

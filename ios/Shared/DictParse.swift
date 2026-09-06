@@ -30,6 +30,19 @@ enum DictParse {
         guard let d = t.data(using: .utf8),
               let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any]
         else { return nil }
+        // 🚨🚨 **句子卡在这儿放行**（09-07 端到端撞出来的）。
+        //    后端上线查句子之后，同一个端点会回
+        //    `{"kind":"sentence", meaning, breakdown, alternatives, keys}` ——
+        //    **没有 `senses`**，于是下面那道 `guard !ss.isEmpty` 直接判 nil，
+        //    客户端报 `[parse]`，他看到「出了点问题，再试一次」。
+        //
+        //    🚨 我当时在**视图层**加了按 `kind` 分流的分支，却忘了
+        //    **解析层先拒了它** —— 分支永远走不到。
+        //    两次瞎猜（token 上限、超时）都错，是给失败加了一行留痕才定位到。
+        if CardSections.isSentence(o) {
+            return DictEntry(word: word, phonetic: "", pos: "",
+                             senses: [], examples: [], collocations: [], raw: t)
+        }
         let raws = o["senses"] as? [[String: Any]] ?? []
         let ss = raws.map {
             DictSense(en: ($0["en"] as? String) ?? "",
