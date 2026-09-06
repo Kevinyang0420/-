@@ -3934,7 +3934,14 @@ final class MainViewController: UIViewController {
                                              multiplier: 0.46),
         ])
 
-        toneButton.setTitle(L.p_tone + "：" + toneTitle(), for: .normal)
+        // 🚨🚨 **冒号不许写在 Swift 里**（2.1 09-07 抓的）。
+        //    原来是 `L.p_tone + "：" + …` —— 全角「：」硬编码，
+        //    而德语/西语该用半角 `": "`（带空格）、日文该用全角。
+        //    **那一行在非中日语言下就是错的，而且不会有任何东西报错。**
+        //    `try_tone_prefix` 这个键就是为这件事存在的，七门各带各自的写法。
+        //    🚨 实际有**三处**（3937/4712/4749），不是 2.1 报的两处 ——
+        //    是断言"命中次数必须等于预期"挡下来的，不然我会只改两处。
+        toneButton.setTitle(L.try_tone_prefix + toneTitle(), for: .normal)
         toneButton.setTitleColor(Theme.dim, for: .normal)
         toneButton.titleLabel?.font = .systemFont(ofSize: 15)
         toneButton.backgroundColor = Theme.key
@@ -4709,7 +4716,9 @@ final class MainViewController: UIViewController {
     }
 
     private func refreshParamTitles() {
-        toneButton.setTitle(L.p_tone + " " + toneTitle() + " ▾", for: .normal)
+        // 🚨 同上：前缀自带冒号和空格，别再手动拼 —— 这几处原来一个用「：」
+        //    一个用空格，**iOS 自己内部就不一致**（安卓是「语气：工作 ▾」）。
+        toneButton.setTitle(L.try_tone_prefix + toneTitle() + " ▾", for: .normal)
         langButton.setTitle(L.p_lang + " " + Backend.langLabel(langNow) + " ▾",
                             for: .normal)
         styleButton.setTitle(L.p_style + " " + (mode == .raw ? L.kb_verbatim : L.kb_polish)
@@ -4746,7 +4755,14 @@ final class MainViewController: UIViewController {
     private func pickTone(_ t: String) {
         tone = t
         KbBridge.prefs.set(tone, forKey: "vime.tone")
-        toneButton.setTitle(L.p_tone + "：" + toneTitle(), for: .normal)
+        // 🚨🚨 **冒号不许写在 Swift 里**（2.1 09-07 抓的）。
+        //    原来是 `L.p_tone + "：" + …` —— 全角「：」硬编码，
+        //    而德语/西语该用半角 `": "`（带空格）、日文该用全角。
+        //    **那一行在非中日语言下就是错的，而且不会有任何东西报错。**
+        //    `try_tone_prefix` 这个键就是为这件事存在的，七门各带各自的写法。
+        //    🚨 实际有**三处**（3937/4712/4749），不是 2.1 报的两处 ——
+        //    是断言"命中次数必须等于预期"挡下来的，不然我会只改两处。
+        toneButton.setTitle(L.try_tone_prefix + toneTitle(), for: .normal)
         // 🚨 菜单要**重新生成**才会更新那个勾 —— `UIMenu` 是值类型快照，
         //    改了 `tone` 不会自动反映到已经挂上去的那份。
         toneButton.menu = toneMenu()
