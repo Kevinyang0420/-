@@ -56,13 +56,13 @@ targets:
         #    后者只管我们自己的 view controller，管不到系统在我们周围怎么画。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260905.1095"
-        CFBundleVersion: "1095"
+        CFBundleShortVersionString: "20260906.1157"
+        CFBundleVersion: "1157"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
         #    开发语言，英文界面**一辈子出不来**而且不报错。
-        CFBundleLocalizations: [zh-Hans, zh-Hant, en]
+        CFBundleLocalizations: [zh-Hans, zh-Hant, en, ja, de, es, ar]
         # 🚨 键盘扩展弹不出系统权限框，必须由容器 App 先要过一次。
         #    转写改到后端后只需要麦克风；语音识别不再走 iOS 的 Speech 框架。
         # 🚨 没有这一行，`Activity.request` 会直接抛 —— 而它抛的错
@@ -213,13 +213,13 @@ targets:
         #    后者只管我们自己的 view controller，管不到系统在我们周围怎么画。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260905.1095"
-        CFBundleVersion: "1095"
+        CFBundleShortVersionString: "20260906.1157"
+        CFBundleVersion: "1157"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
         #    开发语言，英文界面**一辈子出不来**而且不报错。
-        CFBundleLocalizations: [zh-Hans, zh-Hant, en]
+        CFBundleLocalizations: [zh-Hans, zh-Hant, en, ja, de, es, ar]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kevin.tprobe
@@ -256,6 +256,22 @@ targets:
       # 同理：判「这一段有没有人说话」。纯值类型 + 纯函数，不碰音频也不碰存储
       # —— 真正读麦克风的在 `Voice`，那个不进测试包
       - path: Shared/SpeechPresence.swift
+      # 同理：单词本卡片的解析。纯解析，不碰存储也不碰界面
+      - path: Shared/WordCard.swift
+      # WordCard.fromDict 要它 —— DictEntry 也是纯模型
+      - path: Shared/DictEntry.swift
+      # 同理：查词结果的纯解析（换了 JSON 结构，要验老缓存还解得出）
+      - path: Shared/DictParse.swift
+      # 录音静音判据（Kevin 报的说了一堆却说没转出）——纯逻辑，必须能验
+      # 「字节 -> 零占比」也要能验，不然只验了判定那半
+      # 分段路径（Kevin 撞的那条）——转写是注入的，能真测
+      - path: Shared/Segments.swift
+      - path: Shared/AudioStats.swift
+      - path: Shared/SilenceVerdict.swift
+      # 身份规则的判据要能跑（纯逻辑，不碰存储）
+      - path: Shared/Srs.swift
+      - path: Shared/WordBookCore.swift
+      - path: Shared/WordId.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.kevin.transless.uitests
@@ -302,8 +318,8 @@ targets:
       path: LiveActivity/Info.plist
       properties:
         CFBundleDisplayName: Transless 录音状态
-        CFBundleShortVersionString: "20260905.1095"
-        CFBundleVersion: "1095"
+        CFBundleShortVersionString: "20260906.1157"
+        CFBundleVersion: "1157"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
@@ -335,8 +351,8 @@ targets:
         #    用它做的外观判断就不能代表真键盘。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260905.1095"
-        CFBundleVersion: "1095"
+        CFBundleShortVersionString: "20260906.1157"
+        CFBundleVersion: "1157"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -376,8 +392,8 @@ targets:
       path: Keyboard/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260905.1095"
-        CFBundleVersion: "1095"
+        CFBundleShortVersionString: "20260906.1157"
+        CFBundleVersion: "1157"
         # 🚨🚨 **键盘扩展自己也要声明支持哪些语言**（2026-08-28 补）。
         #    Kevin 真机截图：主 App 是中文，**键盘里全是英文**
         #    （Translate / Transcribe / History / Casual / Work / Email…）。
@@ -392,7 +408,7 @@ targets:
         #     那批是预览壳，走的是主 App 的 bundle，所以中文）。
         #    他手机上的键盘**一直**是英文，只是今天才第一次有真机截图。
         #    拿模拟器截图当基线去判"回归"会得出错的结论。
-        CFBundleLocalizations: [zh-Hans, zh-Hant, en]
+        CFBundleLocalizations: [zh-Hans, zh-Hant, en, ja, de, es, ar]
         # 🚨🚨 **白下巴：两个手段必须一起上**（2.1 2026-08-28 核出来的实物差异）。
         #    `overrideUserInterfaceStyle = .dark` 改的是**我们这个 view controller**
         #    的外观特征，而那条浅灰带**不是我们画的**（系统的 UIKeyboardDockView）。
