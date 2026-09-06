@@ -1008,6 +1008,29 @@ enum KbBridge {
         store?.synchronize()
     }
 
+    /// **上一段录音里有没有人说话**（宿主写、键盘读）。
+    ///
+    /// 🚨 键盘扩展**拿不到音频本身**（录音在主 App 里做），所以只能由宿主
+    ///    算好一个结论传过来。传的是**结论**不是原始电平 —— 阈值只有一处，
+    ///    在 `SpeechPresence`；两边各判一次必然走散。
+    static func setSpoke(_ v: Bool) {
+        store?.set(v, forKey: "kb.spoke")
+        store?.set(Date().timeIntervalSince1970, forKey: "kb.spoke.at")
+        store?.synchronize()
+    }
+
+    /// 读上一段的结论。**拿不到就回 `true`**（当作说过话）——
+    /// 两种错的代价不对称，见 `SpeechPresence.spoke`。
+    static func spoke(maxAge: TimeInterval = 600) -> Bool {
+        guard let s = store,
+              s.object(forKey: "kb.spoke") != nil else { return true }
+        let at = s.double(forKey: "kb.spoke.at")
+        guard at > 0, Date().timeIntervalSince1970 - at <= maxAge else {
+            return true          // 太旧了，不拿它下结论
+        }
+        return s.bool(forKey: "kb.spoke")
+    }
+
     /// 存货还新鲜吗（默认 10 分钟）。过期就当没有 —— 他早就说别的了。
     static func hasRetryAudio(maxAge: TimeInterval = 600) -> Bool {
         guard let s = store else { return false }
