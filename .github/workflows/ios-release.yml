@@ -300,7 +300,9 @@ jobs:
           TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
         run: |
           set -euo pipefail
-          test -n "$PROF_APP_NAME" && test -n "$PROF_KB_NAME"
+          # 🚨 三个都要有 —— 少一个就会在导出那步炸，而且报的是
+          #    「bundle ID 不匹配」这种指不到根因的话。
+          test -n "${PROF_APP_NAME}" && test -n "${PROF_KB_NAME}" && test -n "${PROF_LIVE_NAME}"
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -314,6 +316,7 @@ jobs:
             <dict>
               <key>com.kevin.transless</key><string>${PROF_APP_NAME}</string>
               <key>com.kevin.transless.keyboard</key><string>${PROF_KB_NAME}</string>
+              <key>com.kevin.transless.liveactivity</key><string>${PROF_LIVE_NAME}</string>
             </dict>
           </dict>
           </plist>
