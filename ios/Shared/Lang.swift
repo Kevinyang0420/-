@@ -21,9 +21,28 @@ enum Lang {
     static let zh = "zh"
     static let en = "en"
     static let hant = "hant"
+    // 🚨 Kevin 2026-09-06 两次点名要的四门。
+    //    `ar` **先进代码、不进选择器**（见 `selectable`）—— 它是 RTL，还没实测布局。
+    static let ja = "ja"
+    static let de = "de"
+    static let es = "es"
+    static let ar = "ar"
 
     /// 顺序跟安卓弹窗一致：跟随系统 → 简体 → 繁體 → English
-    static let all = [sys, zh, hant, en]
+    static let all = [sys, zh, hant, en, ja, de, es, ar]
+
+    /// **选择器里真正列出来的**。
+    ///
+    /// 🚨 `all` 是"代码支持哪几门"，这个是"可以给用户选哪几门" ——
+    ///    **两件事，别用同一个列表**。
+    ///
+    /// 🚨 `ar` 2026-09-06 **实测通过后加进来的**（`ArabicRtlProbe` 的图）：
+    ///    真阿语文案右对齐、箭头翻向正确、tab 反序、长句不截断，
+    ///    中英混排（`حول Transless` / `عبر TestFlight`）也正确。
+    ///    **加它之前那一版探针只强制了书写方向、界面还是中文** ——
+    ///    等于在看「中文字排成 RTL」，测了个半拉。
+    ///    真正要看的是阿拉伯字母本身：连写、词宽、折行。
+    static let selectable = [sys, zh, hant, en, ja, de, es, ar]
 
     private static let service = "com.kevin.transless.prefs"
     private static let account = "lang.ui"
@@ -58,17 +77,35 @@ enum Lang {
     }
 
     static var current: String {
+        // 调试开关：用真实的界面语言跑一屏截图用。
+        //
+        // 🚨 跟 `TRANSLESS_NO_ARM` 同一套路 —— 只有 simctl/Xcode 启动能注入，
+        //    真机用户设不了，泄不了也误触不了。
+        // 🚨 为什么需要它：终点判据是「切到德文之后整屏是德文」，
+        //    而**靠点界面去切要走弹窗 + 重建，自动化里很脆**；
+        //    更要命的是切完之后所有文案都变了，**再按中文文案去找控件必然找不到**。
+        //    直接从启动就是德文，避开这一整类问题。
+        if let f = ProcessInfo.processInfo.environment["TRANSLESS_UI_LANG"],
+           all.contains(f) {
+            return f
+        }
         let v = read() ?? sys
-        return [zh, en, hant].contains(v) ? v : sys
+        return all.contains(v) ? v : sys
     }
 
     static func set(_ v: String) { write(v) }
 
     static func label(_ v: String) -> String {
         switch v {
+        // 🚨 每门用**它自己的语言**写自己的名字 —— 用户在一堆看不懂的
+        //    语言里找自己那门，靠的是认出母语的字形，不是读懂中文标签。
         case zh: return "简体中文"
         case hant: return "繁體中文"
         case en: return "English"
+        case ja: return "日本語"
+        case de: return "Deutsch"
+        case es: return "Español"
+        case ar: return "العربية"
         default: return L.lang_follow_system
         }
     }
