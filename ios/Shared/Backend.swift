@@ -84,6 +84,21 @@ enum Backend {
     ///    跨实例要真解决，得把 `_REQ_SEEN` 挪到 `device_store` 那条 Supabase 路上。
     static func newReqId() -> String { UUID().uuidString }
 
+    /// **当前界面语言码**，发给后端决定"用哪种语言解释"。
+    ///
+    /// 🚨🚨 Kevin 2026-09-06：「外壳是德文、卡片是中文，这个 bug 要修啊。
+    ///    你肯定要**站在德国用户的立场上**去想问题，他们肯定不愿意看中文」。
+    /// 🚨 **英文原句一个字不动** —— 那句英文本来就是他要拿去用的东西；
+    ///    跟界面语言走的是**解释部分**。
+    ///
+    /// 🚨 **只有这一处取值**，别在各请求里各写一遍 ——
+    ///    `:928` 那条注释已经写过同一件事：「iOS 不许再抄一份判语种的逻辑」。
+    /// 🚨 `[已实测]` 在这之前 iOS **一次都没发过 `ui_lang`**：
+    ///    `/api/voice` 那处被包在 `if autoDir` 里，而它的三个参数
+    ///    **全项目没有任何调用方传**，`autoDir` 恒为假。
+    ///    —— 「代码里有这个字段」和「它真的被发出去过」是两件事。
+    static var uiLang: String { Lang.effective }
+
     static func handleSubmitBody(
         code: Int, obj: [String: Any]?,
         retry: ((Failure) -> Void)? = nil,
@@ -447,8 +462,17 @@ enum Backend {
             return done(.success(hit))
         }
 
-        let mine = Reverse.isMine(word)      // true = 中文输入
-        let sys = mine ? dictSysZhToEn : dictSysEnToZh
+        // 🚨🚨 **改用 `engine.LOOKUP_PROMPT`（＝ `prompt_lookup.txt`）**，
+        //    干掉 iOS 手写的那两份（2026-09-06）。
+        //    1.1 实测手写那份把 `register` 填成 `finance` / `business` ——
+        //    那是**学科领域**，不是**语域**，而这个值**会原样显示给用户**
+        //    （`DictViewController:427` 拼进释义："(business) a formal statement…"）。
+        //    根因是「formal/informal **之类的**」这句把门开太大，模型往领域上滑。
+        //
+        // 🚨 **方向不用我判了** —— engine 那份自己判中→英还是英→中
+        //    （"DIRECTION - decide it yourself, never ask"），所以一份顶两份。
+        //    `Reverse.isMine` 这条分支跟着退休。
+        let sys = Secrets.promptLookup
         let body: [String: Any] = [
             "messages": [
                 ["role": "system", "content": sys],
@@ -457,6 +481,8 @@ enum Backend {
             "temperature": 0.2,
             // 🚨 3 条义项 + 例句 + 搭配，够用；token 是钱。
             "max_tokens": 420,
+            // 🚨 让后端用他的界面语言写解释（英文词条本身不动）。
+            "ui_lang": uiLang,
         ]
         guard let url = URL(string: base + "/api/llm"),
               let data = try? JSONSerialization.data(withJSONObject: body) else {
@@ -499,49 +525,97 @@ enum Backend {
         }.resume()
     }
 
-    /// 英文词 → 中文释义。**英文释义在上、中文在下**（2.1：英文教用法、中文确认理解）。
-    private static let dictSysEnToZh =
-        "你是一本给中文母语者用的英语学习词典。用户给你一个英文单词或短语，"
-        + "你输出严格的 JSON，不要任何解释文字、不要代码块标记。字段："
-        + "word(原词) phonetic(国际音标，不带斜杠) pos(词性缩写，如 adj.) "
-        + "senses(数组，**最多 3 条**，按使用频率从高到低；每条 {en, zh, register}，"
-        + "en 是英文释义、zh 是中文对译、register 是 formal/informal 之类的用法标注，没有就空串) "
-        + "example_en example_zh(一个例句及其中文) "
-        + "collocations(数组，最多 3 个常见搭配)。"
-        + "🚨 只给最常用的 3 条义项；生僻义不要列。"
+    /// **句子/词组的卡片**（结构拆解 / 换个说法 / 可以拆下来用的）。
+    ///
+    /// 🚨 Kevin 2026-09-06 连问三次「单词卡片在哪儿呢」。查词那类的卡片
+    ///    收藏时就存下来了，**句子这类要在这里现取**。
+    ///
+    /// 🚨 **提示词用 `Secrets.promptCard`（＝ `prompt_card.txt`）**，
+    ///    不在这里另写一份 —— 那份是 engine 的单一来源，
+    ///    本机推送前有逐字节闸门盯着，另写一份必然走散。
+    ///
+    /// 🚨 **`tone` 要传进去**：替代说法必须尊重他当时选的语气档，
+    ///    给一个"更地道"但语气全错的说法，等于推翻他自己的选择。
+    static func card(en: String, zh: String, tone: String,
+                     done: @escaping (Result<String, Failure>) -> Void) {
+        let t = en.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return done(.failure(.kinded("empty", "", ""))) }
+        var user = "English: " + t
+        if !zh.isEmpty { user += "\nOriginal Chinese: " + zh }
+        if !tone.isEmpty { user += "\nTone: " + tone }
+        let body: [String: Any] = [
+            "messages": [
+                ["role": "system", "content": Secrets.promptCard],
+                ["role": "user", "content": user],
+            ],
+            "temperature": 0.2,
+            "max_tokens": 700,
+            // 🚨 同上：结构拆解/替代说法的**解释**跟界面语言走，
+            //    英文句子本身不动。
+            "ui_lang": uiLang,
+        ]
+        guard let url = URL(string: base + "/api/llm"),
+              let data = try? JSONSerialization.data(withJSONObject: body) else {
+            return done(.failure(.kinded("badreq", "", "")))
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.timeoutInterval = 15
+        req.setValue("application/json; charset=utf-8",
+                     forHTTPHeaderField: "Content-Type")
+        req.setValue(DeviceId.pass, forHTTPHeaderField: "X-Alex-Pass")
+        req.setValue(newReqId(), forHTTPHeaderField: "X-Req-Id")
+        req.httpBody = data
+        KbBridge.note("取卡片：" + t.prefix(24))
+        URLSession.shared.dataTask(with: req) { d, resp, _ in
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            let obj = d.flatMap { try? JSONSerialization.jsonObject(with: $0) }
+                as? [String: Any]
+            guard code == 200 || code == 202,
+                  let job = obj?["job"] as? String else {
+                return done(.failure(.kinded("http", String(code), "")))
+            }
+            pollRaw(job: job, tries: 60) { r in
+                switch r {
+                case .success(let raw):
+                    // 🚨 只做「剥掉模型多包的代码块」这一件事，别的不加工 ——
+                    //    存的是 JSON 原文，解析在 `WordCard.parse`。
+                    var s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if let a = s.firstIndex(of: "{"), let b = s.lastIndex(of: "}") {
+                        s = String(s[a...b])
+                    }
+                    // 🚨 **解得出才算成功**。解不出就当失败，
+                    //    否则会把一坨垃圾存进去、而且**永久缓存不再重取**。
+                    guard !WordCard.parse(s).isEmpty else {
+                        return done(.failure(.kinded("parse", "", raw)))
+                    }
+                    done(.success(s))
+                case .failure(let f):
+                    done(.failure(f))
+                }
+            }
+        }.resume()
+    }
 
-    /// 中文 → 英文说法。**不是整句翻译**（判据 7 打的就是这个）。
-    private static let dictSysZhToEn =
-        "用户给你一个中文词，你要告诉他英文里**对应的说法有哪些**，"
-        + "而不是把它当句子翻译。输出严格的 JSON，不要解释、不要代码块标记。字段："
-        + "word(最常用的那个英文说法) phonetic(音标，不带斜杠) pos(词性缩写) "
-        + "senses(数组，最多 3 条，每条 {en, zh, register}："
-        + "en 写这个英文说法及其用法差别、zh 写中文说明) "
-        + "example_en example_zh collocations(最多 3 个)。"
+    /// 🚨 **iOS 原来手写的那两份查词提示词已删**（2026-09-06）。
+    ///    它们是 `engine.LOOKUP_PROMPT` 的"手抄近亲" —— 1.1 修好 engine 之后
+    ///    改动到不了这里，实测 `register` 被填成 `finance`/`business`
+    ///    （学科领域，不是语域），而这个值**会原样显示给用户**。
+    ///    现在统一走 `Secrets.promptLookup`（＝ `prompt_lookup.txt`，
+    ///    由 `sync_prompts.py` 从 engine 逐字同步，推送前有闸门比对）。
+    /// 🚨 **别再在这里加第二份**。这个项目为"同一条规矩多处实现"栽过四次。
 
     /// 解析。**容忍模型多包一层代码块**，但不做别的加工。
+    /// 解析。**转调 `DictParse.entry`，这里不留第二份实现。**
+    ///
+    /// 🚨 抽出去的理由是**判据跑不动**：UI 测试是独立进程，
+    ///    `Backend` 拖着网络和 `Secrets`，编不进测试包 ——
+    ///    于是"换了 JSON 结构之后老缓存还解不解得出"这条**没法验**。
+    ///    纯解析没有依赖，抽出去就能验（`LangRank`/`WordCard` 同一套路）。
     static func parseDict(word: String, raw: String) -> DictEntry? {
-        var t = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let a = t.firstIndex(of: "{"), let b = t.lastIndex(of: "}") {
-            t = String(t[a...b])
-        }
-        guard let d = t.data(using: .utf8),
-              let o = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any]
-        else { return nil }
-        let ss = (o["senses"] as? [[String: Any]] ?? []).map {
-            DictSense(en: ($0["en"] as? String) ?? "",
-                      zh: ($0["zh"] as? String) ?? "",
-                      register: ($0["register"] as? String) ?? "")
-        }
-        guard !ss.isEmpty else { return nil }
-        return DictEntry(word: (o["word"] as? String) ?? word,
-                         phonetic: (o["phonetic"] as? String) ?? "",
-                         pos: (o["pos"] as? String) ?? "",
-                         senses: ss,
-                         exampleEn: (o["example_en"] as? String) ?? "",
-                         exampleZh: (o["example_zh"] as? String) ?? "",
-                         collocations: (o["collocations"] as? [String]) ?? [])
+        DictParse.entry(word: word, raw: raw)
     }
+
 
     static func pinyinGuess(_ py: String,
                             done: @escaping (String) -> Void) {
