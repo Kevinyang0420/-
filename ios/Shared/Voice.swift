@@ -613,142 +613,10 @@ final class Voice: NSObject {
         //    闭包两个参数要从重载里反推。写死之后求解空间基本清零。
         let tapBus: AVAudioNodeBus = 0
         let tapFrames: AVAudioFrameCount = 2048
-        node.installTap(onBus: tapBus, bufferSize: tapFrames, format: inFormat) { [weak self] (buf: AVAudioPCMBuffer, _: AVAudioTime) in
-            guard let self = self else { return }
-            let ratio = Voice.SAMPLE_RATE / inFormat.sampleRate
-            let scaled: Double = Double(buf.frameLength) * ratio + 16
-            let cap = AVAudioFrameCount(scaled)
-            guard let out = AVAudioPCMBuffer(pcmFormat: outFormat, frameCapacity: cap) else { return }
-            var err: NSError?
-            var supplied = false
-            converter.convert(to: out, error: &err) { _, status in
-                if supplied { status.pointee = .noDataNow; return nil }
-                supplied = true
-                status.pointee = .haveData
-                return buf
-            }
-            // 🚨🚨 M1（交叉审查）：**转换失败原来被整个丢掉。**
-            //    `err` 声明了却从不检查，失败时 `out.frameLength == 0`
-            //    被下面这道 guard 静默吞掉 → `frames=0, peak=0` →
-            //    报告打出 **`SILENT 全程静音`**。
-            //    **而这个错误结论跟「系统给了哑麦克风」长得一模一样** ——
-            //    这个实验的判据就是"有没有声音"，让它被转换失败伪装成静音，
-            //    整轮结论就是错的。
-            //    → 计数 + 记最后一次 code，进诊断；判据看得见它才不会误判。
-            if let e = err {
-                self.convErrCount += 1
-                self.convErrCode = e.code
-            }
-            guard let ch = out.int16ChannelData, out.frameLength > 0 else {
-                self.emptyFrames += 1
-                return
-            }
-            let n = Int(out.frameLength)
-            self.lastTapAt = Date()
-            // 🚨🚨 **录音心跳：由音频 tap 自己驱动，绝不用定时器。**
-            //
-            //    要回答的问题是 Kevin 2026-09-04 提的：
-            //    「开始录音后切到别的窗口查资料再回来，录音要能继续」。
-            //    没有心跳的话，「切走后断了」和「一直在录但结果没上传」
-            //    **在日志里长得一模一样**，而这两种坏法的修法完全不同。
-            //
-            // 🚨 为什么不能用 `Timer` 每 5 秒打一条：**tap 已经死掉之后，
-            //    定时器照样会准时打印「还在录」** —— 那是永远不会失败的检查，
-            //    比没有检查更糟。帧数只有 tap 真收到数据才会涨，
-            //    **它涨 = 真的还在收音**，这是肯定判据。
-            //
-            // 🚨 `appState` 由主 App 注入（扩展里拿不到 `UIApplication`）。
-            //    没注入就打「?」，不猜。
-            self.hbFrames += n
-            if self.hbFrames >= self.hbNext {
-                self.hbNext = self.hbFrames + Int(Voice.SAMPLE_RATE * 5)
-                let secs = Double(self.hbFrames) / Voice.SAMPLE_RATE
-                KbBridge.note("录音心跳：第 " + String(Int(secs)) + " 秒｜累计帧="
-                              + String(self.hbFrames) + "｜"
-                              + (Voice.appStateProbe?() ?? "?"))
-            }
-            // 🚨🚨 **待命档：转完就扔，不进缓冲。**
-            //    这是整套「不跳转」的地基：iOS **不许后台从零开始录音**
-            //    （2026-08-30 用引擎/录音机/采集栈三条 API 分别验过，
-            //      灵动岛亮着也不行；Apple 论坛的结论也是同一句：
-            //      「录音会话必须最初在前台建立，之后才能从后台暂停/恢复」）。
-            //    → 引擎在**前台**就起好，之后一直活着；键盘按下时
-            //      我们只是**开始把采样留下来**，而不是新建一个录音。
-            //    🚨 音量照常往外抛 —— 待命时也要能看出麦克风是活的，
-            //      否则"引擎其实早死了"这件事会一直藏着。
-            if self.arming {
-                // 待命档：追加和取走都要过锁（见 `pcmLock` 那段）
-                self.pcmLock.lock()
-                if self.keeping {
-                    self.pcm.append(UnsafeBufferPointer(start: ch[0], count: n)
-                        .withMemoryRebound(to: UInt8.self) { Data($0) })
-                }
-                self.pcmLock.unlock()
-            } else {
-                self.pcm.append(UnsafeBufferPointer(start: ch[0], count: n)
-                    .withMemoryRebound(to: UInt8.self) { Data($0) })
-            }
-
-            // 🚨 音量**要在这道 guard 之前**算完抛出去。
-            //    原来 level 是在下面算的，而单句模式在这一行就 return 了
-            //    —— 键盘走的正是单句模式，等于**一个音量值都拿不到**。
-            //    「代码里有这个变量」和「这条路上会算它」是两回事。
-            var s0: Double = 0
-            for i in 0..<n { let v = Double(ch[0][i]); s0 += v * v }
-            let mean0: Double = s0 / Double(n)
-            let rms0: Double = mean0.squareRoot() / 32768.0
-            let curved0: Double = rms0.squareRoot() * 1.9
-            let lv = Float(min(1.0, curved0))
-            self.onLevel?(lv)
-            // 🚨 顺手统计这一段的峰值/本底 —— 判「有没有人说话」要挂在
-            //    **音频本身**上，不能挂在后端返回的文字上（模型对同一段静音
-            //    会给出三种不同说法，追措辞永远追不上）。见 `SpeechPresence`。
-            self.speech.feed(lv)
-
-            // 🚨 **长录音分段**（单句模式也要走）：满一段就交出去，
-            //    `pcm` 只留最后 `SEG_OVERLAP_MS` 那点尾巴当重叠。
-            //    放在这道 guard **之前** —— 单句模式在下一行就 return 了，
-            //    写在后面等于这段代码在键盘那条路上永远不执行。
-            //    （这个坑上面那段注释刚记过一次：「代码里有」≠「这条路上会走到」。）
-            if self.onSegment != nil, self.splitter == nil {
-                let segBytes = Int(Voice.SAMPLE_RATE) * 2 * Voice.SEG_SECONDS
-                if self.pcm.count >= segBytes {
-                    self.emitSegment()
-                }
-            }
-
-            guard let sp = self.splitter else { return }   // 单句模式，到此为止
-
-            // 🚨 音量公式**逐字对着安卓 `ShortRecorder` 抄**：
-            //    rms = sqrt(Σv²/采样数)/32768，再 min(1, sqrt(rms)*1.9)。
-            //    （开方再放大是因为人耳对响度非线性，直接用 rms
-            //      正常说话只能推到 5% 高度。）
-            //    公式不一样的话，同样的说话音量两端算出不同的 level，
-            //    而 SILENCE_LEVEL 是同一个 0.08 —— 等于阈值实际上不同。
-            var sum: Double = 0
-            for i in 0..<n {
-                let v = Double(ch[0][i])
-                sum += v * v
-            }
-            let rms: Double = (sum / Double(n)).squareRoot() / 32768.0
-            let curved: Double = rms.squareRoot() * 1.9
-            let level = Float(min(1.0, curved))
-            let frameMs = n * 1000 / Int(Voice.SAMPLE_RATE)
-
-            // 整场到顶：收工（`stop()` 会把最后这段交出去）。
-            if self.pcm.count >= Int(Voice.SAMPLE_RATE) * 2
-                * Int(Voice.MAX_CONTINUOUS) {
-                DispatchQueue.main.async { [weak self] in self?.stop() }
-                return
-            }
-            // 🚨 单句到顶也要切：有人一口气说 30 秒不带停，
-            //    光等静音会攒成一坨发不出去。
-            let tooLong = self.pcm.count >= Int(Voice.SAMPLE_RATE) * 2
-                * Int(Voice.MAX_UTTERANCE)
-            if sp.feed(level, frameMs) || tooLong {
-                sp.reset()
-                self.cut()
-            }
+        node.installTap(onBus: tapBus, bufferSize: tapFrames, format: inFormat) {
+            [weak self] (buf: AVAudioPCMBuffer, _: AVAudioTime) in
+            self?.handleTapBuffer(buf, inFormat: inFormat,
+                                  outFormat: outFormat, converter: converter)
         }
         engine.prepare()
         // 🚨 `badFormat` 只进诊断、不做判决 —— 见上面 H5 那段。
@@ -922,6 +790,157 @@ final class Voice: NSObject {
         let wav = Voice.wrapWav(pcm: data, sampleRate: Int(Voice.SAMPLE_RATE))
         let cb = onSegment
         DispatchQueue.main.async { cb?(wav) }
+    }
+
+    /// 每一小段采样进来时做的事 —— **从 `installTap` 的尾随闭包里抽出来的**。
+    ///
+    /// 🚨 抽出来不是为了好看，是为了让 CI 编得过。2026-09-06 CI
+    ///    （macos-15 / Xcode 16）在 `installTap` 那一行报
+    ///    「unable to type-check this expression in reasonable time」，
+    ///    而同一份代码在他 Mac（Xcode 26.5）上 Debug 和 Release 都编得过。
+    ///    先试过把调用参数和闭包签名全写死类型 —— **没用，CI 照样挂**，
+    ///    因为负担来自**这 130 多行闭包体本身**被当成一个约束系统去解。
+    ///    抽成方法之后，那一行只剩一次简单调用。
+    /// 📌 教训：**本机编过 ≠ CI 编得过**；类型检查的求解预算逐编译器版本不同，
+    ///    在旧版本上"刚好够"的表达式，代码一长就会翻过去。
+    private func handleTapBuffer(_ buf: AVAudioPCMBuffer,
+                                 inFormat: AVAudioFormat,
+                                 outFormat: AVAudioFormat,
+                                 converter: AVAudioConverter) {
+        let ratio = Voice.SAMPLE_RATE / inFormat.sampleRate
+        let scaled: Double = Double(buf.frameLength) * ratio + 16
+        let cap = AVAudioFrameCount(scaled)
+        guard let out = AVAudioPCMBuffer(pcmFormat: outFormat, frameCapacity: cap) else { return }
+        var err: NSError?
+        var supplied = false
+        converter.convert(to: out, error: &err) { _, status in
+            if supplied { status.pointee = .noDataNow; return nil }
+            supplied = true
+            status.pointee = .haveData
+            return buf
+        }
+        // 🚨🚨 M1（交叉审查）：**转换失败原来被整个丢掉。**
+        //    `err` 声明了却从不检查，失败时 `out.frameLength == 0`
+        //    被下面这道 guard 静默吞掉 → `frames=0, peak=0` →
+        //    报告打出 **`SILENT 全程静音`**。
+        //    **而这个错误结论跟「系统给了哑麦克风」长得一模一样** ——
+        //    这个实验的判据就是"有没有声音"，让它被转换失败伪装成静音，
+        //    整轮结论就是错的。
+        //    → 计数 + 记最后一次 code，进诊断；判据看得见它才不会误判。
+        if let e = err {
+            self.convErrCount += 1
+            self.convErrCode = e.code
+        }
+        guard let ch = out.int16ChannelData, out.frameLength > 0 else {
+            self.emptyFrames += 1
+            return
+        }
+        let n = Int(out.frameLength)
+        self.lastTapAt = Date()
+        // 🚨🚨 **录音心跳：由音频 tap 自己驱动，绝不用定时器。**
+        //
+        //    要回答的问题是 Kevin 2026-09-04 提的：
+        //    「开始录音后切到别的窗口查资料再回来，录音要能继续」。
+        //    没有心跳的话，「切走后断了」和「一直在录但结果没上传」
+        //    **在日志里长得一模一样**，而这两种坏法的修法完全不同。
+        //
+        // 🚨 为什么不能用 `Timer` 每 5 秒打一条：**tap 已经死掉之后，
+        //    定时器照样会准时打印「还在录」** —— 那是永远不会失败的检查，
+        //    比没有检查更糟。帧数只有 tap 真收到数据才会涨，
+        //    **它涨 = 真的还在收音**，这是肯定判据。
+        //
+        // 🚨 `appState` 由主 App 注入（扩展里拿不到 `UIApplication`）。
+        //    没注入就打「?」，不猜。
+        self.hbFrames += n
+        if self.hbFrames >= self.hbNext {
+            self.hbNext = self.hbFrames + Int(Voice.SAMPLE_RATE * 5)
+            let secs = Double(self.hbFrames) / Voice.SAMPLE_RATE
+            KbBridge.note("录音心跳：第 " + String(Int(secs)) + " 秒｜累计帧="
+                          + String(self.hbFrames) + "｜"
+                          + (Voice.appStateProbe?() ?? "?"))
+        }
+        // 🚨🚨 **待命档：转完就扔，不进缓冲。**
+        //    这是整套「不跳转」的地基：iOS **不许后台从零开始录音**
+        //    （2026-08-30 用引擎/录音机/采集栈三条 API 分别验过，
+        //      灵动岛亮着也不行；Apple 论坛的结论也是同一句：
+        //      「录音会话必须最初在前台建立，之后才能从后台暂停/恢复」）。
+        //    → 引擎在**前台**就起好，之后一直活着；键盘按下时
+        //      我们只是**开始把采样留下来**，而不是新建一个录音。
+        //    🚨 音量照常往外抛 —— 待命时也要能看出麦克风是活的，
+        //      否则"引擎其实早死了"这件事会一直藏着。
+        if self.arming {
+            // 待命档：追加和取走都要过锁（见 `pcmLock` 那段）
+            self.pcmLock.lock()
+            if self.keeping {
+                self.pcm.append(UnsafeBufferPointer(start: ch[0], count: n)
+                    .withMemoryRebound(to: UInt8.self) { Data($0) })
+            }
+            self.pcmLock.unlock()
+        } else {
+            self.pcm.append(UnsafeBufferPointer(start: ch[0], count: n)
+                .withMemoryRebound(to: UInt8.self) { Data($0) })
+        }
+
+        // 🚨 音量**要在这道 guard 之前**算完抛出去。
+        //    原来 level 是在下面算的，而单句模式在这一行就 return 了
+        //    —— 键盘走的正是单句模式，等于**一个音量值都拿不到**。
+        //    「代码里有这个变量」和「这条路上会算它」是两回事。
+        var s0: Double = 0
+        for i in 0..<n { let v = Double(ch[0][i]); s0 += v * v }
+        let mean0: Double = s0 / Double(n)
+        let rms0: Double = mean0.squareRoot() / 32768.0
+        let curved0: Double = rms0.squareRoot() * 1.9
+        let lv = Float(min(1.0, curved0))
+        self.onLevel?(lv)
+        // 🚨 顺手统计这一段的峰值/本底 —— 判「有没有人说话」要挂在
+        //    **音频本身**上，不能挂在后端返回的文字上（模型对同一段静音
+        //    会给出三种不同说法，追措辞永远追不上）。见 `SpeechPresence`。
+        self.speech.feed(lv)
+
+        // 🚨 **长录音分段**（单句模式也要走）：满一段就交出去，
+        //    `pcm` 只留最后 `SEG_OVERLAP_MS` 那点尾巴当重叠。
+        //    放在这道 guard **之前** —— 单句模式在下一行就 return 了，
+        //    写在后面等于这段代码在键盘那条路上永远不执行。
+        //    （这个坑上面那段注释刚记过一次：「代码里有」≠「这条路上会走到」。）
+        if self.onSegment != nil, self.splitter == nil {
+            let segBytes = Int(Voice.SAMPLE_RATE) * 2 * Voice.SEG_SECONDS
+            if self.pcm.count >= segBytes {
+                self.emitSegment()
+            }
+        }
+
+        guard let sp = self.splitter else { return }   // 单句模式，到此为止
+
+        // 🚨 音量公式**逐字对着安卓 `ShortRecorder` 抄**：
+        //    rms = sqrt(Σv²/采样数)/32768，再 min(1, sqrt(rms)*1.9)。
+        //    （开方再放大是因为人耳对响度非线性，直接用 rms
+        //      正常说话只能推到 5% 高度。）
+        //    公式不一样的话，同样的说话音量两端算出不同的 level，
+        //    而 SILENCE_LEVEL 是同一个 0.08 —— 等于阈值实际上不同。
+        var sum: Double = 0
+        for i in 0..<n {
+            let v = Double(ch[0][i])
+            sum += v * v
+        }
+        let rms: Double = (sum / Double(n)).squareRoot() / 32768.0
+        let curved: Double = rms.squareRoot() * 1.9
+        let level = Float(min(1.0, curved))
+        let frameMs = n * 1000 / Int(Voice.SAMPLE_RATE)
+
+        // 整场到顶：收工（`stop()` 会把最后这段交出去）。
+        if self.pcm.count >= Int(Voice.SAMPLE_RATE) * 2
+            * Int(Voice.MAX_CONTINUOUS) {
+            DispatchQueue.main.async { [weak self] in self?.stop() }
+            return
+        }
+        // 🚨 单句到顶也要切：有人一口气说 30 秒不带停，
+        //    光等静音会攒成一坨发不出去。
+        let tooLong = self.pcm.count >= Int(Voice.SAMPLE_RATE) * 2
+            * Int(Voice.MAX_UTTERANCE)
+        if sp.feed(level, frameMs) || tooLong {
+            sp.reset()
+            self.cut()
+        }
     }
 
     private func cut() {
