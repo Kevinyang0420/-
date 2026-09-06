@@ -1165,6 +1165,17 @@ final class KeyboardViewController: UIInputViewController {
         }
     }
 
+    /// 「主 App 上次在前台是多久以前」的人话形态。
+    ///
+    /// 🚨 **从没有过 ≠ 很久以前**，两者要分开说：前者是他从没打开过主 App，
+    ///    后者是打开过但现在切走了。混成一句话就分不出是哪种。
+    static func fgAgeText() -> String {
+        guard let a = KbBridge.hostForegroundAge else { return "主App从没进过前台" }
+        if a < 10 { return "主App \(a) 秒前还在前台" }
+        if a < 3600 { return "主App 上次在前台是 \(a / 60) 分钟前" }
+        return "主App 上次在前台是 \(a / 3600) 小时前"
+    }
+
     /// **让宿主 App 回到前台** —— `NSExtensionContext.completeRequest`。
     ///
     /// 🚨 这条语义上正好是「做完事，回到宿主」（分享扩展就靠它），
@@ -3176,10 +3187,15 @@ final class KeyboardViewController: UIInputViewController {
                 //    🚨 判据要**两个宿主都测**：在 Transless 里不许掉出去、
                 //       在微信里保持原行为。只测一个必然改坏另一个。
                 if KbBridge.hostForeground {
-                    KbBridge.note("回宿主：主App就在前台 → **不调 completeRequest**"
+                    KbBridge.note("回宿主[前台=true," + Self.fgAgeText()
+                                  + "]：主App就在前台 → **不调 completeRequest**"
                                   + "（他要去的地方他已经在了）")
                 } else if let ctx = self.extensionContext {
-                    KbBridge.note("回宿主：拉起主App的同时调 completeRequest")
+                    // 🚨 这一条**在第三方 App 里是正确行为**（他本来就该被送回微信）。
+                    //    带上年龄才分得出另一种：他明明就在 Transless 里、
+                    //    标记却没写上 —— 那时年龄会是「几秒前」。
+                    KbBridge.note("回宿主[前台=false," + Self.fgAgeText()
+                                  + "]：拉起主App的同时调 completeRequest")
                     ctx.completeRequest(returningItems: nil) { ok in
                         KbBridge.note("回宿主：completeRequest 回调 ok=" + String(ok))
                     }

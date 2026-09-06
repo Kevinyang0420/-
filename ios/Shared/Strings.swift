@@ -239,6 +239,16 @@ enum L {
     static var wb_card_loading: String { s(["zh": "正在取卡片…", "en": "Loading card…", "hant": "正在取卡片…", "ja": "カードを読み込み中…", "de": "Karte wird geladen …", "es": "Cargando tarjeta…", "ar": "جارٍ تحميل البطاقة…"]) }
     static var wb_card_retry: String { s(["zh": "再试一次", "en": "Try again", "hant": "再試一次", "ja": "再試行", "de": "Erneut versuchen", "es": "Reintentar", "ar": "إعادة المحاولة"]) }
     static var wb_card_senses: String { s(["zh": "释义", "en": "Meanings", "hant": "釋義", "ja": "意味", "de": "Bedeutungen", "es": "Significados", "ar": "المعاني"]) }
+    static var wb_note_title: String { s(["zh": "我的笔记", "en": "My note", "hant": "我的筆記"]) }
+    static var wb_note_empty: String { s(["zh": "还没写。记点自己的理解、什么场合用、跟哪个词容易混。", "en": "Nothing yet. Jot down your own take: when to use it, what it gets confused with.", "hant": "還沒寫。記點自己的理解、什麼場合用、跟哪個詞容易混。"]) }
+    static var wb_note_write: String { s(["zh": "写笔记", "en": "Write a note", "hant": "寫筆記"]) }
+    static var wb_note_edit: String { s(["zh": "编辑笔记", "en": "Edit note", "hant": "編輯筆記"]) }
+    static var wb_note_save: String { s(["zh": "保存", "en": "Save", "hant": "保存"]) }
+    static var wb_note_cancel: String { s(["zh": "取消", "en": "Cancel", "hant": "取消"]) }
+    static var wb_note_hint: String { s(["zh": "只有这一段是你写的，重新取词典数据时不会被覆盖。", "en": "This is the only part you write. Refreshing the dictionary data will not overwrite it.", "hant": "只有這一段是你寫的，重新取詞典數據時不會被覆蓋。"]) }
+    static var wb_note_discard_ask: String { s(["zh": "改了还没保存，要放弃吗？", "en": "You have unsaved changes. Discard them?", "hant": "改了還沒保存，要放棄嗎？"]) }
+    static var wb_note_keep_editing: String { s(["zh": "继续编辑", "en": "Keep editing", "hant": "繼續編輯"]) }
+    static var wb_note_discard: String { s(["zh": "放弃", "en": "Discard", "hant": "放棄"]) }
     static var wb_card_examples: String { s(["zh": "例句", "en": "Examples", "hant": "例句", "ja": "例文", "de": "Beispiele", "es": "Ejemplos", "ar": "أمثلة"]) }
     static var wb_card_collocations: String { s(["zh": "常见搭配", "en": "Collocations", "hant": "常見搭配", "ja": "よく使う組み合わせ", "de": "Kollokationen", "es": "Colocaciones", "ar": "المتلازمات اللفظية"]) }
     static var wb_card_breakdown: String { s(["zh": "结构拆解", "en": "How it's built", "hant": "結構拆解", "ja": "構造の解説", "de": "Aufbau", "es": "Cómo se forma", "ar": "البنية"]) }

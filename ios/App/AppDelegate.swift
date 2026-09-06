@@ -1067,7 +1067,14 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                         + "{\"pos\":\"v.\",\"en\":\"to reduce a legal punishment\","
                         + "\"zh\":\"减刑\"},"
                         + "{\"pos\":\"n.\",\"en\":\"the journey between home and work\","
-                        + "\"zh\":\"通勤路程\"}]}")
+                        + "\"zh\":\"通勤路程\"}],"
+                        // 🚨 **3 条例句** —— 后端真实返回的形状（`probe_lookup_examples.py` 实测 escalate/onboard 都是 3 条）。
+                        //    Kevin 09-06：「这个单词没有例句，什么都没了呀！」
+                        //    种子里一条都没有的话，单词本这一屏的多条例句**从来没被跑到过** ——
+                        //    截图上不出现是「数据没有」，测试也就验不到它，整类对象从没进过检查范围。
+                        + "\"examples\":[{\"en\":\"I commute two hours a day.\",\"zh\":\"我每天通勤两小时。\"},"
+                        + "{\"en\":\"She commutes by train.\",\"zh\":\"她坐火车通勤。\"},"
+                        + "{\"en\":\"His sentence was commuted to ten years.\",\"zh\":\"他的刑期被减为十年。\"}]}")
                 // 🚨 **老格式那张**（senses 里没有 pos）—— 他手机上那张就是这样。
                 //    代码改对了、这张卡还是没有词性，所以要能被认出来去重取。
                 _ = WordBook.add(

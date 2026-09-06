@@ -338,10 +338,54 @@ final class WordBookViewController: UIViewController {
 
         renderCard(it)
 
+        renderNote(it)
+
         let del = bigButton(L.wb_delete, #selector(tapDelete))
         del.backgroundColor = Theme.danger
         body.addArrangedSubview(del)
         body.addArrangedSubview(bigButton(L.wb_back, #selector(showListAction)))
+    }
+
+    /// **我的笔记** —— 卡片上唯一由他自己写的东西。
+    ///
+    /// 🚨 **有没有笔记，这一段都要出现**。别的段落空了就不画（那是词典没给），
+    ///    笔记不一样：不画的话他**根本不知道可以写** ——
+    ///    昨晚存储层全做好了，他手机上却什么都没多，就是因为没有入口。
+    ///    没写过时显示一句灰的引导语 + 「写笔记」；写过了显示正文 + 「编辑」。
+    private func renderNote(_ it: WordBookCore.Item) {
+        let note = WordCard.noteOf(it.card)
+        let t = label(L.wb_note_title, 13, Skin.dim)
+        t.accessibilityIdentifier = "wb.card.section"
+        body.addArrangedSubview(t)
+        let v = label(note.isEmpty ? L.wb_note_empty : note, 15,
+                      note.isEmpty ? Skin.dim : Skin.text)
+        v.accessibilityIdentifier = "wb.note.body"
+        body.addArrangedSubview(v)
+        let b = bigButton(note.isEmpty ? L.wb_note_write : L.wb_note_edit,
+                          #selector(tapEditNote))
+        b.accessibilityIdentifier = "wb.note.edit"
+        body.addArrangedSubview(b)
+    }
+
+    @objc private func tapEditNote() {
+        guard let it = WordBook.list().first(where: { $0.id == detailId })
+        else { return }
+        let vc = NoteEditViewController(
+            word: it.en, note: WordCard.noteOf(it.card))
+        vc.onSave = { [weak self] text in
+            guard let self = self else { return }
+            // 🚨 走 `WordCard.withNote` 改**这一个字段**，其余原样。
+            //    别在这里重新拼一张卡 —— 那会把后端给的字段
+            //    （音标/义项/例句）在他写一次笔记时全抹掉。
+            WordBook.setCard(id: it.id,
+                             card: WordCard.withNote(it.card, note: text))
+            // 重画详情：拿改完的那一条，不是手上这个旧 `it`。
+            if let fresh = WordBook.list().first(where: { $0.id == it.id }) {
+                self.showDetail(fresh)
+            }
+        }
+        let nav = UINavigationController(rootViewController: vc)
+        present(nav, animated: true)
     }
 
     /// 这一条的中文面。

@@ -88,6 +88,13 @@ enum KbBridge {
     private enum K {
         /// 主 App 前台时间戳。**跟 `beat` 分开** —— 一个是引擎在跑，一个是人在这屏。
         static let fg = "kb.hostfg.at"
+        /// **上次**主 App 在前台的时刻 —— 跟 `fg` 分开、**只写不删**。
+        ///
+        /// 🚨 `fg` 进后台就被 `clearForeground()` 删掉了（它必须被删，
+        ///    否则键盘会在接下来几秒里以为宿主还在）。
+        ///    所以拿 `fg` 算不出「多久以前」—— 一切走就变成「从没有过」。
+        ///    这个键只用来**解释日志**，不参与任何判断。
+        static let fgLast = "kb.hostfg.last"
         static let beat = "kb.host.beatAt"        // 主 App 心跳（Double，秒）
         static let cmdSeq = "kb.cmd.seq"          // 命令序号（Int，只增）
         static let cmdAct = "kb.cmd.action"       // "start" / "stop" / "cancel"
@@ -1195,12 +1202,28 @@ enum KbBridge {
 
     /// 主 App 进前台时刷一次。
     static func markForeground() {
-        store?.set(Date().timeIntervalSince1970, forKey: K.fg)
+        let t = Date().timeIntervalSince1970
+        store?.set(t, forKey: K.fg)
+        store?.set(t, forKey: K.fgLast)
+    }
+
+    /// 主 App **上次在前台**是多少秒以前（从没有过 = `nil`）。
+    ///
+    /// 🚨 只用来**解释**日志，判断仍然只看 `hostForeground` ——
+    ///    多一个口径就会有两套说法，改的时候必漏一个。
+    /// 🚨 存的是时刻、读时算年龄：年龄存下来那一刻就已经过期了。
+    static var hostForegroundAge: Int? {
+        guard let s = store else { return nil }
+        let t = s.double(forKey: K.fgLast)
+        guard t > 0 else { return nil }
+        return max(0, Int(Date().timeIntervalSince1970 - t))
     }
 
     /// 主 App 进后台时立刻清 —— 不清的话键盘会在接下来 `staleAfter` 秒里
     /// 以为它还在前台，那几秒里点键盘就不会去拉起它了。
     static func clearForeground() {
+        // 🚨 切走的这一刻也算「上次在前台」—— 只删 `fg`，`fgLast` 写住。
+        store?.set(Date().timeIntervalSince1970, forKey: K.fgLast)
         store?.removeObject(forKey: K.fg)
     }
 
