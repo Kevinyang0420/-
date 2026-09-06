@@ -84,6 +84,9 @@ enum DictParse {
                          pos: pos,
                          senses: ss,
                          examples: exs,
-                         collocations: (o["collocations"] as? [String]) ?? [])
+                         collocations: (o["collocations"] as? [String]) ?? [],
+                         // 🚨 原样留一份 —— 句子卡的字段不在 DictEntry 里，
+                         //    由 `CardSections` 认 `kind` 后自己取。
+                         raw: t)
     }
 }

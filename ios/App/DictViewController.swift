@@ -333,6 +333,24 @@ final class DictViewController: UIViewController {
         cardCol.arrangedSubviews.forEach { $0.removeFromSuperview() }
         card.isHidden = false
 
+        // 🚨🚨 **句子走另一套渲染**（Kevin 09-07：「还需要支持查句子…
+        //    帮我分析这段句子是什么意思、它的结构，以及有什么可参考的句式」）。
+        //    规格 `_规格_查句子_20260907.md`：**判据只看模型返回的 `kind`**，
+        //    客户端不许按空格或字数猜 —— 英文短语有空格、中文句子没有，
+        //    任何本地规则都会在某一门语言上错**而且不报错**。
+        //
+        //    🚨 段落内容走 `CardSections`（跟单词本详情页**同一份**）——
+        //    两处各写一套必漂，今晚已经栽过三次。
+        //
+        //    🚨 **后端还没上线 `kind` 分流**（我 09-07 实测：查整句返回的
+        //    仍是词卡形状，连 `kind` 字段都没有）。所以这条分支现在**走不到** ——
+        //    夹具自测在 `UITests/CardSectionsTests`（好样本过、坏样本红过），
+        //    但**端到端没验过**，等 1.1 上线后再验，不拿夹具绿冒充通过。
+        if let o = (try? JSONSerialization.jsonObject(with: Data(e.raw.utf8)))
+            as? [String: Any], CardSections.isSentence(o) {
+            renderSentence(o, query: e.word)
+            return
+        }
         // ① 词头 + 音标+朗读 **收成一组、紧贴词头**
         //    Grok：「音标是仅次于词头的第二锚点，现在夹在中间、字号行高都偏注释」
         let head = UILabel()
@@ -432,18 +450,48 @@ final class DictViewController: UIViewController {
 
         // ⑦ 主按钮上边距 30
         cardCol.setCustomSpacing(Self.gapCta, after: chips)
-        let add = UIButton(type: .custom)
-        add.backgroundColor = Theme.accent
-        add.layer.cornerRadius = 22
-        add.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
-        add.setTitleColor(.white, for: .normal)
-        add.accessibilityIdentifier = "dict.add.wordbook"
-        add.addTarget(self, action: #selector(tapAdd), for: .touchUpInside)
-        add.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        let add = makeAddButton()
         cardCol.addArrangedSubview(add)
-        addBtn = add
         paintAdd()
         renderRecent()
+    }
+
+    /// 句子卡：意思 / 结构拆解 / 换个说法 / 关键搭配。
+    ///
+    /// 🚨 **不重画一套行样式** —— 用这一屏已有的 `sectionTitle` / `plainRow`
+    ///    （跟词卡同一套间距和字号），只是内容来自 `CardSections`。
+    private func renderSentence(_ o: [String: Any], query: String) {
+        let head = UILabel()
+        head.text = query
+        head.font = .systemFont(ofSize: 22, weight: .semibold)
+        head.textColor = Theme.text
+        head.numberOfLines = 0
+        head.accessibilityIdentifier = "dict.sentence"
+        cardCol.addArrangedSubview(head)
+
+        let secs = CardSections.sentence(
+            o, titles: (meaning: L.wb_card_meaning,
+                        breakdown: L.wb_card_breakdown,
+                        alternatives: L.wb_card_alternatives,
+                        keys: L.wb_card_keys))
+        for sec in secs {
+            let t = UILabel()
+            t.text = sec.title
+            t.font = .systemFont(ofSize: 13)
+            t.textColor = Theme.dim
+            t.accessibilityIdentifier = "dict.section"
+            cardCol.addArrangedSubview(t)
+            for r in sec.rows {
+                let l = UILabel()
+                l.text = r
+                l.font = .systemFont(ofSize: 15)
+                l.textColor = Theme.text
+                l.numberOfLines = 0
+                cardCol.addArrangedSubview(l)
+            }
+        }
+        // 🚨 「也要支持我加入到单词本」是他原话里的后半句，别只做前半。
+        cardCol.addArrangedSubview(makeAddButton())
     }
 
     private func senseRow(no: Int, sense: DictSense, minor: Bool) -> UIView {
@@ -563,8 +611,43 @@ final class DictViewController: UIViewController {
         WordBookCore.dictId(word: e.word)
     }
 
+    /// 「加入单词本」那颗按钮 —— **词卡和句子卡共用一个出口**。
+    ///
+    /// 🚨 抽出来是因为句子卡也要这颗（Kevin 原话后半句：「**同时也要支持我
+    ///    加入到单词本**」）。两处各造一颗的话，改样式/改埋点必漏一处。
+    private func makeAddButton() -> UIButton {
+        let add = UIButton(type: .custom)
+        add.backgroundColor = Theme.accent
+        add.layer.cornerRadius = 22
+        add.titleLabel?.font = .systemFont(ofSize: 16, weight: .semibold)
+        add.setTitleColor(.white, for: .normal)
+        add.accessibilityIdentifier = "dict.add.wordbook"
+        add.addTarget(self, action: #selector(tapAdd), for: .touchUpInside)
+        add.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        addBtn = add
+        paintAdd()
+        return add
+    }
+
     @objc private func tapAdd() {
         guard let e = current else { return }
+        // 🚨 **句子存的字段跟词不一样**（规格第三节）：
+        //    `zh` = 模型给的 meaning，`en` = 他查的那句原文，`span` = "full"。
+        //    id 仍走 `WordId`，不另造一套。
+        if let o = (try? JSONSerialization.jsonObject(with: Data(e.raw.utf8)))
+            as? [String: Any], CardSections.isSentence(o) {
+            let f = CardSections.wordbookFields(o, query: e.word)
+            // 🚨 用三端已有的 ，不另造 id 口径（规格点名）。
+            let sid = WordId.make(f.zh, f.en)
+            if WordBook.list().contains(where: { $0.id == sid }) {
+                WordBook.remove(id: sid)
+            } else {
+                _ = WordBook.add(zh: f.zh, en: f.en, span: f.span, tone: "",
+                                 today: Srs.todayString(), card: e.raw)
+            }
+            paintAdd()
+            return
+        }
         let id = wbId(e)
         if WordBook.list().contains(where: { $0.id == id }) {
             WordBook.remove(id: id)

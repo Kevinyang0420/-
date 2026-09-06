@@ -41,15 +41,26 @@ struct DictEntry {
     var exampleEn: String { examples.first?.0 ?? "" }
     var exampleZh: String { examples.first?.1 ?? "" }
     let collocations: [String]
+    /// 后端返回的**原始 JSON**。
+    ///
+    /// 🚨 句子卡（`kind:"sentence"`）的字段是 meaning/breakdown/alternatives/keys，
+    ///    跟词卡完全不同。往 `DictEntry` 里再塞四个字段，等于把词卡的结构
+    ///    撑成两用 —— 以后每加一种卡都要再撑一次。
+    ///    原样留一份，让 `CardSections` 去认 `kind` 并取自己那几段。
+    var raw: String = ""
 
     init(word: String, phonetic: String, pos: String, senses: [DictSense],
-         examples: [(String, String)], collocations: [String]) {
+         examples: [(String, String)], collocations: [String],
+         // 🚨 有默认值 —— 便利入口和测试夹具不必都传。
+         //    真实解析（`DictParse`）必须传，句子卡全靠它。
+         raw: String = "") {
         self.word = word
         self.phonetic = phonetic
         self.pos = pos
         self.senses = senses
         self.examples = examples
         self.collocations = collocations
+        self.raw = raw
     }
 
     /// 只有一条例句时的便利写法 —— **假数据和老调用点用**。
