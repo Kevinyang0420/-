@@ -968,6 +968,29 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
 
+    /// 前台标记的刷新定时器。
+    ///
+    /// 🚨 静态的：`AppDelegate` 只有一个，而这两个通知回调是两个闭包，
+    ///    要共享同一个 timer。
+    private static var fgBeat: Timer?
+
+    /// 前台期间每 `beatEvery` 秒把「主 App 在前台」刷一次。
+    ///
+    /// 🚨 判据不是"有没有调过 markForeground"，是**键盘那一刻读到的是不是真**。
+    ///    这两件事差了一个 `staleAfter`（6 秒）—— 今晚就栽在这个差上。
+    static func startForegroundBeat() {
+        fgBeat?.invalidate()
+        fgBeat = Timer.scheduledTimer(withTimeInterval: KbBridge.beatEvery,
+                                      repeats: true) { _ in
+            KbBridge.markForeground()
+        }
+    }
+
+    static func stopForegroundBeat() {
+        fgBeat?.invalidate()
+        fgBeat = nil
+    }
+
     /// 「录完放手」开关。环境变量给我自己测，`flags.txt` 给真机验。
     /// 自测开关：这一次不取条子（只写不取），好让下一次冷启动去取。
     private static var noTake: Bool {
@@ -1025,6 +1048,17 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //    而它撤的是**整个 token 下的全部观察者** —— 借它的话，
         //    待机一关这条通道就被连坐掉，而这条要用的场景恰恰是待机关着。
         //    （源码里前人已经为自检/长录通道记过同一个坑。）
+        // 前台标记探针 —— 让主 App 在**任意时刻**报一次它此刻的值。
+        // 🚨 自检写完立刻读是没用的（必然为真）；要量的是「N 秒之后还真不真」。
+        KbBridge.observeFgProbe(Unmanaged.passUnretained(self).toOpaque()) {
+            _, _, _, _, _ in
+            DispatchQueue.main.async {
+                let age = KbBridge.hostForegroundAge.map { String($0) } ?? "无"
+                KbBridge.note("前台探针：hostForeground="
+                              + String(KbBridge.hostForeground)
+                              + "｜上次标记 " + age + " 秒前")
+            }
+        }
         KbBridge.observeArmNow(Unmanaged.passUnretained(self).toOpaque()) {
             _, _, _, _, _ in
             DispatchQueue.main.async {
@@ -1041,6 +1075,22 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //    启动期的初始化要挂在启动上，不是挂在某一屏上。
         if ProcessInfo.processInfo.environment["TRANSLESS_UILANG_RESET"] == "1" {
             Lang.set(Lang.sys)
+        }
+        // **指定界面语言**（上架截图要 7 门语言各一套）。
+        //
+        // 🚨 跟上面那条 RESET 并排放：同一件事的两半（清回默认 / 指定一门），
+        //    分开两处的话下一个人只会看到其中一条。
+        // 🚨 **只认 `Lang.selectable` 里的值**：拼错时**大声跳出来**，
+        //    不要静默落回默认 —— 否则 7 门语言跑出来的是 7 套一样的图，
+        //    而"跑完了"和"跑对了"在产物上分不开。
+        if let v = ProcessInfo.processInfo.environment["TRANSLESS_UILANG"],
+           !v.isEmpty {
+            if Lang.selectable.contains(v) {
+                Lang.set(v)
+            } else {
+                KbBridge.note("🚨 TRANSLESS_UILANG=\(v) 不在 Lang.selectable 里，"
+                              + "没有生效（别把这一轮的图当成那门语言的）")
+            }
         }
         // 🚨🚨 **单词本也要能清回确定起点**（2026-09-05 栽了一次）。
         //    上一轮用例把那条加进单词本**并留在那里**，下一轮跑起来
@@ -1551,6 +1601,19 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             //    去"拉起主 App"并把自己收掉，系统就退回默认输入法。
             //    **这两件事必须分开记**：一个是"引擎在跑"，一个是"人在这屏"。
             KbBridge.markForeground()
+            // 🚨🚨 **一直刷，别只写这一次。**
+            //    `hostForeground` 是按**心跳**读的（`staleAfter = 6` 秒），
+            //    只写一次的话，他进前台 6 秒后标记就过期 ——
+            //    而"打开 App → 点进输入框 → 切到我们的键盘 → 点麦克风"
+            //    这一串**必然超过 6 秒**。Kevin 09-07 实测仍然掉回默认输入法，
+            //    守望者抓到的签名就是 `前台=false,主App 8 秒前还在前台`。
+            //    `KbBridge` 那句注释本来就写着「主 App 前台时每 beatEvery 秒刷一次」——
+            //    **注释写对了，刷新那一半没实现。**
+            //
+            //    🚨 **不能借 `KbVoiceHost` 的定时器**：那个只在待机开着时跑，
+            //    而这条要用的场景恰恰是待机关着（今晚观察者那条已经踩过一次）。
+            //    🚨 **过期机制要留着**：App 崩了没人来清，靠过期兜底。
+            AppDelegate.startForegroundBeat()
             // 🚨 **在这里读回才有意义** —— 启动那一刻还没进前台，
             //    在那儿打必然是 false，证明不了任何事（我第一版就放错了时刻）。
             //    这一行证明的是：`markForeground` 真的执行了、而且读得回来。
@@ -1562,6 +1625,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         NotificationCenter.default.addObserver(
             forName: UIApplication.didEnterBackgroundNotification,
             object: nil, queue: .main) { _ in
+            AppDelegate.stopForegroundBeat()
             KbBridge.clearForeground()
         }
         NotificationCenter.default.addObserver(
@@ -1899,6 +1963,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             //    再点 🌐 切过去，这两步模拟器上脚本点不动。把同一个
             //    `TypingKeyboardView` 直接塞进 App 里截图，看到的是同一份代码。
             //    正式界面里没有任何入口，只有这个环境变量能进。
+            // 直达单词本 —— 上架截图要它（正式入口在设置里，
+            //    靠点文案进不去：**界面语言一换文案就变**，7 门语言各点一次必漂）。
+            case "wb": nav.pushViewController(WordBookViewController(), animated: false)
             case "kb": nav.pushViewController(KeyboardPreviewController(), animated: false)
             // 拼音引擎对拍（期望值来自独立的 Python 参照实现）
             case "pysplit": nav.pushViewController(PinyinSelfTestController(),

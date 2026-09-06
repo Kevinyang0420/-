@@ -1331,6 +1331,22 @@ enum KbBridge {
     private static let noteArmNow =
         "com.kevin.transless.cmd.armnow" as CFString
 
+    /// **前台标记探针**（只给自动化用；正式路径不发它）。
+    ///
+    /// 🚨 为什么要它：`hostForeground` 是**按心跳读**的，
+    ///    写完立刻读必然为真 —— 那种自检**结构上抓不到过期**。
+    ///    要量的是「进前台 N 秒之后它还是不是真」，
+    ///    而这个只能让主 App 在那个时刻自己报一次。
+    private static let noteFgProbe =
+        "com.kevin.transless.debug.fgprobe" as CFString
+
+    static func pokeFgProbe() { poke(noteFgProbe) }
+
+    static func observeFgProbe(_ token: UnsafeRawPointer,
+                               _ cb: @escaping CFNotificationCallback) {
+        observe(token, noteFgProbe, cb)
+    }
+
     /// 键盘喊一声「你就在前台，就地把引擎架起来」。
     ///
     /// 🚨 这是**不跳转**那条路的全部 —— 主 App 在前台时，
