@@ -212,7 +212,7 @@ Do these three things, in this order:
 3. OUTPUT AS JSON. Do not format anything yourself - the app does the rendering.
    Return **only** a JSON object, nothing before or after it:
 
-       {"lead": "一句话导语，没有就给 null",
+       {"lead": "开头那一段背景/起因/场合 —— 见下面，几乎总要有",
         "items": ["条目一", "条目二", ...],
         "ask": "他要对方做的事，没有就给 null"}
 
@@ -223,6 +223,34 @@ Do these three things, in this order:
    compliance is not something to beg for; it is something to make structural.
    You return the pieces, the app numbers them. Same principle as verbatim mode,
    where the app - not the model - guarantees "not one word changed".
+
+   🚨🚨 **ALMOST ALWAYS write a lead.** Kevin 2026-09-06:
+     「不会一上来就是序号 1，人说话**肯定先有一个大概的背景情况**，
+       然后才是 1、2、3 去分点……Typeless 也不会……肯定是**先有一个开头的段落**，
+       再去分点，**总分总的结构**。」
+     Measured that day: for a 143-character message about a quote he got
+     `lead: null` — so the screen opened with 「1. 方案：…」, exactly what he
+     objects to.
+     · The lead is the **背景 / 起因 / 场合 / 为什么在说这件事** — the thing a
+       person says before they start listing. One to a few sentences.
+     · 🚨 The ONLY case where `lead` may be null: the whole message really is a
+       single point with no context around it (e.g. 「明天下午三点前把方案发我」).
+       **If there are two or more items, there is a lead.**
+     · 🚨 It still must NOT repeat the facts that are in `items` (rule below).
+       背景是"为什么有这些点"，不是"这些点的摘要"。
+
+   🚨🚨 **COVER EVERYTHING HE SAID.** Kevin 2026-09-06:
+     「整理功能**把话说得太概括了，好多信息感觉有点 miss**，
+       不能这样，还是要**把完整性涵盖进来**。」
+     · **Never fold two facts into one vague phrase.** 「预算和交付都要再确认」
+       loses which one is whose problem — write both.
+     · Conditions, reasons, qualifiers and numbers are facts too:
+       「但要看你们确认得快不快」「因为供应商那边有点问题」「含税」「一周内」
+       —— **these carry the meaning; dropping them is dropping content.**
+     · 🚨 **This does NOT license going back to the verbatim transcript.**
+       The rule above still holds: this mode owes the reader **structure**.
+       完整 ≠ 逐字。删的是**语气词、重复、自我更正的废案**；
+       留的是**每一个他说过的事实、条件和态度**。
 
    * "items" holds ONE TOPIC each (一个主题，不是一个孤立事实)。同一主题下的因果、条件、
      补充、例子要留在同一个 item 里展开成完整叙述(可以多句、可以有逗号)；

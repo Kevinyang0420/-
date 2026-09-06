@@ -358,7 +358,11 @@ final class WordBookViewController: UIViewController {
     ///    **用不上的那几组就是空的**，跳过即可。
     private func renderCard(_ it: WordBookCore.Item) {
         let c = WordCard.parse(it.card)
-        if c.isEmpty {
+        // 🚨 **老卡片也要重取一次** —— 他手机上那张 commute 是今天早些时候存的，
+        //    里面根本没有义项级词性。只判 `isEmpty` 的话，代码改对了、
+        //    他打开老卡还是没有词性，然后会说"又没修好"。
+        //    （这条是 0 点名"最容易漏"的那一条。）
+        if c.isEmpty || needsRefetchForPos(c) {
             // 🚨 **点进去这一刻才取**（列表滚动绝不取 —— 那会为他根本没看的
             //    条目烧一堆请求）。取到存回，下次不重取。
             fetchCard(it)
@@ -373,10 +377,21 @@ final class WordBookViewController: UIViewController {
                 .filter { !$0.isEmpty }.joined(separator: "   ")
             body.addArrangedSubview(label(head, 14, Skin.dim))
         }
-        // A · 查词
-        section(L.wb_card_senses, c.senses.map { s in
-            s.0.isEmpty ? s.1 : (s.0 + (s.1.isEmpty ? "" : "\n" + s.1))
-        })
+        // A · 查词 —— **按词性分节**，跟查词卡共用 `PosGrouping`。
+        // 🚨 Kevin 2026-09-06：「单词本那个地方就只有一个动词」
+        //    「连动词也没了，完全没标是动词还是名词」。
+        //    两句是同一条链的前后两半：词性被当成整卡级的，而它是义项级的。
+        // 🚨 **不写第二份分组代码** —— 今天「同一规矩两处实现」已经栽了四次。
+        let poses = c.senses.map { $0.2 }
+        var lines: [String] = []
+        for (i, s) in c.senses.enumerated() {
+            if let title = PosGrouping.sectionTitle(at: i, poses: poses) {
+                lines.append(title)
+            }
+            lines.append(s.0.isEmpty ? s.1
+                                     : (s.0 + (s.1.isEmpty ? "" : "\n" + s.1)))
+        }
+        section(L.wb_card_senses, lines)
         section(L.wb_card_examples, c.examples.map { e in
             e.0 + (e.1.isEmpty ? "" : "\n" + e.1)
         })
@@ -398,6 +413,17 @@ final class WordBookViewController: UIViewController {
     ///
     /// 🚨 **不许一直转圈**：转圈是没有终点的状态，他分不出「还在取」
     ///    和「已经死了」，只能干等或者退出去。失败要**落终态 + 给重试**。
+    /// 这张**已存的**卡片需不需要重新取一次。
+    ///
+    /// 🚨 他手机上那张 commute 是今天早些时候存的，里面**根本没有义项级词性**。
+    ///    代码改对了、他打开老卡还是没有词性 —— 然后会说"又没修好"。
+    ///    所以：**卡片在、但一个义项词性都没有 → 重取**。
+    ///    只对查词卡（`kind == "word"` 且有义项）成立，句子卡本来就没有词性。
+    private func needsRefetchForPos(_ c: WordCard.Parsed) -> Bool {
+        guard !c.senses.isEmpty else { return false }
+        return !PosGrouping.hasAnyPos(c.senses.map { $0.2 })
+    }
+
     private func fetchCard(_ it: WordBookCore.Item) {
         let loading = label(L.wb_card_loading, 13, Skin.dim)
         loading.numberOfLines = 0

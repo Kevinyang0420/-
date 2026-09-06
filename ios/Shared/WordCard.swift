@@ -37,7 +37,12 @@ enum WordCard {
         // A · 查词
         var phonetic = ""
         var pos = ""
-        var senses: [(String, String)] = []      // (英文释义, 中文释义)
+        /// (英文释义, 中文释义, **这一条自己的词性**)
+        ///
+        /// 🚨 词性是**义项级**的，不是整卡级的。原来只有 (en, zh)、
+        ///    整卡靠顶层一个 `pos` —— commute 的三条（v./v./n.）
+        ///    在单词本里就全挂在一个词性下，名词那条根本看不出来。
+        var senses: [(String, String, String)] = []
         var examples: [(String, String)] = []    // (例句英, 例句中)
         var collocations: [String] = []
         // B · 句子/词组
@@ -60,7 +65,9 @@ enum WordCard {
             "kind": "word",
             "phonetic": e.phonetic,
             "pos": e.pos,
-            "senses": e.senses.map { ["en": $0.en, "zh": $0.zh] },
+            // 🚨 **每条义项的词性也要存下来。** 不存的话卡片一旦落盘
+            //    就再分不出哪条是名词 —— 而单词本读的正是这份落盘数据。
+            "senses": e.senses.map { ["en": $0.en, "zh": $0.zh, "pos": $0.pos] },
             "collocations": e.collocations,
         ]
         if !e.exampleEn.isEmpty || !e.exampleZh.isEmpty {
@@ -84,7 +91,8 @@ enum WordCard {
         p.pos = (o["pos"] as? String) ?? ""
         for s in (o["senses"] as? [[String: Any]]) ?? [] {
             p.senses.append(((s["en"] as? String) ?? "",
-                             (s["zh"] as? String) ?? ""))
+                             (s["zh"] as? String) ?? "",
+                             (s["pos"] as? String) ?? ""))
         }
         for s in (o["examples"] as? [[String: Any]]) ?? [] {
             p.examples.append(((s["en"] as? String) ?? "",
