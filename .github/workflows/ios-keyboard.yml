@@ -54,24 +54,19 @@ jobs:
               return json.dumps(s, ensure_ascii=False).replace("\\u", "\\u{").replace("}", "}")
           out = root / "Shared" / "Secrets.swift"
           body = "// 构建时生成，勿提交。提示词来自 ios/prompt.txt（源头是 engine.py）。\n"
-          zh = (root / "prompt_zh.txt").read_text(encoding="utf-8")
-          # 2026-09-03（2.1 查出）：原特征串 "Chinese speech-cleanup engine" 早在 engine.py 里改掉了，
-          #    这道守卫会把【正确】的内容判成错 → 走 CI 出包必红。特征串会过期，改成两层：
-          #    ① 结构性标记（同 sync_prompts.py）；② 能 import engine 时【逐字节】相等，否则只查①并提示。
-          #    🚨 engine.py 不在 iOS 仓库里 → CI 里②必然走不到、只剩①。真正的逐字节闸在本机 push_ios.py 闸门⑥（推之前拒推）。
-          if "speech-cleanup engine" not in zh:
-              raise SystemExit("prompt_zh.txt 不对劲，缺结构性标记 speech-cleanup engine")
-          try:
-              import sys as _sys; _sys.path.insert(0, str(root.parent)); import engine as _eng
-              if zh != _eng.TRANSCRIBE_PROMPT:
-                  raise SystemExit("prompt_zh.txt 与 engine.TRANSCRIBE_PROMPT 不一致（%d vs %d 字符）—— 先跑 ios/sync_prompts.py" % (len(zh), len(_eng.TRANSCRIBE_PROMPT)))
-          except ImportError as _e:
-              print("提示：CI 环境 import engine 失败（%s），只做了结构性标记检查" % _e)
-          body += "enum Secrets {\n"
-          body += "    static let pass = %s\n" % json.dumps(pw)
-          body += "    static let prompt = %s\n" % json.dumps(prompt, ensure_ascii=False)
-          body += "    static let promptZh = %s\n" % json.dumps(zh, ensure_ascii=False)
-          body += "}\n"
+          # 🚨 成员表**从 sync_prompts.PAIRS 派生**，不在这里手写。
+          #    2026-09-06 查出：本机生成器 5 个成员、这两份 CI 各只有 3 个，
+          #    而 Swift 用 5 个（Secrets.promptPunct 在 Backend.swift:25）——
+          #    这条路一旦跑起来必然 cannot find 'promptPunct' in scope。
+          #    Kevin 09-05 叫停了触发 CI，所以这个洞一直没人撞到。
+          #    三个生成器现在共用 sync_prompts.secrets_body，加 prompt 只改 PAIRS。
+          import sys as _sys
+          _sys.path.insert(0, str(root))
+          import sync_prompts as _sp
+          body, _bad = _sp.secrets_body(
+              root, pw, lambda s: json.dumps(s, ensure_ascii=False))
+          if _bad:
+              raise SystemExit("Secrets 生成失败：" + "; ".join(_bad))
           out.write_text(body, encoding="utf-8")
           # 闸门就在这儿验，别等编译完去 strings 二进制 ——
           # ALEX_PASS 只有 14 字符，Swift 的小字符串优化(<=15 字节)会把它编成
