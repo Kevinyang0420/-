@@ -508,120 +508,32 @@ final class FaceToFaceViewController: UIViewController {
         if dropdown != nil { hideDropdown(); return }
         let cur = isLeft ? leftLang : rightLang
 
-        let panel = UIView()
-        panel.backgroundColor = Theme.panel
-        panel.layer.cornerRadius = 18
-        panel.layer.borderWidth = 0.6
-        panel.layer.borderColor = UIColor.white.withAlphaComponent(0.16).cgColor
-        panel.translatesAutoresizingMaskIntoConstraints = false
-
-        let col = UIStackView()
-        col.axis = .vertical
-        col.translatesAutoresizingMaskIntoConstraints = false
-        // 🚨🚨 **套一层滚动**（2026-09-05）。原来 `col` 是直接贴在面板上的，
-        //    9 门时刚好放得下，Kevin 要扩到 23+ 门之后**超出屏幕的部分点不到** ——
-        //    而且这个面板是往上弹的，溢出方向正好顶到状态栏。
-        //    这一处 2.1 的清单里没有；三个选择器各写各的，所以只查一处会漏。
+        // 🚨🚨 **改用共享的 `LangPanel`**（2026-09-05 晚）。
         //
-        // 🚨🚨 **浮层里的滚动跟贴死在安全区上的滚动，是两种东西。**
-        //    历史列表/详情那两处也是 `contentLayoutGuide`，但它们四边等式贴死在
-        //    安全区上 —— 高度**由外层定死**，不需要内容来撑，所以套滚动没事。
-        //    这个面板是**浮层**：高度没有任何外部来源，只能靠内容撑。
-        //    套滚动 = 把唯一那条高度来源剪断。
-        //    （2026-09-05 扫全簿三处命中同一形状，只有这一处真坏 ——
-        //      **扫描定位形状，不下判决**；拿扫描结果当结论会去"修"两个没坏的。）
+        //    这里原来是**自己那一份**面板（约 120 行：面板底、滚动、
+        //    chips 行、列表行、约束）。随手翻译那屏要改成同样的东西时，
+        //    我照着这份**又抄了一套** —— 于是同一个面板有了两份实现。
         //
-        // 🚨 **一句话判据（下次往任何浮层里加东西之前先问）**：
-        //    「顶部只有不等式」的浮层，高度**只能靠内容撑**；
-        //    而内容撑不撑得起来，取决于放进去的是什么 ——
-        //      `UILabel` / `UIStackView` **有**固有高度 ✅
-        //      `UIScrollView` **没有**（它的 contentLayoutGuide 只管内容尺寸）❌
-        //    我昨晚干的正是：往一个靠内容撑的浮层里，塞了个没有固有高度的东西。
-        //    （同屏另一处浮层 `l` 是 UILabel，所以它一直好好的。）
-        let scroll = UIScrollView()
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-        scroll.showsVerticalScrollIndicator = true
-        scroll.addSubview(col)
-        panel.addSubview(scroll)
-
-        // 🚨 顺序走共用的 `LangRecents`（最近用过置顶），别在这里另排一份。
-        let sec = LangRecents.sections(all: Backend.langsForUI.map { $0.code })
-        // 🚨🚨 **两段必须有标题。** 不加的话用户看到的是
-        //    「英文…英文」「日语…日语」重复出现而**没有任何解释** ——
-        //    随手那屏用的是系统 `UIMenu`，标题它自己会画；
-        //    这个面板是自绘的，**同一条规矩两种实现，标题这一半漏了**。
+        // 🚨 **我当时说的是"提成共享组件、两屏共用"，实际只做了一半**：
+        //    新的那屏用了 `LangPanel`，这一屏还留着旧的。
+        //    是回头 grep 三屏各用什么才发现的 —— **说了共用不等于共用了**。
         //
-        // 🚨 我第一版闸门只查「看得见几门语言」，12 门也照样绿 ——
-        //    **判据缺了「分段看不看得懂」这一整个维度**，
-        //    是看截图才发现的，不是闸门抓的。
-        // 🚨 分段逻辑**逐行照抄 `LangMenu.swift:66-75`**：
-        //    「最近用过」有内容才加，「全部语言」**无条件加**。
-        //    我第一版写成「只有 recent 非空才加全部语言标题」——
-        //    没有最近记录时整个列表就没标题了，**两屏又走散**。
-        //    这种地方不许凭印象写，去把那一份读出来照抄。
-        // 🚨🚨 **方案丙**（Kevin 2026-09-05 拍板）：「最近用过」是**快捷区**，
-        //    做成横滑 chips（描边不填充、更扁），**不再是跟下面同构的列表行**。
-        //    「全部语言」保持完整不删。
-        //
-        // 🚨 判据是**两段一眼看上去不是同一种东西**，不是"我改成了 chips"。
-        //    改完退一步看：还像两截同样的列表，就没达到目的。
-        if !sec.recent.isEmpty {
-            col.addArrangedSubview(sectionHeader(L.lang_recent))
-            if let chips = LangChips.row(codes: sec.recent, current: cur,
-                                         onPick: { [weak self] code in
-                                             self?.pickLangCode(code, isLeft: isLeft)
-                                         }) {
-                col.addArrangedSubview(chips)
-            }
+        //    现在两屏走同一个 `LangPanel`：面板长什么样、勾画在哪、
+        //    高度链怎么接，只有一处定义。
+        let panel = LangPanel.make(current: cur) { [weak self] code in
+            self?.pickLangCode(code, isLeft: isLeft)
         }
-        col.addArrangedSubview(sectionHeader(L.lang_all))
-        for code in sec.allIncludingRecent {
-            col.addArrangedSubview(langRow(title: Backend.langLabel(code), code: code,
-                                           checked: code == cur, isLeft: isLeft))
-        }
-        // 🚨 **不再有「更多语言…」那一项**（Kevin 2026-09-05 当场砍掉）：
-        //    「既然没有的话，还写着干嘛呢？」—— 它点下去只弹一句"现在先支持这 9 种"，
-        //    而语言表早就 31 门了。**一个只会说自己没有的入口，没有存在的理由。**
-
         view.addSubview(panel)
         NSLayoutConstraint.activate([
-            scroll.topAnchor.constraint(equalTo: panel.topAnchor, constant: 4),
-            scroll.bottomAnchor.constraint(equalTo: panel.bottomAnchor, constant: -4),
-            scroll.leadingAnchor.constraint(equalTo: panel.leadingAnchor),
-            scroll.trailingAnchor.constraint(equalTo: panel.trailingAnchor),
-            col.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor),
-            col.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor),
-            col.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor),
-            col.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor),
-            // 🚨 内容宽度跟着可视宽度，否则会横着滚
-            col.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor),
-            panel.widthAnchor.constraint(greaterThanOrEqualToConstant: 160),
             panel.leadingAnchor.constraint(equalTo: anchor.leadingAnchor),
-            // 🚨 向上弹：锚在被点钮的**上沿**
+            panel.widthAnchor.constraint(greaterThanOrEqualToConstant: 200),
+            panel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor,
+                                            constant: -12),
+            // 🚨 向上弹：锚在被点钮的**上沿**（这一屏的语言钮在底部）
             panel.bottomAnchor.constraint(equalTo: anchor.topAnchor, constant: -8),
             panel.topAnchor.constraint(greaterThanOrEqualTo:
                                         view.safeAreaLayoutGuide.topAnchor, constant: 8),
         ])
-
-        // 🚨🚨 **把高度链接回来** —— 这就是 Kevin 2026-09-05 报的
-        //    「点了之后是个扁的，看不到语言」。
-        //
-        //    我上一版给面板套了滚动来治"23 门滚不到底"，**却把撑高度的那条链剪断了**：
-        //    加滚动之前 `col` 直接贴在面板上，是 stack 的固有高度把面板撑开的；
-        //    套上滚动之后 `col` 钉在 `scroll.contentLayoutGuide` 上，
-        //    而**内容布局指南只定内容尺寸、不给滚动视图自身高度**。
-        //    于是面板只剩 `bottom=锚点上沿` 和 `top>=安全区+8`（不等式，不定高）——
-        //    Auto Layout 取最小解，高度≈0。
-        //
-        //    🚨 **编译不报、约束不冲突、日志没有一个字**，只有点开看才知道。
-        //       "我修好了滚动"和"面板还撑得开"是两件事，我只验了前一件。
-        //
-        //    修法：让滚动"想要"内容那么高（750 优先级），
-        //    顶到安全区时由上面那条 required 的不等式压回来，超出部分靠滚。
-        let hFit = scroll.heightAnchor.constraint(equalTo: col.heightAnchor)
-        hFit.priority = .defaultHigh
-        hFit.isActive = true
-
         dropdown = panel
     }
 
