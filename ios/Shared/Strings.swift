@@ -118,6 +118,19 @@ enum L {
     static var kb_preparing: String { s(["zh": "准备中…", "en": "Preparing…", "hant": "準備中…", "ja": "準備中…", "de": "Vorbereiten…", "es": "Preparando…", "ar": "جارٍ التحضير…"]) }
     static var kb_rearming: String { s(["zh": "重新架引擎…", "en": "Re-arming…", "hant": "重新架引擎…", "ja": "再設定中…", "de": "Neu bewaffnen…", "es": "Reactivando…", "ar": "جارٍ إعادة التهيئة…"]) }
     static var kb_resending: String { s(["zh": "重发中…", "en": "Resending…", "hant": "重發中…", "ja": "再送信中…", "de": "Erneut senden…", "es": "Reenviando…", "ar": "جارٍ الإرسال…"]) }
+    static var about_title: String { s(["zh": "关于 Transless", "en": "About Transless", "hant": "關於 Transless"]) }
+    static var about_version: String { s(["zh": "版本 %1$@", "en": "Version %1$@", "hant": "版本 %1$@"]) }
+    static var about_tagline: String { s(["zh": "让世界听懂你", "en": "No Language In Between", "hant": "讓世界聽懂你"]) }
+    static var about_body1: String { s(["zh": "Transless 首先是一个语音输入法——按住说话，出来的就是能直接发送的文字：整理成通顺中文，或者直接说中文出地道外语。", "en": "Transless is first of all a voice keyboard: hold to speak and you get text you can send right away — tidied-up Chinese, or natural English straight from your Chinese.", "hant": "Transless 首先是一個語音輸入法——按住說話，出來的就是能直接發送的文字：整理成通順中文，或者直接說中文出地道外語。"]) }
+    static var about_body2: String { s(["zh": "它也不止是输入法：面对面翻译帮你当面跟外国人对话，随手翻译不用切出输入法就能查一句话，单词本把你用过的表达收进复习流程——说得越多，你自己脱口而出的也越多。", "en": "It is more than a keyboard: face-to-face translation for talking to someone in person, quick translation without leaving the keyboard, and a word book that turns what you have used into review — the more you speak, the more comes out on its own.", "hant": "它也不止是輸入法：面對面翻譯幫你當面跟外國人對話，隨手翻譯不用切出輸入法就能查一句話，單詞本把你用過的表達收進複習流程——說得越多，你自己脫口而出的也越多。"]) }
+    static var about_langs_title: String { s(["zh": "支持语言", "en": "Languages", "hant": "支持語言"]) }
+    static var about_langs_translate: String { s(["zh": "可翻译成 %1$@ 种语言，包括：", "en": "Translates into %1$@ languages, including:", "hant": "可翻譯成 %1$@ 種語言，包括："]) }
+    static var about_langs_more: String { s(["zh": "…等 %1$@ 种", "en": "…and %1$@ in total", "hant": "…等 %1$@ 種"]) }
+    static var about_langs_ui: String { s(["zh": "应用界面支持 %1$@ 种语言（持续增加中）", "en": "App interface in %1$@ languages (more coming)", "hant": "應用界面支持 %1$@ 種語言（持續增加中）"]) }
+    static var about_privacy_note: String { s(["zh": "历史记录默认只留在这台设备上，想跨设备用可以自己开启云同步——每台设备要单独确认一次，不开就不会上传。", "en": "History stays on this device by default. You can turn on cloud sync if you want it across devices — each device confirms separately, and nothing is uploaded until you do.", "hant": "歷史記錄預設只留在這臺設備上，想跨設備用可以自己開啟雲同步——每臺設備要單獨確認一次，不開就不會上傳。"]) }
+    static var about_legal_title: String { s(["zh": "法律与联系", "en": "Legal & contact", "hant": "法律與聯繫"]) }
+    static var about_contact: String { s(["zh": "联系我们", "en": "Contact us", "hant": "聯繫我們"]) }
+    static var about_publisher_title: String { s(["zh": "发行主体", "en": "Published by", "hant": "發行主體"]) }
     static var again_translate: String { s(["zh": "再次翻译", "en": "Translate again", "hant": "再次翻譯"]) }
     static var again_doing: String { s(["zh": "再译一次…", "en": "Translating again…", "hant": "再譯一次…"]) }
     static var again_no_source: String { s(["zh": "还没有可以重译的原话", "en": "Nothing to translate yet", "hant": "還沒有可以重譯的原話"]) }

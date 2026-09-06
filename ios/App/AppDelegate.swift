@@ -3150,8 +3150,13 @@ final class PrefsViewController: UIViewController {
         //         像内部调试信息。变体模式下显示成「版本 467」。
         let build = (Bundle.main.infoDictionary?["CFBundleVersion"]
                      as? String) ?? ver
+        // 🚨 **这一行原来第三个参数是 `nil` —— 点了没反应。**
+        //    draft 第一句就点名：「没有任何一个真正的"关于"页面被实现过」，
+        //    Kevin 09-06 骂的正是这个：「为什么关于 Transless 这里还是一堆
+        //    这什么东西啊？什么也没写啊」。现在它真的打得开了。
         list.addArrangedSubview(row(L.prefs_about,
-                                    L.fill(L.prefs_version, build), nil))
+                                    L.fill(L.prefs_version, build),
+                                    #selector(openAbout)))
         // 🚨 安卓的「检查更新」是连他局域网那台机下载 APK 的。
         //    **iOS 上不存在这条路** —— 苹果不允许 App 自己装包。
         //    所以这一项如实说明走 TestFlight，不做一个按了没反应的假按钮。
@@ -3260,7 +3265,9 @@ final class PrefsViewController: UIViewController {
     ///    `HomeViewController`（它也有同名方法），编译报
     ///    `cannot find 'openPrivacy' in scope`。
     ///    **「在哪儿定义」跟「定义什么」一样重要**（今天第三次栽在这上面）。
-    private static let privacyURL = "https://transless.net/privacy.html"
+    // 🚨 地址搬到 `Shared/Links.swift` —— 「关于」页也要用同一个，
+    //    两处各写一份的话换域名必然漏一处，而漏掉那处是个死链。
+    private static let privacyURL = Links.privacy
 
     /// 账户行：登录了就退出登录，没登录就去登录。
     /// 设置页里的「单词本」入口（Kevin 09-04：单词本从 Tab/首页挪进设置）。
@@ -3268,6 +3275,12 @@ final class PrefsViewController: UIViewController {
     /// 🚨 **行为跟首页那条一字不差**：`WordBookFeature.isLive` 为假时只说"还没上线"，
     ///    **一个字都不提登录** —— 门后是空的时候挂登录门＝骗一次注册（产品经理 08-28 定）。
     ///    上线后 `loginGate` 那道门自然生效（`gate_wordbook_copy.py` 要求它留成活代码）。
+    /// 打开「关于 Transless」。
+    @objc private func openAbout() {
+        navigationController?.pushViewController(
+            AboutViewController(), animated: true)
+    }
+
     @objc private func openWordbookFromPrefs() {
         guard WordBookFeature.isLive else {
             let a = UIAlertController(title: L.home_wordbook,
