@@ -26,8 +26,10 @@ final class StoreShots: XCTestCase {
     }
 
     /// 起一次 App，停在 `page` 这一屏。
-    private func launch(_ page: String, seedCard: Bool = false)
-        -> XCUIApplication {
+    /// `demo` = 上架图的内容态（`|` 分隔多行）。**只在出图时用**，
+    /// 正式流程永远读不到这个环境变量。
+    private func launch(_ page: String, seedCard: Bool = false,
+                        demo: String = "") -> XCUIApplication {
         let app = XCUIApplication(bundleIdentifier: "com.kevin.transless")
         app.launchEnvironment["TRANSLESS_NO_ARM"] = "1"   // 模拟器音频会 abort
         app.launchEnvironment["TRANSLESS_UILANG"] = lang
@@ -35,6 +37,24 @@ final class StoreShots: XCTestCase {
         // 🚨 出图专用：键盘预览页那身绿底和「预览：真实键盘扩展（…）」横幅
         //    是调试脚手架，**不能出现在上架图里**（09-07 交过一次，被 0 拦下）。
         app.launchEnvironment["TRANSLESS_STORE_SHOT"] = "1"
+        if !demo.isEmpty { app.launchEnvironment["TRANSLESS_DEMO_OUT"] = demo }
+        // 🚨🚨 **阿语要带系统级 RTL 参数**（2.1 09-07 判）。
+        //    原来只设 `TRANSLESS_UILANG=ar`（App 内语言），而 UIKit 的镜像
+        //    跟的是**系统语言** —— 拍出来文字是阿语、版面还是从左到右。
+        //
+        //    🚨 这不是绕过缺陷：**上架图该展示阿语用户实际会看到的样子**，
+        //    而真实阿语用户系统本来就是阿语 → 他们看到的就是这一态（现在是对的）。
+        //    「系统 LTR + App 内切阿语」是少数场景，不该拿它当取景条件。
+        //    那个场景确实是缺陷，判据钉在 `UITests/RtlInAppLangSpec`（默认跳过），
+        //    等 2.1/0 定了再修。
+        if lang == "ar" {
+            app.launchArguments += [
+                "-AppleTextDirection", "YES",
+                "-NSForceRightToLeftWritingDirection", "YES",
+                "-AppleLanguages", "(ar)",
+                "-AppleLocale", "ar_SA",
+            ]
+        }
         if seedCard {
             app.launchEnvironment["TRANSLESS_SEED_CARD"] = "1"
             // 🚨 **真查一次，不用写死中文的假数据。**
@@ -72,7 +92,13 @@ final class StoreShots: XCTestCase {
         shot("02_面对面")
 
         // ③ 随手翻译
-        _ = launch("speak")
+        // 🚨 **带内容态**（2.1 09-07 要）：原来拍的是「打开还没说话」，
+        //    空了 55.4% —— 那不是产品在用的样子。
+        //    🚨 只是把**现有界面**拍在有结果的状态，**没有改版面**。
+        //    输出的是英文，因为这一屏的产出本来就是译文（默认译成 English），
+        //    跟界面语言是哪一门无关。
+        _ = launch("speak",
+                   demo: "Could you send me the proposal by Friday?")
         // 🚨 文件名跟着功能名走：Kevin 09-07 把「随手翻译」改成「随便说点啥」，
         //    七门上架图上印的还是旧名（2.1 抓的）。**改标签重跑即可，不用重设计构图。**
         shot("03_随便说点啥")

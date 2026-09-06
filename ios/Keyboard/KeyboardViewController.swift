@@ -590,6 +590,9 @@ final class KeyboardViewController: UIInputViewController {
         tabTranscribe.setTitle(L.kb_transcribe, for: .normal)
         langButton.setTitle(langTitle() + " ▾", for: .normal)
         histButton.accessibilityIdentifier = "kb.hist"     // UITest 用
+        // 🚨 量「这颗 chip 实际能占多少宽」要用它 —— 2.1 要这个数去送 Grok
+        //    判「异常组合（葡→印尼 260pt）要不要退化、退化到什么程度」。
+        langButton.accessibilityIdentifier = "kb.lang"
         histButton.setTitle(L.kb_history, for: .normal)
         for b in [tabTranslate, langButton, tabTranscribe, histButton] {
             b.titleLabel?.font = .systemFont(ofSize: 13)

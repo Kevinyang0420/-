@@ -4596,6 +4596,16 @@ final class MainViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         applyDebugEnv()
+        // 🚨 **上架图内容态**（2.1 09-07 要）：第 3 张现在展示的是
+        //    「打开还没说话」—— 空了 55.4%，那不是产品在用的样子。
+        //    模拟器里没法真说话，所以给一个**只在调试环境下生效**的结果。
+        //    🚨 这不是设计版面，是把**现有界面**拍在有内容的状态；
+        //    正式流程永远读不到这个环境变量。
+        if let demo = ProcessInfo.processInfo.environment["TRANSLESS_DEMO_OUT"],
+           !demo.isEmpty, lines.isEmpty {
+            lines = demo.components(separatedBy: "|")
+            paintLines()
+        }
         // 🚨🚨 **一上来就弹系统麦克风授权框**，别 push 引导页。
         //    Kevin 2026-08-25：「Typeless 现在就是这样子，它就是让你先给权限，
         //    然后去试一下…用户下载你这个软件的时候，他就有预期这是需要录音的…
