@@ -129,6 +129,9 @@ final class Voice: NSObject {
     /// 主 App 注入「此刻在前台还是后台」。扩展里拿不到 `UIApplication`，
     /// 没注入就是 nil，心跳打「?」—— **不猜**。
     static var appStateProbe: (() -> String)?
+    /// 🚨 「起录 URL 到达那一刻在不在后台」——由主 App 注入。
+    ///    **独立于起录闸的结论**（那个永远报绿）。
+    static var arrivedInBackgroundProbe: (() -> String)?
 
     /// 心跳用的累计帧与下一个打点阈值。**只在 tap 里改**（同一线程）。
     fileprivate var hbFrames = 0
@@ -163,6 +166,11 @@ final class Voice: NSObject {
     private static func recLeave() {
         recLock.lock(); recCount = max(0, recCount - 1); recLock.unlock()
     }
+
+    /// 🚨 #80 诊断：这一轮"开始留"的时刻，和第一帧真有声有没有记过。
+    ///    只记一次，别每帧都打。
+    private var keepStartedAt: Date?
+    private var firstVoicedLogged = false
 
     var frameHealth: String {
         "转换失败 \(convErrCount) 帧（code \(convErrCode)）· 空帧 \(emptyFrames) 帧"
@@ -892,6 +900,19 @@ final class Voice: NSObject {
         let curved0: Double = rms0.squareRoot() * 1.9
         let lv = Float(min(1.0, curved0))
         self.onLevel?(lv)
+        // 🚨🚨 **#80：量「开录 → 第一帧真有声」隔了多久。**
+        //    Kevin 的坏样本全指向开头被吃掉（「第 1 段未转写成功」、
+        //    「没听到你说的前半部分」、只蹦一个词「Engine.」）。
+        //    🚨 挂在**这里**而不是帧计数那儿 —— 只有算完 `lv` 才知道有没有声。
+        //    阈值用这条链自己的音量口径（0.02 ≈ 明显有人说话），
+        //    不去引 `KbSelfRecord`（那是另一套判据，混用会两边都说不清）。
+        if let t0 = self.keepStartedAt, !self.firstVoicedLogged, lv >= 0.02 {
+            self.firstVoicedLogged = true
+            let ms = Int(Date().timeIntervalSince(t0) * 1000)
+            KbBridge.note("开头诊断：开录到第一帧有声 " + String(ms) + " ms"
+                          + "｜URL到达时"
+                          + (Voice.arrivedInBackgroundProbe?() ?? "?"))
+        }
         // 🚨 顺手统计这一段的峰值/本底 —— 判「有没有人说话」要挂在
         //    **音频本身**上，不能挂在后端返回的文字上（模型对同一段静音
         //    会给出三种不同说法，追措辞永远追不上）。见 `SpeechPresence`。
@@ -1116,6 +1137,19 @@ final class Voice: NSObject {
     func beginKeep() -> String? {
         guard arming else { return "还没进待命档" }
         pcmLock.lock(); pcm = Data(); pcmLock.unlock()
+        // 🚨🚨 **量「开录 → 第一帧真有声」中间隔了多久** —— #80 的核心。
+        //
+        //    Kevin：切回微信继续说 → 听不到了；日志里「第 1 段未转写成功」、
+        //    「没听到你说的前半部分」、只蹦一个词「Engine.」。
+        //    **都指向开头被吃掉。**
+        //
+        //    🚨 待命档期间麦克风是**静音的**（上面那句 `setMicMuted(false)`
+        //    才解开），所以"引擎一直活着"**不等于"一直在收声"** ——
+        //    我一开始以为可以直接把待命档那段音频接回来补开头，
+        //    **那是错的，那段本来就是静音**。
+        //    真正要量的是：解静音之后，多久才出现第一帧非静音。
+        keepStartedAt = Date()
+        firstVoicedLogged = false
         // 🚨 探针专用：要测「静着录出来是什么」，就不能让开录这一步把静音解掉。
         //    产品路径 `suppressAutoUnmute` 恒为 false，不受影响。
         if !Voice.suppressAutoUnmute {

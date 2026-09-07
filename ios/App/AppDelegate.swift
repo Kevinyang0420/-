@@ -742,6 +742,12 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     ///    再按一次，两条链都会在 `.active` 那一刻各起一次录音，
     ///    第二次撞上 `voice.running` 写下 `SKIP`，**把第一次的真结果盖掉**。
     ///    **「毫秒级重复」和「用户又按了一次」用"有没有一条链在跑"来分，才可靠。**
+    /// 🚨 **起录 URL 到达那一刻是不是在后台** —— 独立字段，
+    ///    不许由「起录闸的结论」代替（闸永远报绿，见 `handleRecURL`）。
+    static var recUrlArrivedInBackground = false
+    /// 到达时刻 —— 用来量「到达 → 真出声」中间丢了多久。
+    static var recUrlArrivedAt: Date?
+
     private var awaitingActive = false
 
     /// 这一跳**是不是我打开的**待机。审查 H4：放弃起录要把副作用撤回去，
@@ -751,7 +757,20 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     /// 取消掉旧的那一条之后，接着走这一次的起录。
     /// 🚨 抽出来是为了**不复制那一大段** —— 复制一份就是第二个出口。
     private func handleRecURLAfterCancel() {
-        KbBridge.note("收到起录URL｜此刻 " + Self.appStateLine())
+        // 🚨🚨 **把「URL 到达那一刻在前台还是后台」记成独立字段。**
+        //
+        //    0 09-07 按这一刻分组，相关性非常干净：
+        //      到达时【后台】坏 4/4；到达时【前台】坏 1/3
+        //    而**每一次「起录闸」都报绿**（都等到了 didBecomeActive、83~182ms）——
+        //    🚨 拿闸的结果当判据会全绿：**它量的是「等没等到前台」，
+        //    不是「音频有没有从一开始就录上」**。闸把这个差别抹平了。
+        //
+        //    → 所以这一刻必须**单独留痕**，不能只留闸的结论。
+        let bgOnArrive = UIApplication.shared.applicationState != .active
+        Self.recUrlArrivedInBackground = bgOnArrive
+        Self.recUrlArrivedAt = Date()
+        KbBridge.note("收到起录URL｜此刻 " + Self.appStateLine()
+                      + "｜到达时" + (bgOnArrive ? "后台" : "前台"))
         awaitingActive = true
         startWhenTrulyActive()
     }
@@ -1266,6 +1285,11 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                         durMs: 15_000, lang: "en")
             History.add(mode: "raw", tone: "", zh: "这段先照原样记下来别改",
                         out: "这段先照原样记下来别改。", durMs: 9_000)
+        }
+        // 🚨 #80：把「URL 到达那一刻在不在后台」注给 Voice ——
+        //    扩展里拿不到 UIApplication，跟 appStateProbe 同一套做法。
+        Voice.arrivedInBackgroundProbe = {
+            AppDelegate.recUrlArrivedInBackground ? "后台" : "前台"
         }
         Voice.appStateProbe = {
             switch UIApplication.shared.applicationState {
@@ -5679,6 +5703,12 @@ final class MainViewController: UIViewController {
     ///    一颗管加、一颗管看。**这是我的判断，他只说了"改成单词本"。**
     /// 🚨 用 push 不用 present —— 他要求过底部 tab 栏别消失。
     @objc private func tapOpenWordbook() {
+        // 🚨🚨 **登录门漏了，把 2.3 的安卓包也挡住了**（0 09-07 抓的）。
+        //    闸门 gate_wordbook_copy.py 的判据挂在**行为**上：
+        //    凡是函数体里 push WordBookViewController 的，**每一个**都要有活的门。
+        //    我新开入口时只想着"push 一下"，没想到门是**每个入口各自的责任**。
+        //    → 这正是它该干的事，别绕过它。
+        guard loginGate(L.login_gate_wordbook) else { return }
         navigationController?.pushViewController(WordBookViewController(),
                                                  animated: true)
     }
