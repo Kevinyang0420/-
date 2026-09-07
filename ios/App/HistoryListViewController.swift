@@ -308,6 +308,28 @@ final class HistoryListViewController: UIViewController {
             addBtn = b
         }
 
+        // 🚨🚨 **「留下来」** —— 记事本第一步（Kevin 09-07 批「三步同步走」）。
+        //    规格原话：「跟收藏单词是**同一个手势**，用户已经会了，别另发明一个」。
+        //    所以它长得跟「＋单词本」一样、挨着它放，只是动作不同。
+        //    🚨 同一条重复点**不长第二条**（id 只跟历史 id 有关，见 `NotesCore`），
+        //    重复点会把它顶到列表最前 —— 他再点一次多半是"我又想到这条了"。
+        var keepBtn: UIButton?
+        if showAdd {
+            let k = UIButton(type: .system)
+            k.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+            k.contentEdgeInsets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)
+            k.layer.cornerRadius = 13
+            k.translatesAutoresizingMaskIntoConstraints = false
+            k.accessibilityIdentifier = "hist.keep.note"
+            paintKeep(k, kept: Notes.kept(historyId: Self.histId(it)))
+            let t = KeepNote(target: self, action: #selector(tapKeep(_:)))
+            t.item = it
+            t.btn = k
+            k.addGestureRecognizer(t)
+            box.addSubview(k)
+            keepBtn = k
+        }
+
         NSLayoutConstraint.activate([
             zh.topAnchor.constraint(equalTo: box.topAnchor, constant: 14),
             zh.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 16),
@@ -336,6 +358,16 @@ final class HistoryListViewController: UIViewController {
                 ab.leadingAnchor.constraint(greaterThanOrEqualTo: time.trailingAnchor,
                                             constant: 8),
             ])
+            // 「留下来」排在「＋单词本」左边，同一行。
+            if let kb = keepBtn {
+                NSLayoutConstraint.activate([
+                    kb.centerYAnchor.constraint(equalTo: chip.centerYAnchor),
+                    kb.trailingAnchor.constraint(equalTo: ab.leadingAnchor,
+                                                 constant: -8),
+                    kb.leadingAnchor.constraint(greaterThanOrEqualTo:
+                                                    time.trailingAnchor, constant: 8),
+                ])
+            }
         }
 
         box.isUserInteractionEnabled = true
@@ -363,6 +395,49 @@ final class HistoryListViewController: UIViewController {
         guard WordBookCore.usable(it.out) else { return false }
         let id = WordBookCore.idOf(it.zh, it.out)
         return WordBook.list().contains { $0.id == id }
+    }
+
+    /// 「留下来」的两态 —— 跟「＋单词本」同一套画法（同一个手势、同一种反馈）。
+    private func paintKeep(_ b: UIButton, kept: Bool) {
+        b.setTitle(kept ? L.note_kept : L.note_keep, for: .normal)
+        b.setTitleColor(kept ? Theme.dim : Theme.accent, for: .normal)
+        b.backgroundColor = kept
+            ? UIColor.white.withAlphaComponent(0.06)
+            : Theme.accent.withAlphaComponent(0.16)
+    }
+
+    /// 一条说话记录的身份。
+    ///
+    /// 🚨 `History.Item` **没有 id 字段** —— 它的唯一键是 `ts`（毫秒时间戳）。
+    ///    别自己再发明一个（比如拿 zh+out 拼），那样同一句话说两次会被并成一条。
+    private static func histId(_ it: History.Item) -> String {
+        return String(Int(it.ts))
+    }
+
+    @objc private func tapKeep(_ g: KeepNote) {
+        guard let it = g.item, let b = g.btn else { return }
+        let hid = Self.histId(it)
+        let id = NotesCore.idFromHistory(hid)
+        if Notes.kept(historyId: hid) {
+            // 🚨 再点是**取消留存**，跟「＋单词本」同一个语义 ——
+            //    同一个手势在两处给出不同行为，他会记不住哪个是哪个。
+            Notes.remove(id: id)
+        } else {
+            // 正文用**他说的原话**（`zh`），不是译文 ——
+            // 🚨 记事本记的是"他想说什么"，规格判据也写着搜索要搜得到原话。
+            //    原话为空（直接查词那种）才退回译文。
+            let body = it.zh.isEmpty ? it.out : it.zh
+            if !Notes.keep(historyId: hid, body: body,
+                           at: it.ts / 1000.0) {
+                // 🚨 **不许静默失败**：空正文存不进去，得说一句，
+                //    否则他点了没反应，跟"坏了"分不开。
+                KbBridge.note("留下来：正文是空的，没留")
+                return
+            }
+        }
+        // 🚨 **重画之前先读盘** —— 显示的状态必须来自存储，
+        //    拿本地布尔取反的话，存储写失败时界面照样变。
+        paintKeep(b, kept: Notes.kept(historyId: hid))
     }
 
     private func paintAdd(_ b: UIButton, added: Bool) {
@@ -435,6 +510,11 @@ extension HistoryListViewController: UIGestureRecognizerDelegate {
         }
         return true
     }
+}
+
+private final class KeepNote: UITapGestureRecognizer {
+    var item: History.Item?
+    weak var btn: UIButton?
 }
 
 private final class AddWB: UITapGestureRecognizer {

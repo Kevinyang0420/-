@@ -260,6 +260,11 @@ enum L {
     static var wb_card_loading: String { s(["zh": "正在取卡片…", "en": "Loading card…", "hant": "正在取卡片…", "ja": "カードを読み込み中…", "de": "Karte wird geladen …", "es": "Cargando tarjeta…", "ar": "جارٍ تحميل البطاقة…"]) }
     static var wb_card_retry: String { s(["zh": "再试一次", "en": "Try again", "hant": "再試一次", "ja": "再試行", "de": "Erneut versuchen", "es": "Reintentar", "ar": "إعادة المحاولة"]) }
     static var wb_card_senses: String { s(["zh": "释义", "en": "Meanings", "hant": "釋義", "ja": "意味", "de": "Bedeutungen", "es": "Significados", "ar": "المعاني"]) }
+    static var note_keep: String { s(["zh": "留下来", "en": "Keep", "hant": "留下來"]) }
+    static var note_kept: String { s(["zh": "已留下", "en": "Kept", "hant": "已留下"]) }
+    static var note_book: String { s(["zh": "记事本", "en": "Notes", "hant": "記事本"]) }
+    static var note_empty: String { s(["zh": "还没有留下什么。在说话记录里点「留下来」就会收到这儿。", "en": "Nothing kept yet. Tap Keep on a recording and it lands here.", "hant": "還沒有留下什麼。在說話記錄裡點「留下來」就會收到這兒。"]) }
+    static var note_search: String { s(["zh": "搜一下（连原话一起搜）", "en": "Search (searches what you said too)", "hant": "搜一下（連原話一起搜）"]) }
     static var wb_card_meaning: String { s(["zh": "这句什么意思", "en": "What it means", "hant": "這句什麼意思", "ja": "この意味", "de": "Was es bedeutet", "es": "Qué significa", "ar": "ما معناه"]) }
     static var wb_note_title: String { s(["zh": "我的笔记", "en": "My note", "hant": "我的筆記", "ja": "メモ", "de": "Meine Notiz", "es": "Mi nota", "ar": "ملاحظتي"]) }
     static var wb_note_empty: String { s(["zh": "还没写。记点自己的理解、什么场合用、跟哪个词容易混。", "en": "Nothing yet. Jot down your own take: when to use it, what it gets confused with.", "hant": "還沒寫。記點自己的理解、什麼場合用、跟哪個詞容易混。", "ja": "まだメモはありません。自分の解釈や使う場面、混同しやすい語を書き留めましょう。", "de": "Noch nichts geschrieben. Notiere dein eigenes Verständnis: wann man es verwendet, womit es leicht verwechselt wird.", "es": "Aún nada. Anota tu propia interpretación: cuándo usarlo, con qué se confunde.", "ar": "لا شيء بعد. دوّن فهمك الخاص: متى تستخدمه، وما الذي يلتبس به."]) }
