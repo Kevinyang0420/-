@@ -2447,6 +2447,9 @@ final class HomeViewController: UIViewController {
         //    （上面那条硬规矩不许破）。
         // 🚨 **导航栏那个查词按钮不删** —— 那是他 09-05 单独定的，
         //    这次说的是"首页多加一个"，不是"挪过去"。两个入口并存。
+        // 🚨 **两张卡之间要留白**（Kevin 09-07：「隔得这么近，你们搞什么玩意儿」）。
+        //    原来直接挨着 `addArrangedSubview`，用的是 root 的默认间距。
+        root.setCustomSpacing(14, after: root.arrangedSubviews.last ?? UIView())
         root.addArrangedSubview(ctaDict())
 
         // ── ⑧⑨ 输入法槽 52（CTA 下 12），三档同槽 ────────────────
@@ -2630,6 +2633,28 @@ final class HomeViewController: UIViewController {
         b.addTarget(self, action: #selector(openDictFromHome),
                     for: .touchUpInside)
 
+        // 🚨 **照主卡那套**：圆底图标 · 标题 · 右箭头。
+        //    Kevin 09-07：「这个『查词』也没有一个 icon，跟那个『随便说点啥』
+        //    也不统一，做的什么玩意儿」—— 他说得对，我第一版只放了一行字。
+        //    **这是照抄现有形态，不是我在设计**；版式那一轮走 Grok。
+        let side: CGFloat = 72 * 0.36            // 圆径 ≈ 块高的 36%，跟主卡同比例
+        let disc = UIView()
+        disc.backgroundColor = UIColor.white.withAlphaComponent(0.10)
+        disc.layer.cornerRadius = side / 2
+        disc.translatesAutoresizingMaskIntoConstraints = false
+        disc.isUserInteractionEnabled = false
+        b.addSubview(disc)
+
+        let icon = UIImageView(image: UIImage(
+            systemName: "text.magnifyingglass",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: side * 0.55,
+                                                           weight: .medium)))
+        icon.tintColor = Theme.text
+        icon.contentMode = .scaleAspectFit
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.isUserInteractionEnabled = false
+        disc.addSubview(icon)
+
         let t = UILabel()
         t.text = L.dict_title
         t.font = .systemFont(ofSize: 18, weight: .semibold)
@@ -2648,7 +2673,14 @@ final class HomeViewController: UIViewController {
         b.addSubview(chev)
 
         NSLayoutConstraint.activate([
-            t.leadingAnchor.constraint(equalTo: b.leadingAnchor, constant: 20),
+            disc.leadingAnchor.constraint(equalTo: b.leadingAnchor, constant: 20),
+            disc.centerYAnchor.constraint(equalTo: b.centerYAnchor),
+            disc.widthAnchor.constraint(equalToConstant: side),
+            disc.heightAnchor.constraint(equalToConstant: side),
+            icon.centerXAnchor.constraint(equalTo: disc.centerXAnchor),
+            icon.centerYAnchor.constraint(equalTo: disc.centerYAnchor),
+
+            t.leadingAnchor.constraint(equalTo: disc.trailingAnchor, constant: 14),
             t.centerYAnchor.constraint(equalTo: b.centerYAnchor),
             chev.trailingAnchor.constraint(equalTo: b.trailingAnchor,
                                            constant: -20),
@@ -4089,7 +4121,7 @@ final class MainViewController: UIViewController {
         paintOutputButtons()
         speakButton.addTarget(self, action: #selector(tapSpeak), for: .touchUpInside)
 
-        bigButton.setTitle(L.try_bigtext, for: .normal)
+        bigButton.setTitle(L.home_wordbook, for: .normal)
         bigButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
         bigButton.setTitleColor(Theme.text, for: .normal)
         bigButton.backgroundColor = Theme.key
@@ -4103,7 +4135,7 @@ final class MainViewController: UIViewController {
         keepButton.addTarget(self, action: #selector(tapKeep),
                              for: .touchUpInside)
 
-        bigButton.addTarget(self, action: #selector(tapBig),
+        bigButton.addTarget(self, action: #selector(tapOpenWordbook),
                             for: .touchUpInside)
 
         // 🚨 按钮文字**就是当前方向**（Kevin 2026-08-26：
@@ -4145,7 +4177,18 @@ final class MainViewController: UIViewController {
             view.addSubview($0)
         }
         let actionRow = UIStackView(arrangedSubviews:
-            [speakButton, bigButton, keepButton])
+            // 🚨🚨 **朗读按钮删了、大字换成单词本**（Kevin 09-07 亲口）：
+            //    「大字不需要了（**大字只是 for 面对面的**），这边直接把大字
+            //      改成单词本吧。朗读按钮也不需要了，改成我点一下这个字就自动朗读」
+            //
+            //    🚨 **面对面那屏的大字一个字都没动** —— 他说的是"大字只是
+            //    for 面对面的"，是把它从这一屏挪走，**不是把大字这个功能删掉**。
+            //
+            //    🚨 这里的「单词本」是**打开本子**，不是"加入" ——
+            //    「收藏」那颗（`kb_keep`，英文就是 Save to Wordbook）已经在管加入了，
+            //    再放一颗"加入"是重的。一颗管加、一颗管看。
+            //    **这是我的判断，不是他的原话**：他只说了"改成单词本"。
+            [bigButton, keepButton])
         actionRow.axis = .horizontal
         actionRow.spacing = 8
         actionRow.translatesAutoresizingMaskIntoConstraints = false
@@ -4228,7 +4271,6 @@ final class MainViewController: UIViewController {
             actionRow.bottomAnchor.constraint(
                 equalTo: micButton.topAnchor, constant: -12),
             actionRow.heightAnchor.constraint(equalToConstant: 36),
-            speakButton.widthAnchor.constraint(equalToConstant: 130),
             bigButton.widthAnchor.constraint(equalToConstant: 92),
             keepButton.widthAnchor.constraint(equalToConstant: 92),
 
@@ -4409,7 +4451,7 @@ final class MainViewController: UIViewController {
         if Speaker.isPlaying {
             Speaker.stop()
             paintOutputButtons()     // 标题由唯一出口按 isPlaying 决定
-            bigButton.setTitle(L.try_bigtext, for: .normal)
+            bigButton.setTitle(L.home_wordbook, for: .normal)
             revButton.setTitle(
                 reversed ? L.try_dir_them : L.try_dir_me,
                 for: .normal)
@@ -5569,6 +5611,17 @@ final class MainViewController: UIViewController {
                 }
             }
         }
+    }
+
+    /// 打开单词本 —— Kevin 09-07：「这边直接把大字改成单词本吧」。
+    ///
+    /// 🚨 **是"打开本子"不是"加入"**：同一排的「收藏」（`kb_keep`，
+    ///    英文 Save to Wordbook）已经在管加入了，再放一颗加入是重的。
+    ///    一颗管加、一颗管看。**这是我的判断，他只说了"改成单词本"。**
+    /// 🚨 用 push 不用 present —— 他要求过底部 tab 栏别消失。
+    @objc private func tapOpenWordbook() {
+        navigationController?.pushViewController(WordBookViewController(),
+                                                 animated: true)
     }
 
     @objc private func tapBig() {

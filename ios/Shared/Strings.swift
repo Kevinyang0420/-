@@ -64,6 +64,9 @@ enum L {
         return m[Lang.zh] ?? ""
     }
 
+    static var hs_synced: String { s(["zh": "已同步", "en": "Synced", "hant": "已同步"]) }
+    static var hs_syncing: String { s(["zh": "正在传…", "en": "Uploading…", "hant": "正在傳…"]) }
+    static var hs_on_brief: String { s(["zh": "已开启：可以在你的其他设备上看到。", "en": "On: visible on your other devices.", "hant": "已開啟：可以在你的其他設備上看到。", "ja": "オン：他のデバイスで表示できます。", "de": "An: auf deinen anderen Geräten sichtbar.", "es": "Activado: visible en tus otros dispositivos.", "ar": "مفعّل: مرئي على أجهزتك الأخرى."]) }
     static var a11y_add_wb: String { s(["zh": "加入单词本", "en": "Save to word book", "hant": "加入單詞本", "ja": "単語帳に保存", "de": "Zum Wortschatz speichern", "es": "Guardar en el Cuaderno de palabras", "ar": "حفظ في دفتر الكلمات"]) }
     static var a11y_add_note: String { s(["zh": "加入日记本", "en": "Save to journal", "hant": "加入日記本", "ja": "日記に保存", "de": "Zum Tagebuch speichern", "es": "Guardar en el diario", "ar": "حفظ في المذكرة"]) }
     static var del_acct_entry: String { s(["zh": "删除账号", "en": "Delete account", "hant": "刪除帳號", "ja": "アカウント削除", "de": "Konto löschen", "es": "Eliminar cuenta", "ar": "حذف الحساب"]) }
