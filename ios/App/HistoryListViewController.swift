@@ -21,7 +21,22 @@ final class HistoryListViewController: UIViewController {
     //    （量出来一致只说明这一次没动；不碰它才是每次都不动。）
     private let tabRecords = UIButton(type: .system)
     private let tabWordbook = UIButton(type: .system)
-    private var showWordbook = false
+    /// 分段：记录 ｜ 单词本 ｜ 记事本。
+    ///
+    /// 🚨🚨 **记事本的入口从设置挪到这一屏**（Kevin 09-07 亲口：
+    ///    「我在安卓上找到了，我是在 **iOS 上找不到**」）。
+    ///    我原来放在设置页单词本旁边，理由是他说过「跟单词本并列」——
+    ///    **但单词本 09-04 被挪进了设置**，记事本跟着挪，就偏离了他说的位置。
+    ///    他说的是「**说话记录**这里…再加个记事本」，不是"单词本在哪它就在哪"。
+    ///    → **跟着那句话走，不跟着另一个功能走。**
+    ///
+    /// 🚨 用枚举不用两个布尔 —— 三态用两个布尔表示，迟早出现
+    ///    "两个都为真"的第四种状态，而那种状态没人画得出来。
+    enum Seg { case records, wordbook, notes }
+    private var seg: Seg = .records
+    /// 老代码里还有几处读它，保留成计算属性，**不再有第二个真值来源**。
+    private var showWordbook: Bool { seg == .wordbook }
+    private let tabNotes = UIButton(type: .system)
 
     private let scroll = UIScrollView()
     private let stack = UIStackView()
@@ -52,7 +67,11 @@ final class HistoryListViewController: UIViewController {
         // 分段条：样式**照抄随手翻译那对「翻译｜转写」**（圆角 17、等宽、
         // 选中 accent 填充白字、未选 key 底 dim 字）—— 同一种控件不许长得两样。
         for (btn, t, sel) in [(tabRecords, L.hist_tab_records, #selector(pickRecords)),
-                              (tabWordbook, L.hist_tab_wordbook, #selector(pickWordbook))] {
+                              (tabWordbook, L.hist_tab_wordbook, #selector(pickWordbook)),
+                              // 🚨 文案走 `L.note_book`，**不写死中文** ——
+                              //    Kevin 09-07 刚说「不要叫记事本，叫日记本吧」，
+                              //    改名在源头（2.1 手上），这里跟着源头走就自动变。
+                              (tabNotes, L.note_book, #selector(pickNotes))] {
             btn.setTitle(t, for: .normal)
             btn.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
             btn.layer.cornerRadius = 17
@@ -61,7 +80,9 @@ final class HistoryListViewController: UIViewController {
         }
         tabRecords.accessibilityIdentifier = "hist.tab.records"
         tabWordbook.accessibilityIdentifier = "hist.tab.wordbook"
-        let tabs = UIStackView(arrangedSubviews: [tabRecords, tabWordbook])
+        tabNotes.accessibilityIdentifier = "hist.tab.notes"
+        let tabs = UIStackView(arrangedSubviews: [tabRecords, tabWordbook,
+                                                  tabNotes])
         tabs.axis = .horizontal
         tabs.spacing = Theme.gap * 0.7
         tabs.distribution = .fillEqually      // 🚨 等宽，跟方案 F 同口径
@@ -106,19 +127,27 @@ final class HistoryListViewController: UIViewController {
         UI.resizeBg(self)
     }
 
-    @objc private func pickRecords() { showWordbook = false; paintTabs(); refresh() }
-    @objc private func pickWordbook() { showWordbook = true; paintTabs(); refresh() }
+    @objc private func pickRecords() { seg = .records; paintTabs(); refresh() }
+    @objc private func pickWordbook() { seg = .wordbook; paintTabs(); refresh() }
+    @objc private func pickNotes() { seg = .notes; paintTabs(); refresh() }
 
     private func paintTabs() {
-        tabRecords.backgroundColor = showWordbook ? Theme.key : Theme.accent
-        tabRecords.setTitleColor(showWordbook ? Theme.dim : .white, for: .normal)
-        tabWordbook.backgroundColor = showWordbook ? Theme.accent : Theme.key
-        tabWordbook.setTitleColor(showWordbook ? .white : Theme.dim, for: .normal)
+        // 🚨 三格一起画，**一个出口** —— 各写各的话，加第四格时必漏一处。
+        for (b, on) in [(tabRecords, seg == .records),
+                        (tabWordbook, seg == .wordbook),
+                        (tabNotes, seg == .notes)] {
+            b.backgroundColor = on ? Theme.accent : Theme.key
+            b.setTitleColor(on ? .white : Theme.dim, for: .normal)
+        }
     }
 
     private func refresh() {
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        if showWordbook { refreshWordbook() } else { refreshRecords() }
+        switch seg {
+        case .records: refreshRecords()
+        case .wordbook: refreshWordbook()
+        case .notes: refreshNotes()
+        }
     }
 
     private func refreshRecords() {
@@ -144,6 +173,60 @@ final class HistoryListViewController: UIViewController {
             stack.addArrangedSubview(sectionHeader(kindTitle(kind), count: group.count))
             for it in group { stack.addArrangedSubview(wbCard(it)) }
         }
+    }
+
+    /// 记事本那一格。
+    ///
+    /// 🚨 **列表这一段不重画一套卡片** —— 点进去的编辑/搜索仍在
+    ///    `NotesViewController`（那一屏还留着，从设置也进得去）。
+    ///    这里只做"在说话记录旁边看得到、点得进去"，
+    ///    因为 Kevin 找不到的就是这个入口。
+    private func refreshNotes() {
+        let items = Notes.list()
+        emptyLabel.isHidden = !items.isEmpty
+        emptyLabel.text = L.note_empty
+        for it in items { stack.addArrangedSubview(noteCard(it)) }
+    }
+
+    /// 记事本一条 —— 版式跟单词本那张同一套（玻璃卡、标题上色、正文灰）。
+    private func noteCard(_ it: NotesCore.Item) -> UIView {
+        let box = UIControl()
+        box.backgroundColor = Theme.key
+        box.layer.cornerRadius = 14
+        box.accessibilityIdentifier = "hist.note.row"
+        box.translatesAutoresizingMaskIntoConstraints = false
+
+        let t = UILabel()
+        t.text = it.title
+        t.font = .systemFont(ofSize: 16, weight: .semibold)
+        t.textColor = Theme.text
+        t.numberOfLines = 2
+        t.translatesAutoresizingMaskIntoConstraints = false
+        let b = UILabel()
+        b.text = it.body
+        b.font = .systemFont(ofSize: 14)
+        b.textColor = Theme.dim
+        b.numberOfLines = 2
+        b.translatesAutoresizingMaskIntoConstraints = false
+        box.addSubview(t); box.addSubview(b)
+        NSLayoutConstraint.activate([
+            t.topAnchor.constraint(equalTo: box.topAnchor, constant: 12),
+            t.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 16),
+            t.trailingAnchor.constraint(equalTo: box.trailingAnchor, constant: -16),
+            b.topAnchor.constraint(equalTo: t.bottomAnchor, constant: 4),
+            b.leadingAnchor.constraint(equalTo: t.leadingAnchor),
+            b.trailingAnchor.constraint(equalTo: t.trailingAnchor),
+            b.bottomAnchor.constraint(equalTo: box.bottomAnchor, constant: -12),
+        ])
+        // 点一条进记事本那一屏（编辑/搜索都在那儿，**不在这里再写一套**）。
+        box.addTarget(self, action: #selector(openNotesScreen),
+                      for: .touchUpInside)
+        return box
+    }
+
+    @objc private func openNotesScreen() {
+        navigationController?.pushViewController(NotesViewController(),
+                                                 animated: true)
     }
 
     /// 段标题的文案 —— 放界面这一层，`WordKind` 只管判据。

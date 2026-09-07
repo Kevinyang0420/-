@@ -81,7 +81,7 @@ enum L {
     static var seg_lookup: String { s(["zh": "查阅", "en": "Lookup", "hant": "查閱", "ja": "調べる", "de": "Nachschlagen", "es": "Consulta", "ar": "بحث"]) }
     static var seg_words: String { s(["zh": "单词", "en": "Words", "hant": "單詞", "ja": "単語", "de": "Wörter", "es": "Palabras", "ar": "كلمات"]) }
     static var seg_phrases: String { s(["zh": "用语", "en": "Phrases", "hant": "用語", "ja": "フレーズ", "de": "Wendungen", "es": "Frases", "ar": "عبارات"]) }
-    static var seg_notes: String { s(["zh": "记事", "en": "Notes", "hant": "記事", "ja": "メモ", "de": "Notizen", "es": "Notas", "ar": "ملاحظات"]) }
+    static var seg_notes: String { s(["zh": "日记", "en": "Journal", "hant": "日記", "ja": "日記", "de": "Tagebuch", "es": "Diario", "ar": "مذكّرة"]) }
     static var dash_last: String { s(["zh": "上次：", "en": "Last:", "hant": "上次：", "ja": "前回：", "de": "Zuletzt:", "es": "Última:", "ar": "آخر:"]) }
     static var app_name: String { s(["zh": "Transless", "en": "Transless", "hant": "Transless"]) }
     static var ime_name: String { s(["zh": "Transless 输入法", "en": "Transless Keyboard", "hant": "Transless 輸入法", "ja": "Transless キーボード", "de": "Transless-Tastatur", "es": "Teclado Transless", "ar": "لوحة مفاتيح ‎Transless‎"]) }
@@ -260,11 +260,11 @@ enum L {
     static var wb_card_loading: String { s(["zh": "正在取卡片…", "en": "Loading card…", "hant": "正在取卡片…", "ja": "カードを読み込み中…", "de": "Karte wird geladen …", "es": "Cargando tarjeta…", "ar": "جارٍ تحميل البطاقة…"]) }
     static var wb_card_retry: String { s(["zh": "再试一次", "en": "Try again", "hant": "再試一次", "ja": "再試行", "de": "Erneut versuchen", "es": "Reintentar", "ar": "إعادة المحاولة"]) }
     static var wb_card_senses: String { s(["zh": "释义", "en": "Meanings", "hant": "釋義", "ja": "意味", "de": "Bedeutungen", "es": "Significados", "ar": "المعاني"]) }
-    static var note_keep: String { s(["zh": "留下来", "en": "Keep", "hant": "留下來"]) }
-    static var note_kept: String { s(["zh": "已留下", "en": "Kept", "hant": "已留下"]) }
-    static var note_book: String { s(["zh": "记事本", "en": "Notes", "hant": "記事本"]) }
-    static var note_empty: String { s(["zh": "还没有留下什么。在说话记录里点「留下来」就会收到这儿。", "en": "Nothing kept yet. Tap Keep on a recording and it lands here.", "hant": "還沒有留下什麼。在說話記錄裡點「留下來」就會收到這兒。"]) }
-    static var note_search: String { s(["zh": "搜一下（连原话一起搜）", "en": "Search (searches what you said too)", "hant": "搜一下（連原話一起搜）"]) }
+    static var note_keep: String { s(["zh": "留下来", "en": "Keep", "hant": "留下來", "ja": "残す", "de": "Behalten", "es": "Conservar", "ar": "إبقاء"]) }
+    static var note_kept: String { s(["zh": "已留下", "en": "Kept", "hant": "已留下", "ja": "残しました", "de": "Behalten", "es": "Conservado", "ar": "تم الإبقاء"]) }
+    static var note_book: String { s(["zh": "日记本", "en": "Journal", "hant": "日記本", "ja": "日記", "de": "Tagebuch", "es": "Diario", "ar": "مذكّرة"]) }
+    static var note_empty: String { s(["zh": "还没有留下什么。在说话记录里点「留下来」就会收到这儿。", "en": "Nothing kept yet. Tap Keep on a recording and it lands here.", "hant": "還沒有留下什麼。在說話記錄裡點「留下來」就會收到這兒。", "ja": "まだ何も残していません。発言記録で「残す」をタップすると、ここに表示されます。", "de": "Noch nichts behalten. Tippe in einer Aufnahme auf „Behalten“, dann landet es hier.", "es": "Aún no has conservado nada. Toca Conservar en una grabación y aparecerá aquí.", "ar": "لا شيء محفوظ بعد. اضغط على «إبقاء» في سجلّ الحديث وسيظهر هنا."]) }
+    static var note_search: String { s(["zh": "搜一下（连原话一起搜）", "en": "Search (searches what you said too)", "hant": "搜一下（連原話一起搜）", "ja": "検索（発言も含めて検索）", "de": "Suchen (auch im Gesprochenen)", "es": "Buscar (también busca lo que dijiste)", "ar": "بحث (يشمل ما قلته أيضًا)"]) }
     static var wb_card_meaning: String { s(["zh": "这句什么意思", "en": "What it means", "hant": "這句什麼意思", "ja": "この意味", "de": "Was es bedeutet", "es": "Qué significa", "ar": "ما معناه"]) }
     static var wb_note_title: String { s(["zh": "我的笔记", "en": "My note", "hant": "我的筆記", "ja": "メモ", "de": "Meine Notiz", "es": "Mi nota", "ar": "ملاحظتي"]) }
     static var wb_note_empty: String { s(["zh": "还没写。记点自己的理解、什么场合用、跟哪个词容易混。", "en": "Nothing yet. Jot down your own take: when to use it, what it gets confused with.", "hant": "還沒寫。記點自己的理解、什麼場合用、跟哪個詞容易混。", "ja": "まだメモはありません。自分の解釈や使う場面、混同しやすい語を書き留めましょう。", "de": "Noch nichts geschrieben. Notiere dein eigenes Verständnis: wann man es verwendet, womit es leicht verwechselt wird.", "es": "Aún nada. Anota tu propia interpretación: cuándo usarlo, con qué se confunde.", "ar": "لا شيء بعد. دوّن فهمك الخاص: متى تستخدمه، وما الذي يلتبس به."]) }
@@ -482,8 +482,8 @@ enum L {
     static var f2f_more_langs: String { s(["zh": "更多语言…", "en": "More languages…", "hant": "更多語言…", "ja": "その他の言語…", "de": "Weitere Sprachen …", "es": "Más idiomas…", "ar": "المزيد من اللغات…"]) }
     static var hist_yesterday: String { s(["zh": "昨天", "en": "Yesterday", "hant": "昨天", "ja": "昨日", "de": "Gestern", "es": "Ayer", "ar": "أمس"]) }
     static var hist_monthday: String { s(["zh": "%1$d月%2$d日", "en": "%1$d/%2$d", "hant": "%1$d月%2$d日", "ja": "%1$d月%2$d日", "de": "%2$d.%1$d.", "es": "%2$d/%1$d", "ar": "%2$d/%1$d"]) }
-    static var notes_title: String { s(["zh": "记事本", "en": "Notes", "hant": "記事本", "ja": "メモ", "de": "Notizen", "es": "Notas", "ar": "ملاحظات"]) }
-    static var notes_empty: String { s(["zh": "还没有笔记 · 在说话记录上点「留下来」", "en": "No notes yet — tap Keep on a record", "hant": "還沒有筆記 · 在說話記錄上點「留下來」", "ja": "メモはまだありません。録音で「キープ」をタップしてください", "de": "Noch keine Notizen – tippe auf „Behalten“ bei einem Eintrag", "es": "Aún no hay notas: toca Conservar en un registro", "ar": "لا ملاحظات بعد — اضغط «الاحتفاظ» على سجل"]) }
+    static var notes_title: String { s(["zh": "日记本", "en": "Journal", "hant": "日記本", "ja": "日記", "de": "Tagebuch", "es": "Diario", "ar": "مذكّرة"]) }
+    static var notes_empty: String { s(["zh": "还没有日记 · 在说话记录上点「留下来」", "en": "No journal entries yet — tap Keep on a record", "hant": "還沒有日記 · 在說話記錄上點「留下來」", "ja": "日記はまだありません。発言記録で「残す」をタップしてください。", "de": "Noch keine Einträge – tippe bei einer Aufnahme auf „Behalten“", "es": "Aún no hay entradas en el diario: toca Conservar en una grabación", "ar": "لا توجد إدخالات بعد — اضغط على «إبقاء» في سجلّ الحديث"]) }
     static var notes_keep: String { s(["zh": "留下来", "en": "Keep", "hant": "留下來", "ja": "キープ", "de": "Behalten", "es": "Conservar", "ar": "الاحتفاظ"]) }
     static var notes_kept: String { s(["zh": "已留下", "en": "Kept", "hant": "已留下", "ja": "キープ済み", "de": "Behalten", "es": "Conservada", "ar": "تم الاحتفاظ"]) }
     static var notes_search: String { s(["zh": "搜标题或原话", "en": "Search titles or what you said", "hant": "搜標題或原話", "ja": "タイトルまたは発言を検索", "de": "Titel oder Gesagtes durchsuchen", "es": "Buscar títulos o lo que dijiste", "ar": "البحث في العناوين أو ما قيل"]) }
