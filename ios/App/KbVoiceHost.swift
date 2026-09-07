@@ -203,6 +203,8 @@ final class KbVoiceHost {
     ///    第二档还没到宿主就停了 —— 那样测出来的"起不了录"**是我们自己关的，
     ///    不是 iOS 拦的**。这类"被自己的设计伪装成故障"最难查。
     var suspendTimeout = false
+    /// 诊断计数器 —— 只为把上面那条日志降到每分钟一条。
+    private var hbTick = 0
 
     private var openedAt = Date()
     private var timer: Timer?
@@ -884,6 +886,21 @@ final class KbVoiceHost {
             }
         }
         guard standby else { return }
+        // 🚨🚨 **待命档为什么一直不过期 —— 现在能分辨了。**
+        //    09-07 从他手机上读到：待命档连续挂了 **3488 秒（58 分钟）**，
+        //    而设计里有 10 分钟上限。可能是①定时器压根没在跑
+        //    ②`openedAt` 被反复续期（`drain()` 每收一条命令就续）
+        //    ③`suspendTimeout` 被谁挂起了。
+        //    **这三种在原来的日志里长得一模一样**（都表现为"心跳一直在打"）。
+        //    → 每分钟打一条**带三个数**的：还剩多久、上次续期多久以前、有没有被挂起。
+        //    先能分辨，再动手改 —— 猜着改会把对的那条也改坏。
+        if hbTick % 12 == 0 {          // tick 每 5 秒一次 → 每分钟一条
+            KbBridge.note("待命档诊断：还剩 " + String(Int(remaining))
+                          + " 秒｜上次续期 "
+                          + String(Int(Date().timeIntervalSince(openedAt)))
+                          + " 秒前｜超时挂起=" + String(suspendTimeout))
+        }
+        hbTick += 1
         if remaining <= 0 && !suspendTimeout {
             // 🚨 H4（产品经理 2026-08-28）：**「该不该这么频繁地需要恢复」
             //    比「恢复得顺不顺」重要。** 如果他一天撞上五次
