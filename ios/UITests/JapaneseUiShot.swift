@@ -33,8 +33,11 @@ final class JapaneseUiShot: XCTestCase {
         //    **但读代码不算，去看真屏幕。**
         // 🚨 按标识，不按文案 —— 这一屏本来就是在**别的语言**下截图，
         //    钉中文文案在这儿尤其没道理。
+        // 🚨🚨 **这里我自己改了一半**（09-07）：条件换成了标识，
+        //    **body 里还在点旧文案** —— 条件成立、然后去点一个不存在的东西。
+        //    「改了一处忘了另一处」在同一个 if 语句里也会发生。
         if app.buttons["app.try"].waitForExistence(timeout: 3) {
-            app.staticTexts["随手翻译"].tap()
+            app.buttons["app.try"].tap()
         } else if app.buttons.element(boundBy: 0).exists {
             // 日语界面下那句已经不叫「随手翻译」了 —— **按文案找必漂**，
             //    这里用它的 a11y id。

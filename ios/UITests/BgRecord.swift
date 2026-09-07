@@ -39,11 +39,16 @@ final class BgRecord: XCTestCase {
         if entry.waitForExistence(timeout: 5) {
             entry.tap()
         } else {
-            // 🚨 找不到就按文字找，**但不静默跳过** —— 跳过等于这一轮什么都没测。
-            let byText = app.staticTexts["随手翻译"].firstMatch
-            XCTAssertTrue(byText.waitForExistence(timeout: 10),
-                          "🚨 首页上找不到「随手翻译」入口，这一轮没测到东西")
-            byText.tap()
+            // 🚨 找不到就直接红，**不静默跳过** —— 跳过等于这一轮什么都没测。
+            //
+            // 🚨🚨 **退路不再按文案找**：原来这儿写的是
+            //    `app.staticTexts["随手翻译"]` —— Kevin 09-07 把它改名成
+            //    「随便说点啥」之后，这条退路**也失效了**，
+            //    而断言消息里还印着一个**已经不存在的词**，
+            //    去查的人会照着那四个字满屏找。
+            //    文案会变、标识不会，所以退路只有一条：如实报找不到。
+            XCTFail("🚨 首页上找不到主入口（标识 app.try），这一轮没测到东西")
+            return
         }
         Thread.sleep(forTimeInterval: 2.5)
 
