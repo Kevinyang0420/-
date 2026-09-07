@@ -4010,6 +4010,14 @@ final class MainViewController: UIViewController {
         resultView.layer.cornerRadius = 12
         resultView.isEditable = false
         resultView.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
+        // 🚨 **点正文即朗读** —— 接的是**同一个出口 `tapSpeak`**，
+        //    不另写一条朗读链：那条链里有"播放中再点=停止"和防重入的代次闸，
+        //    重写一遍必漂。`UITextView` 默认不可编辑但会吃触摸，
+        //    所以加手势而不是换控件。
+        resultView.isEditable = false
+        resultView.isSelectable = false      // 选中态会抢掉单击
+        resultView.addGestureRecognizer(
+            UITapGestureRecognizer(target: self, action: #selector(tapSpeak)))
 
         // 🚨 AI 生成声明：DeepSeek 开放平台服务协议 8.1「应当向终端用户明确披露
         //    相关输出内容系由人工智能生成」+ 3.7「对生成、合成的文本进行标识」。
@@ -5524,7 +5532,11 @@ final class MainViewController: UIViewController {
         // 🚨 高-2：busy 也收进来，跟键盘的 `paintSpeakButton(busy:)` 对称。
         let canSpeak = hasText && phase == .idle && speakBusyEpoch != epoch
         let canBig = !bigTextNow().isEmpty
-        speakButton.isHidden = !hasText
+        // 🚨 朗读按钮**永久隐藏**（他说不需要了）。留着对象不删，
+        //    是因为 `tapSpeak` 里那套状态还挂在它身上（标题/可用/透明度），
+        //    删对象要连带重写那条链 —— 那是另一件事。
+        //    **它不在任何一排里**，隐藏只是保险。
+        speakButton.isHidden = true
         speakButton.isEnabled = canSpeak
         // 🚨 「再次翻译」跟朗读/收藏**同一套显隐**（规格点名沿用 `hasText`）——
         //    有结果才出现；在飞时置灰防连点，但**不隐藏**（隐藏会跳版）。
@@ -5544,6 +5556,16 @@ final class MainViewController: UIViewController {
         speakButton.setTitle(speakBusyEpoch == epoch ? "…"
                              : (Speaker.isPlaying ? L.kb_stop : L.kb_speak),
                              for: .normal)
+        // 🚨🚨 **点正文即朗读，loading 时正文变紫**（Kevin 09-07 亲口：
+        //    「朗读按钮也不需要了，改成我点一下这个字就自动朗读。
+        //      **跟那个面对面一样**，它在 loading 的过程中颜色会发生变化」）。
+        //    紫 = 正在取，跟面对面那屏同一个含义、同一个颜色常量（`Theme.accent`）。
+        //    🚨 **诚实标一句**：面对面那边的实现在
+        //    `FaceToFaceViewController:670`，这里是第二处调用点 ——
+        //    颜色常量共用，但"变色"这条规矩现在有两个落点。
+        //    真要收成一处得把那条链一起改，那是另一件事，我没做。
+        resultView.textColor = (speakBusyEpoch == epoch)
+            ? Theme.accent : Theme.text
         // 🚨 收藏跟朗读同一个判据（**有这一句**才出现），
         //    不跟大字（那个看的是整段）。收过的置灰写「已收」。
         keepButton.isHidden = !hasText
