@@ -37,6 +37,13 @@ final class HistoryListViewController: UIViewController {
     /// 老代码里还有几处读它，保留成计算属性，**不再有第二个真值来源**。
     private var showWordbook: Bool { seg == .wordbook }
     private let tabNotes = UIButton(type: .system)
+    /// 🚨 **上云入口放在这一屏**（Kevin 09-07 亲口：「上云那个入口，
+    ///    放在「说话记录」这里。**如果他不点，就一直留在那儿给他** ——
+    ///    不然他在哪儿点？」）。
+    ///    规格 `_规格_历史同步开关UI_20260906.md` 原来写的是"设置页隐私组"，
+    ///    **以他最后说的为准**。
+    private let syncRow = UIControl()
+    private let syncLabel = UILabel()
 
     private let scroll = UIScrollView()
     private let stack = UIStackView()
@@ -89,11 +96,39 @@ final class HistoryListViewController: UIViewController {
         tabs.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tabs)
 
+        // 上云那一行 —— **一直在**，不因为他没点就消失。
+        syncRow.backgroundColor = Theme.key
+        syncRow.layer.cornerRadius = 14
+        syncRow.accessibilityIdentifier = "hist.sync.row"
+        syncRow.translatesAutoresizingMaskIntoConstraints = false
+        syncLabel.font = .systemFont(ofSize: 14)
+        syncLabel.numberOfLines = 0
+        syncLabel.translatesAutoresizingMaskIntoConstraints = false
+        syncRow.addSubview(syncLabel)
+        syncRow.addTarget(self, action: #selector(tapSync), for: .touchUpInside)
+        view.addSubview(syncRow)
+        NSLayoutConstraint.activate([
+            syncLabel.topAnchor.constraint(equalTo: syncRow.topAnchor, constant: 10),
+            syncLabel.bottomAnchor.constraint(equalTo: syncRow.bottomAnchor,
+                                              constant: -10),
+            syncLabel.leadingAnchor.constraint(equalTo: syncRow.leadingAnchor,
+                                               constant: 14),
+            syncLabel.trailingAnchor.constraint(equalTo: syncRow.trailingAnchor,
+                                                constant: -14),
+        ])
+        paintSync()
+
         paintTabs()          // 🚨 建完就画一次初始选中态，别等第一次点击
 
         let g = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
-            tabs.topAnchor.constraint(equalTo: g.topAnchor, constant: 10),
+            syncRow.topAnchor.constraint(equalTo: g.topAnchor, constant: 10),
+            syncRow.leadingAnchor.constraint(equalTo: g.leadingAnchor,
+                                             constant: Theme.pad),
+            syncRow.trailingAnchor.constraint(equalTo: g.trailingAnchor,
+                                              constant: -Theme.pad),
+
+            tabs.topAnchor.constraint(equalTo: syncRow.bottomAnchor, constant: 10),
             tabs.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: Theme.pad),
             tabs.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -Theme.pad),
             tabs.heightAnchor.constraint(equalToConstant: 34),
@@ -125,6 +160,71 @@ final class HistoryListViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         UI.resizeBg(self)
+    }
+
+    /// 🚨 两态都要**看得出来**：开着写"正在同步"，关着写那两句说明。
+    ///    只画一个开关图标的话，他分不出"没开"和"坏了"。
+    private func paintSync() {
+        if HistSync.isOn {
+            syncLabel.text = L.hs_on_now
+            syncLabel.textColor = Theme.accent
+        } else {
+            syncLabel.text = L.hs_title + " · " + L.hs_off_now
+            syncLabel.textColor = Theme.dim
+        }
+    }
+
+    @objc private func tapSync() {
+        if HistSync.isOn {
+            // 关掉 —— 说清"已经传上去的不会自动删"（规格第 5 条）
+            HistSync.set(false)
+            paintSync()
+            let a = UIAlertController(title: L.hs_off_1, message: L.hs_off_2,
+                                      preferredStyle: .alert)
+            a.addAction(UIAlertAction(title: "OK", style: .default))
+            present(a, animated: true)
+            return
+        }
+        // 打开 —— 🚨 **文案一字不改**（合规审过，改一个字要重审）
+        let msg = [L.hs_ask_1, L.hs_ask_2, L.hs_ask_3, L.hs_ask_4]
+            .joined(separator: String(UnicodeScalar(10)))
+        let a = UIAlertController(title: L.hs_ask_title, message: msg,
+                                  preferredStyle: .alert)
+        a.addAction(UIAlertAction(title: L.hs_ask_no, style: .cancel))
+        a.addAction(UIAlertAction(title: L.hs_ask_yes, style: .default) {
+            [weak self] _ in self?.askBacklog()
+        })
+        present(a, animated: true)
+    }
+
+    /// 🚨 **存量要二次确认**（规格第 4 条）：只说"以后会传"而把已有的
+    ///    偷偷带上去，是最糟的一种。没有存量就不多问一次。
+    private func askBacklog() {
+        let n = HistSync.backlogCount()
+        guard n > 0 else {
+            HistSync.set(true)
+            HistSync.setSince(0)
+            paintSync()
+            return
+        }
+        let a = UIAlertController(
+            title: String(format: L.hs_stock_title, n),
+            message: nil, preferredStyle: .alert)
+        a.addAction(UIAlertAction(title: L.hs_stock_future, style: .default) {
+            [weak self] _ in
+            HistSync.set(true)
+            // 只传以后的 —— 分界点设成此刻
+            HistSync.setSince(Date().timeIntervalSince1970)
+            self?.paintSync()
+        })
+        a.addAction(UIAlertAction(title: L.hs_stock_all, style: .default) {
+            [weak self] _ in
+            HistSync.set(true)
+            HistSync.setSince(0)
+            self?.paintSync()
+        })
+        a.addAction(UIAlertAction(title: L.hs_ask_no, style: .cancel))
+        present(a, animated: true)
     }
 
     @objc private func pickRecords() { seg = .records; paintTabs(); refresh() }
