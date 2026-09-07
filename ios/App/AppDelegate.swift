@@ -1135,6 +1135,13 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             //    探针要的是**确定的状态**，就把它清干净再种。
             if ProcessInfo.processInfo.environment["TRANSLESS_SEED_CARD"] == "1" {
                 for it in WordBook.list() { WordBook.remove(id: it.id) }
+                // 🚨🚨 **记事本也要清** —— 09-07 实撞：
+                //    「留下来」是个**开关**，而笔记跨用例保留。
+                //    上一轮留过的那条，这一轮再点就被**取消**了，
+                //    于是记事本是空的、判据红；再跑一次又变绿。
+                //    **同一份代码一红一绿，中间什么都没改 —— 那种绿不能要。**
+                //    （单词本和界面语言为这个坑各留过一条注释，我还是漏了第三处。）
+                for n in Notes.list() { Notes.remove(id: n.id) }
                 // 🚨🚨 **上架截图专用：种一条「没有卡片」的词，逼它真查一次。**
                 //
                 //    Kevin 09-07 看日语版截图：「为什么日文的版本，
@@ -3305,6 +3312,11 @@ final class PrefsViewController: UIViewController {
         let wbRow = row(L.home_wordbook, nil, #selector(openWordbookFromPrefs))
         wbRow.accessibilityIdentifier = "prefs.row.wordbook"
         list.addArrangedSubview(wbRow)
+        // 🚨 **记事本跟单词本并列** —— Kevin 原话：「说话记录这里有一个单词本，
+        //    **再加个记事本吧**」。所以入口就放在它旁边，不另找地方。
+        let nbRow = row(L.note_book, nil, #selector(openNotes))
+        nbRow.accessibilityIdentifier = "prefs.row.notes"
+        list.addArrangedSubview(nbRow)
 
         // ② 偏好
         list.addArrangedSubview(group(L.prefs_g_pref))
@@ -3453,6 +3465,13 @@ final class PrefsViewController: UIViewController {
     @objc private func openAbout() {
         navigationController?.pushViewController(
             AboutViewController(), animated: true)
+    }
+
+    @objc private func openNotes() {
+        // 🚨 **不挂登录门** —— 记事本第一步「不碰任何权限、不依赖后端」，
+        //    数据全在本机。单词本要门是因为它跟云端同步，这一个不是。
+        navigationController?.pushViewController(NotesViewController(),
+                                                 animated: true)
     }
 
     @objc private func openWordbookFromPrefs() {
