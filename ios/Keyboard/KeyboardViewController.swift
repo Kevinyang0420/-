@@ -1067,6 +1067,28 @@ final class KeyboardViewController: UIInputViewController {
     /// 🚨 只影响调试开关那一路，真实存货走 `KbBridge.hasRetryAudio()`，不受它影响。
     private var forceRetryDropped = false
 
+    /// **一次成功上屏，就把还亮着角标的失败存货一并了结**（#93）。
+    ///
+    /// Kevin 两次报同一件事：「都已经上传完、转写完了，它（✕）还一直保留着，
+    /// 这显然不合理。」
+    ///
+    /// 🚨 **不许改成删掉 `hasStock` 这个显示条件** —— 那会把「上次失败还能重试」
+    ///    的入口一起做没，然后他会撞上另一个 bug。
+    ///    要改的是**「什么时候算了结」**：他已经重说过并且成功了，
+    ///    那条旧存货就没有取回的意义了。
+    ///    语义照抄安卓 `PendingCore.toCloseOnSuccess()` —— **两端必须一致**。
+    ///
+    /// 🚨 **反向：没有成功轮次时一条都不动。** 两个调用点都在
+    ///    「`out` 非空才往下走」的 guard 之后，走到这儿必然真出了字。
+    /// 🚨 两个成功出口共用这一份 —— 各写一份的话，改语义时必漏一处
+    ///    （这摊活在"同一规矩两处实现"上栽过很多次）。
+    private func settleStockAfterSuccess() {
+        guard KbBridge.hasRetryAudio() else { return }
+        KbBridge.dropRetryAudio()
+        KbBridge.note("成功上屏 → 顺手了结旧的失败存货（#93）")
+        refreshRetryBadge()   // 唯一出口：角标灭掉，✕ 跟着收起
+    }
+
     private func refreshCancelButton() {
         let hasStock = !retryBadge.isHidden
         cancelButton.isHidden = !(phase == .listening
@@ -4982,6 +5004,7 @@ final class KeyboardViewController: UIInputViewController {
         lastOut = out
         heardLabel.text = ""
         textDocumentProxy.insertText(out)
+        settleStockAfterSuccess()
         setPhase(.idle, hint: "")
     }
 
@@ -5082,6 +5105,7 @@ final class KeyboardViewController: UIInputViewController {
         lastOut = out
         heardLabel.text = ""
         textDocumentProxy.insertText(out)
+        settleStockAfterSuccess()
         setPhase(.idle, hint: "")
     }
 
