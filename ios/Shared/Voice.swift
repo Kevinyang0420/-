@@ -132,6 +132,10 @@ final class Voice: NSObject {
     /// 🚨 「起录 URL 到达那一刻在不在后台」——由主 App 注入。
     ///    **独立于起录闸的结论**（那个永远报绿）。
     static var arrivedInBackgroundProbe: (() -> String)?
+    /// 🚨 这一轮**前摇过**（起录指令一到就开始留音，没等前台）。
+    ///    `start()` 据此决定要不要清缓冲 —— 清了前摇就白做。
+    ///    用完即置假，**跨轮不许残留**（残留会让下一轮读到两轮之和）。
+    static var preRolledThisRound = false
 
     /// 心跳用的累计帧与下一个打点阈值。**只在 tap 里改**（同一线程）。
     fileprivate var hbFrames = 0
@@ -456,7 +460,18 @@ final class Voice: NSObject {
         if let p = Voice.permissionState() { return onWav(.failure(p)) }
         self.onPartial = onPartial
         self.onWav = onWav
-        pcm = Data()
+        // 🚨🚨 **前摇留下的音不许在这儿清掉**（#80）。
+        //    起录指令一到我们就 `beginKeep()` 开始留（不等前台），
+        //    而这一句 `pcm = Data()` 会把那段**全扔了** ——
+        //    那正是「写了前摇但没接上」，前摇等于白做。
+        //    🚨 跨轮清零仍然要做（否则第二轮读到两轮之和），
+        //    所以判据是**这一轮有没有前摇过**，不是"要不要清"。
+        if Voice.preRolledThisRound {
+            Voice.preRolledThisRound = false
+            KbBridge.note("起录：保留前摇的 " + String(pcm.count) + " 字节，不清缓冲")
+        } else {
+            pcm = Data()
+        }
         finished = false
         // 🚨 跨轮必须清零，否则第二轮读到的是两轮之和 —— 旧数据冒充新数据。
         convErrCount = 0

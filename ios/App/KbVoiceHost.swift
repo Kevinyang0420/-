@@ -440,6 +440,46 @@ final class KbVoiceHost {
     ///    上一个进程的残留值，冷启动时正好把自己坑了。
     var voiceIsArming: Bool { voice.arming }
 
+    /// **起录指令一到就先开始留音**（#80 / #47 的可救那一半）。
+    ///
+    /// ## 为什么
+    /// 0 09-07 按「起录 URL 到达那一刻」分组，相关性很干净：
+    /// **到达时在后台 4/4 全坏**；而每一次「起录闸」都报绿（都等到了
+    /// `didBecomeActive`、83~182ms）—— 闸量的是「等没等到前台」，
+    /// **不是「音频有没有从头录上」**。
+    ///
+    /// 那 83~182ms 里引擎**是活着的**（待命档），只是**麦克风被静音**
+    /// （`beginKeep()` 才解）。所以那段是**白白丢掉的**，不是物理上录不到。
+    ///
+    /// 🚨 **能救的只有这一半。** #47 那种「主 App 根本没在跑」的空档，
+    ///    引擎压根不存在，**物理上补不回来** —— 别把两者当成一件事修。
+    ///
+    /// 🚨 只在**引擎已经架着**时做：没架着的话 `beginKeep` 会失败，
+    ///    而在后台重新架引擎是 iOS 不允许的（这条实测过很多次）。
+    /// 🚨 幂等：`begin()` 后面还会走正常那条路，重复调 `beginKeep`
+    ///    只是把缓冲清空重来，不会崩 —— 但会**把前摇丢掉**，
+    ///    所以那边要认这个标记，别再清一次。
+    @discardableResult
+    func preRollOnRecUrl() -> Bool {
+        guard voice.arming else {
+            KbBridge.note("前摇：引擎没架着，救不了（这是 #47 那一半）")
+            return false
+        }
+        if let why = voice.beginKeep() {
+            KbBridge.note("前摇：开闸失败 —— " + why)
+            return false
+        }
+        preRolled = true
+        // 🚨 告诉  别清缓冲 —— 不设这个标记，前摇白做。
+        Voice.preRolledThisRound = true
+        KbBridge.note("前摇：起录指令一到就开始留音（不等前台）")
+        return true
+    }
+
+    /// 这一轮**已经前摇过**了 —— 正常起录那条路别再把缓冲清掉。
+    var preRolled = false
+
+
     func yieldMic() {
         if KbVoiceHost.holdIsPlayRec { return }
         hold.stop()

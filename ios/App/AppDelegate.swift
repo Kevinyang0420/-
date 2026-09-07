@@ -771,6 +771,12 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         Self.recUrlArrivedAt = Date()
         KbBridge.note("收到起录URL｜此刻 " + Self.appStateLine()
                       + "｜到达时" + (bgOnArrive ? "后台" : "前台"))
+        // 🚨🚨 **先把音留起来，别等前台**（#80）。
+        //    到达时在后台的 4 次全坏，而那段时间引擎是活着的、只是静音 ——
+        //    等前台那 83~182ms 是**白丢的**，不是物理上录不到。
+        //    🚨 只在引擎已架着时有效；#47 那种「主 App 根本没在跑」
+        //       引擎压根不存在，**补不回来** —— 别把两者当一件事修。
+        KbVoiceHost.shared.preRollOnRecUrl()
         awaitingActive = true
         startWhenTrulyActive()
     }
@@ -849,6 +855,12 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //    所以 RecLog 那条「不跨进程」的限制在这条路上不成立。
         RecLog.add(sec: 0, bytes: 0, result: "收到起录URL",
                    detail: "此刻 " + Self.appStateLine())
+        // 🚨🚨 **先把音留起来，别等前台**（#80）。
+        //    到达时在后台的 4 次全坏，而那段时间引擎是活着的、只是静音 ——
+        //    等前台那 83~182ms 是**白丢的**，不是物理上录不到。
+        //    🚨 只在引擎已架着时有效；#47 那种「主 App 根本没在跑」
+        //       引擎压根不存在，**补不回来** —— 别把两者当一件事修。
+        KbVoiceHost.shared.preRollOnRecUrl()
         awaitingActive = true
         startWhenTrulyActive()
         // ⑤ 会不会自己跳回去：**如实记，不预设。**
