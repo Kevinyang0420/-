@@ -3449,6 +3449,43 @@ final class PrefsViewController: UIViewController {
         //    藏在一个够不着的文档里不叫披露。
         list.addArrangedSubview(row(L.prefs_privacy, nil,
                                     #selector(openPrivacy)))
+
+        // 🚨🚨 **关掉同步的唯一入口** —— 必须有，而且**故意放在最下面**。
+        //
+        //    Kevin 09-07 下午亲口：「同步完了之后，如果他还想取消同步的话，
+        //    **他就要去设置那边自己去找这个入口，增加一下他这个难度**。」
+        //
+        //    🚨 **这条跟 one-off 是配套的，缺了它就是真缺陷**：
+        //    说话记录那一行点完就隐藏，如果设置页没有这个，
+        //    **iOS 就再也没有任何地方能关掉同步**。半截上线比不做更糟。
+        //
+        //    🚨 按他的要求**不加高亮、不加角标、不往上放** ——
+        //    "难找"是需求的一部分，不是我偷懒。
+        //    但**只在开着的时候出现**：没开过的人看到"取消同步"只会困惑。
+        if HistSync.isOn {
+            let offRow = row(L.hs_off_1, L.hs_off_2, #selector(tapSyncOff))
+            offRow.accessibilityIdentifier = "prefs.row.syncoff"
+            list.addArrangedSubview(offRow)
+        }
+    }
+
+    /// 关掉同步。
+    ///
+    /// 🚨 走 `HistSync.turnOff()`（**同时复位 one-off**），不是 `set(false)` ——
+    ///    只关开关的话，说话记录那屏的开启入口**永远不会再出现**，
+    ///    等于把功能永久藏死。
+    @objc private func tapSyncOff() {
+        HistSync.turnOff()
+        let a = UIAlertController(title: L.hs_off_1, message: L.hs_off_2,
+                                  preferredStyle: .alert)
+        a.addAction(UIAlertAction(title: "OK", style: .default))
+        present(a, animated: true)
+        // 🚨 重画设置页，把这一行收掉 —— 这一屏的构建入口叫 build()，
+        //    我第一版写了个不存在的 buildPrefs()。**函数名要去文件里确认**。
+        list.arrangedSubviews.forEach {
+            list.removeArrangedSubview($0); $0.removeFromSuperview()
+        }
+        build()
     }
 
     /// 分组标题（带上下留白）。

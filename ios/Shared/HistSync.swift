@@ -49,6 +49,31 @@ enum HistSync {
         KbBridge.note("说话记录同步分界点：" + (t <= 0 ? "含存量" : String(Int(t))))
     }
 
+    private static let doneKey = "histsync.oneoff.done.local"
+
+    /// **这台设备已经走完过一次开启流程**（one-off 用完就收起来）。
+    ///
+    /// Kevin 09-07 下午亲口：
+    /// > 「它这个应该只是一个 **one-off** 的功能。不点就一直留着；
+    /// >   **一旦点完就自动隐藏**。正在同步 → 已同步 → 打个勾 → 隐藏。」
+    ///
+    /// 🚨 **这一条决定说话记录那屏还画不画那一行** ——
+    ///    所以它必须**落盘**，不能只存在内存里：重启后又冒出来，
+    ///    在他眼里就是"隐藏没生效"。
+    static var oneOffDone: Bool {
+        get { UserDefaults.standard.bool(forKey: doneKey) }
+        set { UserDefaults.standard.set(newValue, forKey: doneKey) }
+    }
+
+    /// 🚨🚨 **关掉同步时要把 one-off 也复位** —— 否则他在设置里关了之后，
+    ///    说话记录那屏**再也不会**出现开启入口，等于把功能永久藏死了。
+    ///    （这条是我加的：他只说了"点完隐藏"，没说"关掉之后还能不能再开"。
+    ///      但"关了就再也开不回来"显然不是他要的。）
+    static func turnOff() {
+        set(false)
+        oneOffDone = false
+    }
+
     /// 这台设备上**已经攒下**多少条历史。
     ///
     /// 🚨 打开时要拿它做二次确认：说清「这台设备上已有的 N 条也会一起传上去」。

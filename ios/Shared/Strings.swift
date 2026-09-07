@@ -64,8 +64,9 @@ enum L {
         return m[Lang.zh] ?? ""
     }
 
-    static var hs_synced: String { s(["zh": "已同步", "en": "Synced", "hant": "已同步"]) }
-    static var hs_syncing: String { s(["zh": "正在传…", "en": "Uploading…", "hant": "正在傳…"]) }
+    static var kb_noted: String { s(["zh": "已存", "en": "Saved", "hant": "已存", "ja": "保存済み", "de": "Gespeichert", "es": "Guardado", "ar": "تم الحفظ"]) }
+    static var hs_synced: String { s(["zh": "已同步", "en": "Synced", "hant": "已同步", "ja": "同期済み", "de": "Synchronisiert", "es": "Sincronizado", "ar": "مُزامَن"]) }
+    static var hs_syncing: String { s(["zh": "正在传…", "en": "Uploading…", "hant": "正在傳…", "ja": "アップロード中…", "de": "Wird hochgeladen…", "es": "Subiendo…", "ar": "جارٍ الرفع…"]) }
     static var hs_on_brief: String { s(["zh": "已开启：可以在你的其他设备上看到。", "en": "On: visible on your other devices.", "hant": "已開啟：可以在你的其他設備上看到。", "ja": "オン：他のデバイスで表示できます。", "de": "An: auf deinen anderen Geräten sichtbar.", "es": "Activado: visible en tus otros dispositivos.", "ar": "مفعّل: مرئي على أجهزتك الأخرى."]) }
     static var a11y_add_wb: String { s(["zh": "加入单词本", "en": "Save to word book", "hant": "加入單詞本", "ja": "単語帳に保存", "de": "Zum Wortschatz speichern", "es": "Guardar en el Cuaderno de palabras", "ar": "حفظ في دفتر الكلمات"]) }
     static var a11y_add_note: String { s(["zh": "加入日记本", "en": "Save to journal", "hant": "加入日記本", "ja": "日記に保存", "de": "Zum Tagebuch speichern", "es": "Guardar en el diario", "ar": "حفظ في المذكرة"]) }
@@ -414,8 +415,8 @@ enum L {
     static var full_note: String { s(["zh": "在设置里打开就行。开好之后这一行不会变绿 —— iOS 不让 App 查这个状态，以键盘里的提示为准。", "en": "Just switch it on in Settings. This line won't turn green afterwards — iOS doesn't let the app read that state. The keyboard will tell you.", "hant": "在設定裡打開就行。開好之後這一行不會變綠 —— iOS 不讓 App 查這個狀態，以鍵盤裡的提示為準。", "ja": "設定でオンにしてください。オンにしてもこの行は緑になりません — iOSはアプリにその状態を読み取らせないためです。キーボードの表示を確認してください。", "de": "Einfach in den Einstellungen einschalten. Danach wird diese Zeile nicht grün – iOS erlaubt der App nicht, den Status zu lesen. Die Tastatur zeigt es dir.", "es": "Solo actívalo en Ajustes. Esta línea no se pondrá verde después — iOS no permite que la app lea ese estado. El teclado te lo indicará.", "ar": "فقط فعّله في الإعدادات. بعد التفعيل، لن يتحول هذا السطر إلى الأخضر - لا يسمح ‎iOS‎ للتطبيق بقراءة هذه الحالة. ستُخبرك لوحة المفاتيح."]) }
     static var home_wordbook: String { s(["zh": "单词本", "en": "Word book", "hant": "單詞本", "ja": "単語帳", "de": "Wortliste", "es": "Libro de palabras", "ar": "دفتر الكلمات"]) }
     static var home_wordbook_soon: String { s(["zh": "单词本下个版本上线", "en": "Word book is coming next version", "hant": "單詞本下個版本上線", "ja": "単語帳は次回バージョンで提供予定", "de": "Wortliste kommt im nächsten Update", "es": "El libro de palabras estará en la próxima versión", "ar": "دفتر الكلمات سيأتي في الإصدار القادم"]) }
-    static var kb_keep: String { s(["zh": "收藏", "en": "Save to Wordbook", "hant": "收藏", "ja": "単語帳に保存", "de": "Im Wörterbuch speichern", "es": "Guardar en el cuaderno", "ar": "حفظ في دفتر الكلمات"]) }
-    static var kb_kept: String { s(["zh": "已收", "en": "Saved", "hant": "已收", "ja": "保存済み", "de": "Gespeichert", "es": "Guardado", "ar": "تم الحفظ"]) }
+    static var kb_keep: String { s(["zh": "单词本", "en": "Wordbook", "hant": "單詞本", "ja": "単語帳", "de": "Wortschatz", "es": "Vocabulario", "ar": "دفتر الكلمات"]) }
+    static var kb_kept: String { s(["zh": "已存", "en": "Saved", "hant": "已存", "ja": "保存済み", "de": "Gespeichert", "es": "Guardado", "ar": "تم الحفظ"]) }
     static var login_checking: String { s(["zh": "正在验证…", "en": "Checking…", "hant": "正在驗證…", "ja": "確認中…", "de": "Prüfe…", "es": "Verificando…", "ar": "جارٍ التحقق…"]) }
     static var login_code_ph: String { s(["zh": "6 位验证码", "en": "6-digit code", "hant": "6 位驗證碼", "ja": "6桁のコード", "de": "6-stelliger Code", "es": "Código de 6 dígitos", "ar": "رمز من ‎6‎ أرقام"]) }
     static var login_do: String { s(["zh": "登录", "en": "Sign in", "hant": "登入", "ja": "ログイン", "de": "Anmelden", "es": "Iniciar sesión", "ar": "تسجيل الدخول"]) }

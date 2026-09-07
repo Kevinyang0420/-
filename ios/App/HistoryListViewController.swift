@@ -165,19 +165,56 @@ final class HistoryListViewController: UIViewController {
     /// 🚨 两态都要**看得出来**：开着写"正在同步"，关着写那两句说明。
     ///    只画一个开关图标的话，他分不出"没开"和"坏了"。
     private func paintSync() {
-        if HistSync.isOn {
-            syncLabel.text = L.hs_on_now
-            syncLabel.textColor = Theme.accent
-        } else {
-            syncLabel.text = L.hs_title + " · " + L.hs_off_now
-            syncLabel.textColor = Theme.dim
+        // 🚨🚨 **`hs_on_now`（「这台设备正在同步」）已作废。**
+        //    Kevin 09-07 下午：「为什么我这个设备同步了这么久，
+        //    它还是显示"在同步"？**这是不是卡住了呀？**」
+        //    —— 那句话只看开关状态，**跟有没有在传数据毫无关系**，
+        //    而它写成了进行时，他盯着一个永不变化的"正在"就判成卡住。
+        //    **进行时的文案必须对应真的进行中**，否则它自己会制造故障感。
+        //
+        //    现在三态：没点过 → 正在传 → 已同步✓ → 自动隐藏。
+        if HistSync.oneOffDone {
+            // 走完一次就收起来（one-off）。要关同步去设置页找。
+            syncRow.isHidden = true
+            return
+        }
+        syncRow.isHidden = false
+        syncLabel.text = L.hs_title + " · " + L.hs_off_now
+        syncLabel.textColor = Theme.dim
+    }
+
+    /// 打开之后那段动画：正在传 → 已同步✓ → 淡出收起。
+    ///
+    /// 🚨 1.2 秒是 2.1 定的、**不是他说的**，真机给他看一眼再调。
+    /// 🚨 绿勾用 `.systemGreen` —— **不自己配色**（他定过「你不要自己设计了」）。
+    private func runSyncedAnimation() {
+        syncLabel.text = L.hs_syncing
+        syncLabel.textColor = Theme.accent
+        // 🚨 这里没有真的"传完"的信号可等（上传端点还没接）——
+        //    所以这一段是**按时间走的**，不是按真实进度。
+        //    **等 1.1 的上传端点上线后要改成等真信号**，否则它跟
+        //    `hs_on_now` 是同一个病：进行时的文案对不上真实进行。
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+            guard let self = self else { return }
+            self.syncLabel.text = "✓ " + L.hs_synced
+            self.syncLabel.textColor = .systemGreen
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                UIView.animate(withDuration: 0.3, animations: {
+                    self.syncRow.alpha = 0
+                }, completion: { _ in
+                    HistSync.oneOffDone = true
+                    self.syncRow.isHidden = true
+                    self.syncRow.alpha = 1        // 复位，下次还能用
+                })
+            }
         }
     }
 
     @objc private func tapSync() {
         if HistSync.isOn {
-            // 关掉 —— 说清"已经传上去的不会自动删"（规格第 5 条）
-            HistSync.set(false)
+            // 🚨 正常情况下走不到这儿（开着时这一行已经隐藏了）。
+            //    留着是防御：万一状态错位，点它仍然能关，而不是没反应。
+            HistSync.turnOff()
             paintSync()
             let a = UIAlertController(title: L.hs_off_1, message: L.hs_off_2,
                                       preferredStyle: .alert)
@@ -204,7 +241,7 @@ final class HistoryListViewController: UIViewController {
         guard n > 0 else {
             HistSync.set(true)
             HistSync.setSince(0)
-            paintSync()
+            runSyncedAnimation()
             return
         }
         let a = UIAlertController(
@@ -215,13 +252,13 @@ final class HistoryListViewController: UIViewController {
             HistSync.set(true)
             // 只传以后的 —— 分界点设成此刻
             HistSync.setSince(Date().timeIntervalSince1970)
-            self?.paintSync()
+            self?.runSyncedAnimation()
         })
         a.addAction(UIAlertAction(title: L.hs_stock_all, style: .default) {
             [weak self] _ in
             HistSync.set(true)
             HistSync.setSince(0)
-            self?.paintSync()
+            self?.runSyncedAnimation()
         })
         a.addAction(UIAlertAction(title: L.hs_ask_no, style: .cancel))
         present(a, animated: true)
