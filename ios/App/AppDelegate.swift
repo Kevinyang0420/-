@@ -2437,6 +2437,18 @@ final class HomeViewController: UIViewController {
         //    「随手翻译永久免登录」，看到"拿不到注册转化"这个代价之后仍然选了它）。
         root.addArrangedSubview(cta())
 
+        // ── ⑦′ 「查词」卡 ──────────────────────────────────────
+        //
+        // Kevin 09-07 亲口：「iOS 的首页只有『随便说点啥』，但是安卓的首页
+        // 还多了一个『查词』…那你就首页多加一个『查词』功能了」。
+        //
+        // 🚨 **玻璃底、不抢主 CTA** —— 照安卓 `HomeScreen.ctaDict()`：
+        //    跟主 CTA 同宽，但不是实色。这一屏**唯一的实色块仍然是随手翻译**
+        //    （上面那条硬规矩不许破）。
+        // 🚨 **导航栏那个查词按钮不删** —— 那是他 09-05 单独定的，
+        //    这次说的是"首页多加一个"，不是"挪过去"。两个入口并存。
+        root.addArrangedSubview(ctaDict())
+
         // ── ⑧⑨ 输入法槽 52（CTA 下 12），三档同槽 ────────────────
         //
         // 🚨🚨 **三档高度必须完全一样**，第三档用"占位不可见"而不是"移除" ——
@@ -2593,6 +2605,58 @@ final class HomeViewController: UIViewController {
     }
 
     /// 主 CTA：88 高、圆角 18、渐变紫、17pt 粗体。
+    /// 首页那张卡点进去。
+    ///
+    /// 🚨 **用 push，不用 present** —— Kevin 说过至少两遍
+    ///    「要合在一起，跟那四个 tab 一样合在一个窗口」。
+    ///    `present` 会盖住底部 tab 栏，那正是他反复要求修掉的那件事。
+    @objc private func openDictFromHome() {
+        navigationController?.pushViewController(DictViewController(),
+                                                 animated: true)
+    }
+
+    /// 首页那张「查词」卡。
+    ///
+    /// 🚨 样式**照安卓 `ctaDict()`**：同宽、玻璃底（不是实色）、高 72、
+    ///    左右内边距 20、垂直居中。**有现成答案就照抄，不重新设计。**
+    private func ctaDict() -> UIView {
+        let b = UIButton(type: .custom)
+        // 玻璃底：跟设置页那些行同一种（白 6%），**不用 accent 实色**
+        b.backgroundColor = UIColor.white.withAlphaComponent(0.06)
+        b.layer.cornerRadius = 18
+        b.clipsToBounds = true
+        b.heightAnchor.constraint(equalToConstant: 72).isActive = true
+        b.accessibilityIdentifier = "app.dict"
+        b.addTarget(self, action: #selector(openDictFromHome),
+                    for: .touchUpInside)
+
+        let t = UILabel()
+        t.text = L.dict_title
+        t.font = .systemFont(ofSize: 18, weight: .semibold)
+        t.textColor = Theme.text
+        t.translatesAutoresizingMaskIntoConstraints = false
+        t.isUserInteractionEnabled = false      // 🚨 别吃触摸，整块响应
+        b.addSubview(t)
+
+        let chev = UILabel()
+        chev.text = UIView.userInterfaceLayoutDirection(
+            for: .unspecified) == .rightToLeft ? "‹" : "›"
+        chev.font = .systemFont(ofSize: 22, weight: .regular)
+        chev.textColor = Theme.dim
+        chev.translatesAutoresizingMaskIntoConstraints = false
+        chev.isUserInteractionEnabled = false
+        b.addSubview(chev)
+
+        NSLayoutConstraint.activate([
+            t.leadingAnchor.constraint(equalTo: b.leadingAnchor, constant: 20),
+            t.centerYAnchor.constraint(equalTo: b.centerYAnchor),
+            chev.trailingAnchor.constraint(equalTo: b.trailingAnchor,
+                                           constant: -20),
+            chev.centerYAnchor.constraint(equalTo: b.centerYAnchor),
+        ])
+        return b
+    }
+
     private func cta() -> UIView {
         // 🚨🚨 **方案丙**（Kevin 2026-09-05：「用丙吧，我也觉得丙好一点」）：
         //    圆底图标 + 主副两行 + 右箭头。
