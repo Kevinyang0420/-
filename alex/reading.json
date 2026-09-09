@@ -34272,6 +34272,294 @@
    "src": "The Conversation",
    "srcen": "The Conversation (CC BY-ND)",
    "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_assumed_authority_over",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "assumed regulatory and supervisory authority over mutual banks from the Office of Thrift Supervision in 2011",
+   "why": "使用 assumed authority 比常用的 took over 显得更正式、更有法律效力。over 与 from 的搭配清晰界定了权力的归属转移，避免了中国作者常犯的介词混淆。",
+   "when": "用于描述监管机构、母公司或新管理层接管某项业务、资产或实体的控制权与监督权。",
+   "slot": "assumed regulatory and supervisory authority over [...] from [...] in [...]",
+   "swap": [
+    "took over the supervision of [...] from [...] in [...] (口语化，缺乏法律严肃感)",
+    "was granted regulatory control over [...] from [...] in [...] (强调被动授权，而 assume 强调主动接管)"
+   ],
+   "para": "The Board assumed regulatory and supervisory authority over mutual banks from the Office of Thrift Supervision in 2011. The rules governing these banks were first established in 1993. They have not been updated and have proven over time to be overly burdensome and complex.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize rules for mutual banking organizations",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731a.htm"
+  },
+  {
+   "id": "ph_proven_over_time",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "have proven over time to be overly burdensome and complex",
+   "why": "用 prove (主动表被动) 配合 over time，比被动语态 are proved 更有动态演变感。overly burdensome 比 too heavy 或 difficult 更具专业财务/合规报告的客观批判性。",
+   "when": "用于尽调报告中指出某项流程、系统或内部控制在长期运行中暴露出的弊端。",
+   "slot": "[...] have proven over time to be overly burdensome and [...]",
+   "swap": [
+    "have turned out to be highly inefficient and [...] (turn out 语气较随意，不如 prove 正式)",
+    "have been shown over the years to be excessively tedious and [...] (be shown 强调被动观察，不如 prove 具有结论性)"
+   ],
+   "para": "The Board assumed regulatory and supervisory authority over mutual banks from the Office of Thrift Supervision in 2011. The rules governing these banks were first established in 1993. They have not been updated and have proven over time to be overly burdensome and complex.",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize rules for mutual banking organizations",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731a.htm"
+  },
+  {
+   "id": "ph_addressing_challenging",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "Addressing this question is challenging due to data limitations",
+   "why": "国人常写成 \"Solving this problem is very difficult because we don't have enough data\"。原句用 \"Addressing\" 代替 \"Solving\" 更显客观中立，用 \"challenging\" 代替 \"difficult\" 既专业又留有余地，\"due to data limitations\" 比 \"because of lack of data\" 更加书面化和体面。",
+   "when": "在尽调报告中，解释为何因客户提供资料不全或信息不对称，导致某项分析或估值存在局限性时。",
+   "slot": "Addressing this [...] is challenging due to [...]",
+   "swap": [
+    "Resolving this issue is constrained by [...] (语气更正式，强调客观限制而非主观困难)",
+    "Answering this query remains difficult owing to [...] (稍微传统，owing to 极具公文感)"
+   ],
+   "para": "Addressing this question is challenging due to data limitations, particularly regarding firms' foreign ownership. 2 In this note, we leverage a unique feature of the Vietnamese firm-level data, which identify the source country of inward foreign direct investment (FDI) for foreign-invested firms. In addition, using a unique firm identifier, we merge these data with transaction-level trade data from Panjiva, allowing us to directly examine how Vietnam's export boom differed across ownership groups.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_leverage_unique_feature",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "we leverage a unique feature of the Vietnamese firm-level data",
+   "why": "国人常写成 \"we use the special data\"。原句用 \"leverage\"（杠杆、利用）替代普通的 \"use\"，瞬间提升了方法论的含金量；\"unique feature\" 强调了数据的独特价值，显得分析手段非常专业且有针对性。",
+   "when": "在审计或尽调报告的方法论部分，向客户展示己方如何巧妙利用某项特定账目明细或数据库来穿透分析时。",
+   "slot": "we leverage a unique feature of the [...] data",
+   "swap": [
+    "we exploit a distinct characteristic of the [...] dataset (更偏技术感，exploit 在数据分析中意为充分挖掘利用)",
+    "we take advantage of a specific attribute within the [...] records (更具实操感，适合描述对审计底稿或凭证特征的利用)"
+   ],
+   "para": "Addressing this question is challenging due to data limitations, particularly regarding firms' foreign ownership. 2 In this note, we leverage a unique feature of the Vietnamese firm-level data, which identify the source country of inward foreign direct investment (FDI) for foreign-invested firms. In addition, using a unique firm identifier, we merge these data with transaction-level trade data from Panjiva, allowing us to directly examine how Vietnam's export boom differed across ownership groups.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_allowing_directly_examine",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "allowing us to directly examine how Vietnam's export boom differed across ownership groups",
+   "why": "国人常写成 \"so we can check the difference\"。原句使用分词结构 \"allowing us to...\" 自然承接上文，用 \"directly examine\" 展现审计的直接穿透力，用 \"differed across\" 替代 \"is different in\"，表达不同维度下的差异，极其高级。",
+   "when": "在描述完数据合并、穿透或对比程序后，顺理成章地引出该程序能达到的穿透分析效果时。",
+   "slot": "allowing us to directly examine how [...] differed across [...]",
+   "swap": [
+    "enabling a direct comparison of how [...] varied among [...] (侧重于对比和波动，适合财务指标的跨期或跨部门对比)",
+    "permitting us to analyze the divergence of [...] across [...] (语气更学术、严谨，强调不同组别之间的分化)"
+   ],
+   "para": "Addressing this question is challenging due to data limitations, particularly regarding firms' foreign ownership. 2 In this note, we leverage a unique feature of the Vietnamese firm-level data, which identify the source country of inward foreign direct investment (FDI) for foreign-invested firms. In addition, using a unique firm identifier, we merge these data with transaction-level trade data from Panjiva, allowing us to directly examine how Vietnam's export boom differed across ownership groups.",
+   "srctitle": "FEDS Note: Vietnam's Export Boom to the U.S.: The Role of Chinese Firms",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/vietnams-export-boom-to-the-u-s-the-role-of-Chinese-firms-20260717.html"
+  },
+  {
+   "id": "ph_previous_low",
+   "kind": "phrase",
+   "dim": "quant",
+   "en": "compared with a previous low of 19.8 million tonnes in 2020",
+   "why": "中国人常写 'compared with the lowest level in history'，显得冗长且不专业。原句用 'a previous low of [数字]' 极其精炼，直接将‘历史低点’和‘具体数值’融为一体，非常适合财务分析中对比历史最差业绩。",
+   "when": "在财务尽调报告中，对比目标公司历史最低营收、最低利润率或最低库存水平时。",
+   "slot": "compared with a previous low of [...] in [...]",
+   "swap": [
+    "representing a decline to the historical minimum of [...] in [...] (更正式，强调向最低点的逼近)",
+    "relative to the previous trough of [...] recorded in [...] (更具行业周期分析感，trough常用于周期性行业低谷)"
+   ],
+   "para": "That is compared with a previous low of 19.8 million tonnes in 2020, and would cost farmers £390m in lost revenue, the ECIU estimated.",
+   "srctitle": "",
+   "src": "BBC 商业",
+   "srcen": "BBC Business",
+   "url": "https://www.bbc.co.uk/news/articles/c4gwv9590xeo?at_medium=RSS&at_campaign=rss"
+  },
+  {
+   "id": "ph_revenues_derived_represented",
+   "kind": "phrase",
+   "en": "Revenues derived directly, as a prime contractor, or indirectly, as a subcontractor, from contracts with the U.S. government represented 80%, 79% and 80% of our total revenues for 2025, 2024, and 2023, respectively.",
+   "why": "用 'Revenues derived... from... represented...' 结构清晰地交代了收入来源的性质（直接/间接身份）和占比。中国人常写成 'Our revenue comes from... and it is...'，显得业余。此处用 'derived' 修饰主语，再用 'represented' 承接比例，非常适合审计报告中披露收入结构。",
+   "when": "在尽调或审计报告中，披露客户或业务板块在过去几年的收入占比及业务获取方式时。",
+   "slot": "Revenues derived directly, as a […], or indirectly, as a […], from contracts with […] represented […], […] and […] of our total revenues for […], […], and […], respectively.",
+   "swap": [
+    "Revenues generated through [...] and [...] from [...] accounted for [...] of our total sales during [...]. (更平实，用accounted for代替represented，适合常规描述)",
+    "Contracts with [...] contributed [...], [...] and [...] to our total revenue for [...], respectively, split between [...] and [...]. (强调合同贡献度，句式更紧凑)"
+   ],
+   "dim": "attr",
+   "para": "The U.S. government is our largest customer. Revenues derived directly, as a prime contractor, or indirectly, as a subcontractor, from contracts with the U.S. government represented 80%, 79% and 80% of our total revenues for 2025, 2024, and 2023, respectively. Our U.S. government sales are concentrated with the DoW, which constitutes the majority of our U.S. government revenue for any given year. Our revenues with the U.S. government span the Navy, Army, Air Force and other U.S. government agencies which represented 36%, 36%, 3% and 5%, respectively, of our total revenues for 2025.",
+   "srctitle": "Leonardo DRS, Inc.  (DRS)  (CIK 0001833756)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1833756/000183375626000013/drs-20251231.htm"
+  },
+  {
+   "id": "ph_revenues_span_represented",
+   "kind": "phrase",
+   "en": "Our revenues with the U.S. government span the Navy, Army, Air Force and other U.S. government agencies which represented 36%, 36%, 3% and 5%, respectively, of our total revenues for 2025.",
+   "why": "动词 'span'（横跨、覆盖）用得极妙，避免了单调的 'come from' 或 'include'。它生动地展现了业务在某一领域下的广泛分布，随后用 'which represented... respectively' 顺畅地接入具体的财务数据，结构一气呵成。",
+   "when": "用于描述公司在某一特定大客户或特定市场细分下的具体收入构成。",
+   "slot": "Our revenues with […] span […] which represented […], respectively, of our total revenues for […].",
+   "swap": [
+    "Our sales to [...] are diversified across [...], representing [...], respectively, of our total revenue in [...]. (强调多样化，语气更积极)",
+    "Our revenue stream from [...] is distributed among [...], which made up [...], respectively, of our total turnover for [...]. (强调收入流的分布，turnover比revenue更具英式财务色彩)"
+   ],
+   "dim": "attr",
+   "para": "The U.S. government is our largest customer. Revenues derived directly, as a prime contractor, or indirectly, as a subcontractor, from contracts with the U.S. government represented 80%, 79% and 80% of our total revenues for 2025, 2024, and 2023, respectively. Our U.S. government sales are concentrated with the DoW, which constitutes the majority of our U.S. government revenue for any given year. Our revenues with the U.S. government span the Navy, Army, Air Force and other U.S. government agencies which represented 36%, 36%, 3% and 5%, respectively, of our total revenues for 2025.",
+   "srctitle": "Leonardo DRS, Inc.  (DRS)  (CIK 0001833756)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1833756/000183375626000013/drs-20251231.htm"
+  },
+  {
+   "id": "ph_important_step_in_work",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "is another important step in our work to",
+   "why": "国人写审计整改或尽职调查报告时，表达“正在做某事以改善”常单调地使用 'is designed to' 或 'aims to'。原文使用 'is another important step in our work to'，不仅显得工作有系统性和连续性，还展现了主动推进的专业姿态。",
+   "when": "用于管理建议书或整改报告中，描述企业针对发现的缺陷所采取的阶段性改善措施。",
+   "slot": "[...] is another important step in our work to [...]",
+   "swap": [
+    "represents a key milestone in our efforts to (语气更正式，强调该步骤具有里程碑意义)",
+    "marks a significant phase in our initiative to (语气更侧重于项目或计划进入了关键的新阶段)"
+   ],
+   "para": "\"Today's proposal is another important step in our work to modernize the bank regulatory framework by updating mutual bank regulations for the first time in 30 years. The continued success of this model contributes to the institutional diversity of the U.S. banking system, which is one of the greatest strengths of our financial system,\" said Vice Chair for Supervision Michelle W. Bowman. \"This proposal will allow mutual banks to continue to grow and more effectively serve communities across the country, while preserving their unique depositor-owned structure.\"",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize rules for mutual banking organizations",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731a.htm"
+  },
+  {
+   "id": "ph_allow_growth_while_preserving",
+   "kind": "phrase",
+   "dim": "hedge",
+   "en": "will allow mutual banks to continue to grow and more effectively serve communities across the country, while preserving their unique depositor-owned structure.",
+   "why": "国人在表达“既要发展，又要保留原有优势/合规要求”的双重目标时，常生硬地用 'but we must keep'。原文通过 'will allow [A] to [do something], while preserving [B]' 的句式，极其优雅地平衡了“增长”与“合规/传承”的关系，主次分明且逻辑严密。",
+   "when": "用于管理建议书中，建议企业在推行某项业务扩张或系统升级时，如何兼顾原有的核心内部控制或独特优势。",
+   "slot": "[...] will allow [...] to continue to [...] and more effectively [...] while preserving [...]",
+   "swap": [
+    "enables [...] to scale up [...] without compromising [...] (语气更强硬，强调绝不能妥协核心要素/控制线)",
+    "facilitates the expansion of [...] while safeguarding [...] (语气更稳健，强调在发展的同时做好安全保障与防范风险)"
+   ],
+   "para": "\"Today's proposal is another important step in our work to modernize the bank regulatory framework by updating mutual bank regulations for the first time in 30 years. The continued success of this model contributes to the institutional diversity of the U.S. banking system, which is one of the greatest strengths of our financial system,\" said Vice Chair for Supervision Michelle W. Bowman. \"This proposal will allow mutual banks to continue to grow and more effectively serve communities across the country, while preserving their unique depositor-owned structure.\"",
+   "srctitle": "Federal Reserve Board requests comment on a proposal to modernize rules for mutual banking organizations",
+   "src": "美联储",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg20260731a.htm"
+  },
+  {
+   "id": "ph_signed_a_continuing_resolution_to_fund",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "signed a continuing resolution to fund the U.S. government, including the DoW, through January 30, 2026.",
+   "why": "中国人常把“资助”写成 'provide money to'，而原文一个动词 'fund' 极为精准；此外，表达“持续到某日（含当天）”时，中国人习惯用 'until'，而商务英语中用 'through [date]' 更加严谨，避免了截止日期是否包含在内的歧义。",
+   "when": "在尽调报告中描述过渡期资金安排、过桥贷款或临时预算覆盖期限时套用。",
+   "slot": "signed a [...] to fund [...], including [...], through [...]",
+   "swap": [
+    "to provide interim financing for [...], covering [...] up to [...] (更偏向资金技术层面，适用于债务或授信协议的描述)",
+    "to sustain the operations of [...], specifically [...], until [...] (侧重于保障运营连续性，语气较为客观)"
+   ],
+   "para": "Separately, the National Defense Authorization Act (“NDAA”) for FY2026 was signed into law on December 18, 2025. The NDAA authorizes $901 billion for defense, including an $8 billion increase over the President’s DoW budget request from June 2025. On November 12, 2025, the President signed a continuing resolution to fund the U.S. government, including the DoW, through January 30, 2026. On January 20, 2026, Congress unveiled its final appropriations package, which included the Defense Appropriations Act conference report. This legislation provides $839 billion in funding for the DoW, representing an $8 billion increase over the topline in the President’s DoW budget request. On February 3, 2026, Congress passed and the President signed the Consolidated Appropriations Act, 2026, providing funding for the government through the end of the government’s FY26, including authority for defense accounts.",
+   "srctitle": "Leonardo DRS, Inc.  (DRS)  (CIK 0001833756)",
+   "src": "SEC 10-K",
+   "srcen": "SEC 10-K filing",
+   "url": "https://www.sec.gov/Archives/edgar/data/1833756/000183375626000013/drs-20251231.htm"
+  },
+  {
+   "id": "ph_paired_with_perceived",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "These high operating costs are paired with a perceived low return on investment.",
+   "why": "中国人写报告常用 and 或 combined with 来叠加负面因素。这里用 are paired with 显得结构工整、逻辑并重。更妙的是用 perceived（外界感知的/账面体现的），在审计和尽职调查中，这种词能客观描述“外界对ROI的预期”，避免把话说得太绝对（直接说 low ROI 容易被客户挑战，加个 perceived 就非常严谨）。",
+   "when": "用于分析企业面临的双重财务劣势，或将两项负面财务指标并列呈现时。",
+   "slot": "These high [...] are paired with a perceived low [...].",
+   "swap": [
+    "These high [...] are coupled with an anticipated low [...] (语气更侧重于对未来的预测，而 perceived 侧重于当下的市场主观认知)",
+    "These high [...] are compounded by a seemingly low [...] (compounded by 强调雪上加霜的因果加剧关系，语气比 paired with 更强烈)"
+   ],
+   "para": "These high operating costs are paired with a perceived low return on investment. Because the city’s median household income is $39,938 , corporate analyses often project low profit margins, making retailers more reluctant to expand or relocate in Detroit.",
+   "srctitle": "Detroit has a shortage of national retailers. What can officials do to attract more chains to the city?",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_reluctant_to",
+   "kind": "phrase",
+   "dim": "misc",
+   "en": "making retailers more reluctant to expand or relocate",
+   "why": "中国人描述企业不愿做某事时，常直白地写 they do not want to 或 refuse to。在尽职调查中，用 making [entities] more reluctant to [do something]（使...更不情愿/更持谨慎态度）非常委婉且专业，客观描述了市场主体的防御性心理，符合审计报告中立、克制的语气。",
+   "when": "用于解释某种财务风险或市场环境如何导致管理层、投资者或合作方产生顾虑、放缓决策。",
+   "slot": "making [...] more reluctant to [...]",
+   "swap": [
+    "rendering [...] increasingly hesitant to [...] (rendering 比 making 更正式，hesitant 强调犹豫不决，而 reluctant 强调主观上的抗拒)",
+    "discouraging [...] from [...] (用 discourage 语气更重，强调外部因素直接阻碍了其行动，而 reluctant 保留了主体的一定自主权)"
+   ],
+   "para": "These high operating costs are paired with a perceived low return on investment. Because the city’s median household income is $39,938 , corporate analyses often project low profit margins, making retailers more reluctant to expand or relocate in Detroit.",
+   "srctitle": "Detroit has a shortage of national retailers. What can officials do to attract more chains to the city?",
+   "src": "The Conversation",
+   "srcen": "The Conversation (CC BY-ND)",
+   "url": "https://theconversation.com/detroit-has-a-shortage-of-national-retailers-what-can-officials-do-to-attract-more-chains-to-the-city-287154"
+  },
+  {
+   "id": "ph_track_evolution_impact",
+   "kind": "phrase",
+   "dim": "scope",
+   "en": "track the evolution of the generative AI buildout and its potential impact on the economy on a timely basis",
+   "why": "中国人常写 monitor the changes of... and see the effect on... in time。原文用 track the evolution（追踪演变）比 monitor 更具动态感，用 on a timely basis 代替 in time，显得报告语气非常专业、严谨，符合审计和尽调的行文标准。",
+   "when": "适用于描述如何持续监控目标公司的某项业务变化（如供应链调整、研发进度）及其对财务状况的潜在影响。",
+   "slot": "track the evolution of [...] and its potential impact on [...] on a timely basis",
+   "swap": [
+    "monitor the development of [...] and its subsequent effect on [...] in a timely manner (较为常规，语气平实，适合日常工作汇报)",
+    "closely follow the progress of [...] and its prospective implications for [...] promptly (强调紧密跟踪和前瞻性影响，语气更积极)"
+   ],
+   "para": "This note presents publicly available indicators that can help researchers and policymakers track the evolution of the generative AI buildout and its potential impact on the economy on a timely basis. We organize the indicators into three categories: capabilities and costs; firm investment and adoption; and productivity and labor. These categories map closely to the sequence often associated with general-purpose technologies (GPT) and the economy: capability improvements and cost declines precede broad firm adoption and investment, which in turn precede measurable aggregate productivity gains and labor market outcomes (Bresnahan and Trajtenberg, 1995; Lipsey et al., 2005). Whether AI qualifies as a GPT is examined in Baily et al. (2025). Here, we propose a set of public, often official, indicators that researchers can draw on to assess economic developments resulting from this technology as they unfold.",
+   "srctitle": "FEDS Note: The AI Buildout and the Economy: Publicly Available Data to Assess AI's Impact",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/the-ai-buildout-and-the-economy-publicly-available-data-to-assess-ais-impact-20260717.html"
+  },
+  {
+   "id": "ph_precede_in_turn_precede",
+   "kind": "phrase",
+   "dim": "link",
+   "en": "precede broad firm adoption and investment, which in turn precede measurable aggregate productivity gains",
+   "why": "表达“A先于B，B又先于C”的链式因果关系时，中国人常写 A happens before B, and then B happens before C。原文用 precede..., which in turn precede... 极具逻辑美感，in turn 准确表达了“转而/进而”的递进因果，避免了重复使用 before 或 lead to 的单调。",
+   "when": "适用于分析审计或尽调中，某项前置指标（如系统升级、研发投入）如何逐步传导至最终财务表现（如效率提升、利润增长）的逻辑链条。",
+   "slot": "precede [...] and [...], which in turn precede measurable [...]",
+   "swap": [
+    "come before [...] and [...], which subsequently lead to measurable [...] (口语化一些，逻辑同样清晰，适合口头汇报)",
+    "antecede [...] and [...], thereby paving the way for quantifiable [...] (非常正式，学术感更强，适合高规格的正式尽调报告)"
+   ],
+   "para": "This note presents publicly available indicators that can help researchers and policymakers track the evolution of the generative AI buildout and its potential impact on the economy on a timely basis. We organize the indicators into three categories: capabilities and costs; firm investment and adoption; and productivity and labor. These categories map closely to the sequence often associated with general-purpose technologies (GPT) and the economy: capability improvements and cost declines precede broad firm adoption and investment, which in turn precede measurable aggregate productivity gains and labor market outcomes (Bresnahan and Trajtenberg, 1995; Lipsey et al., 2005). Whether AI qualifies as a GPT is examined in Baily et al. (2025). Here, we propose a set of public, often official, indicators that researchers can draw on to assess economic developments resulting from this technology as they unfold.",
+   "srctitle": "FEDS Note: The AI Buildout and the Economy: Publicly Available Data to Assess AI's Impact",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/the-ai-buildout-and-the-economy-publicly-available-data-to-assess-ais-impact-20260717.html"
+  },
+  {
+   "id": "ph_draw_on_to_assess",
+   "kind": "phrase",
+   "dim": "reg",
+   "en": "draw on to assess economic developments resulting from this technology as they unfold",
+   "why": "表达“利用/参考数据来评估随时间推移而显现的变化”时，中国人常写 use... to evaluate... when they happen。原文用 draw on 代替 use 显得更专业，用 as they unfold（随着事态展开/逐步显现）比 when they happen 更有动态跟踪的专业感。",
+   "when": "适用于说明在尽调中，项目组将利用哪些公开或内部指标，来动态评估目标公司重组、诉讼或新业务拓展的后续影响。",
+   "slot": "draw on to assess [...] developments resulting from [...] as they unfold",
+   "swap": [
+    "rely on to evaluate [...] changes arising from [...] as they progress (强调依赖某些数据，语气较稳重)",
+    "utilize to appraise [...] trends stemming from [...] as they materialize (用 utilize 和 appraise 显得非常书面化，materialize 强调“具体显现”)"
+   ],
+   "para": "This note presents publicly available indicators that can help researchers and policymakers track the evolution of the generative AI buildout and its potential impact on the economy on a timely basis. We organize the indicators into three categories: capabilities and costs; firm investment and adoption; and productivity and labor. These categories map closely to the sequence often associated with general-purpose technologies (GPT) and the economy: capability improvements and cost declines precede broad firm adoption and investment, which in turn precede measurable aggregate productivity gains and labor market outcomes (Bresnahan and Trajtenberg, 1995; Lipsey et al., 2005). Whether AI qualifies as a GPT is examined in Baily et al. (2025). Here, we propose a set of public, often official, indicators that researchers can draw on to assess economic developments resulting from this technology as they unfold.",
+   "srctitle": "FEDS Note: The AI Buildout and the Economy: Publicly Available Data to Assess AI's Impact",
+   "src": "美联储研究札记",
+   "srcen": "Federal Reserve",
+   "url": "https://www.federalreserve.gov/econres/notes/feds-notes/the-ai-buildout-and-the-economy-publicly-available-data-to-assess-ais-impact-20260717.html"
   }
  ]
 }
