@@ -421,9 +421,9 @@ final class WordBookViewController: UIViewController {
     private func originLine(_ it: WordBookCore.Item) -> String {
         let said = zhFace(it)
         let tone = it.tone.trimmingCharacters(in: .whitespaces)
-        if said.isEmpty { return tone.isEmpty ? "" : L.wb_tone + "：" + tone }
+        if said.isEmpty { return tone.isEmpty ? "" : L.wb_tone + L.sep_colon + tone }
         if tone.isEmpty { return said }
-        return said + "　·　" + L.wb_tone + "：" + tone
+        return said + L.sep_dot + L.wb_tone + L.sep_colon + tone
     }
 
     private func zhFace(_ it: WordBookCore.Item) -> String {

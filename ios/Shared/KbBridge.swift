@@ -244,6 +244,31 @@ enum KbBridge {
         if seq > st.integer(forKey: K.doneSeq) { st.set(seq, forKey: K.doneSeq) }
     }
 
+    /// **提醒的一次性确认**（#90）：主 App 写，键盘上屏之后读一次就清掉。
+    ///
+    /// 🚨 为什么要专门开一条：他说话时人在**键盘里**（微信），
+    ///    主 App 的界面他根本看不到 —— 在那边弹提示等于没弹。
+    /// 🚨 **不许静默**：权限被拒也要让他看到「记下了、但到点不会弹」，
+    ///    否则他以为记下了、到点什么都没有。这是 0 定的硬要求。
+    static func setRemindHint(_ text: String) {
+        guard let st = store else { return }
+        st.set(text, forKey: "kb.remind.hint")
+        st.set(Date().timeIntervalSince1970, forKey: "kb.remind.hint.at")
+        st.synchronize()
+    }
+
+    /// 读一次就清掉。**过期不显示** —— 隔了十分钟再冒出来他会莫名其妙。
+    static func takeRemindHint(maxAge: TimeInterval = 90) -> String? {
+        guard let st = store,
+              let t = st.string(forKey: "kb.remind.hint"), !t.isEmpty
+        else { return nil }
+        let at = st.double(forKey: "kb.remind.hint.at")
+        st.removeObject(forKey: "kb.remind.hint")
+        st.synchronize()
+        guard Date().timeIntervalSince1970 - at <= maxAge else { return nil }
+        return t
+    }
+
     /// 主 App 出稿。
     static func postPending(zh: String, out: String) {
         guard let st = store else { return }

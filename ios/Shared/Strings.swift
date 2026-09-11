@@ -64,7 +64,11 @@ enum L {
         return m[Lang.zh] ?? ""
     }
 
-    static var kb_noted: String { s(["zh": "已存", "en": "Saved", "hant": "已存", "ja": "保存済み", "de": "Gespeichert", "es": "Guardado", "ar": "تم الحفظ"]) }
+    static var remind_title: String { s(["zh": "到点了", "en": "Reminder", "hant": "到點了"]) }
+    static var remind_set: String { s(["zh": "记下了，到点提醒你", "en": "Got it — I will remind you", "hant": "記下了，到點提醒你"]) }
+    static var remind_no_perm: String { s(["zh": "记下了。但通知权限没开，到点不会弹出来", "en": "Saved, but notifications are off, so it will not pop up", "hant": "記下了。但通知權限沒開，到點不會彈出來"]) }
+    static var note_added: String { s(["zh": "已加入日记本", "en": "Saved to journal", "hant": "已加入日記本", "ja": "日記に追加しました", "de": "Zum Tagebuch hinzugefügt", "es": "Añadido al diario", "ar": "أُضيف إلى اليوميات"]) }
+    static var kb_noted: String { s(["zh": "✓ 日记本", "en": "✓ Journal", "hant": "✓ 日記本", "ja": "✓ 日記", "de": "✓ Tagebuch", "es": "✓ Diario", "ar": "✓ اليوميات"]) }
     static var hs_synced: String { s(["zh": "已同步", "en": "Synced", "hant": "已同步", "ja": "同期済み", "de": "Synchronisiert", "es": "Sincronizado", "ar": "مُزامَن"]) }
     static var hs_syncing: String { s(["zh": "正在传…", "en": "Uploading…", "hant": "正在傳…", "ja": "アップロード中…", "de": "Wird hochgeladen…", "es": "Subiendo…", "ar": "جارٍ الرفع…"]) }
     static var hs_on_brief: String { s(["zh": "已开启：可以在你的其他设备上看到。", "en": "On: visible on your other devices.", "hant": "已開啟：可以在你的其他設備上看到。", "ja": "オン：他のデバイスで表示できます。", "de": "An: auf deinen anderen Geräten sichtbar.", "es": "Activado: visible en tus otros dispositivos.", "ar": "مفعّل: مرئي على أجهزتك الأخرى."]) }
@@ -157,6 +161,8 @@ enum L {
     static var about_privacy_note: String { s(["zh": "历史记录默认只留在这台设备上，想跨设备用可以自己开启云同步——每台设备要单独确认一次，不开就不会上传。", "en": "History stays on this device by default. You can turn on cloud sync if you want it across devices — each device confirms separately, and nothing is uploaded until you do.", "hant": "歷史記錄預設只留在這台裝置上，想跨裝置使用可以自己開啟雲端同步——每台裝置要單獨確認一次，不開就不會上傳。", "ja": "履歴はデフォルトでこの端末にのみ保存されます。複数端末で使いたい場合はクラウド同期を自分でオンにしてください。各端末で個別に確認が必要で、オンにするまでアップロードされません。", "de": "Der Verlauf bleibt standardmäßig nur auf diesem Gerät. Wenn du ihn geräteübergreifend nutzen möchtest, kannst du die Cloud-Synchronisierung selbst aktivieren – jedes Gerät muss einzeln bestätigen, und ohne Bestätigung wird nichts hochgeladen.", "es": "El historial permanece en este dispositivo por defecto. Puedes activar la sincronización en la nube si lo quieres entre dispositivos — cada dispositivo confirma por separado, y nada se sube hasta que lo hagas.", "ar": "يبقى السجل على هذا الجهاز افتراضياً. يمكنك تفعيل المزامنة السحابية إذا أردته عبر الأجهزة — كل جهاز يؤكد بشكل منفصل، ولا يُرفع شيء حتى تفعل ذلك."]) }
     static var about_legal_title: String { s(["zh": "法律与联系", "en": "Legal & contact", "hant": "法律與聯繫", "ja": "法務・連絡先", "de": "Rechtliches & Kontakt", "es": "Legal y contacto", "ar": "قانوني وتواصل"]) }
     static var about_contact: String { s(["zh": "联系我们", "en": "Contact us", "hant": "聯繫我們", "ja": "お問い合わせ", "de": "Kontaktiere uns", "es": "Contáctanos", "ar": "اتصل بنا"]) }
+    static var sep_colon: String { s(["zh": "：", "en": ": ", "hant": "：", "ja": "：", "de": ": ", "es": ": ", "ar": ": "]) }
+    static var sep_dot: String { s(["zh": "　·　", "en": " · ", "hant": "　·　", "ja": "　・　", "de": " · ", "es": " · ", "ar": " · "]) }
     static var about_publisher_title: String { s(["zh": "发行主体", "en": "Published by", "hant": "發行主體", "ja": "発行元", "de": "Herausgegeben von", "es": "Publicado por", "ar": "نُشر بواسطة"]) }
     static var again_translate: String { s(["zh": "再次翻译", "en": "Translate again", "hant": "再次翻譯", "ja": "再翻訳", "de": "Erneut übersetzen", "es": "Traducir de nuevo", "ar": "ترجم مرة أخرى"]) }
     static var again_doing: String { s(["zh": "再译一次…", "en": "Translating again…", "hant": "再譯一次…", "ja": "再翻訳中…", "de": "Wird erneut übersetzt …", "es": "Traduciendo de nuevo…", "ar": "جارٍ الترجمة مرة أخرى…"]) }
@@ -267,7 +273,7 @@ enum L {
     static var wb_card_retry: String { s(["zh": "再试一次", "en": "Try again", "hant": "再試一次", "ja": "再試行", "de": "Erneut versuchen", "es": "Reintentar", "ar": "إعادة المحاولة"]) }
     static var wb_card_senses: String { s(["zh": "释义", "en": "Meanings", "hant": "釋義", "ja": "意味", "de": "Bedeutungen", "es": "Significados", "ar": "المعاني"]) }
     static var note_keep: String { s(["zh": "留下来", "en": "Keep", "hant": "留下來", "ja": "残す", "de": "Behalten", "es": "Conservar", "ar": "إبقاء"]) }
-    static var note_kept: String { s(["zh": "已留下", "en": "Kept", "hant": "已留下", "ja": "残しました", "de": "Behalten", "es": "Conservado", "ar": "تم الإبقاء"]) }
+    static var note_kept: String { s(["zh": "✓ 日记本", "en": "✓ Journal", "hant": "✓ 日記本", "ja": "✓ 日記", "de": "✓ Tagebuch", "es": "✓ Diario", "ar": "✓ اليوميات"]) }
     static var note_book: String { s(["zh": "日记本", "en": "Journal", "hant": "日記本", "ja": "日記", "de": "Tagebuch", "es": "Diario", "ar": "مذكّرة"]) }
     static var note_empty: String { s(["zh": "还没有留下什么。在说话记录里点「留下来」就会收到这儿。", "en": "Nothing kept yet. Tap Keep on a recording and it lands here.", "hant": "還沒有留下什麼。在說話記錄裡點「留下來」就會收到這兒。", "ja": "まだ何も残していません。発言記録で「残す」をタップすると、ここに表示されます。", "de": "Noch nichts behalten. Tippe in einer Aufnahme auf „Behalten“, dann landet es hier.", "es": "Aún no has conservado nada. Toca Conservar en una grabación y aparecerá aquí.", "ar": "لا شيء محفوظ بعد. اضغط على «إبقاء» في سجلّ الحديث وسيظهر هنا."]) }
     static var note_search: String { s(["zh": "搜一下（连原话一起搜）", "en": "Search (searches what you said too)", "hant": "搜一下（連原話一起搜）", "ja": "検索（発言も含めて検索）", "de": "Suchen (auch im Gesprochenen)", "es": "Buscar (también busca lo que dijiste)", "ar": "بحث (يشمل ما قلته أيضًا)"]) }
@@ -491,7 +497,7 @@ enum L {
     static var notes_title: String { s(["zh": "日记本", "en": "Journal", "hant": "日記本", "ja": "日記", "de": "Tagebuch", "es": "Diario", "ar": "مذكّرة"]) }
     static var notes_empty: String { s(["zh": "还没有日记 · 在说话记录上点「留下来」", "en": "No journal entries yet — tap Keep on a record", "hant": "還沒有日記 · 在說話記錄上點「留下來」", "ja": "日記はまだありません。発言記録で「残す」をタップしてください。", "de": "Noch keine Einträge – tippe bei einer Aufnahme auf „Behalten“", "es": "Aún no hay entradas en el diario: toca Conservar en una grabación", "ar": "لا توجد إدخالات بعد — اضغط على «إبقاء» في سجلّ الحديث"]) }
     static var notes_keep: String { s(["zh": "留下来", "en": "Keep", "hant": "留下來", "ja": "キープ", "de": "Behalten", "es": "Conservar", "ar": "الاحتفاظ"]) }
-    static var notes_kept: String { s(["zh": "已留下", "en": "Kept", "hant": "已留下", "ja": "キープ済み", "de": "Behalten", "es": "Conservada", "ar": "تم الاحتفاظ"]) }
+    static var notes_kept: String { s(["zh": "✓ 日记本", "en": "✓ Journal", "hant": "✓ 日記本", "ja": "✓ 日記", "de": "✓ Tagebuch", "es": "✓ Diario", "ar": "✓ اليوميات"]) }
     static var notes_search: String { s(["zh": "搜标题或原话", "en": "Search titles or what you said", "hant": "搜標題或原話", "ja": "タイトルまたは発言を検索", "de": "Titel oder Gesagtes durchsuchen", "es": "Buscar títulos o lo que dijiste", "ar": "البحث في العناوين أو ما قيل"]) }
     static var notes_title_hint: String { s(["zh": "标题", "en": "Title", "hant": "標題", "ja": "タイトル", "de": "Titel", "es": "Título", "ar": "العنوان"]) }
     static var notes_body_hint: String { s(["zh": "他说的原话，可以接着补几句", "en": "What you said — add more if you like", "hant": "他說的原話，可以接著補幾句", "ja": "あなたの発言です。必要に応じて追加できます", "de": "Was du gesagt hast – ergänze, wenn du möchtest", "es": "Lo que dijiste: agrega más si quieres", "ar": "ما قيل — يمكنك إضافة المزيد"]) }

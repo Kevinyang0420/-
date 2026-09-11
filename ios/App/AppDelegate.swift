@@ -947,6 +947,12 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         awaitingActive = false
         let ms = Int(Date().timeIntervalSince(t0) * 1000)
         applyStandbyPolicy()
+        // 🚨🚨 **到前台了，补一次解静音**（2026-09-07，#80 真根因）。
+        //    `fire()` 是"确认已经在前台"的唯一出口 —— 它本来就是等
+        //    `didBecomeActive` 才跑的。后台那一路在 `preRollOnRecUrl()` 里
+        //    解过一次静音，但**那一下在后台不生效**，而之后没有任何人再解。
+        //    Kevin 的 RecLog：后台到达 4/4 全坏、前台到达 3/3 全好，无一例外。
+        KbVoiceHost.shared.reUnmuteNowForeground()
         KbBridge.note("起录闸：" + how + "，耗时 " + String(ms) + " ms｜此刻 "
                       + Self.appStateLine())
         RecLog.add(sec: 0, bytes: 0, result: "起录闸通过",
@@ -2485,7 +2491,10 @@ final class HomeViewController: UIViewController {
         //    这次说的是"首页多加一个"，不是"挪过去"。两个入口并存。
         // 🚨 **两张卡之间要留白**（Kevin 09-07：「隔得这么近，你们搞什么玩意儿」）。
         //    原来直接挨着 `addArrangedSubview`，用的是 root 的默认间距。
-        root.setCustomSpacing(14, after: root.arrangedSubviews.last ?? UIView())
+        // 🚨 Kevin 09-07：「你这个『查词』跟那个『随便说点啥』中间隔得这么近」。
+        //    规格＝主卡高的 20%（安卓量出来是 20dp / 100dp）。
+        root.setCustomSpacing(Self.ctaMainH * 0.20,
+                              after: root.arrangedSubviews.last ?? UIView())
         root.addArrangedSubview(ctaDict())
 
         // ── ⑧⑨ 输入法槽 52（CTA 下 12），三档同槽 ────────────────
@@ -2654,17 +2663,29 @@ final class HomeViewController: UIViewController {
                                                  animated: true)
     }
 
+    /// **首页主卡（随便说点啥）的高度** —— 查词卡和两卡间距都按它折算。
+    ///
+    /// 🚨 收成一个常量是为了**单一配置点**：三处各写一遍数字的话，
+    ///    调主卡时另外两处不跟着走，比例关系当场作废，
+    ///    而屏幕上只是“看着有点怪”，没有任何东西会报错。
+    private static let ctaMainH: CGFloat = 88
+
     /// 首页那张「查词」卡。
     ///
-    /// 🚨 样式**照安卓 `ctaDict()`**：同宽、玻璃底（不是实色）、高 72、
+    /// 🚨 样式**照安卓 `ctaDict()`**：同宽、玻璃底（不是实色）、
     ///    左右内边距 20、垂直居中。**有现成答案就照抄，不重新设计。**
+    ///    尺寸全部按 `ctaMainH` 折算，见下面那个常量。
     private func ctaDict() -> UIView {
         let b = UIButton(type: .custom)
         // 玻璃底：跟设置页那些行同一种（白 6%），**不用 accent 实色**
         b.backgroundColor = UIColor.white.withAlphaComponent(0.06)
         b.layer.cornerRadius = 18
         b.clipsToBounds = true
-        b.heightAnchor.constraint(equalToConstant: 72).isActive = true
+        // 🚨 **写成"主卡的六成"，不写死数字**（Kevin 09-07 已批的规格）。
+        //    主卡哪天调高，这张跟着走 —— 单一配置点。
+        //    原来是 72（主卡的 0.82），跟主卡几乎一样高，层级分不出来。
+        b.heightAnchor.constraint(
+            equalToConstant: Self.ctaMainH * 0.6).isActive = true
         b.accessibilityIdentifier = "app.dict"
         b.addTarget(self, action: #selector(openDictFromHome),
                     for: .touchUpInside)
@@ -2673,7 +2694,9 @@ final class HomeViewController: UIViewController {
         //    Kevin 09-07：「这个『查词』也没有一个 icon，跟那个『随便说点啥』
         //    也不统一，做的什么玩意儿」—— 他说得对，我第一版只放了一行字。
         //    **这是照抄现有形态，不是我在设计**；版式那一轮走 Grok。
-        let side: CGFloat = 72 * 0.36            // 圆径 ≈ 块高的 36%，跟主卡同比例
+        // 🚨 图标 = **主卡那颗的七成**（规格），不是"本块高的 36%"。
+        //    本块矮下去之后再按本块算，图标会跟着缩两次，小到认不出。
+        let side: CGFloat = Self.ctaMainH * 0.36 * 0.7
         let disc = UIView()
         disc.backgroundColor = UIColor.white.withAlphaComponent(0.10)
         disc.layer.cornerRadius = side / 2
@@ -2740,14 +2763,15 @@ final class HomeViewController: UIViewController {
         b.setBackgroundImage(Theme.purpleGrad, for: .normal)
         b.layer.cornerRadius = 18
         b.clipsToBounds = true
-        b.heightAnchor.constraint(equalToConstant: 88).isActive = true
+        b.heightAnchor.constraint(
+            equalToConstant: Self.ctaMainH).isActive = true
         // 🚨 给端到端测试一个**按类型的锚点**：按文字找会随文案改动而失效，
         //    而文案是常改的（`L.home_try_speak` 改过好几次）。
         b.accessibilityIdentifier = "app.try"
         b.addTarget(self, action: #selector(openSpeak), for: .touchUpInside)
 
         // ── 块内三件：圆底图标 · 主副两行 · 右箭头 ───────────────
-        let side: CGFloat = 88 * 0.36        // 规格：圆径 ≈ 块高的 36%
+        let side: CGFloat = Self.ctaMainH * 0.36   // 规格：圆径 ≈ 块高的 36%
         let disc = UIView()
         disc.backgroundColor = UIColor.white.withAlphaComponent(0.18)
         disc.layer.cornerRadius = side / 2
@@ -3483,8 +3507,12 @@ final class PrefsViewController: UIViewController {
         // 🚨 隐私政策入口。**AI 生成披露从产品界面移走之后，这一条是必需的**
         //    —— 条款 8.1 要的是「向终端用户明确披露」，
         //    藏在一个够不着的文档里不叫披露。
-        list.addArrangedSubview(row(L.prefs_privacy, nil,
-                                    #selector(openPrivacy)))
+        let pvRow = row(L.prefs_privacy, nil, #selector(openPrivacy))
+        // 🚨 给它一个标识，好让用例**按标识**点进去。
+        //    按可见文案点的话，改一次文案（或者切成日语/阿语）用例就找不着，
+        //    而失败信息会写成"隐私政策页打不开"—— **指错层**。
+        pvRow.accessibilityIdentifier = "prefs.row.privacy"
+        list.addArrangedSubview(pvRow)
 
         // 🚨🚨 **关掉同步的唯一入口** —— 必须有，而且**故意放在最下面**。
         //
@@ -3498,11 +3526,19 @@ final class PrefsViewController: UIViewController {
         //    🚨 按他的要求**不加高亮、不加角标、不往上放** ——
         //    "难找"是需求的一部分，不是我偷懒。
         //    但**只在开着的时候出现**：没开过的人看到"取消同步"只会困惑。
-        if HistSync.isOn {
-            let offRow = row(L.hs_off_1, L.hs_off_2, #selector(tapSyncOff))
-            offRow.accessibilityIdentifier = "prefs.row.syncoff"
-            list.addArrangedSubview(offRow)
-        }
+        // 🚨🚨 **这一行已挪进隐私政策页**（#97②a，Kevin：「不要放在
+        //    「关于」这个大栏目里，把它放到「隐私政策」的小 tab 里面，
+        //    让用户在那边统一操作」）。这里**故意不再画**，
+        //    否则同一个动作两个入口，关了一个另一个还亮着。
+        //
+        //    🚨 顺带修掉一个显示错误（他 09-07 亲口抓到）：
+        //    原来这一行的标题是 `hs_off_1`「已停止同步。」——
+        //    **那是"点下去之后的结果"，却被当成"当前状态"显示**，
+        //    于是同步开着的时候，它反而告诉他"已停止同步"。
+        //    新的那一行把**状态**（已同步 ✓ 绿勾）和**动作**（停止符号）分开画。
+        //
+        //    🚨 关同步这条路**没有丢**：它是 iOS 关闭同步的唯一入口，
+        //    丢了的话说话记录那屏点完就隐藏，功能会被永久藏死。
     }
 
     /// 关掉同步。
@@ -3510,6 +3546,12 @@ final class PrefsViewController: UIViewController {
     /// 🚨 走 `HistSync.turnOff()`（**同时复位 one-off**），不是 `set(false)` ——
     ///    只关开关的话，说话记录那屏的开启入口**永远不会再出现**，
     ///    等于把功能永久藏死。
+    ///
+    /// 🚨🚨 **2026-09-07 起零调用点**：这个动作挪到了
+    ///    `PrivacyViewController.tapStop()`（#97②a，Kevin 要求归到隐私那一类）。
+    ///    **先留着不删** —— 零调用点的东西多半是"改回去了但死代码没删"，
+    ///    而删死代码我栽过（正则贪婪吃掉隔壁函数）。
+    ///    等 #97 真机验过、确认新入口好用，再由谁顺手删掉这一个。
     @objc private func tapSyncOff() {
         HistSync.turnOff()
         let a = UIAlertController(title: L.hs_off_1, message: L.hs_off_2,
@@ -3673,9 +3715,14 @@ final class PrefsViewController: UIViewController {
         }
     }
 
+    /// 打开隐私政策 —— **端内页，不跳浏览器**（#97①，Kevin 亲口：
+    /// 「现在点进去会在浏览器打开新窗口，不要这么搞…**不要跳出 App**」）。
+    ///
+    /// 🚨 `Self.privacyURL` 这个常量**留着别删**：`PrivacyViewController`
+    ///    在文档没打进包时会把它摆出来，而且外部分享链接还用它。
     @objc private func openPrivacy() {
-        guard let u = URL(string: Self.privacyURL) else { return }
-        UIApplication.shared.open(u)
+        navigationController?.pushViewController(PrivacyViewController(),
+                                                 animated: true)
     }
 
     @objc private func openSetup() {
@@ -4077,7 +4124,19 @@ final class MainViewController: UIViewController {
         heardLabel.textAlignment = .center
         heardLabel.numberOfLines = 4
 
-        resultView.font = .systemFont(ofSize: 17)
+        // **iOS 这一屏三档字号：原话 15 · 结果 20 · 状态 15**（2.1 09-07 定）。
+        //
+        // 🚨🚨 **20 这个数是 2.1 按 iOS 底数折的，不是 Kevin 说的。**
+        //    他批的是效果图上的样子，而那张图是**安卓**的（12→13 / 16→18 / 13 不动）。
+        //    iOS 该复制的是「结果明显比原话大、整体变大」这个观感，**不是那两个数字** ——
+        //    照字面把原话改成 13，在 iOS 上是从 15 **变小**，方向正好反了
+        //    （他的原话是「那么大的框但字这么小，稍微变大一点点吧」）。
+        //    → 不缩小任何一档：原话/状态 15 不动，结果 17→20（+3 档，还算"稍微"）。
+        //      比值 15/20 = 0.75，目标 0.72；21 更准但跳 4 档、19 只到 0.79 主次不够开。
+        //
+        // 🚨 **真机给他看一眼再定** —— 跟绿勾那 1.2 秒同一个处理：
+        //    别让"2.1 折的数"过几轮就变成"一直就是这么定的"。
+        resultView.font = .systemFont(ofSize: 20)
         resultView.textColor = Theme.text
         resultView.backgroundColor = Theme.panel
         resultView.layer.cornerRadius = 12
@@ -4202,21 +4261,33 @@ final class MainViewController: UIViewController {
         paintOutputButtons()
         speakButton.addTarget(self, action: #selector(tapSpeak), for: .touchUpInside)
 
-        bigButton.setTitle(L.home_wordbook, for: .normal)
+        // 🚨🚨 **这一颗原来也叫「单词本」，跟右边那颗一模一样**
+        //    （2.1 09-07 抓到：4211 用 home_wordbook、4218 用 kb_keep，
+        //     两个键的中文都是「单词本」，同屏两颗同名，用户分不出）。
+        //    成因是把 Kevin 的 #89「不要叫收藏了」和 #91「大字改成单词本」
+        //    当成两件事各做一遍 —— 其实是同一件事说了两次。
+        //    他最后定的是 **[单词本][日记本] 两颗**。
+        bigButton.setTitle(L.note_book, for: .normal)
         bigButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        // 🚨 图标用 **SF Symbols 对语义**，不另发明形状（2.1 规格）。
+        //    转写区这一档 20pt，图标右侧 6pt 跟文字。
+        applyChipIcon(bigButton, systemName: "bookmark")
         bigButton.setTitleColor(Theme.text, for: .normal)
         bigButton.backgroundColor = Theme.key
         bigButton.layer.cornerRadius = 16
         paintOutputButtons()
         keepButton.setTitle(L.kb_keep, for: .normal)
         keepButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        applyChipIcon(keepButton, systemName: "character.book.closed")
         keepButton.setTitleColor(Theme.text, for: .normal)
         keepButton.backgroundColor = Theme.key
         keepButton.layer.cornerRadius = 16
         keepButton.addTarget(self, action: #selector(tapKeep),
                              for: .touchUpInside)
 
-        bigButton.addTarget(self, action: #selector(tapOpenWordbook),
+        // 🚨 动作跟着文案一起换 —— 只改字不改动作的话，
+        //    按钮写着「日记本」点下去却打开单词本，比原来还糟。
+        bigButton.addTarget(self, action: #selector(tapKeepNote),
                             for: .touchUpInside)
 
         // 🚨 按钮文字**就是当前方向**（Kevin 2026-08-26：
@@ -4532,7 +4603,7 @@ final class MainViewController: UIViewController {
         if Speaker.isPlaying {
             Speaker.stop()
             paintOutputButtons()     // 标题由唯一出口按 isPlaying 决定
-            bigButton.setTitle(L.home_wordbook, for: .normal)
+            bigButton.setTitle(L.note_book, for: .normal)
             revButton.setTitle(
                 reversed ? L.try_dir_them : L.try_dir_me,
                 for: .normal)
@@ -5673,6 +5744,56 @@ final class MainViewController: UIViewController {
     /// 🚨 **按真实结果显示**，不是先宣布成功 —— 安卓键盘那边我犯过这个错：
     ///    无条件把按钮改成「已收」，而 `add` 可能返回 error/empty/nogroup，
     ///    用户以为收了、本子里没有。
+    /// **给这一排小按钮统一贴图标** —— 一个出口。
+    ///
+    /// 🚨 两颗各写一遍配置的话，尺寸/间距迟早漂 ——
+    ///    「同一规矩两端各一份 = 必漂」在这一个文件里也成立。
+    private func applyChipIcon(_ b: UIButton, systemName: String) {
+        let cfg = UIImage.SymbolConfiguration(pointSize: 20, weight: .regular)
+        b.setImage(UIImage(systemName: systemName, withConfiguration: cfg),
+                   for: .normal)
+        b.tintColor = Theme.text
+        b.imageEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 6)
+        b.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
+    }
+
+    /// 把这一条**存进日记本**（转写区左边那颗）。
+    ///
+    /// 🚨 正文用**他说的原话**（`lastZh`），不是译文 —— 跟说话记录那屏
+    ///    的「留下来」同口径（那边注释写着：记事本记的是"他想说什么"，
+    ///    搜索判据也要求搜得到原话）。原话为空才退回译文。
+    /// 🚨 日记本的条目 id 是**从历史 id 推的**，所以必须找到刚落下的那条历史；
+    ///    找不到就**说一句然后停**，不许拿当前时间凑一个 id ——
+    ///    那样每点一次就多一条，"重复点不长第二条"这条规格当场失效。
+    @objc private func tapKeepNote() {
+        guard !lastOut.isEmpty else { return }
+        guard let it = History.list().first(where: { $0.out == lastOut })
+        else {
+            KbBridge.note("存日记本：找不到对应的历史条目，没存")
+            toastOnce(L.wb_save_failed)
+            return
+        }
+        let hid = String(Int(it.ts))
+        let body = it.zh.isEmpty ? it.out : it.zh
+        let ok = Notes.keep(historyId: hid, body: body, at: it.ts / 1000.0)
+        if !ok { KbBridge.note("存日记本：正文是空的，没存") }
+        // 🚨 提示语用 note_added「已加入日记本」，**不是** note_kept ——
+        //    后者是「✓ 日记本」，那是【按钮上的状态标签】，当提示语不成句。
+        //    对照单词本那边：wb_added 是按钮、wb_saved「已收进单词本」才是提示。
+        //    **同一族的两个键长得像，混用不会报错、只会说人话说不通。**
+        toastOnce(ok ? L.note_added : L.wb_save_failed)
+    }
+
+    /// 一闪而过的提示。两处都要用，收成一个。
+    private func toastOnce(_ msg: String) {
+        let a = UIAlertController(title: nil, message: msg,
+                                  preferredStyle: .alert)
+        present(a, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            a.dismiss(animated: true)
+        }
+    }
+
     @objc private func tapKeep() {
         guard !lastOut.isEmpty else { return }
         let r = WordBook.add(zh: lastZh, en: lastOut, span: "full",

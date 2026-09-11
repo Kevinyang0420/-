@@ -82,7 +82,7 @@ final class Voice: NSObject {
             //    出现在界面上只会让他觉得这软件在讲黑话。
             //    **但原始 stage + detail 必须进诊断**（判据 ERR1，
             //    见 `_文案_随手翻译屏的提示与错误.md`）。
-            if detail.contains("没听清") { return L.err_empty }
+            if FailureText.isEmptyAsr(detail) { return L.err_empty }
             switch stage {
             case .permissionAsk:    return L.err_mic_ask
             case .permissionDenied: return L.err_mic_denied
@@ -1040,6 +1040,34 @@ final class Voice: NSObject {
         }
     }
 
+    /// **解静音之后读回来确认一次**，没解开就再试一次。
+    ///
+    /// 🚨🚨 **这个读回值要打折看**：`isInputMuted` 是同一个 API 的读侧，
+    ///    很可能只是回放我刚设进去的值（**同源自比**）。所以 ——
+    ///      · 它报 `true`  → **有意义**，坐实"请求了解静音但没解开"
+    ///      · 它报 `false` → **不等于**麦克风真的在收声
+    ///    真正的判据仍然是「有没有出现非静音的帧」（见 `firstVoicedLogged`）。
+    ///    写下这一条是为了别让下一个人拿它当"已经验过了"。
+    static func confirmUnmuted(coldStart: Bool) {
+        guard #available(iOS 17.0, *) else { return }
+        if !AVAudioApplication.shared.isInputMuted {
+            KbBridge.note("解静音确认：读回=没静音（"
+                          + (coldStart ? "冷启动" : "热引擎")
+                          + "）。🚨 这只说明设进去了，不代表真在收声")
+            return
+        }
+        KbBridge.note("🚨 解静音确认：读回**仍是静音**（"
+                      + (coldStart ? "冷启动" : "热引擎") + "）—— 再试一次")
+        do {
+            try AVAudioApplication.shared.setInputMuted(false)
+            KbBridge.note("解静音重试：读回="
+                          + (AVAudioApplication.shared.isInputMuted
+                             ? "🚨 还是静音，这一段多半会全零" : "这次解开了"))
+        } catch {
+            KbBridge.note("解静音重试失败 —— " + error.localizedDescription)
+        }
+    }
+
     /// 只给静音探针用：开录时**不要**自动解静音（默认 false，产品路径不受影响）。
     static var suppressAutoUnmute = false
 
@@ -1102,6 +1130,19 @@ final class Voice: NSObject {
     /// **前台把引擎架起来，进待命档。** 必须在 App 前台调用。
     func armIdle(reuseSession: Bool, done: @escaping (String?) -> Void) {
         if arming && engine.isRunning { return done(nil) }
+        // 🚨🚨 **正在录音时不许来架待命档**（2026-09-07，补 #80 修法的洞）。
+        //
+        //    我上一处改动是让 0.4 秒那个收尾块「正在录音就别动」，判据读 keeping。
+        //    但**这一行会把 keeping 置回 false** —— 而 armIdle 和前摇是并发的：
+        //    只要它跑在最后一次 beginKeep 之后，那个保护就读到 false、当场失效。
+        //    **判据被同一个函数的另一行悄悄废掉**，是我自己查出来的，不是它报的。
+        //
+        //    正在录就整个早退：待命引擎的作用是平时架着，
+        //    而此刻引擎本来就在跑、还在给他收音，没有任何理由重架一遍。
+        if keeping && engine.isRunning {
+            KbBridge.note("架待命档：**正在录音，整个跳过**（别把他说的话掐掉）")
+            return done(nil)
+        }
         keeping = false
         arming = true
         start(onPartial: { _ in }, reuseSession: reuseSession) { r in
@@ -1117,6 +1158,32 @@ final class Voice: NSObject {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             if self.engine.isRunning {
+                // 🚨🚨 **正在录音就什么都别做**（2026-09-07，#80 真根因）。
+                //
+                //    冷启动那一路：起录URL 在后台到达 → 一边 `armIdle()` 架待命档，
+                //    一边前摇已经开始录了。0.4 秒后这个收尾块醒来，
+                //    `pause()` + `setMicMuted(true)` **把他正在说的话掐掉** ——
+                //    他后面几秒说进的是一只被静音的麦克风。
+                //
+                //    Kevin 19:00:24 那次的日志（这一段是铁证，不是推断）：
+                //      19:00:24 开头诊断：开录到第一帧有声 80 ms   ← 声音真进来了
+                //      19:00:25 系统麦克风：已静音（待命中，不听）  ← 被这里掐掉
+                //      19:00:28 收工 125088 字节 → 第 1 段未转写成功
+                //    全项目只有两处会静音，而「待命中，不听」这个落款只有这一处。
+                //
+                //    前台那几次为什么好：引擎早架好了，上面
+                //    `if arming && engine.isRunning { return done(nil) }` 直接返回，
+                //    **这个收尾块根本不会跑**。—— 4/4 后台全坏、3/3 前台全好，
+                //    分界就在这儿。
+                //
+                // 🚨 **不是"延后再静音"，是这一轮直接不做**：录完之后
+                //    `endKeep` 那条路会走 `setMicMuted(true, why: "录完了，回到不听")`，
+                //    静音这件事**本来就有人管**，这里补一刀纯属重复。
+                if self.keeping {
+                    KbBridge.note("待命档收尾：**正在录音，不暂停也不静音**"
+                                  + "（原来这一刀会把他说的话掐掉）")
+                    return done(nil)
+                }
                 if Voice.pauseWhenIdle && !Voice.pauseProvenBad { self.engine.pause() }
                 // 🚨 架好之后**立刻系统级静音** —— 平时绝不听。
                 Voice.setMicMuted(true, why: "待命中，不听")
@@ -1165,18 +1232,55 @@ final class Voice: NSObject {
         //    真正要量的是：解静音之后，多久才出现第一帧非静音。
         keepStartedAt = Date()
         firstVoicedLogged = false
-        // 🚨 探针专用：要测「静着录出来是什么」，就不能让开录这一步把静音解掉。
-        //    产品路径 `suppressAutoUnmute` 恒为 false，不受影响。
-        if !Voice.suppressAutoUnmute {
-            Voice.setMicMuted(false, why: "他按下了录音")
-        }
-        if !engine.isRunning {
+        // 🚨🚨 **这一轮的电平统计要清零**（2026-09-07 查出来的量测缺陷）。
+        //
+        //    speech 原来**只在 Voice.start() 里清** —— 那是非待命档那条路。
+        //    而他日常走的是待命档：引擎架一次能活好几轮，
+        //    beginKeep() 一轮一轮地开闸，**统计却从来不清**。
+        //    于是「这一段电平 peak=…」量的根本不是「这一段」，
+        //    是**引擎架起来到现在的累计**，还把待命期间那些静音帧算了进去。
+        //
+        //    0 让我在分析「坏的那次 peak=0.0662、好的那次 0.5928，低一个数量级」
+        //    之前先排掉这条 —— **排掉了：那两个数不可比**，
+        //    它们的统计窗口长短不同、含不含待命静音段也不同。
+        //    **拿它下增益偏低的结论是错的。**
+        //
+        // 🚨 这是今天第六次同族：**量的对象跟结论说的对象不是一个**。
+        //    清零之后它才真的是这一段，下次再出现低电平才有讨论价值。
+        speech = SpeechPresence.Stats()
+        // 🚨🚨 **顺序：先把引擎跑起来，再解静音**（2026-09-07 翻案）。
+        //
+        //    原来是反的（先解静音、后 `engine.start()`）。冷启动那条路
+        //    （主 App 被关过、引擎不在跑）会走到 `engine.start()`，
+        //    而那一步会激活/重建音频会话 ——
+        //    **在会话激活之前设的静音状态很可能不生效或被覆盖**，
+        //    结果就是引擎跑着、buffer 一直在出、**全是零**。
+        //
+        //    Kevin 的三个现象逐条对得上：
+        //      · 说话过程中**没有波浪线**（全零）
+        //      · 4.7 秒 146KB，**长度是全的**（引擎确实在跑）
+        //      · 识别不出，提示"第一段未转出"
+        //    也解释了为什么"引擎已经在跑"那几次是好的 ——
+        //    那时解静音有效、`engine.start()` 根本不执行。
+        //
+        //    🚨 我先前按「开头被吃掉 83~182ms」修的前摇**不是这个根因**。
+        //       前摇留着（它让起录指令一到就开始留音，本身没错），
+        //       但它救不了"整段都是静音"。**两个毛病，别混成一个。**
+        let coldStart = !engine.isRunning
+        if coldStart {
             do { try engine.start() } catch {
                 // 🚨 恢复不了就**永久退回"不暂停"档**，并说清楚。
                 //    不这么做的话每次录音都要先失败一次。
                 Voice.pauseProvenBad = true
                 return "从暂停恢复失败：" + (error as NSError).description.prefix(80).description
             }
+        }
+        // 🚨 探针专用：要测「静着录出来是什么」，就不能让开录这一步把静音解掉。
+        //    产品路径 `suppressAutoUnmute` 恒为 false，不受影响。
+        if !Voice.suppressAutoUnmute {
+            Voice.setMicMuted(false, why: coldStart ? "开录·冷启动（引擎刚起）"
+                                                    : "开录·热引擎")
+            Voice.confirmUnmuted(coldStart: coldStart)
         }
         keeping = true
         return nil
@@ -1300,7 +1404,8 @@ final class Voice: NSObject {
         }
         // 太短 = 没说话（不足约 0.5 秒）
         if plan == .tooShort {
-            onWav?(.failure(Failure(stage: .none, detail: "没听清，再说一次")))
+            onWav?(.failure(Failure(stage: .none,
+                                    detail: FailureText.Local.emptyAsr)))
             onWav = nil; onPartial = nil
             return
         }

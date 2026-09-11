@@ -70,6 +70,14 @@ final class Segments {
         self.transcribe = transcribe
     }
 
+    /// **诊断出口**。默认什么都不做。
+    ///
+    /// 🚨 这个文件**也编进不含  的测试目标** —— 直接调 KbBridge
+    ///    会让测试目标编不过（2026-09-07 实撞：设备包好好的，测试全红，
+    ///    而报错指向 Segments，看起来像分段逻辑坏了）。
+    ///    **纯逻辑文件不许依赖只有 App 才有的东西**，诊断靠注入。
+    static var note: (String) -> Void = { _ in }
+
     var count: Int { lock.lock(); defer { lock.unlock() }; return slots.count }
 
     /// 交一段进来，**立刻去转**，不等。
@@ -81,8 +89,25 @@ final class Segments {
         //    完全指不出真正的毛病（麦克风没解开静音）。
         // 🚨 判据走 `SilenceVerdict`，跟短录音那条**同一处阈值**，
         //    不在这里另写一个数。
+        // 🚨🚨 **先砍掉开头那段纯零，再判、再发**（2026-09-07，Kevin 实撞）。
+        //    前摇会从"起录指令到达"那一刻就开始留音，而那时麦克风
+        //    可能还没真出数据 —— 开头灌进几秒纯零，零占比一算 99%，
+        //    这一段就被判成"麦克风什么都没收到"、**连请求都不发**，
+        //    他说的话整段被扔。而同一段音频，电平那条判据说"判定说了话"。
+        //    **两个实现相反的结论，错的那个决定了发不发。**
+        //
+        // 🚨 判据和发出去的内容用**同一份砍过的音频** ——
+        //    分开用两份是"判的和发的不是一个"，那类问题查起来最费劲。
+        let trimmed = AudioStats.trimLeadingZeros(wav)
+        let cutMs = AudioStats.trimmedMs(wav, trimmed)
+        let wav = trimmed
         let zp = AudioStats.zeroPct(wav)
         let silent = SilenceVerdict.micGotNothing(zeroPct: zp)
+        if cutMs > 0 {
+            Segments.note("分段：砍掉开头 " + String(cutMs) + " 毫秒纯零"
+                          + "（前摇留的空档）｜砍后零占比=" + String(zp)
+                          + "% → " + (silent ? "仍判静音" : "判定有声，照发"))
+        }
         lock.lock()
         let s = Slot(slots.count)
         slots.append(s)

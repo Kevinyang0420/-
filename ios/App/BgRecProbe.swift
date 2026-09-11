@@ -134,7 +134,7 @@ final class BgRecProbe {
                     //    那恰恰说明起录成功 —— 别把它记成失败，
                     //    否则整夜的数据全是假的失败。
                     let s = "\(f)"
-                    let reallyOK = s.contains("没听清")
+                    let reallyOK = FailureText.isEmptyAsr(s)
                     self.record(ok: reallyOK, note: reallyOK ? "" : s,
                                 state: state, bgMin: mins)
                 }

@@ -43,6 +43,10 @@ final class HistoryListViewController: UIViewController {
     ///    规格 `_规格_历史同步开关UI_20260906.md` 原来写的是"设置页隐私组"，
     ///    **以他最后说的为准**。
     private let syncRow = UIControl()
+    /// 同步那一行**显示时**用的：标签排在它下面。
+    private var tabsTopWithRow: NSLayoutConstraint!
+    /// 同步那一行**隐藏时**用的：标签直接贴安全区顶，**不给它留位置**。
+    private var tabsTopNoRow: NSLayoutConstraint!
     private let syncLabel = UILabel()
 
     private let scroll = UIScrollView()
@@ -116,6 +120,22 @@ final class HistoryListViewController: UIViewController {
             syncLabel.trailingAnchor.constraint(equalTo: syncRow.trailingAnchor,
                                                 constant: -14),
         ])
+        // 🚨🚨 **藏起来还占位** —— Kevin 09-07：「已同步完之后，为什么它还在
+        //    上面留这么大的空间呢？这个时候就该把空间往上移一点了嘛」
+        //
+        //    根因：isHidden 只有在 UIStackView 的 arrangedSubview 上才收走空间。
+        //    这一屏是普通 Auto Layout：tabs 的顶边挂在 syncRow 的底边上，
+        //    而 syncRow 的高度由 syncLabel 的 top/bottom ±10 撑着 ——
+        //    **隐藏之后高度和两个 10pt 间距原样保留**，就是他看到的那块空白。
+        //    安卓那边用 View.GONE，天然连 margin 一起收走，所以只有 iOS 有这毛病。
+        //
+        //    改法：两条互斥约束 —— 显示时挂 syncRow 底边，隐藏时直接挂安全区顶。
+        //    🚨 两条的常数都是 10，所以隐藏后 tabs 顶到安全区顶的距离，
+        //       跟「压根没有同步入口」时**一模一样**（0 给的判据就是量这个差＝0）。
+        tabsTopWithRow = tabs.topAnchor.constraint(
+            equalTo: syncRow.bottomAnchor, constant: 10)
+        tabsTopNoRow = tabs.topAnchor.constraint(
+            equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10)
         paintSync()
 
         paintTabs()          // 🚨 建完就画一次初始选中态，别等第一次点击
@@ -128,7 +148,7 @@ final class HistoryListViewController: UIViewController {
             syncRow.trailingAnchor.constraint(equalTo: g.trailingAnchor,
                                               constant: -Theme.pad),
 
-            tabs.topAnchor.constraint(equalTo: syncRow.bottomAnchor, constant: 10),
+
             tabs.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: Theme.pad),
             tabs.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -Theme.pad),
             tabs.heightAnchor.constraint(equalToConstant: 34),
@@ -175,12 +195,25 @@ final class HistoryListViewController: UIViewController {
         //    现在三态：没点过 → 正在传 → 已同步✓ → 自动隐藏。
         if HistSync.oneOffDone {
             // 走完一次就收起来（one-off）。要关同步去设置页找。
-            syncRow.isHidden = true
+            setSyncRow(visible: false)
             return
         }
-        syncRow.isHidden = false
+        setSyncRow(visible: true)
         syncLabel.text = L.hs_title + " · " + L.hs_off_now
         syncLabel.textColor = Theme.dim
+    }
+
+    /// **同步那一行显示/隐藏的唯一出口。**
+    ///
+    /// 🚨 藏它必须同时做两件事：`isHidden` 和**换约束**。
+    ///    只写 `isHidden = true`（原来两处都是这么写的）行是看不见了，
+    ///    可它的高度和上下两个 10pt 间距还占着 —— 那正是他看到的空白。
+    ///    所以收成一个方法：**谁也不许再单独写 `syncRow.isHidden`**。
+    private func setSyncRow(visible: Bool) {
+        syncRow.isHidden = !visible
+        // 🚨 先关后开，顺序反了会有一帧两条同时生效 → 约束冲突警告。
+        (visible ? tabsTopNoRow : tabsTopWithRow)?.isActive = false
+        (visible ? tabsTopWithRow : tabsTopNoRow)?.isActive = true
     }
 
     /// 打开之后那段动画：正在传 → 已同步✓ → 淡出收起。
@@ -199,12 +232,34 @@ final class HistoryListViewController: UIViewController {
             self.syncLabel.text = "✓ " + L.hs_synced
             self.syncLabel.textColor = .systemGreen
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                UIView.animate(withDuration: 0.3, animations: {
+                // 🚨🚨 **收起这一步原来是"噔一下"跳上去的**（Kevin 09-07 亲口：
+                //    「现在的画面像楼梯一样噔一下直接跳上去了，有点太草台」）。
+                //
+                //    病根：换约束和 `layoutIfNeeded()` 写在**淡出的 completion 里**
+                //    —— 淡出动画结束之后才改布局，而那一步**不在任何动画块里**，
+                //    于是下面整块内容**瞬移**到新位置。看着就是一级台阶。
+                //
+                //    改法：**两段接力，各自都在动画里**
+                //      ① 淡出（0.28s，easeOut）—— 那一行"淡淡地退掉"
+                //      ② 收起并上滑（0.34s，easeInOut）—— 换约束 **+
+                //         `layoutIfNeeded()` 写在动画块【内】**，
+                //         下面那块才会平滑地滑上来，而不是跳。
+                //    🚨 关键就是 `layoutIfNeeded()` 在不在动画块里：
+                //       在里面 = 逐帧插值；在外面（原来那样）= 一帧到位。
+                UIView.animate(withDuration: 0.28, delay: 0,
+                               options: [.curveEaseOut], animations: {
                     self.syncRow.alpha = 0
                 }, completion: { _ in
                     HistSync.oneOffDone = true
-                    self.syncRow.isHidden = true
-                    self.syncRow.alpha = 1        // 复位，下次还能用
+                    UIView.animate(withDuration: 0.34, delay: 0,
+                                   options: [.curveEaseInOut], animations: {
+                        // 🚨 走**同一个出口** —— 单独写 syncRow.isHidden 的话，
+                        //    约束不会跟着换，空白就留下了（原来正是这么漏的）。
+                        self.setSyncRow(visible: false)
+                        self.view.layoutIfNeeded()      // ← 必须在块【内】
+                    }, completion: { _ in
+                        self.syncRow.alpha = 1          // 复位，下次还能用
+                    })
                 })
             }
         }
@@ -513,9 +568,8 @@ final class HistoryListViewController: UIViewController {
         //    不另写判断。两处各写一套 id 的话，"已加入"会在两屏给出不同答案。
         var addBtn: UIButton?
         if showAdd {
-            let b = UIButton(type: .system)
+            let b = HitPadButton(type: .system)
             b.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
-            b.contentEdgeInsets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)
             b.layer.cornerRadius = 13
             b.translatesAutoresizingMaskIntoConstraints = false
             b.accessibilityIdentifier = "hist.add.wordbook"
@@ -535,9 +589,8 @@ final class HistoryListViewController: UIViewController {
         //    重复点会把它顶到列表最前 —— 他再点一次多半是"我又想到这条了"。
         var keepBtn: UIButton?
         if showAdd {
-            let k = UIButton(type: .system)
+            let k = HitPadButton(type: .system)
             k.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
-            k.contentEdgeInsets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)
             k.layer.cornerRadius = 13
             k.translatesAutoresizingMaskIntoConstraints = false
             k.accessibilityIdentifier = "hist.keep.note"
@@ -619,8 +672,12 @@ final class HistoryListViewController: UIViewController {
 
     /// 「留下来」的两态 —— 跟「＋单词本」同一套画法（同一个手势、同一种反馈）。
     private func paintKeep(_ b: UIButton, kept: Bool) {
-        b.setTitle(kept ? L.note_kept : L.note_keep, for: .normal)
+        // 未留时用 `note_book`「日记本」（原来是 `note_keep`「留下来」，
+        // 五个字，正是他点名嫌长的那种）；已留时 `note_kept`「已留下」是状态。
+        b.setTitle(kept ? L.note_kept : L.note_book, for: .normal)
+        histRowIcon(b, systemName: "bookmark")
         b.setTitleColor(kept ? Theme.dim : Theme.accent, for: .normal)
+        b.tintColor = kept ? Theme.dim : Theme.accent
         b.backgroundColor = kept
             ? UIColor.white.withAlphaComponent(0.06)
             : Theme.accent.withAlphaComponent(0.16)
@@ -660,9 +717,38 @@ final class HistoryListViewController: UIViewController {
         paintKeep(b, kept: Notes.kept(historyId: hid))
     }
 
+    /// 历史行那两颗的小图标 —— **18pt，热区靠 padding 撑到 ≥36pt**。
+    ///
+    /// 🚨 别把图标本身做成 36：那样它在一行里比文字还抢眼，
+    ///    而他要的正好相反（「放一个**小** icon 就好」）。
+    ///    热区 = 18 图标 + 上下 4 内边距 + 文字那一截，横向早过 36；
+    ///    竖向 4+18+4 = 26 不够，所以这里把上下内边距提到 9（9+18+9 = 36）。
+    /// 🚨 转写区那一排是 20pt（`applyChipIcon`），**两档不同是规格定的**，
+    ///    不是漂移 —— 谁想"统一"之前先看 2.1 的规格。
+    private func histRowIcon(_ b: UIButton, systemName: String) {
+        // 🚨 **13pt，跟自己的文字同号，也跟旁边那个档位 chip 同号**。
+        //    原来是 18 —— Kevin 09-07：「这个 icon 太大了…太引人注目了，
+        //    搞成跟那个翻译那个小按钮差不多大小」。
+        //    量过：chip 是 13pt 字 + 上下 4 = 总高 26；我那版 18pt 图标 +
+        //    上下 9 = 总高 36，**高了 10pt、图标还比字大一圈**。
+        let cfg = UIImage.SymbolConfiguration(pointSize: 13, weight: .regular)
+        b.setImage(UIImage(systemName: systemName, withConfiguration: cfg),
+                   for: .normal)
+        b.imageEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 5)
+        // 上下 4 → 总高 26，跟 chip 齐平
+        b.contentEdgeInsets = UIEdgeInsets(top: 4, left: 10, bottom: 4, right: 10)
+    }
+
     private func paintAdd(_ b: UIButton, added: Bool) {
-        b.setTitle(added ? L.wb_added : L.wb_add, for: .normal)
+        // 🚨 **短文案 + 小图标**（#87，Kevin 亲口：「不需要打那么多字…
+        //    直接写「日记本」，或者放一个小 icon 就好」）。
+        //    未加时用 `kb_keep`「单词本」—— **跟转写区那颗同一个键**，
+        //    两处各用一个键的话，2.1 改一次文案必然漏一处。
+        //    已加时仍用 `wb_added`「已加入」：那是**状态**不是名字，得说清楚。
+        b.setTitle(added ? L.wb_added : L.kb_keep, for: .normal)
+        histRowIcon(b, systemName: "character.book.closed")
         b.setTitleColor(added ? Theme.dim : Theme.accent, for: .normal)
+        b.tintColor = added ? Theme.dim : Theme.accent   // 图标跟文字同色
         b.backgroundColor = added
             ? UIColor.white.withAlphaComponent(0.06)
             : Theme.accent.withAlphaComponent(0.16)
@@ -770,3 +856,21 @@ final class WbRowTap: UITapGestureRecognizer {
         onPick?(id)
     }
 }
+
+
+/// **看着小、点着大** —— 视觉 26pt 高，可点区域往上下各扩 5pt（＝36pt）。
+///
+/// 🚨 为什么不用 padding 撑热区：padding 会**连视觉一起撑大**，
+///    而 Kevin 嫌的正是"太引人注目"。
+///    「一个控件看起来多大」和「它能点的范围多大」是两件事，
+///    要分开设 —— 拿 padding 同时管两件，必然只能满足其中一个。
+final class HitPadButton: UIButton {
+    /// 上下各往外扩这么多。左右不扩：两颗按钮是挨着放的，
+    /// 横向扩会让两个热区叠在一起，点右边那颗可能触发左边那颗。
+    private let padY: CGFloat = 5
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        return bounds.insetBy(dx: 0, dy: -padY).contains(point)
+    }
+}
+

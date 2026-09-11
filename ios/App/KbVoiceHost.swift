@@ -459,6 +459,29 @@ final class KbVoiceHost {
     /// 🚨 幂等：`begin()` 后面还会走正常那条路，重复调 `beginKeep`
     ///    只是把缓冲清空重来，不会崩 —— 但会**把前摇丢掉**，
     ///    所以那边要认这个标记，别再清一次。
+    /// **到前台了，补一次解静音。**
+    ///
+    /// 🚨 Kevin 09-07 的 RecLog 把分界钉死了（按"起录URL到达那一刻在哪"分组）：
+    ///    **后台到达 4/4 全坏、前台到达 3/3 全好**，没有一个例外。
+    ///
+    ///    后台那一路：`preRollOnRecUrl()` 在后台调了 `setMicMuted(false)`，
+    ///    **那一下不生效**（读回却说"没静音" —— 同源自比，它只是回放我写进去的值）。
+    ///    125 毫秒后 App 真到了前台，**却没有任何人再解一次** → 整轮全是零。
+    ///
+    /// 🚨 **无条件补**，不判"现在静音吗" —— 那个读回值已经骗过我一次，
+    ///    拿它当前置条件等于把判据挂在不可信的东西上。多解一次没有副作用。
+    /// 🚨 判据不看这里的读回值，看**之后有没有出现非静音的帧**
+    ///    （`开头诊断：开录到第一帧有声 N ms`）。
+    func reUnmuteNowForeground() {
+        guard voice.arming else {
+            KbBridge.note("补解静音：引擎没架着，跳过")
+            return
+        }
+        Voice.setMicMuted(false, why: "到前台了，补一次（后台那次可能没生效）")
+        KbBridge.note("补解静音：已到前台，补了一次 —— "
+                      + "真没真收到声音看后面那条「开头诊断」")
+    }
+
     @discardableResult
     func preRollOnRecUrl() -> Bool {
         guard voice.arming else {
@@ -1211,7 +1234,7 @@ final class KbVoiceHost {
                     // 🚨 「没听清」= 录了但不到 0.5 秒，**引擎其实起来了** ——
                     //    交给 `report` 按 frames/peak 判，别在这儿自己下结论。
                     let s = "\(f)"
-                    let tooShort = s.contains("没听清")
+                    let tooShort = FailureText.isEmptyAsr(s)
                     // 🚨 失败也要写，而且**写原因** —— 「没有记录」和
                     //    「记录里写着失败」是两个完全不同的结论。
                     RecLog.add(sec: 0, bytes: 0,
@@ -3940,6 +3963,22 @@ final class KbVoiceHost {
     ///    **同一个坏结果换了个原因，而且更难发现**：代码里明明有 `tally.sec`。
     ///    收成一处之后，下一个往里加东西的人不会再漏。
     private func makeSegments(seq: Int) -> Segments {
+        // 🚨 唯一创建点，顺手把诊断出口接上（Segments 自己不许依赖 KbBridge，
+        //    它还编进不含 KbBridge 的测试目标）。接在这里是因为
+        //    gate_single_factory.py 钉死了这里只有一个创建点。
+        Segments.note = { KbBridge.note($0) }
+        // 🚨 提醒的出口也接在这儿（#90）。跟 Segments.note 同一个理由：
+        //    Remind 是纯逻辑、也编进键盘和测试目标，不许它自己去调通知接口。
+        //    键盘扩展**不接**这个 —— 它是另一个进程，排了主 App 也管不着。
+        if Remind.onParsed == nil {
+            Remind.onParsed = { r in
+                RemindScheduler.schedule(r) { granted in
+                    // 🚨 **两种情况说不同的话**：权限被拒时也要让他知道
+                    //    「记下了、但到点不会弹」—— 静默失败是最糟的一档。
+                    KbBridge.setRemindHint(granted ? L.remind_set : L.remind_no_perm)
+                }
+            }
+        }
         return Segments(transcribe: { [weak self] wav, done in
             // 🚨 **每段都计入本轮总量。** 分段是"边录边传"，
             //    不在这里加的话，「出稿完成」那行只会有最后一段的量 ——

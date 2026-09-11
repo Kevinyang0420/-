@@ -2463,6 +2463,53 @@ final class KeyboardViewController: UIInputViewController {
     /// 当前铺出来的那几条 —— 「收藏」按钮靠 `tag` 回来找它。
     private var historyRows: [History.Item] = []
 
+    /// 「日记本」那颗的两态。**跟 `paintKeep` 同一套画法**，
+    /// 只是文案和图标不同 —— 同一行里两颗长得不一样会让人以为是两类东西。
+    ///
+    /// 🚨 图标 13pt、上下 4 → 总高 26，跟同一行别的元素齐平。
+    ///    Kevin 09-07 刚退过一版 18pt 的：「这个 icon 太大了…太引人注目了，
+    ///    搞成跟那个翻译那个小按钮差不多大小」。**键盘面板空间更紧，更要小。**
+    private func paintNote(_ b: UIButton, _ got: Bool) {
+        b.setTitle(got ? L.note_kept : L.note_book, for: .normal)
+        b.setTitleColor(got ? Theme.kbHint : Theme.accent, for: .normal)
+        b.tintColor = got ? Theme.kbHint : Theme.accent
+        b.setImage(UIImage(systemName: "bookmark",
+                           withConfiguration: UIImage.SymbolConfiguration(
+                               pointSize: 13, weight: .regular)),
+                   for: .normal)
+        // 🚨 **不禁用**（跟单词本那颗不同）：日记本再点是"取消留下"，
+        //    禁用的话他留错了一条就再也撤不掉。
+        b.isEnabled = true
+    }
+
+    /// 把这一条**留进日记本**（键盘面板里那颗）。
+    ///
+    /// 🚨 正文用**他说的原话**（`zh`）不用译文 —— 跟主 App 那块同口径：
+    ///    日记本记的是"他想说什么"，搜索判据也要求搜得到原话。
+    /// 🚨 再点是**取消留下**，不是重复添加 —— 跟主 App 那块同一个手势语义。
+    /// 🚨 **按真实返回值改按钮**，不先宣布成功（安卓犯过：无条件写"已收"，
+    ///    而实际可能没存进去，用户以为留了、本子里没有）。
+    @objc private func noteHistory(_ sender: UIButton) {
+        let i = sender.tag
+        guard i >= 0, i < historyRows.count else { return }
+        let it = historyRows[i]
+        let hid = String(Int(it.ts))
+        if Notes.kept(historyId: hid) {
+            Notes.remove(id: NotesCore.idFromHistory(hid))
+        } else {
+            let body = it.zh.isEmpty ? it.out : it.zh
+            if !Notes.keep(historyId: hid, body: body, at: it.ts / 1000.0) {
+                // 🚨 键盘里弹不了 UIAlertController，结果只能落在这行提示上。
+                //    **失败必须说出来** —— 静默失败跟"坏了"分不开。
+                hintLabel.text = L.wb_save_failed
+                return
+            }
+        }
+        // 🚨 **重画之前先读盘** —— 显示的状态必须来自存储，
+        //    拿本地布尔取反的话，写失败时界面照样变。
+        paintNote(sender, Notes.kept(historyId: hid))
+    }
+
     private func paintKeep(_ b: UIButton, _ got: Bool) {
         b.setTitle(got ? L.kb_kept : L.kb_keep, for: .normal)
         b.setTitleColor(got ? Theme.kbHint : Theme.accent, for: .normal)
@@ -2577,9 +2624,35 @@ final class KeyboardViewController: UIInputViewController {
                 //    禁用的按钮**还占位置、还让人想点**，"鸡肋"感一点没解决。
                 //    判定口径：**产出跟原话不是同一种语言**才显示。
                 //    `it.mode` 是 en / zh / raw，后两个是同语言转写。
+                // 🚨🚨 **「日记本」那一颗** —— Kevin 09-07 亲口：
+                //    「我在 iOS 的这个**输入法**历史记录这里，
+                //      我只看到单词本，没看到有日记本。」
+                //
+                //    🚨 **每条都画，不受 `crossLang` 管**（照安卓的语义）：
+                //    单词本收的是"词"，同语言转写没有词可收；
+                //    而日记本记的是"他想说什么"，**哪一档都可以留**。
+                //    他的原话：「日记本是都可以加的」。
+                //    → 所以它在 `crossLang` 这个条件**外面**。
+                let note = KbHitPadButton(type: .system)
+                note.accessibilityIdentifier = "transless.hist.note"
+                note.tag = i
+                note.titleLabel?.font = .systemFont(ofSize: 13)
+                // 🚨 清掉自带的横向内边距，否则德语 "Tagebuch"、阿语更长
+                //    会被挤成半截（安卓「Delete」被截成「Delet」就是这条）。
+                note.contentEdgeInsets = UIEdgeInsets(top: 4, left: 6,
+                                                      bottom: 4, right: 6)
+                note.imageEdgeInsets = UIEdgeInsets(top: 0, left: 0,
+                                                    bottom: 0, right: 4)
+                note.setContentHuggingPriority(.required, for: .horizontal)
+                note.setContentCompressionResistancePriority(.required,
+                                                             for: .horizontal)
+                paintNote(note, Notes.kept(historyId: String(Int(it.ts))))
+                note.addTarget(self, action: #selector(noteHistory(_:)),
+                               for: .touchUpInside)
+
                 let crossLang = (it.mode == "en")
                 let row = UIStackView(
-                    arrangedSubviews: crossLang ? [b, keep] : [b])
+                    arrangedSubviews: crossLang ? [b, keep, note] : [b, note])
                 row.axis = .horizontal
                 row.spacing = 8
                 list.addArrangedSubview(row)
@@ -2816,9 +2889,20 @@ final class KeyboardViewController: UIInputViewController {
 
     private func setPhase(_ p: Phase, hint: String) {
         if p == .listening { listenStartedAt = Date() }   // 🚨 说话起点，给停止后的等待时限用
-        refreshRetryBadge()   // 🚨 相位变了角标就要跟着刷 —— 唯一出口
         if p == .thinking && phase != .thinking { thinkingSince = Date() }
         phase = p
+        // 🚨🚨 **这一行必须在 `phase = p` 之后**（2026-09-07 Kevin 实撞）。
+        //
+        //    原来它在 `phase = p` **前面** —— 注释写着"相位变了就跟着刷"，
+        //    可刷的时候 `phase` **还是旧值**。于是 `.thinking → .idle` 那一跳，
+        //    `refreshCancelButton()` 读到的仍是 `.thinking` → **✕ 判成该显示**，
+        //    而这之后没有任何人再刷一次 → **上完屏了 ✕ 还赖在屏幕上**。
+        //    他的原话：「我说完话停止录音、上完屏之后它还在，这个得删掉，没有意义。」
+        //
+        //    🚨 这个 bug 的形状值得记：**代码没写错，顺序写错了**；
+        //       注释描述的行为跟代码实际做的事差一行的距离，看代码时极容易读成对的。
+        //       `gate_setphase_order.py` 现在钉住这个顺序。
+        refreshRetryBadge()   // 🚨 相位变了角标/✕ 就要跟着刷 —— 唯一出口
         // 🚨 M1 + 高-2：🔊 的三个属性走**同一个出口**，见 `paintSpeakButton()`。
         paintSpeakButton()
         hintLabel.text = hint
@@ -5005,7 +5089,10 @@ final class KeyboardViewController: UIInputViewController {
         heardLabel.text = ""
         textDocumentProxy.insertText(out)
         settleStockAfterSuccess()
-        setPhase(.idle, hint: "")
+        // 🚨 提醒的确认在这儿露出来（#90）—— 他说话时人在键盘里，
+        //    主 App 的界面看不到，在那边提示等于没提示。
+        //    没有提醒时  回 nil，行为跟以前一模一样。
+        setPhase(.idle, hint: KbBridge.takeRemindHint() ?? "")
     }
 
     // MARK: - 遥控：等主 App 把结果递回来
@@ -5106,7 +5193,10 @@ final class KeyboardViewController: UIInputViewController {
         heardLabel.text = ""
         textDocumentProxy.insertText(out)
         settleStockAfterSuccess()
-        setPhase(.idle, hint: "")
+        // 🚨 提醒的确认在这儿露出来（#90）—— 他说话时人在键盘里，
+        //    主 App 的界面看不到，在那边提示等于没提示。
+        //    没有提醒时  回 nil，行为跟以前一模一样。
+        setPhase(.idle, hint: KbBridge.takeRemindHint() ?? "")
     }
 
     /// 共享容器都拿不到时的现场。**这条是配置问题，不是运行时故障**，
@@ -5172,10 +5262,28 @@ final class KeyboardViewController: UIInputViewController {
                     for _ in 0..<replaceChars { self.textDocumentProxy.deleteBackward() }
                     self.textDocumentProxy.insertText(en)
                     self.heardLabel.text = ""
-                    self.setPhase(.idle, hint: "")
+                    // 🚨 **第三条上屏路，原来漏了这一句**（2026-09-07）。
+                    //    另外两处（5017/5118）都调了，就这里没有 ——
+                    //    我上次是按 `insertText(out)` 去找调用点的，
+                    //    而这一处的变量叫 `en`，**搜的范围本身就漏了它**。
+                    //    漏的后果正是他报的：失败留下的存货没被了结 →
+                    //    角标还亮着 → ✕ 跟着一直挂在屏上。
+                    self.settleStockAfterSuccess()
+                    // 🚨 **第三条上屏路也要接** —— 今天已经因为只改两处、
+                    //    漏掉第三处栽过一次（那次变量名叫 en 不叫 out，搜法把它排除在外）。
+                    self.setPhase(.idle, hint: KbBridge.takeRemindHint() ?? "")
                 case .failure(let err):
                     // 失败绝不动输入框，他说的话还在
-                    self.setPhase(.idle, hint: "失败：\(err)")
+                    // 🚨 **不许 `"失败：\(err)"`**（原来就是这么写的）。
+                    //    `\(err)` 走的是 `description` —— 而 `Backend.Failure`
+                    //    自己那段注释就写着「**description 是给我们看的，
+                    //    不许直接上屏**」。那样上屏会出现两件事：
+                    //    ① 后端原样的英文/HTTP 码摆在键盘上；
+                    //    ② 「失败：」这三个字是写死的中文，
+                    //       他把界面切成日语/德语，这一句还是中文。
+                    //    这一句平时看不见（只有真失败才出现），
+                    //    所以截图扫不出来，是 `gate_hardcoded_cjk.py` 扫源码扫到的。
+                    self.setPhase(.idle, hint: err.userText)
                 }
             }
         }
@@ -5420,3 +5528,24 @@ private final class PaddedLabel: UILabel {
                                                        bottom: 0, right: 16)))
     }
 }
+
+
+/// **看着小、点着大**（键盘面板版）—— 视觉 26pt 高，可点区域上下各扩 5pt。
+///
+/// 🚨 为什么不用 padding 撑热区：padding 会**连视觉一起撑大**，
+///    而 Kevin 09-07 刚退过一版就是因为"太引人注目"。
+///    「看起来多大」和「能点多大」是两件事，一个参数管不了两件。
+/// 🚨 **左右不扩**：这一行里几颗按钮是挨着放的，横向扩会让热区叠在一起，
+///    点右边那颗可能触发左边那颗。
+/// 🚨 主 App 那边有个同名同形的 `HitPadButton` —— **不共用**：
+///    键盘是独立 target，跨 target 共享 UI 小件要动 project.yml 的
+///    源文件清单，为一个 6 行的子类改构建配置不划算。
+///    两处各一份**在这里是有意的**，所以把理由写下来，
+///    免得下一个人当成"漂移"去合并。
+final class KbHitPadButton: UIButton {
+    private let padY: CGFloat = 5
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        return bounds.insetBy(dx: 0, dy: -padY).contains(point)
+    }
+}
+

@@ -36,6 +36,23 @@ enum FailureText {
         static let noAudio = "没返回音频"
     }
 
+    /// **「录了但太短／没听清」的唯一判据出口。**
+    ///
+    /// 🚨 上面那段注释说了「构造处和匹配处引用同一个」，可实际有**四处**
+    ///    各自写着 `.contains("没听清")`（`Voice.userText` / `BgRecProbe`
+    ///    / `KbVoiceHost` 两处）。**同一规则四处实现 = 必漂**：
+    ///    2.1 哪天把这句话改成别的措辞、或者跟着界面语言翻成日文，
+    ///    四个匹配点会**一起静默变假** —— 而它们判的是
+    ///    「引擎到底起来过没有」这种要紧事，判错了会把
+    ///    「录成功了只是太短」报成「引擎起不来」。
+    ///
+    /// 🚨 而且这正是 1.1 踩过的那条：**判据不许挂在对方的措辞上**。
+    ///    这里退一步是因为构造方就是我们自己（`Local.emptyAsr`），
+    ///    但**匹配只能有一个出口**，改措辞时才只有一处要改。
+    static func isEmptyAsr(_ s: String) -> Bool {
+        return s.contains(Local.emptyAsr)
+    }
+
     /// 我们自己写错了的那几种。**顺序有讲究：先认它，再认网络。**
     static let ourBugMarks = [Local.assembleFailed, Local.badURL,
                               Local.badJobURL]

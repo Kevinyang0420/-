@@ -59,6 +59,32 @@ final class DictViewController: UIViewController {
         renderRecent()
     }
 
+    /// 🚨🚨 **进来得能出去** —— Kevin 09-07：「从首页点了查词进去，
+    ///    它没有一个返回的按钮啊，怎么回事？它怎么返回呢？」
+    ///
+    ///    根因：**首页在自己的 `viewWillAppear` 里把导航栏藏了**
+    ///    （`MainViewController` 那句 `setNavigationBarHidden(true)`），
+    ///    子页要自己把它显回来 —— `SetupViewController` 那边的注释
+    ///    早就写着「子页要显示导航栏（首页是隐藏的）—— **不然进来就出不去**」。
+    ///
+    /// 🚨 **为什么以前没暴露**：查词页原来只能从「随手翻译」右上角进，
+    ///    那条栈里导航栏本来就是显示的。09-07 加了首页那张查词卡之后，
+    ///    多了一条**从藏栏的屏推进来**的路，这一屏才第一次露出问题。
+    ///    → **一屏的导航栏状态不该取决于是谁把它推进来的**，
+    ///      所以修在这里，不是修在首页那张卡上。
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+    }
+
+    /// 退回栈底（首页）时把栏重新藏回去，否则首页顶上会多一条空栏。
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if navigationController?.viewControllers.count == 1 {
+            navigationController?.setNavigationBarHidden(true, animated: animated)
+        }
+    }
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         UI.resizeBg(self)

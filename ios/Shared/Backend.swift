@@ -317,6 +317,14 @@ enum Backend {
                           + "｜长度 " + String(t.count)
                           + "｜原话长度 " + String(text.count)
                           + (t.count < text.count / 2 ? "｜🚨 只剩不到一半" : ""))
+            // 🚨 顺带认一下 remind（#90）。**解析失败一律当没有，绝不影响出稿** ——
+            //    提醒是附带的，出稿是主线；让附带的东西把主线搞挂是本末倒置。
+            if let d = t.data(using: .utf8),
+               let obj = (try? JSONSerialization.jsonObject(with: d))
+                   as? [String: Any],
+               let r = Remind.parse(obj) {
+                Remind.onParsed?(r)
+            }
             rawDone(.success(Prompts.renderPoints(t, fallback: text)))
         }
         func retryOrFail(_ f: Failure) {
@@ -350,6 +358,11 @@ enum Backend {
             ],
             "temperature": 0.3,
             "max_tokens": 1200,
+            // 🚨 **必须传 now，而且必须带时区**（#90 契约）。
+            //    不传的话后端一律回 null —— 功能整个哑掉**而且不报错**。
+            //    带不带时区也不是小事：不带的话时间会被按 UTC 理解，
+            //    东八区悄悄差 8 小时。判据见 Remind.nowISO 和 RemindTests。
+            "now": Remind.nowISO(),
         ]
         guard let url = URL(string: base + "/api/llm"),
               let data = try? JSONSerialization.data(withJSONObject: body) else {

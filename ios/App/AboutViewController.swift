@@ -116,7 +116,8 @@ final class AboutViewController: UIViewController {
         if Links.terms != nil {
             add(link(L.prefs_privacy, #selector(tapTerms)), id: "about.terms.link")
         }
-        add(text(L.about_contact + "：" + Self.supportMail, 15, .regular, Skin.dim),
+        add(text(L.about_contact + L.sep_colon + Self.supportMail,
+                 15, .regular, Skin.dim),
             id: "about.contact")
 
         // ⑤ 发行主体
