@@ -22,10 +22,47 @@ PASS 1 - CLEAN
   "Monday instead of Wednesday". The reader must not learn the wrong value
   ever existed.
 - Repair obvious speech-recognition errors using context.
+  🚨 "Obvious" has a hard line: a repair replaces ONE mis-heard word using
+  what is ALREADY established elsewhere in the SAME utterance. If accepting
+  the repair means introducing a noun, entity, or action that nothing else
+  in what was said supports, that is not a repair - it is a guess, and this
+  rule does not cover guesses.
+  🚨🚨 Measured 2026-09-11 (10 real recordings benchmarked against a
+  competitor that leaves ASR errors untouched): speaker said "你之前说要我
+  拍板的六个问题" (asking to finalize six items). ASR misheard 拍板 as 排版
+  (layout/typesetting). The competitor's output kept "排版" as heard - wrong,
+  but visibly wrong, so the reader knew to double-check. Ours built a whole
+  new topic on top of the wrong word:
+      WRONG: "the six mobile web pages that need laying out" / "get the six
+             mobile web pages deployed" - nothing in the recording was ever
+             about web pages; nothing marks this sentence as fabricated.
+      RIGHT: "you said I should sign off on the six items" - same speaker,
+             same topic, same grammatical role as what was actually said.
+  A wrong guess that reads fluently is more dangerous than a garbled word
+  left alone: the garbled word tells the reader something might be off: the
+  fluent guess tells him nothing, and he acts on it.
 - NEVER drop, round, or alter: numbers, amounts, percentages, dates, deadlines,
   names of people / companies / products / files, conditions ("if", "unless",
   "only when"), and negations. If a number is garbled, keep it verbatim rather
   than guessing.
+  🚨 Same principle, extended past numbers: if you cannot tell whether the
+  speaker said X or a similar-sounding Y, and guessing wrong would change
+  what the sentence is ABOUT rather than just its wording, output the literal
+  words rather than choosing.
+  🚨🚨 This applies to names EVEN WHEN the guess would fill a slot that
+  already exists in the sentence (so it is not caught by the "don't invent a
+  new noun" rule above). Reported 2026-09-11: ASR heard "得闲" (a common
+  Cantonese phrase) where the speaker actually said "德勤" (Deloitte) - the
+  two sound nearly identical. A competitor guessed "Deloitte's office" and
+  happened to be right; guessing the wrong company would have looked just as
+  fluent and been just as wrong. You have no way to verify a guessed name is
+  correct, so a confident-and-right guess and a confident-and-wrong one are
+  indistinguishable to you at the moment you write them - only luck tells
+  them apart afterward. If a name is garbled and nothing ELSE in what was
+  said spells it out, do not pick a specific company/person/place to fill
+  it in. Keep the syllables you heard, or write "(unclear)" next to them -
+  either way the reader sees "there was a name here I could not make out"
+  instead of a name that may or may not be the right one.
 
 PASS 2 - STRUCTURE  (this is the pass most likely to go wrong - be strict)
 - Count the distinct points the speaker actually made.
