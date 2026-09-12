@@ -1085,6 +1085,11 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //    而它撤的是**整个 token 下的全部观察者** —— 借它的话，
         //    待机一关这条通道就被连坐掉，而这条要用的场景恰恰是待机关着。
         //    （源码里前人已经为自检/长录通道记过同一个坑。）
+        // 🚨🚨 会员购买的 `Transaction.updates` 观察者——**无条件挂在启动上**，
+        //    别学上面那段血泪史：续订/退款/家长同意延迟批准这些事件
+        //    只从这条通道来，不挂在这儿就等于永远收不到，而且不报错。
+        IAP.startObservingTransactionUpdates()
+
         // 前台标记探针 —— 让主 App 在**任意时刻**报一次它此刻的值。
         // 🚨 自检写完立刻读是没用的（必然为真）；要量的是「N 秒之后还真不真」。
         KbBridge.observeFgProbe(Unmanaged.passUnretained(self).toOpaque()) {
@@ -3441,10 +3446,26 @@ final class PrefsViewController: UIViewController {
 
     func onAppear() {
         build()      // 状态可能变了（比如刚去加了键盘）
+        // 🚨🚨 **每次进设置都问一次服务端**，不是只信本机缓存——
+        //    这是判据③「服务端把 pro 改成 false，客户端要跟着退回」的
+        //    唯一入口：不主动刷新的话，本机缓存能撑到下次自然过期，
+        //    看起来像是"退了款但还在用"，这正是这条判据要卡住的洞。
+        ProStatus.refresh { [weak self] _ in self?.build() }
     }
 
     private func build() {
         list.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        // ⓪ 会员 —— 放在最前面，跟「账户」同一个量级的信息。
+        //    Kevin 09-11「这个功能得先把上」；🚨 文案规矩照抄 `loginGate` 那条：
+        //    不写"解锁高级功能"（说不清解锁的是什么），不写"还能免费用 N 次"
+        //    （核心翻译不限次，那句话是假的）。这里只说"是不是会员"这一件事。
+        let proRow = row(
+            L.prefs_pro_title,
+            ProStatus.isProCached ? L.prefs_pro_active : L.prefs_pro_inactive,
+            #selector(openSubscribe))
+        proRow.accessibilityIdentifier = "prefs.row.pro"
+        list.addArrangedSubview(proRow)
 
         // ① 输入法
         list.addArrangedSubview(group(L.prefs_g_ime))
@@ -3713,6 +3734,15 @@ final class PrefsViewController: UIViewController {
             navigationController?.pushViewController(LoginViewController(),
                                                      animated: true)
         }
+    }
+
+    /// 会员状态跟**账号**走（服务端 `pro_until` 挂在 `user_id` 上，不是设备），
+    /// 换设备也要能看到已购买的会员，所以**必须先登录**才能进这一屏——
+    /// 跟 `tapOpenWordbook` 那条是同一条规矩（`loginGate` 统一处理未登录）。
+    @objc private func openSubscribe() {
+        guard loginGate(L.prefs_pro_login_gate) else { return }
+        navigationController?.pushViewController(SubscribeViewController(),
+                                                 animated: true)
     }
 
     /// 打开隐私政策 —— **端内页，不跳浏览器**（#97①，Kevin 亲口：

@@ -448,6 +448,23 @@ enum L {
     static var login_wait: String { s(["zh": "%1$d 秒后可重发", "en": "Resend in %1$ds", "hant": "%1$d 秒後可重發", "ja": "%1$d秒後に再送信できます", "de": "Erneut senden in %1$d s", "es": "Reenviar en %1$d s", "ar": "إعادة الإرسال بعد ‎%1$d‎ ثانية"]) }
     static var login_why: String { s(["zh": "登录之后才能把 Transless 设为输入法，也方便你换手机时找回设置。", "en": "Sign in to set Transless as your keyboard — it also keeps your settings when you switch phones.", "hant": "登入之後才能把 Transless 設為輸入法，也方便你換手機時找回設定。", "ja": "Translessをキーボードに設定するにはログインが必要です。機種変更時にも設定を復元できます。", "de": "Melde dich an, um Transless als Tastatur einzurichten – das behält auch deine Einstellungen beim Gerätewechsel.", "es": "Inicia sesión para configurar Transless como teclado; también conserva tus ajustes al cambiar de teléfono.", "ar": "سجّل الدخول لتعيين ‎Transless‎ كلوحة مفاتيح — كما يحفظ إعداداتك عند تغيير هاتفك."]) }
     static var prefs_privacy: String { s(["zh": "隐私政策", "en": "Privacy Policy", "hant": "私隱政策", "ja": "プライバシーポリシー", "de": "Datenschutzerklärung", "es": "Política de privacidad", "ar": "سياسة الخصوصية"]) }
+    static var prefs_pro_title: String { s(["zh": "会员", "en": "Membership", "hant": "會員"]) }
+    static var prefs_pro_active: String { s(["zh": "已是会员", "en": "You are a member", "hant": "已是會員"]) }
+    static var prefs_pro_inactive: String { s(["zh": "未订阅", "en": "Not subscribed", "hant": "未訂閱"]) }
+    static var prefs_pro_headline: String { s(["zh": "Transless 会员", "en": "Transless Membership", "hant": "Transless 會員"]) }
+    static var prefs_pro_loading: String { s(["zh": "正在读取价格…", "en": "Loading price…", "hant": "正在讀取價格…"]) }
+    static var prefs_pro_load_failed: String { s(["zh": "读不到商品信息，请稍后再试", "en": "Could not load product info, try again later", "hant": "讀不到商品信息，請稍後再試"]) }
+    static var prefs_pro_per_month_suffix: String { s(["zh": " / 月", "en": " / month", "hant": " / 月"]) }
+    static var prefs_pro_trial_note: String { s(["zh": "新设备可享 7 天免费试用，到期后按月订阅价扣费", "en": "New devices get a 7-day free trial, then billed at the monthly price", "hant": "新設備可享 7 天免費試用，到期後按月訂閱價扣費"]) }
+    static var prefs_pro_subscribe: String { s(["zh": "订阅", "en": "Subscribe", "hant": "訂閱"]) }
+    static var prefs_pro_restore: String { s(["zh": "恢复购买", "en": "Restore Purchases", "hant": "恢復購買"]) }
+    static var prefs_pro_terms: String { s(["zh": "服务条款", "en": "Terms of Use", "hant": "服務條款"]) }
+    static var prefs_pro_privacy: String { s(["zh": "隐私政策", "en": "Privacy Policy", "hant": "隱私政策"]) }
+    static var prefs_pro_purchased_wait: String { s(["zh": "已提交，正在确认，稍后回来看看", "en": "Submitted — confirming now, check back shortly", "hant": "已提交，正在確認，稍後回來看看"]) }
+    static var prefs_pro_pending: String { s(["zh": "这笔交易还在等待处理（比如家长同意）", "en": "This purchase is still pending (e.g. waiting for approval)", "hant": "這筆交易還在等待處理（比如家長同意）"]) }
+    static var prefs_pro_failed: String { s(["zh": "没能完成购买，请稍后再试", "en": "Purchase did not go through, please try again", "hant": "沒能完成購買，請稍後再試"]) }
+    static var prefs_pro_restore_failed: String { s(["zh": "没能找到可恢复的购买", "en": "No restorable purchase was found", "hant": "沒能找到可恢復的購買"]) }
+    static var prefs_pro_login_gate: String { s(["zh": "登录之后才能订阅会员，会员状态跟账号绑定，换设备也能找回。", "en": "Sign in to subscribe — membership is tied to your account and follows you across devices.", "hant": "登錄之後才能訂閱會員，會員狀態跟帳號綁定，換設備也能找回。"]) }
     static var profile_birth: String { s(["zh": "出生日期（选填）", "en": "Date of birth (optional)", "hant": "出生日期（選填）", "ja": "生年月日（任意）", "de": "Geburtsdatum (optional)", "es": "Fecha de nacimiento (opcional)", "ar": "تاريخ الميلاد (اختياري)"]) }
     static var profile_country: String { s(["zh": "国家/地区", "en": "Country", "hant": "國家/地區", "ja": "国", "de": "Land", "es": "País", "ar": "البلد"]) }
     static var profile_day: String { s(["zh": "日", "en": "Day", "hant": "日", "ja": "日", "de": "Tag", "es": "Día", "ar": "يوم"]) }
