@@ -129,6 +129,10 @@ enum Backend {
         case http(Int)
         case unauthorized
         case quota(String)
+        /// 🚨 09-13：试用期到了（后端 `kind":"trial_expired"`，HTTP 402）。
+        ///    别复用 `.quota`——文案和动作都不一样：quota 是"额度用完等下再来"，
+        ///    这个是"该付费了"，UI 侧要直接弹订阅页，不是给一句报错完事。
+        case trialExpired(String)
         case message(String)
         /// 🚨 后端明确给了分类的那一档。**有它就不猜。**
         ///    `kind` 取值见 `server_api.py:283-288`：
@@ -166,6 +170,7 @@ enum Backend {
             case .http: k = .http
             case .unauthorized: k = .unauthorized
             case .quota: k = .quota
+            case .trialExpired: k = .trialExpired
             case .message: k = .message
             case .kinded(let kk, _, _): return FailureText.byKind(kk)
             case .timeout: k = .timeout
@@ -185,7 +190,7 @@ enum Backend {
         ///    朗读是次要动作，不能让他以为整件事失败了。
         var ttsText: String {
             switch self {
-            case .quota, .unauthorized, .network: return userText
+            case .quota, .unauthorized, .network, .trialExpired: return userText
             case .kinded(let k, _, _) where k == "auth" || k == "quota": return userText
             default: return L.err_tts_failed
             }
@@ -196,6 +201,7 @@ enum Backend {
             case .http(let c):      return "HTTP \(c)"
             case .unauthorized:     return "口令不对，重新装一次"
             case .quota(let m):     return m
+            case .trialExpired(let m): return m
             case .message(let m):   return m
             case .kinded(let k, let m, let rk):
                 return "[\(k)] \(m)" + (rk.isEmpty ? "" : " retry=\(rk)")
@@ -385,6 +391,11 @@ enum Backend {
             let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
             if code == 401 { return done(.failure(.unauthorized)) }
             let obj = d.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
+            // 🚨 09-13：试用期到了，后端 402 + `kind":"trial_expired"`（0 已端到端实测）。
+            //    跟 429（额度用完稍后再来）不是一回事，不许合并处理。
+            if code == 402, (obj?["kind"] as? String) == "trial_expired" {
+                return done(.failure(.trialExpired((obj?["error"] as? String) ?? L.err_trial_expired)))
+            }
             if code == 429 {
                 return done(.failure(.quota((obj?["error"] as? String) ?? "额度用完了")))
             }
@@ -856,6 +867,11 @@ enum Backend {
             let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
             if code == 401 { return done(.failure(.unauthorized)) }
             let obj = d.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
+            // 🚨 09-13：试用期到了，后端 402 + `kind":"trial_expired"`（0 已端到端实测）。
+            //    跟 429（额度用完稍后再来）不是一回事，不许合并处理。
+            if code == 402, (obj?["kind"] as? String) == "trial_expired" {
+                return done(.failure(.trialExpired((obj?["error"] as? String) ?? L.err_trial_expired)))
+            }
             // 🚨🚨 **这里原来没有 429 分支**（复审 中-3），而抄过来的注释
             //    还写着「位置：在 401/429 之后」—— **描述了一个不存在的分支**。
             //    后果：`/api/tts` 额度用完 → `.message` → `ttsText` 落 default
@@ -1086,6 +1102,11 @@ func retryOrFail(_ f: Failure) {
             let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
             if code == 401 { return done(.failure(.unauthorized)) }
             let obj = d.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
+            // 🚨 09-13：试用期到了，后端 402 + `kind":"trial_expired"`（0 已端到端实测）。
+            //    跟 429（额度用完稍后再来）不是一回事，不许合并处理。
+            if code == 402, (obj?["kind"] as? String) == "trial_expired" {
+                return done(.failure(.trialExpired((obj?["error"] as? String) ?? L.err_trial_expired)))
+            }
             if code == 429 {
                 return done(.failure(.quota((obj?["error"] as? String) ?? "额度用完了")))
             }
@@ -1147,6 +1168,11 @@ func retryOrFail(_ f: Failure) {
             let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
             if code == 401 { return done(.failure(.unauthorized)) }
             let obj = d.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
+            // 🚨 09-13：试用期到了，后端 402 + `kind":"trial_expired"`（0 已端到端实测）。
+            //    跟 429（额度用完稍后再来）不是一回事，不许合并处理。
+            if code == 402, (obj?["kind"] as? String) == "trial_expired" {
+                return done(.failure(.trialExpired((obj?["error"] as? String) ?? L.err_trial_expired)))
+            }
             // 🚨 这一处形状跟另外三处不一样，"按形状找"时曾被漏掉。
             // 🚨🚨 **不许再挂 `code == 502` 这个前提** ——
             //    后端 `_send` 会把网关会吃掉的码（502…）**改写成 500**
@@ -1339,6 +1365,11 @@ func retryOrFail(_ f: Failure) {
             let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
             if code == 401 { return done(.failure(.unauthorized)) }
             let obj = d.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
+            // 🚨 09-13：试用期到了，后端 402 + `kind":"trial_expired"`（0 已端到端实测）。
+            //    跟 429（额度用完稍后再来）不是一回事，不许合并处理。
+            if code == 402, (obj?["kind"] as? String) == "trial_expired" {
+                return done(.failure(.trialExpired((obj?["error"] as? String) ?? L.err_trial_expired)))
+            }
             if code == 429 {
                 return done(.failure(.quota((obj?["error"] as? String) ?? "额度用完了")))
             }

@@ -1,26 +1,20 @@
 import XCTest
-import StoreKitTest
 
-/// **订阅界面端到端** —— 用 `SKTestSession` 挂本地 `Transless.storekit`，
-/// 不需要真沙盒账号也能验证判据①②（真机拉到商品、走完一次购买）。
+/// **订阅界面端到端** —— 挂**scheme 级** StoreKit Configuration File（project.yml
+/// 的 `targets.Transless.scheme.storeKitConfiguration`），不需要真沙盒账号也能验证
+/// 判据①②（真机拉到商品、走完一次购买）。
 ///
-/// 🚨 这不能替代**真沙盒账号**的验证——`SKTestSession` 是苹果自己的模拟环境，
+/// 🚨🚨 **09-13 撤掉了 `SKTestSession`**——它只拦截【创建它的那个进程】的 StoreKit
+///    调用，而这里的 AUT 是用 `XCUIApplication(bundleIdentifier:)` 单独拉起的
+///    **另一个进程**，`SKTestSession` 对它完全不生效（两次真机验证过：读不到商品）。
+///    scheme 级配置不一样：Xcode 在 LaunchAction 里把配置文件路径喂给它启动的
+///    那个进程本身，跟"谁创建了 session"无关——这正是这条路真正能用的原因。
+///
+/// 🚨 这不能替代**真沙盒账号**的验证——本地 StoreKit 配置是苹果自己的模拟环境，
 ///    跟真实 App Store 服务器行为不保证 100%一致（比如汇率、税费展示）。
 ///    但它能确认：**商品 id / 订阅群组 id 配对没写错、购买流程的代码路径能走通、
 ///    UI 状态机在各个阶段切换正确**——这些错了，真机也一定错。
 final class SubscribeFlowSpec: XCTestCase {
-    var session: SKTestSession!
-
-    override func setUpWithError() throws {
-        session = try SKTestSession(configurationFileNamed: "Transless")
-        session.resetToDefaultState()
-        session.disableDialogs = true        // 别停在系统确认弹窗上，自动当作同意
-        session.clearTransactions()
-    }
-
-    override func tearDownWithError() throws {
-        session.clearTransactions()
-    }
 
     func testProductLoadsAndPurchaseCompletes() throws {
         let app = XCUIApplication(bundleIdentifier: "com.kevin.transless")

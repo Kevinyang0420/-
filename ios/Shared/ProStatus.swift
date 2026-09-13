@@ -54,6 +54,36 @@ enum ProStatus {
         }.resume()
     }
 
+    /// 🚨🚨 **购买时要传的 `appAccountToken`，由服务端按 `user_id` 确定性算出**——
+    ///    客户端**绝不自己生成/派生**这个 UUID（那正是 09-12 报出来又被 1.1
+    ///    修掉的洞：客户端瞎编的 UUID，服务端永远反查不回真实账号）。
+    ///
+    ///    契约：`GET /api/pro` 响应里带一个 `purchase_uuid` 字段（字符串）。
+    ///    未登录时这个字段就是空/缺失——`onResult(nil)`，调用方（`IAP.purchase`）
+    ///    要么先走 `loginGate`，要么干脆不让没登录的人看到订阅按钮
+    ///    （现在的路径是前者：`SubscribeViewController` 靠 `loginGate` 挡在前面）。
+    static func fetchPurchaseUUID(onResult: @escaping (UUID?) -> Void) {
+        guard let url = URL(string: Backend.base + "/api/pro") else {
+            return DispatchQueue.main.async { onResult(nil) }
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        req.setValue(DeviceId.pass, forHTTPHeaderField: "X-Alex-Pass")
+        req.timeoutInterval = 15
+        URLSession.shared.dataTask(with: req) { data, resp, err in
+            guard err == nil, let data = data,
+                  let http = resp as? HTTPURLResponse, http.statusCode == 200,
+                  let j = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let s = j["purchase_uuid"] as? String,
+                  let u = UUID(uuidString: s)
+            else {
+                KbBridge.note("购买凭证：读不到 purchase_uuid（未登录，或网络问题）")
+                return DispatchQueue.main.async { onResult(nil) }
+            }
+            DispatchQueue.main.async { onResult(u) }
+        }.resume()
+    }
+
     /// 🚨 供购买/恢复购买成功后**立刻**调一次，别等下一次自然刷新——
     ///    否则他刚付完钱，界面上看着还是没解锁，会以为没生效。
     static func refreshSoonAfterPurchase() {

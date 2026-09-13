@@ -47,6 +47,17 @@ final class KeyboardViewController: UIInputViewController {
         set { }
     }
 
+    /// 🚨🚨 09-13 实测证伪：`dictationRecordingDidEnd()` / `dictationRecognitionFailed()`
+    ///    **不是** `UIInputViewController` 的方法——编译直接报「不覆盖父类任何方法」。
+    ///    那两个名字是网上搜到的，但搜到的语境是 `UITextView` 自己接收听写事件，
+    ///    跟"键盘扩展"完全是两回事，我没核对就往这写，属于该验而没验。
+    ///
+    ///    真实情况看起来是：`hasDictationKey = true` 只是「允许系统在这个键盘上
+    ///    画听写按钮」的开关，按下去之后系统接管、直接改宿主的文本框，**键盘扩展
+    ///    自己代码里没有专属回调**——发生了什么只能靠已有的 `textDidChange(_:)`
+    ///    去看文本变化，别再找不存在的专属方法。下一步：真机验证这个按钮到底
+    ///    出不出现、按下去是不是真的系统接管。
+
     /// 渐变底。🚨 必须在 viewDidLayoutSubviews 里更新 frame ——
     ///    不更新的话转屏或键盘高度变化时渐变不跟着走，
     ///    表现成「下半截是黑的」，而且只在真机转屏才看得见。

@@ -14,14 +14,15 @@ import StoreKit
 ///    **真正的会员状态永远以 `ProStatus.refresh()` 读到的服务端结果为准**。
 ///    购买成功后调 `ProStatus.refreshSoonAfterPurchase()`，不是自己在本地翻一个 flag。
 ///
-/// 🚨🚨 **`appAccountToken` 那道契约还没接上**（2026-09-12 报给 1.1）：
-///    服务端 `user_id` 是 `u_` 前缀字符串，StoreKit 2 这个参数要的是 `Foundation.UUID`，
-///    两边格式对不上。**在服务端把"给我一个可以用的 UUID"这个字段加进 `/api/pro` 之前，
-///    这里先不传 `appAccountToken`**——不传的后果是苹果通知里没有这个字段，
-///    后端 `_apple_webhook` 会落进 `no_appAccountToken` 分支、不打会员标记。
-///    **这意味着现在这版购买了但服务端认不出是谁，不能上线**，
-///    等 1.1 那边给了字段，把 `appAccountTokenPlaceholder` 换成真值就行——
-///    改动只在这一处，其余流程不用动。
+/// 🚨🚨 **`appAccountToken` 契约（2026-09-12 报给 1.1，09-13 已接上）**：
+///    服务端按 `user_id` 确定性算出一个 UUID，通过 `GET /api/pro` 的
+///    `purchase_uuid` 字段发给客户端——**客户端只管拿来用，绝不自己生成/派生**。
+///    这个值传给 `Product.purchase(options:)` 的 `.appAccountToken`；
+///    苹果的服务器通知会把它原样带回来，后端 `resolve_purchase_uuid()`
+///    拿它反查回真实 `user_id`，才打得上会员标记。
+///    🚨 拿不到这个值（未登录/网络问题）就**不发起购买**——传一个随机瞎编的
+///    UUID 会被后端新加的判据拒绝并返回 `unresolvable_purchase_uuid`，
+///    表现成"钱扣了、会员没开通"，比直接不让购买更糟。
 enum IAP {
     static let proMonthlyId = "com.kevin.transless.pro.monthly"
 
@@ -30,6 +31,7 @@ enum IAP {
         case userCancelled
         case pending
         case verificationFailed
+        case noPurchaseToken   // 拿不到 purchase_uuid（未登录/网络问题）
         case unknown(Error)
     }
 
@@ -59,10 +61,24 @@ enum IAP {
     /// 生效与否永远看 `ProStatus`。
     static func purchase(_ product: Product,
                          onResult: @escaping (Result<Void, PurchaseError>) -> Void) {
+        // 🚨 先拿服务端签发的 purchase_uuid，拿不到就**不发起购买**——
+        //    理由见文件顶部注释：瞎编一个 UUID 会让钱扣了但会员打不上标记。
+        ProStatus.fetchPurchaseUUID { token in
+            guard let token = token else {
+                KbBridge.note("内购：拿不到 purchase_uuid，中止购买（未登录或网络问题）")
+                return onResult(.failure(.noPurchaseToken))
+            }
+            purchaseWithToken(product, token: token, onResult: onResult)
+        }
+    }
+
+    private static func purchaseWithToken(
+        _ product: Product, token: UUID,
+        onResult: @escaping (Result<Void, PurchaseError>) -> Void) {
         Task {
             do {
-                // 🚨 appAccountToken 暂不传，理由见文件顶部注释。
-                let result = try await product.purchase()
+                let result = try await product.purchase(
+                    options: [.appAccountToken(token)])
                 switch result {
                 case .success(let verification):
                     switch verification {

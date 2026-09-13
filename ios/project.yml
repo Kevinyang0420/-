@@ -22,6 +22,13 @@ targets:
   Transless:
     type: application
     platform: iOS
+    # 🚨 09-13：给自动生成的 Transless scheme 挂一个 StoreKit Configuration File，
+    #    只用来在模拟器本地跑出 $9.99 商品做审核截图 —— 跟真实 ASC 商品配置无关，
+    #    也不影响 CI 那条签名/上传流水线（那边不跑这个 scheme 的 Run 动作）。
+    scheme:
+      storeKitConfiguration: Transless.storekit
+      testTargets:
+        - UITests
     sources:
       - path: App
         excludes:
@@ -286,6 +293,14 @@ targets:
   UITests:
     type: bundle.ui-testing
     platform: iOS
+    # 🚨 09-13：给 Transless 的 scheme 挂 `testTargets: [UITests]` 之后，
+    #    XcodeGen 认为 UITests 已经被 Transless 的 scheme 覆盖，不再单独
+    #    生成一个 `UITests` scheme —— 而 `run_uitest.py`（真机跑法）和
+    #    CI 都在用 `-scheme UITests`。补一个空的 `scheme: {}` 把它强制找回来，
+    #    两条 scheme 并存不冲突：`Transless` 那条只给模拟器出审核截图用。
+    scheme:
+      testTargets:
+        - UITests
     sources:
       - path: UITests
       # 🚨 纯逻辑**直接编进测试包**。UI 测试跑在独立进程里，

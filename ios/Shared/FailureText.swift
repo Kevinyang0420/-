@@ -72,6 +72,7 @@ enum FailureText {
         case .network: return L.err_network
         case .unauthorized: return L.err_unauthorized
         case .quota: return L.err_quota
+        case .trialExpired: return L.err_trial_expired
         case .http: return L.err_http
         case .message:
             // 🚨 顺序有讲究：**先认我们自己的 bug**。
@@ -127,7 +128,7 @@ enum FailureText {
     /// 跟 `Backend.Failure` 一一对应。**这里不 import Backend，保持可单测。**
     /// 🚨 `network` 这一档以前【不存在】，所以 `err_network` 全项目零生产者，
     ///    他拔了网线，App 说的是「出了点问题」。判定见 `NetClassify`。
-    enum Kind: String { case http, unauthorized, quota, message, timeout, network }
+    enum Kind: String { case http, unauthorized, quota, message, timeout, network, trialExpired }
 
     // MARK: - 自测
 

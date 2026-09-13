@@ -4684,6 +4684,7 @@ final class MainViewController: UIViewController {
                 switch r {
                 case .failure(let e):
                     self.paintOutputButtons()
+                    if self.presentTrialExpiredIfNeeded(e) { return }
                     // 🚨 M2：**原文不上屏**，进诊断；屏上给 2.1 那句
                     //    （重点是"文字还在" —— 朗读是次要动作，译文还在屏上）
                     // 🚨 H-B：**不动阶段** —— 录音中改成 idle 会让停止键变回开始键。
@@ -5184,6 +5185,22 @@ final class MainViewController: UIViewController {
         setPhase(.idle, hint: human)
     }
 
+    /// 🚨🚨 09-13：试用期到了要**直接弹订阅页**，不是给一句报错完事
+    ///    （0 派的活：后端 402 已上线，iOS 这边接不上等于「拦了人但没给付款入口」，
+    ///     比不拦更糟——用户直接卸载）。
+    ///
+    /// 六个调用点（朗读/录音/连续/再次翻译/上屏）各自的失败分支**先走这个**，
+    /// 命中就直接返回，别再往下走它们各自的 `logFailure`/`showFailure`——
+    /// 那些是给"真失败"看的，试用到期不是失败，是该收钱了。
+    ///
+    /// - Returns: `true` = 已经处理（弹了订阅页），调用方不用再走自己的失败展示逻辑。
+    @discardableResult
+    private func presentTrialExpiredIfNeeded(_ f: Backend.Failure) -> Bool {
+        guard case .trialExpired = f else { return false }
+        navigationController?.pushViewController(SubscribeViewController(), animated: true)
+        return true
+    }
+
     private func applyHint() {
         // 🚨 **判断不在这儿** —— 在 `HintPolicy.pick`（纯函数、带坏实现自测）。
         //    工程里已有教训（`KbBridge.hostAlive` 注释）：
@@ -5444,6 +5461,8 @@ final class MainViewController: UIViewController {
                 self.elapsedTimer?.invalidate(); self.elapsedTimer = nil
                 switch result {
                 case .failure(let f):
+                    // 🚨 这里是 `Voice.Failure`（录音层，还没打网络请求），
+                    //    不是 `Backend.Failure`——试用期到不到期在这一步管不着。
                     self.showFailure("\(f)", human: f.userText, step: "录音")
                 case .success(let wav):
                     // 🚨 连续模式下空 WAV 是**正常收尾**（刚切完一句才按的停止，
@@ -5563,6 +5582,7 @@ final class MainViewController: UIViewController {
                 guard ep == self.epoch else { return }
                 switch r {
                 case .failure(let f):
+                    if self.presentTrialExpiredIfNeeded(f) { return }
                     // 错误落在**那一行**上，别把整块已经出来的结果冲掉
                     // 🚨 H3：**原文不上屏**（`"\(f)"` 是 description，
                     //    形如 `HTTP 500` / `[internal] 后端原文`），
@@ -5593,6 +5613,7 @@ final class MainViewController: UIViewController {
                                 //    只用连续模式的人永远解锁不了。
                                 self.markTriedIfProduced(en)
                             case .failure(let e):
+                                if self.presentTrialExpiredIfNeeded(e) { return }
                                 self.logFailure("\(e)", step: "连续")
                                 self.setLine(idx, e.userText)
                             }
@@ -5636,6 +5657,7 @@ final class MainViewController: UIViewController {
                     self.paintLines()
                     self.hintLabel.text = ""
                 case .failure(let e):
+                    if self.presentTrialExpiredIfNeeded(e) { return }
                     // 🚨🚨 **失败不许清掉已有结果。**
                     //    他点一下、网络不好连原来的也没了 —— **比没这个按钮更糟**。
                     //    只在提示行说一句，`lastOut`/`lines` 一个字都不动。
@@ -5988,6 +6010,7 @@ final class MainViewController: UIViewController {
                     self.paintOutputButtons()
                     self.setPhase(.idle, hint: L.ok_copied)
                 case .failure(let err):
+                    if self.presentTrialExpiredIfNeeded(err) { return }
                     self.showFailure("\(err)", human: err.userText, step: "上屏")
                 }
             }
