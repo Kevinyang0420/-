@@ -90,8 +90,8 @@ targets:
         #    后者只管我们自己的 view controller，管不到系统在我们周围怎么画。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260911.1343"
-        CFBundleVersion: "1343"
+        CFBundleShortVersionString: "20260913.1359"
+        CFBundleVersion: "1359"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -265,8 +265,8 @@ targets:
         #    后者只管我们自己的 view controller，管不到系统在我们周围怎么画。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260911.1343"
-        CFBundleVersion: "1343"
+        CFBundleShortVersionString: "20260913.1359"
+        CFBundleVersion: "1359"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -411,8 +411,8 @@ targets:
       path: LiveActivity/Info.plist
       properties:
         CFBundleDisplayName: Transless 录音状态
-        CFBundleShortVersionString: "20260911.1343"
-        CFBundleVersion: "1343"
+        CFBundleShortVersionString: "20260913.1359"
+        CFBundleVersion: "1359"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
@@ -444,8 +444,8 @@ targets:
         #    用它做的外观判断就不能代表真键盘。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260911.1343"
-        CFBundleVersion: "1343"
+        CFBundleShortVersionString: "20260913.1359"
+        CFBundleVersion: "1359"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -503,8 +503,8 @@ targets:
       path: Keyboard/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260911.1343"
-        CFBundleVersion: "1343"
+        CFBundleShortVersionString: "20260913.1359"
+        CFBundleVersion: "1359"
         # 🚨🚨 **键盘扩展自己也要声明支持哪些语言**（2026-08-28 补）。
         #    Kevin 真机截图：主 App 是中文，**键盘里全是英文**
         #    （Translate / Transcribe / History / Casual / Work / Email…）。

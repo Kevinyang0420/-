@@ -63,6 +63,18 @@ final class AccountViewController: UIViewController {
             stack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
+
+        // 🚨🚨 09-13：会员行从设置页搬过来了（Kevin 原话：「你把那个会员那里，
+        //    不要放到设置那个地方…你把它丢到账户里面嘛，单独搞个会员很奇怪呀」）。
+        //    只搬位置，不重新设计版式——沿用 `PrefsViewController.row()` 那套
+        //    标题+副标题+箭头的视觉语言，这里 `AccountViewController` 自己没有
+        //    这个变体，所以就地起一份，别跨类复用私有方法。
+        //    能进这一页就说明已登录（`openAccount()` 分流过了），
+        //    `loginGate` 那道门不需要了。
+        let proRow = memberRow()
+        proRow.accessibilityIdentifier = "account.row.pro"
+        stack.addArrangedSubview(proRow)
+
         for kv in Auth.profileKeys {
             stack.addArrangedSubview(row(label(for: kv.id),
                                          Auth.profile(kv.id), kv.id))
@@ -111,6 +123,60 @@ final class AccountViewController: UIViewController {
     @objc private func openDelete() {
         navigationController?.pushViewController(
             DeleteAccountViewController(), animated: true)
+    }
+
+    /// 会员行——照抄 `PrefsViewController.row()` 那套标题+副标题+箭头视觉，
+    /// 那个方法是私有的、在另一个类里，拿不到，所以这里单起一份，
+    /// 不引入新的共享抽象（就一处用，抽公共方法是过度设计）。
+    private func memberRow() -> UIView {
+        let b = UIControl()
+        b.backgroundColor = UIColor.white.withAlphaComponent(0.06)
+        b.layer.cornerRadius = 14
+        b.translatesAutoresizingMaskIntoConstraints = false
+        b.heightAnchor.constraint(greaterThanOrEqualToConstant: 60).isActive = true
+
+        let t = UILabel()
+        t.text = L.prefs_pro_title
+        t.textColor = Skin.text
+        t.font = .systemFont(ofSize: 15.5)
+        let s = UILabel()
+        s.text = ProStatus.isProCached ? L.prefs_pro_active : L.prefs_pro_inactive
+        s.textColor = Skin.sub
+        s.font = .systemFont(ofSize: 11.5)
+        let col = UIStackView(arrangedSubviews: [t, s])
+        col.axis = .vertical
+        col.spacing = 3
+        col.isUserInteractionEnabled = false
+        col.translatesAutoresizingMaskIntoConstraints = false
+        b.addSubview(col)
+        NSLayoutConstraint.activate([
+            col.leadingAnchor.constraint(equalTo: b.leadingAnchor, constant: 16),
+            col.trailingAnchor.constraint(equalTo: b.trailingAnchor, constant: -34),
+            col.topAnchor.constraint(equalTo: b.topAnchor, constant: 15),
+            col.bottomAnchor.constraint(equalTo: b.bottomAnchor, constant: -15),
+        ])
+        b.addTarget(self, action: #selector(openSubscribe), for: .touchUpInside)
+        let chev = UILabel()
+        chev.text = UIView.userInterfaceLayoutDirection(for: .unspecified)
+            == .rightToLeft ? "‹" : "›"
+        chev.textColor = Skin.dim
+        chev.font = .systemFont(ofSize: 20)
+        chev.translatesAutoresizingMaskIntoConstraints = false
+        b.addSubview(chev)
+        NSLayoutConstraint.activate([
+            chev.trailingAnchor.constraint(equalTo: b.trailingAnchor, constant: -16),
+            chev.centerYAnchor.constraint(equalTo: b.centerYAnchor),
+        ])
+        return b
+    }
+
+    /// 🚨 09-13 从 `PrefsViewController` 挪过来的。原来那条注释仍然成立：
+    ///    会员状态跟**账号**走（服务端 `pro_until` 挂在 `user_id` 上，不是设备），
+    ///    但现在**不需要 `loginGate` 了**——能看到这一页就说明已登录
+    ///    （`openAccount()` 早分流过：没登录直接进 `LoginViewController`）。
+    @objc private func openSubscribe() {
+        navigationController?.pushViewController(SubscribeViewController(),
+                                                 animated: true)
     }
 
     private func label(for id: String) -> String {

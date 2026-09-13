@@ -3456,16 +3456,13 @@ final class PrefsViewController: UIViewController {
     private func build() {
         list.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-        // ⓪ 会员 —— 放在最前面，跟「账户」同一个量级的信息。
-        //    Kevin 09-11「这个功能得先把上」；🚨 文案规矩照抄 `loginGate` 那条：
-        //    不写"解锁高级功能"（说不清解锁的是什么），不写"还能免费用 N 次"
-        //    （核心翻译不限次，那句话是假的）。这里只说"是不是会员"这一件事。
-        let proRow = row(
-            L.prefs_pro_title,
-            ProStatus.isProCached ? L.prefs_pro_active : L.prefs_pro_inactive,
-            #selector(openSubscribe))
-        proRow.accessibilityIdentifier = "prefs.row.pro"
-        list.addArrangedSubview(proRow)
+        // 🚨🚨 09-13：会员行从这里挪进账户页了（Kevin 夜里原话：「你把那个会员那里，
+        //    不要放到设置那个地方，不要单独搞个会员嘛，你把它丢到账户里面嘛，
+        //    单独搞个会员很奇怪呀」）。它本来就该跟账户走——服务端 `pro_until`
+        //    挂在 `user_id` 上不是设备，逻辑上从来就是账户的一部分。
+        //    见 `AccountViewController` 里的会员行 + `openSubscribe()`。
+        //    402 触发那条不受影响：`presentTrialExpiredIfNeeded` 直接
+        //    push `SubscribeViewController`，跟入口搬去哪无关。
 
         // ① 输入法
         list.addArrangedSubview(group(L.prefs_g_ime))
@@ -3734,15 +3731,6 @@ final class PrefsViewController: UIViewController {
             navigationController?.pushViewController(LoginViewController(),
                                                      animated: true)
         }
-    }
-
-    /// 会员状态跟**账号**走（服务端 `pro_until` 挂在 `user_id` 上，不是设备），
-    /// 换设备也要能看到已购买的会员，所以**必须先登录**才能进这一屏——
-    /// 跟 `tapOpenWordbook` 那条是同一条规矩（`loginGate` 统一处理未登录）。
-    @objc private func openSubscribe() {
-        guard loginGate(L.prefs_pro_login_gate) else { return }
-        navigationController?.pushViewController(SubscribeViewController(),
-                                                 animated: true)
     }
 
     /// 打开隐私政策 —— **端内页，不跳浏览器**（#97①，Kevin 亲口：
