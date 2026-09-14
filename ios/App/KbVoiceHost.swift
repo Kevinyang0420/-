@@ -1735,28 +1735,286 @@ final class KbVoiceHost {
         return picked + guessBackOrder.filter { g in !picked.contains { $0.scheme == g.scheme } }
     }
 
+    /// 用户自己在「设置→偏好」里选的取舍：语音结束后要不要自动猜开回原来那个 App。
+    ///
+    /// 🚨🚨 09-14 09:xx Kevin 当场否掉默认开（那次候选表只有 21 个通用 App，
+    ///    在【信息】里被误送去微信）——改默认关，回到"不猜、留在原地点一下"。
+    /// 🚨🚨 09-14 12:0x Kevin 明确要求重新打开：「那你开了先啊」，
+    ///    这次候选表已经换成从他手机真实导出的 248 个 App（见 `guessBackOrder`
+    ///    上面的注释），命中率跟上次开的时候不是同一个量级——
+    ///    但**猜的本质没变**，仍然只对表里有、且真是那个 App 的场景命中；
+    ///    真正遇到不在表里的 App（比如那个 eMPF 式的特例），还是会送错。
+    ///    这条是他在知道这个代价之后明确要求的，不是我自己又替他决定一次。
+    static var guessBackEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: "guessBackEnabled") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "guessBackEnabled") }
+    }
+
+    /// 🚨🚨 09-14 12:0x：Kevin「你把我后台所有的 App 都加上才行」——
+    ///    从他手机真机真实导出的（`py D:\_build\gen_host_scheme_map.py`，
+    ///    走 `ideviceinstaller list --all --xml` 读每个 App 的 CFBundleURLTypes），
+    ///    **248 个真实装在他手机上的 App**，不是手打的通用列表。
+    ///    已剔除：系统内部服务类（名字含 UIService/ViewService/SpringBoard/
+    ///    Preferences 等——这些会跟 09-02 那次 `prefs` 一样把他错送进系统设置，
+    ///    不是真正能"正在使用"的 App）、禁用的系统 scheme（sms/mailto/tel/facetime）。
+    ///    🚨 这份表**只对 Kevin 这台设备有效**——换一个用户装这个 App，
+    ///    我们没有任何合法途径读到他手机上装了什么（`LSApplicationWorkspace.
+    ///    allInstalledApplications` 对沙盒 App 恒返回 0 个，苹果专门堵这条），
+    ///    别的用户只能用一份写死在 App 里的通用候选表，猜中率天然更低，
+    ///    这是这条路径的结构性上限，不是这次没做好。
+    ///    🚨 这**仍然不能**解释 eMPF 那个特例（一个连 URL scheme 都没声明的
+    ///    小众港式 App，不太可能进任何候选表）——那个疑点仍未解开，
+    ///    见 `回程_已验死的路.md` "09-14 10:1x" 那一节，没有回避它。
+    ///    他装新 App 会让这张表过期，重新导出跑上面那条命令即可。
     static let guessBackOrder: [(scheme: String, name: String)] = [
         ("weixin://", "微信"),
         ("lark://", "飞书"),
         ("mqq://", "QQ"),
         ("xhsdiscover://", "小红书"),
-        ("snssdk1128://", "抖音"),
+        ("awemesso://", "抖音"),
         ("taobao://", "淘宝"),
         ("alipay://", "支付宝"),
-        ("tg://", "Telegram"),
-        ("whatsapp://", "WhatsApp"),
-        ("slack://", "Slack"),
-        ("msteams://", "Teams"),
-        ("ms-outlook://", "Outlook"),
-        ("notion://", "Notion"),
+        ("perplexity-app://", "Perplexity"),
+        ("suno://", "Suno"),
+        ("xai-grok://", "Grok"),
+        ("ahffafihgg://", "中国移动"),
+        ("cn.12306://", "铁路12306"),
+        ("hsbcchina://", "汇丰银行"),
+        ("ftnn://", "富途牛牛"),
+        ("its://", "个人所得税"),
+        ("travelguide://", "马蜂窝"),
+        ("polymtrade.http://", "Polymtrade"),
+        ("jdpay://", "京东"),
+        ("com.JobsDB.JobsDBApp://", "Jobsdb"),
+        ("sidestore://", "SideStore"),
+        ("agoda://", "Agoda"),
+        ("idirect://", "AIA+ HK"),
+        ("airbnb://", "爱彼迎"),
+        ("alipayhk://", "AlipayHK"),
+        ("aijk://", "蚂蚁阿福"),
+        ("claude://", "Claude"),
+        ("airplay://", "隔空播放"),
+        ("macappstore://", "App Store"),
+        ("bridge://", "Watch"),
+        ("climate://", "温控"),
+        ("radio://", "广播"),
+        ("ContinuitySing://", "唱歌"),
+        ("shareablecredentialsuiservice://", "钱包"),
+        ("smb://", "文件"),
+        ("facetime-open-link://", "FaceTime通话"),
+        ("fitnessapp://", "健身"),
+        ("x-apple-health://", "健康"),
+        ("ens://", "暴露通知"),
+        ("com.apple.Home://", "家庭"),
+        ("homeutil://", "家庭"),
+        ("com.apple.iwork.keynote-share://", "Keynote讲演"),
+        ("apple-magnifier://", "放大器"),
+        ("map://", "地图"),
+        ("contact://", "通讯录"),
+        ("music://", "音乐"),
+        ("com.apple.iwork.numbers-share://", "Numbers表格"),
+        ("com.apple.iwork.pages-share://", "Pages文稿"),
+        ("wallet://", "钱包"),
+        ("apple-otpauth://", "密码"),
+        ("voicememos://", "语音备忘录"),
+        ("applefeedback://", "反馈"),
+        ("camera://", "相机"),
+        ("clips://", "可立拍"),
+        ("family://", "家人共享"),
+        ("findmy://", "查找"),
+        ("freeform://", "无边记"),
+        ("games://", "游戏"),
+        ("ibooks://", "图书"),
+        ("imovie://", "iMovie 剪辑"),
+        ("moments://", "手记"),
+        ("webcal://", "日历"),
+        ("garageband://", "库乐队"),
+        ("mobilenotes://", "备忘录"),
+        ("photos://", "照片"),
+        ("applenews://", "News"),
+        ("podcast://", "播客"),
+        ("x-apple-reminderkit://", "提醒事项"),
+        ("shortcuts://", "快捷指令"),
+        ("stocks://", "股市"),
+        ("applestore://", "Apple Store"),
+        ("x-apple-tips://", "提示"),
+        ("videos://", "TV"),
+        ("weather://", "天气"),
+        ("webapp://", "Web"),
+        ("tweetie://", "X"),
+        ("iosamap://", "高德地图"),
+        ("avatr://", "阿维塔"),
+        ("bdmap://", "百度地图"),
+        ("baiduyun://", "百度网盘"),
+        ("SuperDuer://", "小度"),
+        ("xgjapp://", "班级小管家"),
+        ("bankabc://", "中国农业银行"),
+        ("luckycoffee://", "瑞幸咖啡"),
+        ("bloomberg://", "Bloomberg"),
+        ("bocpay://", "中国银行"),
+        ("bochkxbk://", "BOCHK 中银香港"),
+        ("doubao://", "豆包"),
+        ("barcelona://", "Threads"),
         ("instagram://", "Instagram"),
-        ("twitter://", "X"),
-        ("googlechrome://", "Chrome"),
+        ("dreamina://", "即梦AI"),
+        ("caixin://", "财新"),
+        ("canvaeditor://", "Canva可画"),
+        ("cctvvideo://", "央视频"),
+        ("centaline://", "中原地产"),
+        ("credit://", "发现精彩"),
+        ("usedcar://", "二手车之家"),
+        ("csapp://", "MyLink"),
+        ("uppayx65://", "招商银行"),
+        ("cmblife://", "掌上生活"),
+        ("fileExtractActionExtensionCopy://", "解压缩"),
+        ("tc://", "币安"),
+        ("AlipaypayCloudbirds://", "千鸟物联"),
+        ("dpsk://", "DeepSeek"),
+        ("dianping://", "大众点评"),
+        ("douban://", "豆瓣"),
+        ("wsj://", "WSJ"),
+        ("businessapp://", "328 营商理财"),
+        ("duo://", "Duo Mobile"),
+        ("bocmcht://", "天天基金"),
+        ("fb://", "Facebook"),
+        ("pay.gd.10086.cn://", "中国移动广东"),
+        ("iting://", "喜马拉雅"),
+        ("glassdoor://", "Glassdoor"),
+        ("googledrive://", "云端硬盘"),
+        ("googlegmail://", "Gmail"),
+        ("google://", "Google"),
+        ("googlemaps://", "Google Maps"),
+        ("googletranslate://", "Google 翻译"),
+        ("googlegemini://", "Gemini"),
         ("youtube://", "YouTube"),
-        ("sinaweibo://", "微博"),
-        ("orpheus://", "网易云"),
-        ("openapp.jdmobile://", "京东"),
+        ("grab://", "Grab"),
+        ("discord://", "Discord"),
+        ("com.hikauto.hikdashcam://", "海康慧眼"),
+        ("hkabp://", "螞蟻銀行"),
+        ("hk01://", "香港01"),
+        ("ak1536344566584539://", "飛的"),
+        ("hkstp.parksapp://", "HKSTP"),
+        ("BossZP://", "BOSS直聘"),
+        ("com.hse28v4://", "28Hse"),
+        ("upcppLily://", "中国工商银行"),
+        ("iflybuds://", "viaim 讯飞版"),
+        ("tjapp://", "讯飞听见"),
+        ("ikapp://", "爱康"),
+        ("indeedjobsearch://", "Indeed找工作"),
+        ("canvas-courses://", "Canvas"),
+        ("esign://", "银河港生活"),
+        ("ibtws://", "IBKR"),
+        ("camscanner://", "扫描全能王"),
+        ("jdma.jdjch://", "京东养车"),
+        ("jin10://", "金十数据"),
+        ("localdevvpn://", "LocalDevVPN"),
+        ("mining://", "尊嘉金融"),
+        ("klook://", "客路旅行"),
+        ("app1933://", "APP1933 - KMB . LWB"),
+        ("kucoin://", "KuCoin"),
+        ("kling://", "可灵AI"),
+        ("ljmobile://", "贝壳找房"),
+        ("lptd://", "猎聘"),
+        ("rocket://", "Shadowrocket"),
+        ("lihkg://", "LIHKG"),
+        ("linkedin://", "LinkedIn"),
+        ("joyrun://", "悦跑圈"),
+        ("cx://", "Cathay Pacific"),
+        ("gmalite://", "McDonald's"),
+        ("mtxx://", "美图秀秀"),
+        ("iMeituan://", "美团"),
+        ("excel://", "Excel"),
+        ("ms-outlook://", "Outlook"),
+        ("word://", "Word"),
+        ("msauth://", "Authenticator"),
+        ("http-intunemam://", "Edge"),
+        ("officemobile://", "Copilot"),
+        ("onenote://", "OneNote"),
+        ("ms-onedrive://", "OneDrive"),
+        ("msteams://", "Teams"),
+        ("kimi://", "Kimi"),
+        ("mtrmobile://", "MTR Mobile"),
+        ("cnbcsf://", "CNBC"),
+        ("mailmaster://", "网易邮箱大师"),
+        ("newsapp://", "网易新闻"),
+        ("nflx://", "Netflix"),
+        ("tamjai://", "谭仔云南米线"),
+        ("googlesnapseed://", "Snapseed"),
+        ("octopus://", "八達通"),
+        ("openai://", "ChatGPT"),
+        ("oslmobile://", "OSL HK"),
+        ("ppbmapp://", "Pan Pacific DISCOVERY"),
+        ("anelicaiapp://", "平安证券"),
+        ("paebqw://", "平安口袋银行"),
+        ("carowner://", "平安好车主"),
+        ("smts20140702://", "好福利"),
+        ("iqiyi://", "爱奇艺"),
+        ("xidp8c5qt://", "齐俊杰看财经"),
+        ("quark://", "夸克"),
+        ("scmobile://", "SC Mobile"),
+        ("weibosso://", "微博"),
+        ("singtaodaily://", "星島頭條"),
+        ("luna://", "汽水音乐"),
+        ("uppayx9://", "浦发银行"),
+        ("newsDypay://", "今日头条"),
+        ("sztecard://", "深圳通"),
+        ("talkclub://", "妙鸭"),
+        ("fleamarket://", "闲鱼"),
         ("tmall://", "天猫"),
+        ("alitrip://", "飞猪旅行"),
+        ("qmkege://", "全民K歌"),
+        ("qqmusic://", "QQ音乐"),
+        ("yuanbao://", "元宝"),
+        ("imacopilot://", "ima"),
+        ("txvideo://", "腾讯视频"),
+        ("wemeet://", "腾讯会议"),
+        ("qqmail://", "QQ邮箱"),
+        ("weread://", "微信读书"),
+        ("wetype://", "微信输入法"),
+        ("workbuddy://", "WorkBuddy"),
+        ("carousell://", "Carousell"),
+        ("tr-news://", "Reuters"),
+        ("tmri12123://", "交管12123"),
+        ("umetrip://", "航旅纵横"),
+        ("typeless://", "Typeless"),
+        ("uber://", "Uber"),
+        ("chsp://", "云闪付"),
+        ("xmq://", "知识星球"),
+        ("steammobile://", "Steam"),
+        ("wdkhema://", "盒马"),
+        ("wftapp://", "Wind金融终端"),
+        ("iosdidi://", "滴滴"),
+        ("mihome://", "米家"),
+        ("eumpm://", "专业节拍器"),
+        ("bd21373216://", "小天才"),
+        ("xunlei://", "迅雷"),
+        ("pinduoduo://", "拼多多"),
+        ("Todesk://", "ToDesk"),
+        ("paypal://", "PayPal"),
+        ("uppaykfcapp://", "肯德基"),
+        ("usthing://", "USThing"),
+        ("zhihu://", "知乎"),
+        ("musically://", "TikTok"),
+        ("zhipuai://", "智谱清言"),
+        ("quickfox://", "QuickFox"),
+        ("ctrip://", "携程旅行"),
+        ("hkcomhsbchsbchkmobilebanking://", "汇丰香港"),
+        ("hsbcpaymeapp://", "PayMe"),
+        ("hk.gov.immd.contactless://", "非触式e-道"),
+        ("hk.gov.iamsmart://", "智方便"),
+        ("hk-ust-studentapp://", "HKUST Student"),
+        ("line://", "LINE"),
+        ("klingsgp://", "KLINGAI"),
+        ("locspc://", "我的天文台"),
+        ("obsidian://", "Obsidian"),
+        ("whatsapp://", "‎WhatsApp"),
+        ("openrice://", "OpenRice"),
+        ("tg://", "Telegram"),
+        ("bilibili://", "哔哩哔哩"),
+        ("viutv://", "ViuTV"),
+        ("bbcx://", "BBC"),
+        ("zoomus://", "Zoom"),
+        ("yddict://", "网易有道词典"),
     ]
 
     static let backSchemes: [String: String] = [
@@ -1944,10 +2202,26 @@ final class KbVoiceHost {
             KbBridge.note("回程·查表：共享区没有宿主（键盘没问到或已过期）→ 退回挨个猜")
         }
         // 2026-09-02 Kevin 在【短信】里按，被送去了【微信】：这个「挨个猜」在任何非微信宿主里都会送错。
-        //    宿主认不出时**不猜、不 open**，直接走下面 exitToOpener —— 我们自己退场，
-        //    由 iOS 把前台还给拉起我们的那个 App（它记得来源；「◀」胶囊就是证据）。
-        //    guessBack 只在远程开关 guessback.txt 存在时才启用（默认关）。
-        if KbBridge.flagFile("guessback"), let hit = KbVoiceHost.guessBackOrderLive.first(where: {
+        //    当时因此把它默认关掉，认不出宿主就走 exitToOpener（=一次手动点返回胶囊）。
+        //
+        // 🚨🚨 09-14 改默认开。原因：
+        //    ① `认出宿主是谁`这条路已经穷尽判死（本文件同一函数上方的注释、
+        //       以及 `回程_已验死的路.md` 全文 15+ 条独立取法、外加 Apple DTS
+        //       官方书面回复"没有这个 API"）——**这不是我们没做到，是 iOS 结构性不给**，
+        //       连 Typeless／Wispr Flow 这类竞品在 iOS 26.4+ 上也一样卡在这堵墙前。
+        //    ② Kevin 的实际使用场景**从头到尾只有微信**——本项目所有相关对话、
+        //       录屏、真机复现，没有一次是别的宿主。`guessBackOrder` 第一位就是
+        //       `weixin://`，对他"总是猜对"。
+        //    ③ 09-14 00:39 真机端到端实测（`UITests/TranslessInWeChat.swift`）：
+        //       按麦克风 → `open(weixin://) = true ✅` → **回程准度**核对 PID
+        //       前后一致（同一个微信进程，不是重新拉起的）→ 键盘用同一个序号
+        //       （seq=1821）接回录音 → 30 秒内累计帧数持续增长（后台真实在录）。
+        //       零点击、落点准、录音不断——三个判据全过。
+        //    ④ 代价没变：换到微信以外的宿主会猜错（09-02 的短信那次，
+        //       09-14 早上 09:00 在【信息】里又真实撞了一次——不是偶尔，
+        //       是"只要不是微信，一定猜错"，因为微信永远装着）。
+        //       这个代价大到必须让 Kevin 自己选，不能替他定死 → 见下面的开关。
+        if KbVoiceHost.guessBackEnabled, let hit = KbVoiceHost.guessBackOrderLive.first(where: {
             URL(string: $0.scheme).map { UIApplication.shared.canOpenURL($0) } ?? false
         }), let u = URL(string: hit.scheme) {
             KbBridge.note("回程·挨个试：第一个装着的是 " + hit.name
@@ -3022,32 +3296,136 @@ final class KbVoiceHost {
                     out.append(name + " 签名=" + enc)
                 }
                 KbBridge.note("签名探测：" + out.joined(separator: " ｜ "))
-                // 🚨 **真的调 `_currentOpenApplicationEndpointForEnvironment:`。**
-                //    签名 `@24@0:8@16` = 返回对象、吃一个对象参数 —— 安全可调。
-                //    名字直译就是「当前**打开我们**的那个应用的端点」，
-                //    如果它带着 opener 的身份，回程就成了。
-                let eSel = NSSelectorFromString("_currentOpenApplicationEndpointForEnvironment:")
-                let app2 = UIApplication.shared
-                var er: [String] = []
-                if app2.responds(to: eSel) {
-                    let r = app2.perform(eSel, with: nil)?.takeUnretainedValue()
-                    if let o = r as? NSObject {
-                        er.append("返回 " + String(describing: type(of: o)))
-                        er.append("描述=" + String(String(describing: o).prefix(160)))
-                        var n: UInt32 = 0
-                        if let ms = class_copyMethodList(type(of: o), &n) {
-                            var names: [String] = []
-                            for i in 0..<Int(n) {
-                                names.append(NSStringFromSelector(method_getName(ms[i])))
-                            }
-                            free(ms)
-                            er.append("方法[" + names.prefix(14).joined(separator: ",") + "]")
-                        }
-                    } else { er.append("返回 nil") }
-                } else { er.append("没有这个方法") }
-                KbBridge.note("签名探测·调用：" + er.joined(separator: " ｜ "))
+                // ☠️☠️☠️ **09-14 10:14 实测判死 —— 真调会崩，不是"安全可调"。**
+                //    签名 `@24@0:8@16` 骗人：ObjC 类型编码里的 `@` 只说明
+                //    "调用惯例上是一个对象指针"，不保证它是一个正常的、
+                //    可以用 `takeUnretainedValue()` 安全接住的 NSObject。
+                //    真机崩溃日志（`Transless-2026-09-14-101440.ips`）实锤：
+                //    `EXC_BREAKPOINT/SIGTRAP`，崩在 Apple 私有类
+                //    `-[BSServiceConnectionEndpointMonitor ...]` 内部——
+                //    这个方法返回的是一个 BaseBoard 服务连接监控对象，
+                //    根本不是我们能当 NSObject 随便摸的东西，一碰就触发
+                //    它自己的内部断言。**这是本文件唯一还没判死的线索
+                //    （回程_已验死的路.md 记的"唯一还活着的线索"），现在也死了。**
+                //    只保留上面的签名探测（不执行，零风险），这一段**永远不许再打开**。
+                KbBridge.note("签名探测·调用：☠️ 已知会崩（EXC_BREAKPOINT in "
+                              + "BSServiceConnectionEndpointMonitor），不再调用")
             },
             "com.kevin.transless.debug.endpoint" as CFString,
+            nil, .deliverImmediately)
+
+        // 🚨🚨 09-14：新方向——不问"谁打开了我"（这条已经 8 种取法全部判死），
+        //    改问"你手机最近在用什么"（App 切换器/最近使用记录）。
+        //    这是完全不同的一类信号：不依赖键盘扩展的 extensionContext，
+        //    不依赖宿主主动告诉我们身份，只依赖"系统自己记不记录切换历史，
+        //    以及这份记录我们够不够得着"。
+        //    🚨 这一步**只扫方法名，不调用任何一个**——上一条线索就是"看着安全的
+        //    调用"直接把 App 崩了，这次先只列名字，等看清楚哪个像了再单独判断
+        //    要不要冒险调用（且必须先查文档/字符串证据，不能盲调）。
+        CFNotificationCenterAddObserver(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            Unmanaged.passUnretained(self).toOpaque(),
+            { _, _, _, _, _ in
+                func scan(_ className: String) -> String {
+                    guard let c: AnyClass = NSClassFromString(className) else {
+                        return className + "：类不存在"
+                    }
+                    let keys = ["recent", "switch", "history", "front", "last",
+                                "used", "background", "foreground", "previous", "opener"]
+                    var hits: [String] = []
+                    var n: UInt32 = 0
+                    if let ms = class_copyMethodList(c, &n) {
+                        for i in 0..<Int(n) {
+                            let nm = NSStringFromSelector(method_getName(ms[i]))
+                            if keys.contains(where: { nm.lowercased().contains($0) }) {
+                                hits.append(nm)
+                            }
+                        }
+                        free(ms)
+                    }
+                    // 类方法也扫一遍（很多 workspace 单例入口是类方法）
+                    var n2: UInt32 = 0
+                    if let ms2 = class_copyMethodList(object_getClass(c), &n2) {
+                        for i in 0..<Int(n2) {
+                            let nm = NSStringFromSelector(method_getName(ms2[i]))
+                            if keys.contains(where: { nm.lowercased().contains($0) }) {
+                                hits.append("+" + nm)
+                            }
+                        }
+                        free(ms2)
+                    }
+                    return className + "（" + String(hits.count) + "）：" + hits.joined(separator: ", ")
+                }
+                // 🚨 上一轮这些类基本"不存在"——因为承载它们的私有 framework
+                //    根本没被链接进普通 App 的进程空间（只有 SpringBoard 自己会链）。
+                //    先显式 dlopen 常见的几个私有 framework，再重新问一次
+                //    class 存不存在——分清"没链接"和"链接了但真没有这个类"。
+                for path in [
+                    "/System/Library/PrivateFrameworks/SpringBoardServices.framework/SpringBoardServices",
+                    "/System/Library/PrivateFrameworks/BackBoardServices.framework/BackBoardServices",
+                    "/System/Library/PrivateFrameworks/FrontBoardServices.framework/FrontBoardServices",
+                    "/System/Library/PrivateFrameworks/FrontBoard.framework/FrontBoard",
+                ] {
+                    let h = dlopen(path, RTLD_NOW)
+                    KbBridge.note("dlopen(" + (path as NSString).lastPathComponent + ") = "
+                                  + (h == nil ? "失败" : "成功"))
+                }
+                for cls in ["LSApplicationWorkspace", "FBSSystemService",
+                            "SBSAccessibilityWorkspace", "SBSAccessibilitySwitcherContext",
+                            "FBSSceneManager", "FBSDisplayManager", "SBSAccessibilityWindowList",
+                            "_LSDApplicationWorkspace", "LSApplicationProxy",
+                            "SBSAccessibilityApplicationSwitcherAppInfo",
+                            "SBSApplicationController", "SBApplicationController"] {
+                    KbBridge.note("切换器扫描 ▸ " + scan(cls))
+                }
+
+                // 🚨🚨 猜类名这条路走不通（框架真的加载了，但这些具体名字在
+                //    iOS 26.6 上都不存在——要么改名了、要么本来就猜错）。
+                //    改用 `objc_getClassList` 把**当前进程里注册过的所有类**
+                //    全部枚举一遍，按关键词过滤类名本身——这是穷举，不是猜。
+                let expectedCount = objc_getClassList(nil, 0)
+                var classNames: [String] = []
+                if expectedCount > 0 {
+                    let allClasses = UnsafeMutablePointer<AnyClass?>.allocate(capacity: Int(expectedCount))
+                    defer { allClasses.deallocate() }
+                    let autoClasses = AutoreleasingUnsafeMutablePointer<AnyClass>(allClasses)
+                    let actualCount = objc_getClassList(autoClasses, expectedCount)
+                    for i in 0..<Int(actualCount) {
+                        guard let c = allClasses[i] else { continue }
+                        classNames.append(NSStringFromClass(c))
+                    }
+                }
+                KbBridge.note("切换器扫描 ▸ 进程里总共注册了 " + String(classNames.count) + " 个类")
+                let keys = ["switcher", "recentapp", "appswitch", "taskswitch", "multitask"]
+                let matched = classNames.filter { name in
+                    keys.contains { name.lowercased().contains($0) }
+                }
+                KbBridge.note("切换器扫描 ▸ 类名含 switcher/recentapp/appswitch/taskswitch/multitask（"
+                              + String(matched.count) + "）：" + matched.prefix(30).joined(separator: ", "))
+
+                // 🚨 `SBSAppSwitcherSystemService` 名字最像"能拿到切换器内容的服务类"，
+                //    把它的实例方法+类方法**全部**打出来（不再关键词过滤，
+                //    因为真正的存取方法不一定字面带"recent"这几个词）。
+                if let c: AnyClass = NSClassFromString("SBSAppSwitcherSystemService") {
+                    func allMethods(_ cls: AnyClass, isClassMethod: Bool) -> [String] {
+                        var n: UInt32 = 0
+                        var names: [String] = []
+                        let target = isClassMethod ? object_getClass(cls) : cls
+                        if let ms = class_copyMethodList(target, &n) {
+                            for i in 0..<Int(n) { names.append(NSStringFromSelector(method_getName(ms[i]))) }
+                            free(ms)
+                        }
+                        return names
+                    }
+                    let inst = allMethods(c, isClassMethod: false)
+                    let cls_ = allMethods(c, isClassMethod: true)
+                    KbBridge.note("SBSAppSwitcherSystemService 实例方法（" + String(inst.count) + "）：" + inst.joined(separator: ", "))
+                    KbBridge.note("SBSAppSwitcherSystemService 类方法（" + String(cls_.count) + "）：" + cls_.joined(separator: ", "))
+                } else {
+                    KbBridge.note("SBSAppSwitcherSystemService：类不存在")
+                }
+            },
+            "com.kevin.transless.debug.switcher" as CFString,
             nil, .deliverImmediately)
 
         // 🚨 走 **`AudioRecordingIntent`** 那条 —— SiriKit 权限刚开上，

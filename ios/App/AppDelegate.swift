@@ -3496,6 +3496,14 @@ final class PrefsViewController: UIViewController {
         list.addArrangedSubview(group(L.prefs_g_pref))
         list.addArrangedSubview(row(L.lang_title, Lang.label(Lang.current),
                                     #selector(pickLanguage)))
+        // 🚨 09-14：自动切回微信这条给他一个自己能改的开关，别再让他每次
+        //    踩到取舍就得来找我一趟——点一下就在两种模式间切换，副标题
+        //    直接显示当前是哪一种，不用进二级页面。
+        let arRow = row(L.prefs_autoreturn_title,
+                        KbVoiceHost.guessBackEnabled ? L.prefs_autoreturn_on : L.prefs_autoreturn_off,
+                        #selector(tapAutoReturnMode))
+        arRow.accessibilityIdentifier = "prefs.row.autoreturn"
+        list.addArrangedSubview(arRow)
 
         // ③ 诊断
         list.addArrangedSubview(group(L.prefs_g_diag))
@@ -3749,6 +3757,13 @@ final class PrefsViewController: UIViewController {
     }
 
     /// 界面语言：跟安卓一样弹窗选。
+    /// 点一下在「微信优先」和「保守（不猜）」之间切换——不用二级页面、
+    /// 不用等我，这个取舍是他自己承担代价的选择，给他一个随手能改的开关。
+    @objc private func tapAutoReturnMode() {
+        KbVoiceHost.guessBackEnabled.toggle()
+        build()
+    }
+
     @objc private func pickLanguage() {
         // 🚨 用 .alert 不用 .actionSheet：这是 iPad 应用
         //    （project.yml 的 TARGETED_DEVICE_FAMILY = "1,2"），

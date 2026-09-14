@@ -117,7 +117,10 @@ targets:
         # 🚨🚨 **不许加系统 scheme**（sms / mailto / message / x-web-search）：
         #    它们**永远返回可打开**，加进去会永远第一个命中，
         #    把他从微信劫持到短信。顺序在 `KbVoiceHost.guessBackOrder` 里定。
-        LSApplicationQueriesSchemes: [weixin, wechat, lark, mqq, xhsdiscover, snssdk1128, taobao, tmall, alipay, openapp.jdmobile, tg, telegram, whatsapp, slack, msteams, ms-outlook, notion, instagram, twitter, googlechrome, youtube, sinaweibo, orpheus]
+        # 🚨 09-14：Kevin 追问"Typeless 候选表 50 个、我们只有 23 个"之后扩的——
+        #    补齐到接近它的量级，新增的都是有公开文档的常见 App scheme，
+        #    顺序对应关系在 `KbVoiceHost.guessBackOrder` 里。
+        LSApplicationQueriesSchemes: [weixin, wechat, lark, mqq, xhsdiscover, snssdk1128, taobao, tmall, alipay, openapp.jdmobile, tg, telegram, whatsapp, slack, msteams, ms-outlook, notion, instagram, twitter, googlechrome, youtube, sinaweibo, orpheus, fb, fb-messenger, snapchat, line, kakaotalk, viber, skype, zoomus, dingtalk, baidumap, iosamap, didialpine, meituanwaimai, imeituan, dianping, bilibili, kwai, pinduoduo, suning, ctrip, qunar, elemecn, gaodeh5, baiduboxapp, sogousearch, qqmusic, spotify, netease-cloud-music, keep, xmly, evernote, onenote, googledrive, dropbox, gmail, readdle-spark, wpsoffice, csair]
         NSMicrophoneUsageDescription: 用来听你说的中文，转成文字后整理并译成英文。
         # 🚨🚨 **这三条缺一个，包就传不上 TestFlight**（2026-09-06 实撞两次）。
         #    苹果邮件原文（构建 1173 / 1175 各一封）：
