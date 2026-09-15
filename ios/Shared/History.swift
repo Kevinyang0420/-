@@ -233,32 +233,19 @@ enum History {
     }
 
     /// 追加一行。文件不在就创建。
+    ///
+    /// 🚨 09-15 曾在这里加过一版"每次读写都打 note"的诊断（怀疑真机上这个函数
+    ///    静默写失败）——0 后来查实那次"文件不存在"是他自己 `devicectl copy from`
+    ///    拉**单个文件**的用法有问题（拉目录才行，见 `pitfalls/app.md`），
+    ///    这个函数本身没问题，已撤回诊断。**别再加**：`kb.trail` 是 200 行环形
+    ///    缓冲，这个函数在正常使用下**每说一句话就跑一次**，长期挂着的成功日志
+    ///    会把别的诊断信息挤出去——这类"是否要写、写多久"的诊断只该在真正怀疑
+    ///    这个函数时临时加、查完就撤，不是常驻代码。
     private static func append(_ line: String) {
-        // 🚨🚨 0 09-15 真机实证：跳转路 `History.add` 那一行（`KbVoiceHost.swift:4898`）
-        //    确实执行了（紧挨着的 `postPending` note 在 trail 里出现了），但
-        //    `history.jsonl` 在设备上不存在。0 的诊断步骤：在这个函数**前后各打
-        //    一行 note**，把 `fileURL()` 解析到的路径、写入是成功还是失败都打出来
-        //    —— 判据挂在「文件真的存在且有这条」，不是「note 打出来了」。
-        //    以前这里两条写路径（首次创建 / 追加）全是 `try?`/静默 `catch`，
-        //    写失败**没有任何痕迹**——这正是"检查写对了≠检查在跑"那一族的反面：
-        //    这里连检查都没有。现在两条都留痕，不许再静默。
-        guard let url = fileURL() else {
-            KbBridge.note("🚨 History.append：fileURL() 拿不到路径（App Group 容器和本进程容器都解析不出来）")
-            return
-        }
-        guard let d = line.data(using: .utf8) else {
-            KbBridge.note("🚨 History.append：这一行转不成 UTF-8 data，行首=" + String(line.prefix(40)))
-            return
-        }
+        guard let url = fileURL(), let d = line.data(using: .utf8) else { return }
         let fm = FileManager.default
         if !fm.fileExists(atPath: url.path) {
-            do {
-                try d.write(to: url, options: .atomic)
-                KbBridge.note("History.append：首次创建文件并写入 " + String(d.count) + " 字节｜" + url.path)
-            } catch {
-                KbBridge.note("🚨 History.append：首次创建写入失败｜" + url.path + "｜"
-                              + String("\(error)".prefix(160)))
-            }
+            try? d.write(to: url, options: .atomic)
             return
         }
         // 🚨🚨 用 throwing 版 `seekToEnd()`/`write(contentsOf:)`（iOS 13.4+，本工程 16.0）。
@@ -272,12 +259,8 @@ enum History {
             defer { try? h.close() }
             try h.seekToEnd()
             try h.write(contentsOf: d)
-            KbBridge.note("History.append：追加 " + String(d.count) + " 字节成功｜" + url.path)
         } catch {
-            // 🚨 之前这里是真的吞掉——历史写失败不许连累上屏，这条不变；
-            //    但**吞异常不等于不许留痕**，两者是两回事。
-            KbBridge.note("🚨 History.append：追加写入失败（异常已吞，不影响上屏）｜"
-                          + url.path + "｜" + String("\(error)".prefix(160)))
+            // 现在真的吞掉了：历史写失败绝不连累上屏。
         }
     }
 
