@@ -31,6 +31,7 @@ enum Reverse {
     static let targetOf: [String: String] = [
         "zh": "zh", "hant": "zht", "en": "en",
         "ja": "ja", "de": "de", "es": "es", "ar": "ar",
+        "vi": "vi", "th": "th",   // 🚨 2026-09-14 加（Kevin 点名东南亚语种）
     ]
 
     static func target(for uiLang: String?) -> String {
@@ -106,6 +107,9 @@ enum Reverse {
         if target(for: "de") != "de" { return "德语界面 -> de" }
         if target(for: "es") != "es" { return "西语界面 -> es" }
         if target(for: "ar") != "ar" { return "阿语界面 -> ar" }
+        // 🚨 2026-09-14 加 vi/th，跟安卓 `Reverse.selfTest` 一一对应
+        if target(for: "vi") != "vi" { return "越南语界面 -> vi" }
+        if target(for: "th") != "th" { return "泰语界面 -> th" }
 
         // ---- 方向判定。**坏样本是这一组的要害**（对齐安卓 selfTest）----
         if !isMine("我们明天开个会") { return "纯中文该判我说的" }

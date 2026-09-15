@@ -41,8 +41,15 @@ enum KbBridge {
 
     /// 心跳多久算还活着。
     /// 主 App 每 `beatEvery` 秒写一次，键盘认 `staleAfter` 秒。
-    static let beatEvery: TimeInterval = 2
-    static let staleAfter: TimeInterval = 6
+    // 🚨 09-14 Kevin 要求省电：这个定时器同时驱动 tick() 整套引擎检查，
+    //    24 小时待命档期间每 2 秒就要把 CPU 叫醒一次，一天 4 万 3 千多次——
+    //    这类周期性唤醒是 iOS 上公认的耗电大头，跟播不播音频是两回事。
+    //    拉到 8 秒，一天降到约 1 万次，比例仍按 1:3 留给 staleAfter。
+    //    🚨 真正保护"宿主刚死、他按了没反应"这个场景的是
+    //    KeyboardViewController 里那个独立的 1.5 秒兜底（`fallbackWork`），
+    //    不靠这两个数——staleAfter 变大不会让那条路径变慢，已确认。
+    static let beatEvery: TimeInterval = 8
+    static let staleAfter: TimeInterval = 24
 
     // ------------------------------------------------------------ 可用性
 
@@ -921,6 +928,13 @@ enum KbBridge {
     /// 🚨 过滤同样只有 `VocabCore` 那一份实现，这里不重写。
     static func styleVocab() -> String {
         VocabCore.joinFor(loadVocab(), asr: false)
+    }
+
+    /// 同上，但给 09-14 之后的 `/api/llm`（服务端认 `vocab` 数组，不再吃
+    /// 拼进 system 提示词里的顿号字符串）。**同一份过滤逻辑，两种形状**——
+    /// 别为了这个新出口重写一遍 `VocabCore` 的过滤规则。
+    static func styleVocabArray() -> [String] {
+        VocabCore.wordsFor(loadVocab(), asr: false)
     }
 
     static func markArmed(_ on: Bool) {

@@ -23,6 +23,16 @@ final class AccountViewController: UIViewController {
 
     private let stack = UIStackView()
 
+    /// 🚨🚨 09-14 晚 Kevin 真机撞到的 bug 就出在这一行的旧写法上：
+    ///    `memberRow()` 原来只读 `ProStatus.isProCached`（纯本地缓存，
+    ///    这台设备可能从没成功同步过），从不问服务端，
+    ///    也没法区分"没登录"和"登录了没订阅"——他的账号后端明明是十年 Pro，
+    ///    界面却显示「未订阅」。现在页面一出现就问一次服务端，
+    ///    拿到权威的三态结果存在这里，`memberRow()` 照它画。
+    ///    初始值给个基于本地缓存的乐观猜测，活的结果回来后立刻纠正。
+    private var proState: ProCheckResult = ProCheck.classify(
+        isPro: ProStatus.isProCached, until: ProStatus.cachedUntilValue, hasReason: false)
+
     override func viewDidLoad() {
         super.viewDidLoad()
         UI.paintBg(self)
@@ -55,6 +65,15 @@ final class AccountViewController: UIViewController {
         super.viewWillAppear(animated)
         // 从生日那一页回来要刷新。
         refresh()
+        // 🚨🚨 每次进这一页都问一次服务端，不是只信本机缓存——本地缓存可能
+        //    从没同步成功过（Kevin 那次就是），只有活的响应能分清
+        //    "没登录"和"登录了没订阅"。资料字段的编辑走的是弹窗（`UIAlertController`），
+        //    不是页面里的输入框，整页重建不会打断正在填的东西。
+        ProStatus.refresh { [weak self] result in
+            guard let self = self else { return }
+            self.proState = result
+            self.refresh()
+        }
     }
 
     /// 照 `Auth.profileKeys` 画。加字段只改那张表。
@@ -128,6 +147,10 @@ final class AccountViewController: UIViewController {
     /// 会员行——照抄 `PrefsViewController.row()` 那套标题+副标题+箭头视觉，
     /// 那个方法是私有的、在另一个类里，拿不到，所以这里单起一份，
     /// 不引入新的共享抽象（就一处用，抽公共方法是过度设计）。
+    ///
+    /// 🚨🚨 副标题和点击目标现在跟着 `proState` 走（三态而不是两态），
+    ///    不再是"读一次本地缓存、永远指去付款页"——
+    ///    `_spec_not_logged_in_vs_not_subscribed.md` 那次真机 bug 的根子就在这里。
     private func memberRow() -> UIView {
         let b = UIControl()
         b.backgroundColor = UIColor.white.withAlphaComponent(0.06)
@@ -140,7 +163,12 @@ final class AccountViewController: UIViewController {
         t.textColor = Skin.text
         t.font = .systemFont(ofSize: 15.5)
         let s = UILabel()
-        s.text = ProStatus.isProCached ? L.prefs_pro_active : L.prefs_pro_inactive
+        switch proState {
+        case .pro: s.text = L.prefs_pro_active
+        case .notLoggedIn: s.text = L.prefs_pro_logged_out
+        case .notSubscribed: s.text = L.prefs_pro_inactive
+        case .unreachable: s.text = L.prefs_pro_unknown
+        }
         s.textColor = Skin.sub
         s.font = .systemFont(ofSize: 11.5)
         let col = UIStackView(arrangedSubviews: [t, s])
@@ -155,7 +183,7 @@ final class AccountViewController: UIViewController {
             col.topAnchor.constraint(equalTo: b.topAnchor, constant: 15),
             col.bottomAnchor.constraint(equalTo: b.bottomAnchor, constant: -15),
         ])
-        b.addTarget(self, action: #selector(openSubscribe), for: .touchUpInside)
+        b.addTarget(self, action: #selector(tapMemberRow), for: .touchUpInside)
         let chev = UILabel()
         chev.text = UIView.userInterfaceLayoutDirection(for: .unspecified)
             == .rightToLeft ? "‹" : "›"
@@ -170,13 +198,27 @@ final class AccountViewController: UIViewController {
         return b
     }
 
-    /// 🚨 09-13 从 `PrefsViewController` 挪过来的。原来那条注释仍然成立：
-    ///    会员状态跟**账号**走（服务端 `pro_until` 挂在 `user_id` 上，不是设备），
-    ///    但现在**不需要 `loginGate` 了**——能看到这一页就说明已登录
-    ///    （`openAccount()` 早分流过：没登录直接进 `LoginViewController`）。
-    @objc private func openSubscribe() {
-        navigationController?.pushViewController(SubscribeViewController(),
-                                                 animated: true)
+    /// 🚨🚨 09-14 晚发现：上面那条"能看到这一页就说明已登录，不需要再判断"
+    ///    的假设**不成立**——`openAccount()` 的分流只看本地的 `Auth.loggedIn`
+    ///    标志，这台设备**本地标志可能是真的、后端会话却早失效了**
+    ///    （Kevin 真机就是这个状态：本地一直觉得自己登录着，后端 `/api/pro`
+    ///    回的其实是 `reason:"未登录"`）。所以这一行**不能无条件去付款页**——
+    ///    他很可能已经付过钱了，指去付款页 = 让他重复付费。
+    @objc private func tapMemberRow() {
+        switch proState {
+        case .notLoggedIn:
+            navigationController?.pushViewController(LoginViewController(), animated: true)
+        case .unreachable:
+            // 🚨 查不到不代表任何真实状态，点一下就是再问一次，不许乱跳页面。
+            ProStatus.refresh { [weak self] result in
+                guard let self = self else { return }
+                self.proState = result
+                self.refresh()
+            }
+        case .pro, .notSubscribed:
+            navigationController?.pushViewController(SubscribeViewController(),
+                                                     animated: true)
+        }
     }
 
     private func label(for id: String) -> String {

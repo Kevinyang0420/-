@@ -127,4 +127,103 @@ final class KeyboardUITests: XCTestCase {
         NSLog("UITEST 本次新增=%@", delta.isEmpty ? "（一个字都没新增）" : delta)
         NSLog("UITEST 结束时还在微信吗=%d", wx.state == .runningForeground ? 1 : 0)
     }
+
+    /// 验 `pinyinGuess()` 搬到服务端后真机还出不出字（0 验收判据③）。
+    /// 打字键盘默认就是中文拼音档，三个音节够触发云端整句猜测——
+    /// 不用切档，只要能进「打字」面板就行。
+    func testPinyinCloudGuess() throws {
+        let wx = XCUIApplication(bundleIdentifier: "com.tencent.xin")
+        wx.activate()
+        XCTAssertTrue(wx.wait(for: .runningForeground, timeout: 20), "微信没起来")
+        Thread.sleep(forTimeInterval: 3)
+
+        var inChat = false
+        for (n, y) in [0.22, 0.30, 0.38, 0.46].enumerated() {
+            if n > 0 {
+                let a = wx.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
+                let b = wx.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5))
+                a.press(forDuration: 0.05, thenDragTo: b)
+                Thread.sleep(forTimeInterval: 1.5)
+            }
+            tap(wx, 0.5, CGFloat(y), "会话第 \(n + 1) 行")
+            if wx.textViews.count > 0 || wx.textFields.count > 0 { inChat = true; break }
+        }
+        NSLog("UITEST 进会话了吗=%d", inChat ? 1 : 0)
+
+        tap(wx, 0.45, 0.945, "输入框")
+
+        // 不是 Transless 就切；跟 testWeChatMic 同一套地球键逻辑。
+        if !wx.buttons["transless.mic"].exists && !wx.buttons["kb.bottom.type"].exists {
+            NSLog("UITEST 当前不是 Transless，去切键盘")
+            let globe = wx.coordinate(withNormalizedOffset: CGVector(dx: 0.07, dy: 0.945))
+            globe.press(forDuration: 1.3)
+            Thread.sleep(forTimeInterval: 1.8)
+            var picked = false
+            for i in 0..<min(wx.buttons.count, 60) {
+                let b = wx.buttons.element(boundBy: i)
+                if b.exists, b.label.contains("Transless"), b.isHittable {
+                    b.tap(); picked = true
+                    break
+                }
+            }
+            if !picked {
+                for n in 0..<8 where !wx.buttons["transless.mic"].exists
+                    && !wx.buttons["kb.bottom.type"].exists {
+                    globe.tap()
+                    Thread.sleep(forTimeInterval: 1.4)
+                    NSLog("UITEST 循环切第 %d 次", n + 1)
+                }
+            }
+            Thread.sleep(forTimeInterval: 1.5)
+        }
+
+        // 语音面板是默认档，打字键盘要点底部「打字」切过去。
+        let typeBtn = wx.buttons["kb.bottom.type"]
+        guard typeBtn.waitForExistence(timeout: 8) else {
+            NSLog("UITEST 🚨 始终没切到 Transless（找不到 kb.bottom.type）")
+            return
+        }
+        typeBtn.tap()
+        NSLog("UITEST ✅ 切到打字键盘")
+        Thread.sleep(forTimeInterval: 1.5)
+
+        // 🚨 用 0 已经在服务端验过的长串（9 个音节），不用 "wojintian" 那种
+        //    短串——短串本地字典自己就能拼出"我今天"，测不出候选到底是不是
+        //    云端回来的。这条长串本地逐字典拼不出通顺整句，只有云端整句
+        //    猜测能给出「我今天下午三点开会」，命中了才是真证据。
+        let letters = "wojintianxiawusandiankaihui"
+        var typed = ""
+        for ch in letters {
+            let k = String(ch)
+            let key = wx.buttons[k]
+            guard key.waitForExistence(timeout: 3) else {
+                NSLog("UITEST 🚨 找不到字母键 %@（已打：%@）", k, typed)
+                continue
+            }
+            key.tap()
+            typed += k
+        }
+        NSLog("UITEST 打完拼音串=%@", typed)
+
+        // cloudDelay 0.7s + 网络往返，留够余量再读候选栏。
+        Thread.sleep(forTimeInterval: 6)
+
+        var candTexts: [String] = []
+        for i in 0..<min(wx.buttons.count, 100) {
+            let b = wx.buttons.element(boundBy: i)
+            guard b.exists else { continue }
+            let l = b.label
+            if l.count >= 2,
+               l.unicodeScalars.contains(where: { $0.value >= 0x4E00 && $0.value <= 0x9FFF }) {
+                candTexts.append(l)
+            }
+        }
+        NSLog("UITEST 候选栏及周边中文按钮=%@",
+              candTexts.isEmpty ? "（一个都没有）" : candTexts.joined(separator: "|"))
+        // 🚨 这条长串本地逐字典拼不出通顺整句，命中这个精确整句
+        //    才是云端 pinyinGuess() 真出字的铁证（不是本地字典碰巧拼对）。
+        let expect = "我今天下午三点开会"
+        let hit = candTexts.contains(expect)
+        NSLog("UITEST 【判据】云端整句候选命中「%@」=%d", expect, hit ? 1 : 0)
+    }
 }

@@ -21,36 +21,63 @@ import WebKit
 final class PrivacyViewController: UIViewController {
 
     private let web = WKWebView()
-    /// 第 1 格（同步的开关）。**没开过同步时整格不画** —— 连标题一起。
+    /// 第 1 格（同步的开关）内容。**没开过同步时整格不画** —— 连标题一起。
     private let syncBox = UIStackView()
+    /// 第 1 格的卡片外壳——见下面 `docBox` 的说明，两格必须是**同一种卡片**。
+    private let syncCard = UIView()
     /// 第 2 格（具体的隐私政策）的小标题。
     ///
-    /// 🚨 Kevin 09-07：「你至少这里面要分**两个格子**吧：1. 一个是同步的开关
-    ///    2. 另一个才是具体的隐私政策」。原来是"正文上面挂一行同步"，
-    ///    读起来是主次关系；他要的是**两个并列区块，各有各的标题**。
-    ///    他那句「跟前面那个已同步有什么关系呢」说的是：
-    ///    **关系要在界面上写出来，不能靠用户猜。**
+    /// 🚨🚨 09-14 二次翻车，写清楚别再犯：09-07 那版已经把 `syncBox`/`docHead`
+    ///    拆成了两个变量、各自有标题，**但只有 `syncBox` 内部那个状态行
+    ///    （`row.backgroundColor = Theme.key`）有卡片背景，`docHead`+`web`
+    ///    从来没被套进一个真正的卡片容器**——只是一个灰色小标题浮在裸的
+    ///    WebView 上面，没有背景、没有边框。所以视觉上是"一个圆角胶囊
+    ///    + 底下一大片没有边界的正文"，跟 Kevin 09-14 说的一模一样：
+    ///    「头顶上一个『同步说话记录』，下面全是这些隐私条款」。
+    ///    "分成两个变量" 不等于 "分成两个看得见的格子"——安卓
+    ///    `PrivacyScreen.java` 的 `syncBox`/`docBox` **都**套了
+    ///    `Skin.glass(host)` 背景，这才是"并列"的真正意思。
+    ///    现在 `docHead`+`web` 一起装进 `docBox`（下面那个 UIView），
+    ///    `syncBox` 也整体套进 `syncCard`，两个卡片用同一套样式
+    ///    （`Theme.panel` + 18pt 圆角 + 0.6pt 描边，跟 `HistoryListViewController`
+    ///    的卡片同源，不自己再配一套）。
     private let docHead = UILabel()
+    /// 第 2 格的卡片外壳，装 `docHead` + `web`。
+    private let docBox = UIView()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         title = L.prefs_privacy
         UI.paintBg(self)
 
-        // ── 顶部：上云状态 + 停止（#97②a：入口挪到隐私这一类里统一操作）──
+        // ── 卡片通用样式：跟 `HistoryListViewController.wbCard` 同一套，
+        //    别自己再配一套（他定过「你不要自己设计了」）。
+        for card in [syncCard, docBox] {
+            card.backgroundColor = Theme.panel
+            card.layer.cornerRadius = 18
+            card.layer.borderWidth = 0.6
+            card.layer.borderColor = UIColor.white.withAlphaComponent(0.16).cgColor
+            card.clipsToBounds = true
+            card.translatesAutoresizingMaskIntoConstraints = false
+        }
+
+        // ── 格子 1：上云状态 + 停止（#97②a：入口挪到隐私这一类里统一操作）──
         syncBox.axis = .vertical
         syncBox.spacing = 6
         syncBox.translatesAutoresizingMaskIntoConstraints = false
-        // 🚨🚨 **不许比自己的内容更高**。
-        //    没开同步时这个 stack 是空的（固有高度 0），可**没人要求它贴着
-        //    固有高度** —— 而 `web.bottom` 钉在安全区底，
-        //    于是"把 syncBox 拉满、把 web 压成 0 高"**完全满足所有约束**，
-        //    Auto Layout 就真的这么解了：**整页空白，正文一个字都没有**。
-        //    （用例当时五条判据全绿 —— 因为我验的是标题和返回键，
-        //      **没验正文有没有真的显示**。判据又挂错了对象。）
-        syncBox.setContentHuggingPriority(.required, for: .vertical)
-        syncBox.setContentCompressionResistancePriority(.required,
-                                                        for: .vertical)
+        syncCard.addSubview(syncBox)
+        NSLayoutConstraint.activate([
+            syncBox.topAnchor.constraint(equalTo: syncCard.topAnchor),
+            syncBox.leadingAnchor.constraint(equalTo: syncCard.leadingAnchor),
+            syncBox.trailingAnchor.constraint(equalTo: syncCard.trailingAnchor),
+            syncBox.bottomAnchor.constraint(equalTo: syncCard.bottomAnchor),
+        ])
+        // 🚨 没开过同步时**整张卡片隐藏**，不是"卡片在、内容空"——
+        //    卡片有背景和描边，空着也会画出一个没内容的圆角框，
+        //    等于把"难找"的取消入口变成"显眼但空"的怪东西。
+        //    `UIStackView` 会自动跳过 `isHidden` 的 arranged subview，
+        //    根 stack 不用再靠"空 stack + required hugging"这种
+        //    间接手法猜它会不会占位——直接让它不占位。
 
         web.translatesAutoresizingMaskIntoConstraints = false
         web.isOpaque = false
@@ -66,45 +93,43 @@ final class PrivacyViewController: UIViewController {
         //    那正是他要消掉的行为。策略见 `webView(_:decidePolicyFor:)`。
         web.navigationDelegate = self
 
-        // ── 第 2 格的小标题 ──
+        // ── 格子 2：隐私政策正文，标题 + 正文一起装进 docBox 这张卡 ──
         docHead.text = L.prefs_privacy
         docHead.font = .systemFont(ofSize: 13, weight: .semibold)
         docHead.textColor = Theme.dim
         docHead.accessibilityIdentifier = "privacy.head.doc"
-        // 🚨 在 stack 里就不自己挂左右约束了，缩进交给 stack 的 margins，
-        //    否则同一件事两套实现（约束 + margins），改一处必漂。
         docHead.translatesAutoresizingMaskIntoConstraints = false
+        docBox.addSubview(docHead)
+        docBox.addSubview(web)
+        NSLayoutConstraint.activate([
+            docHead.topAnchor.constraint(equalTo: docBox.topAnchor, constant: 12),
+            docHead.leadingAnchor.constraint(equalTo: docBox.leadingAnchor, constant: 14),
+            docHead.trailingAnchor.constraint(equalTo: docBox.trailingAnchor, constant: -14),
+            web.topAnchor.constraint(equalTo: docHead.bottomAnchor, constant: 6),
+            web.leadingAnchor.constraint(equalTo: docBox.leadingAnchor),
+            web.trailingAnchor.constraint(equalTo: docBox.trailingAnchor),
+            web.bottomAnchor.constraint(equalTo: docBox.bottomAnchor),
+        ])
 
-        // 🚨🚨 **一个根竖直 stack，多余空间确定性地给正文**。
-        //
-        //    上一版是三个视图各挂各的约束：syncBox 顶边钉安全区顶、
-        //    docHead 挂 syncBox 底、web 挂 docHead 底且底边钉安全区底。
-        //    这组约束**留了一个自由度**：syncBox 的高度没人管 ——
-        //    于是"把 syncBox 拉满整屏、把正文压成 0 高"**每条约束都满足**，
-        //    Auto Layout 就真这么解了：**整页空白，小标题被挤到最底下**。
-        //
-        //    我第一次的修法是给 syncBox 加 hugging（"不许比内容更高"）——
-        //    **那是错的**：空 stack 没有固有尺寸，hugging 无从谈起，
-        //    改完截图跟没改一模一样。
-        //
-        //    现在换成 `.fill` 的根 stack：多余空间给**竖直 hugging 最低**的，
-        //    只让 web 低、另两个 required —— 空 syncBox 排到 0 高，
-        //    正文吃满剩下的。**不依赖固有尺寸，是确定的。**
-        let root = UIStackView(arrangedSubviews: [syncBox, docHead, web])
+        // 🚨🚨 **一个根竖直 stack，多余空间确定性地给 docBox（正文那张卡）。**
+        //    上一版三个视图各挂各的约束时留过一个自由度、被 Auto Layout
+        //    解出"正文压成 0 高"的坏解（09-07 栽过一次）。现在两个卡片
+        //    平级放进 `.fill` 的根 stack，只给 `docBox` 低 hugging，
+        //    `syncCard` 保持 required —— 跟原来那版的处理方式一致，
+        //    只是把"三个视图"换成了"两张卡片"，道理没变。
+        let root = UIStackView(arrangedSubviews: [syncCard, docBox])
         root.axis = .vertical
         root.distribution = .fill
         root.alignment = .fill
-        root.spacing = 6
-        // 🚨 只给小标题留缩进；正文自己有内边距，缩了会挤成一条。
+        root.spacing = 14
         root.isLayoutMarginsRelativeArrangement = true
-        root.layoutMargins = UIEdgeInsets(top: 0, left: Theme.pad + 4,
+        root.layoutMargins = UIEdgeInsets(top: 0, left: Theme.pad,
                                           bottom: 0, right: Theme.pad)
         root.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(root)
-        syncBox.setContentHuggingPriority(.required, for: .vertical)
-        docHead.setContentHuggingPriority(.required, for: .vertical)
-        web.setContentHuggingPriority(.defaultLow, for: .vertical)
-        web.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        syncCard.setContentHuggingPriority(.required, for: .vertical)
+        docBox.setContentHuggingPriority(.defaultLow, for: .vertical)
+        docBox.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
 
         let g = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
@@ -233,9 +258,11 @@ final class PrivacyViewController: UIViewController {
         syncBox.arrangedSubviews.forEach {
             syncBox.removeArrangedSubview($0); $0.removeFromSuperview()
         }
-        // 🚨 没开过同步的人：**第 1 格连标题一起不画**，只剩隐私政策那格。
+        // 🚨 没开过同步的人：**整张卡片隐藏**，不只是清空内容
+        //    ——卡片现在有背景和描边，空着也会画出一个没内容的圆角框。
         //    别为了"版式对称"把取消入口露给没开过的人（他定过要"难找"）。
-        guard HistSync.isOn else { return }
+        guard HistSync.isOn else { syncCard.isHidden = true; return }
+        syncCard.isHidden = false
 
         let head = UILabel()
         head.text = L.hs_title

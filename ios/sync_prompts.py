@@ -40,32 +40,14 @@ except ImportError:
 #    这里还在找旧串）。**特征串要挑那种改文案也不会动的结构性标记。**
 # 🚨 **文件名 + 特征串这一层不依赖 engine** —— CI 上要用它生成 Secrets.swift。
 #    engine 里对应的变量名单独放在下面，本机同步时才需要。
-FILES = [
-    ("prompt.txt", "PASS 2 - STRUCTURE"),
-    ("prompt_zh.txt", "speech-cleanup engine"),
-    ("prompt_card.txt", "VERBATIM SUBSTRING"),
-    # 🚨 查词提示词（2026-09-06 接进来）。原来 iOS 手写了两份中文的，
-    #    跟 engine 那份是"手抄的近亲" —— 1.1 修好 engine 之后改动到不了这里，
-    #    实测 register 填成了 finance/business（领域，不是语域）。
-    #    特征串取 "DIRECTION" —— 它是这份 prompt 的结构骨架
-    #    （让模型自己判中→英还是英→中），改文案不会动它。
-    ("prompt_lookup.txt", "DIRECTION"),
-    # 2026-09-06 补：这一份原来**没有特征串** —— CI 上拿不到 engine.py 时，
-    #   逐字比对那层用不了，只剩特征串这层，而它是空的 = 这份文件无人看管。
-    #   挑 "subsequence"：它是这份 prompt 的**技术不变量**（输出必须是输入的子序列），
-    #   改文案不会把它改掉，改掉了就说明契约真的变了 —— 那时本来就该报。
-    ("prompt_punct.txt", "subsequence"),
-    ("prompt_asr.txt", "SAME language"),
-]
+# 🚨🚨 09-14 清空：提示词全部搬到服务端（0 独立验证过 `gate_thin_client.py` 9/9）。
+#    客户端从此不该再持有任何一份提示词文本 —— 这份列表原来驱动两件事：
+#    ①同步 ios/prompt*.txt ②生成 Secrets.swift 里的 promptXxx 常量。
+#    两件事现在都不该发生了，清空这一张表，两处自动一起停（单一配置点）。
+#    别只删 Secrets.swift 里的成员——那是治标，源头在这里，改这里才是唯一实现。
+FILES = []
 
-_ENGINE_VARS = {
-    "prompt.txt": "SYSTEM_PROMPT",
-    "prompt_zh.txt": "TRANSCRIBE_PROMPT",
-    "prompt_card.txt": "CARD_PROMPT",
-    "prompt_lookup.txt": "LOOKUP_PROMPT",
-    "prompt_punct.txt": "PUNCT_PROMPT",
-    "prompt_asr.txt": "ASR_PROMPT",
-}
+_ENGINE_VARS = {}
 
 # 🚨 `PAIRS` 需要 engine，所以只在本机成立；CI 上是空的（那边也用不到它）。
 #    **判据别挂在 `PAIRS` 上** —— 它在 CI 上恒空，挂上去就是个永远不失败的检查。
@@ -128,26 +110,12 @@ def secrets_body(root, password, json_str):
 
 
 def main():
-    ok = True
-    for name, text, marker in PAIRS:
-        p = HERE / name
-        p.write_text(text, encoding="utf-8")
-        back = p.read_text(encoding="utf-8")          # 读回真磁盘，不信 write 的返回
-        same = (back == text)
-        has_marker = (marker in back) if marker else True
-        print("  %-16s %5d 字符  逐字一致=%s  特征串=%s"
-              % (name, len(back), "PASS" if same else "FAIL",
-                 "PASS" if has_marker else "FAIL"))
-        ok = ok and same and has_marker
-
-    # 阴性对照：证明「逐字一致」这条查得动 —— 拿一份改过的比一比
-    tampered = engine.SYSTEM_PROMPT + "x"
-    caught = (tampered != (HERE / "prompt.txt").read_text(encoding="utf-8"))
-    print("  %-16s %s" % ("阴性对照", "PASS" if caught else "FAIL 这条恒真"))
-    ok = ok and caught
-
-    print("=== %s ===" % ("两份 prompt 已同步" if ok else "同步有问题"))
-    return 0 if ok else 1
+    # 🚨 09-14：FILES 清空之后这个函数没有活干了——提示词不再往 ios/*.txt 同步，
+    #    不再往 Secrets.swift 塞常量。留着这个入口只是为了旧调用点
+    #    （CI workflow / 本机脚本）不会因为函数消失而报错，但它现在什么也不做。
+    #    真要验"客户端有没有提示词"，判据是 scan_prompt_leak.py，不是这个函数。
+    print("=== 提示词已全部搬到服务端，这里无事可做（FILES 为空） ===")
+    return 0
 
 
 if __name__ == "__main__":

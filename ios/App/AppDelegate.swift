@@ -1158,6 +1158,34 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         if ProcessInfo.processInfo.environment["TRANSLESS_CLEAR_HIST"] == "1" {
             History.clear()
         }
+        // 🚨🚨 0 09-15 点名：`probeHostApp()` 那次"以为收进开关了、其实只改了
+        //    另一处"把他的键盘崩了两次——这条不许重演。**不靠运行时判断，
+        //    靠编译期直接切掉**：`#if targetEnvironment(simulator)` 让这段代码
+        //    在真机/Release 包里**根本不会被编进二进制**，不是"正常不会触发"，
+        //    是"这段机器码在正式包里不存在"，运行时环境变量猜得再准也够不着它。
+        //    验②的专用探针——**不碰真麦克风、不打真后端**，直接复刻
+        //    `KbVoiceHost.done(seq:kind:body:)` 里跳转分支成功时的那两行
+        //    （`History.add` 紧跟 `postPending`），用固定的测试文案。
+        //    模拟器摸不到麦克风，这是唯一能在不改动产品代码路径本身的前提下
+        //    把「出稿即写 history」这条单独摆出来测的办法。
+        //    正判据：这条跑完、App 全程不弹键盘 → history.jsonl 里要有这条。
+        //    反向控制：这条跑完之后再让键盘把这份 pending 取走一次
+        //    （召出键盘即可，`takePendingIfAny()` 在 `viewDidAppear` 无条件跑）
+        //    → history.jsonl 必须仍然只有一条，不是两条——这条红了就说明
+        //    `deliverLocal(writeHistory:false)` 没真的生效。
+        //    🚨 0 09-15 另一条更准的话已收下：这条探针只证明"探针那两行能跑"，
+        //    证不了"`done(seq:)` 真的会走到写 history 那一行"（中间隔着
+        //    `if seq == Self.jumpSeq` + JSON 解析 + `out` 非空），标签是
+        //    `[探针验过]` 不是 `[已实测]`——那半句留给真机录屏那次一并验。
+        #if targetEnvironment(simulator)
+        if ProcessInfo.processInfo.environment["TRANSLESS_SIM_JUMP_DONE"] == "1" {
+            let zh = "模拟跳转出稿测试"
+            let out = "SIM_JUMP_DONE_PROBE"
+            History.add(mode: "en", tone: "", zh: zh, out: out, durMs: 3000, lang: "en")
+            KbBridge.postPending(zh: zh, out: out)
+            KbBridge.note("探针 TRANSLESS_SIM_JUMP_DONE：已写 history + postPending（复刻②那两行）")
+        }
+        #endif
         // 🚨 种子也放这儿 —— 跟清空同一个理由：`TRANSLESS_PAGE=speak` 走的是
         //    另一条路，原来那两处（Scene 里）**根本跑不到**，
         //    于是"截图里有历史"全靠模拟器上攒下来的真数据，换台机器就没了。
@@ -1515,32 +1543,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                 KbVoiceHost.shared.finish()
             }
         }
-        // 🚨 **启动时把回程候选打出来** —— 这样"声明 → canOpenURL → 选中"
-        //    整条猜的逻辑在真机上跑一遍，只差最后那下 `open`。
-        //    没有这一行，我只能说"代码写了"，说不出"它在他机器上真的选得出来"。
-        DispatchQueue.main.async {
-            // 🚨 **每一步都写死类型、字符串不许连加**（2026-09-06 修 CI）。
-            //    CI（macos-15 / Xcode 16）在这一行报「unable to type-check
-            //    this expression in reasonable time」，而他 Mac（Xcode 26.6）
-            //    连 200ms 阈值都不到 —— **本机编过 ≠ CI 编得过**。
-            //    两个爆炸点：① `filter { URL(...).map { } ?? false }` 三层嵌套推断；
-            //    ② 五段字符串 `+` 连加，每个 `+` 都要解一次重载。
-            let all: [(scheme: String, name: String)] =
-                KbVoiceHost.guessBackOrder.filter { cand in
-                    guard let u = URL(string: cand.scheme) else { return false }
-                    return UIApplication.shared.canOpenURL(u)
-                }
-            let names: [String] = all.prefix(6).map { $0.name }
-            let joined: String = names.joined(separator: "、")
-            let first: String = all.first?.name ?? "（一个都没有）"
-            var line: String = "回程候选：装着的有 "
-            line += String(all.count)
-            line += " 个 —— "
-            line += joined
-            line += "｜要回去时会开："
-            line += first
-            KbBridge.note(line)
-        }
+        // 🚨 09-15：启动时打回程候选那段诊断已删——它打的是"猜"机制的候选表，
+        //    而那整条机制（`guessBackOrder`）已经被删掉了，见 `KbVoiceHost.swift`
+        //    `returnToPreviousApp()` 上面的说明。
         KbVoiceHost.shared.armDebugStress()
         KbVoiceHost.shared.armDebugForceArm()
         KbVoiceHost.shared.armDebugMute()
@@ -1952,6 +1957,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             KpiWords.addSpoken(durMs: 0, zh: String(repeating: "字", count: 3400))
         }
         if let page = env["TRANSLESS_PAGE"], !page.isEmpty {
+            NSLog("AUTHDUMP-PROBE page收到的原始值=%@", page)
             let nav = UINavigationController(rootViewController: HomeViewController())
             nav.setNavigationBarHidden(true, animated: false)
             switch page {
@@ -2035,6 +2041,13 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             case "setup": nav.pushViewController(SetupViewController(), animated: false)
             case "prefs": nav.pushViewController(PrefsViewController(), animated: false)
             case "login": nav.pushViewController(LoginViewController(), animated: false)
+            // 调试：跟 `openAccount()` 同一个分流（登录了进账户页，没登录进登录页）。
+            // 🚨 09-15 加——验苹果录屏第 7/9 镜（登审核账号 + 看会员状态）要能
+            //    不经首页那个按钮直达，UITest 才能可靠定位到 `account.row.pro`。
+            case "account":
+                nav.pushViewController(
+                    Auth.loggedIn ? AccountViewController() : LoginViewController(),
+                    animated: false)
             // 调试：直接落在手机号 tab（好并排截两个 tab 的图）。
             // 🚨 走的是**真实的 tab 切换方法**，不是另建一套状态。
             case "login-phone":
@@ -3496,19 +3509,28 @@ final class PrefsViewController: UIViewController {
         list.addArrangedSubview(group(L.prefs_g_pref))
         list.addArrangedSubview(row(L.lang_title, Lang.label(Lang.current),
                                     #selector(pickLanguage)))
-        // 🚨 09-14：自动切回微信这条给他一个自己能改的开关，别再让他每次
-        //    踩到取舍就得来找我一趟——点一下就在两种模式间切换，副标题
-        //    直接显示当前是哪一种，不用进二级页面。
-        let arRow = row(L.prefs_autoreturn_title,
-                        KbVoiceHost.guessBackEnabled ? L.prefs_autoreturn_on : L.prefs_autoreturn_off,
-                        #selector(tapAutoReturnMode))
-        arRow.accessibilityIdentifier = "prefs.row.autoreturn"
-        list.addArrangedSubview(arRow)
+        // 🚨🚨🚨 09-15：这一行**第三次也是最后一次**删除，写清楚这次为什么是终局：
+        //    第一次删（09-14 晚）：理解成「删了」＝"行为定死成开、不留开关"，
+        //    Kevin 没要这个，那是我们自己的判断。
+        //    第二次改回（09-15 凌晨）：默认关 + 开关加回来，以为这样更保守更安全。
+        //    Kevin 当面否掉了这个"更安全"的折中——他要的不是"关掉这个功能"，
+        //    是"这个功能不存在"：「我不是让你把『语音说完自动切回』给删了吗？
+        //    你根本就没有改呀」「这是一个残废功能」。这条机制**结构性做不到**
+        //    它承诺的事（认不出真实宿主，只是猜），留着一个"关掉的残废功能"
+        //    跟留着一个"打开的残废功能"一样没有意义——所以这次删的是整个入口，
+        //    不留开关、不留"默认值该是什么"这个问题。
+        //    行为代码（`guessBackOrder`/`guessBackEnabled`/"挨个试"逻辑）
+        //    已经在 `KbVoiceHost.swift` 里一并删掉，这里不再是"改回默认关"，
+        //    是这一整块 UI 不再存在。
 
-        // ③ 诊断
-        list.addArrangedSubview(group(L.prefs_g_diag))
-        list.addArrangedSubview(row(L.rec_log_title, L.prefs_diag_sub,
-                                    #selector(showRecLog)))
+        // ③ 诊断——🚨 Kevin 2026-09-14 晚原话「那个录音诊断 也不要放在正式版里
+        //    测试版可以留着」，规格 `_spec_reclog_release_hidden.md`。
+        //    藏的是入口，`RecLog.add(...)` 记录逻辑照跑不误（见 `BuildKind.swift`）。
+        if BuildKind.isTestBuild {
+            list.addArrangedSubview(group(L.prefs_g_diag))
+            list.addArrangedSubview(row(L.rec_log_title, L.prefs_diag_sub,
+                                        #selector(showRecLog)))
+        }
 
         // ④ 关于
         list.addArrangedSubview(group(L.prefs_g_about))
@@ -3757,13 +3779,6 @@ final class PrefsViewController: UIViewController {
     }
 
     /// 界面语言：跟安卓一样弹窗选。
-    /// 点一下在「微信优先」和「保守（不猜）」之间切换——不用二级页面、
-    /// 不用等我，这个取舍是他自己承担代价的选择，给他一个随手能改的开关。
-    @objc private func tapAutoReturnMode() {
-        KbVoiceHost.guessBackEnabled.toggle()
-        build()
-    }
-
     @objc private func pickLanguage() {
         // 🚨 用 .alert 不用 .actionSheet：这是 iPad 应用
         //    （project.yml 的 TARGETED_DEVICE_FAMILY = "1,2"），
@@ -4157,19 +4172,24 @@ final class MainViewController: UIViewController {
         heardLabel.textAlignment = .center
         heardLabel.numberOfLines = 4
 
-        // **iOS 这一屏三档字号：原话 15 · 结果 20 · 状态 15**（2.1 09-07 定）。
+        // **iOS 这一屏三档字号：原话 15 · 结果 17 · 状态 15**。
         //
-        // 🚨🚨 **20 这个数是 2.1 按 iOS 底数折的，不是 Kevin 说的。**
-        //    他批的是效果图上的样子，而那张图是**安卓**的（12→13 / 16→18 / 13 不动）。
-        //    iOS 该复制的是「结果明显比原话大、整体变大」这个观感，**不是那两个数字** ——
-        //    照字面把原话改成 13，在 iOS 上是从 15 **变小**，方向正好反了
-        //    （他的原话是「那么大的框但字这么小，稍微变大一点点吧」）。
-        //    → 不缩小任何一档：原话/状态 15 不动，结果 17→20（+3 档，还算"稍微"）。
-        //      比值 15/20 = 0.75，目标 0.72；21 更准但跳 4 档、19 只到 0.79 主次不够开。
+        // 🚨🚨 09-14 晚回滚：09-07 那次把结果从 17 调到 20（+3 档，见下方
+        //    保留的旧记录），Kevin 09-14 当面说「说完话之后那一串字太大了，
+        //    还是用回之前那一版吧」——**这条判据是他真机看了新效果之后给的**，
+        //    不是我们自己又拍了一次脑袋，所以直接改回 17，不再另挑一个新数。
         //
-        // 🚨 **真机给他看一眼再定** —— 跟绿勾那 1.2 秒同一个处理：
-        //    别让"2.1 折的数"过几轮就变成"一直就是这么定的"。
-        resultView.font = .systemFont(ofSize: 20)
+        // —— 09-07 那次改动的原始记录（保留，供下次再有人想调这个数时看背景）——
+        //    「20 这个数是 2.1 按 iOS 底数折的，不是 Kevin 说的。他批的是效果图上的
+        //    样子，而那张图是安卓的（12→13 / 16→18 / 13 不动）。iOS 该复制的是
+        //    『结果明显比原话大、整体变大』这个观感，不是那两个数字——照字面把原话
+        //    改成 13，在 iOS 上是从 15 变小，方向正好反了（他的原话是『那么大的框
+        //    但字这么小，稍微变大一点点吧』）。→ 不缩小任何一档：原话/状态 15 不动，
+        //    结果 17→20（+3 档，还算"稍微"）。比值 15/20 = 0.75，目标 0.72；
+        //    21 更准但跳 4 档、19 只到 0.79 主次不够开。」
+        //    ——事后看，这次调整**方向没错**（结果确实该比原话大），
+        //    但**幅度过了**，20 对他来说太大。17 这个值本身没被否定过，退回它。
+        resultView.font = .systemFont(ofSize: 17)
         resultView.textColor = Theme.text
         resultView.backgroundColor = Theme.panel
         resultView.layer.cornerRadius = 12

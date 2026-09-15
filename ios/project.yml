@@ -90,8 +90,8 @@ targets:
         #    后者只管我们自己的 view controller，管不到系统在我们周围怎么画。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260913.1359"
-        CFBundleVersion: "1359"
+        CFBundleShortVersionString: "20260915.1375"
+        CFBundleVersion: "1375"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -114,12 +114,12 @@ targets:
         #    从他手机上读出它的 `Info.plist`，那里列了 **50 个**别的 App 的 scheme。
         #    而这个键**只有用 `canOpenURL` 才需要声明** → **它不认宿主，它是挨个试的**。
         #    （Apple DTS 说没有认宿主的 API 是对的；这条路根本不需要认。）
-        # 🚨🚨 **不许加系统 scheme**（sms / mailto / message / x-web-search）：
-        #    它们**永远返回可打开**，加进去会永远第一个命中，
-        #    把他从微信劫持到短信。顺序在 `KbVoiceHost.guessBackOrder` 里定。
-        # 🚨 09-14：Kevin 追问"Typeless 候选表 50 个、我们只有 23 个"之后扩的——
-        #    补齐到接近它的量级，新增的都是有公开文档的常见 App scheme，
-        #    顺序对应关系在 `KbVoiceHost.guessBackOrder` 里。
+        # 🚨🚨 09-15：这份表原来是给"认不出宿主就挨个猜"那条机制用的——
+        #    那条机制（连同 `KbVoiceHost.guessBackOrder`）已经被 Kevin 要求整个删掉，
+        #    这份声明现在**没有消费者**了（`backSchemes`/`hostSchemeMap` 那条精确
+        #    查表路径直接调 `UIApplication.open()`，不需要先 `canOpenURL`）。
+        #    留着没清理——删不删、要不要精简这份表，还没问过 0，先别动它，
+        #    只是把这两条过期的注释更新成不指向已删代码。
         LSApplicationQueriesSchemes: [weixin, wechat, lark, mqq, xhsdiscover, snssdk1128, taobao, tmall, alipay, openapp.jdmobile, tg, telegram, whatsapp, slack, msteams, ms-outlook, notion, instagram, twitter, googlechrome, youtube, sinaweibo, orpheus, fb, fb-messenger, snapchat, line, kakaotalk, viber, skype, zoomus, dingtalk, baidumap, iosamap, didialpine, meituanwaimai, imeituan, dianping, bilibili, kwai, pinduoduo, suning, ctrip, qunar, elemecn, gaodeh5, baiduboxapp, sogousearch, qqmusic, spotify, netease-cloud-music, keep, xmly, evernote, onenote, googledrive, dropbox, gmail, readdle-spark, wpsoffice, csair]
         NSMicrophoneUsageDescription: 用来听你说的中文，转成文字后整理并译成英文。
         # 🚨🚨 **这三条缺一个，包就传不上 TestFlight**（2026-09-06 实撞两次）。
@@ -268,8 +268,8 @@ targets:
         #    后者只管我们自己的 view controller，管不到系统在我们周围怎么画。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260913.1359"
-        CFBundleVersion: "1359"
+        CFBundleShortVersionString: "20260915.1375"
+        CFBundleVersion: "1375"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -329,6 +329,11 @@ targets:
       # 所以这一层自己再判一次，而那些判断必须被证明【会失败】。
       - path: Shared/Remind.swift
       - path: Shared/RoundTally.swift
+      # 同理：会员状态三态判定（没登录/没订阅/查不到），从 ProStatus 拆出来的纯函数——
+      # ProStatus 本身牵着 Backend/KbBridge/URLSession，编不进 UI 测试包
+      - path: Shared/ProCheck.swift
+      # 同理：这份包是不是测试版（录音诊断入口要不要出现），纯函数不碰网络也不碰存储
+      - path: Shared/BuildKind.swift
       # 同理：录音诊断**一行**的格式。判据要挂在他粘出来的文本上
       - path: Shared/RecLine.swift
       # 同理：单词本卡片的解析。纯解析，不碰存储也不碰界面
@@ -414,8 +419,8 @@ targets:
       path: LiveActivity/Info.plist
       properties:
         CFBundleDisplayName: Transless 录音状态
-        CFBundleShortVersionString: "20260913.1359"
-        CFBundleVersion: "1359"
+        CFBundleShortVersionString: "20260915.1375"
+        CFBundleVersion: "1375"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
@@ -447,8 +452,8 @@ targets:
         #    用它做的外观判断就不能代表真键盘。
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
-        CFBundleShortVersionString: "20260913.1359"
-        CFBundleVersion: "1359"
+        CFBundleShortVersionString: "20260915.1375"
+        CFBundleVersion: "1375"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -506,8 +511,8 @@ targets:
       path: Keyboard/Info.plist
       properties:
         CFBundleDisplayName: Transless
-        CFBundleShortVersionString: "20260913.1359"
-        CFBundleVersion: "1359"
+        CFBundleShortVersionString: "20260915.1375"
+        CFBundleVersion: "1375"
         # 🚨🚨 **键盘扩展自己也要声明支持哪些语言**（2026-08-28 补）。
         #    Kevin 真机截图：主 App 是中文，**键盘里全是英文**
         #    （Translate / Transcribe / History / Casual / Work / Email…）。

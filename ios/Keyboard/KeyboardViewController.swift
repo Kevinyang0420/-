@@ -1829,18 +1829,36 @@ final class KeyboardViewController: UIInputViewController {
         // 🚨 单号必须从**共享区**取：切到别的 App 会让 iOS 销毁键盘扩展，
         //    回来是个**全新进程**，`remoteSeq` 恒为 -1，进程内存里什么都不剩。
         // 🚨 取不到就**不猜**（猜错会去停别人的单），只记一笔。
+        var orphaned = false
         if remoteSeq < 0 {
             let sq = KbBridge.recordingSeq()
             if sq >= 0 {
                 remoteSeq = sq
                 KbBridge.note("键盘：接回在飞的那一单 seq=" + String(sq))
             } else {
-                KbBridge.note("🚨 键盘：宿主在录但共享区没有单号 —— 接不回来，"
-                              + "他按停止会没反应（多半是旧版本留下的半份状态）")
+                orphaned = true
+                // 🚨🚨 0 09-15：原文案「多半是旧版本留下的半份状态」是**错的归因**，
+                //    把我们俩都带偏过一整晚——这句不是脏状态，是两个各自独立的
+                //    正常情况：
+                //    ① 跳转路（`beginJump()` → `busySeq = KbVoiceHost.jumpSeq = -99`）
+                //       **每一次**都会落进这个分支——`KbBridge.markRecording` 自己
+                //       `if seq >= 0` 就把 -99 挡在写共享区之前（`Shared/KbBridge.swift`），
+                //       根本不是"没接回"，是这条录音**压根不用单号接**——它的结果走
+                //       `postPending`/`takePendingIfAny` 那条独立信箱，不挂在这个字段上。
+                //    ② 已架引擎、键盘发了真实 `cmd.seq`、但走到冷路径的那条子路径，
+                //       原来 `busySeq` 赋值顺序反了（写共享区在赋新值之前），已修。
+                //    → 这个分支本身留着当**诚实兜底**（给他一个还能按停的提示），
+                //      不代表出了什么异常，别再往"旧版本残留"上归因。
             }
         }
-        KbBridge.note("键盘：宿主正在录，恢复成录音态")
-        setPhase(.listening, hint: "")
+        KbBridge.note("键盘：宿主正在录，恢复成录音态" + (orphaned ? "（接不回单号，走兜底提示）" : ""))
+        // 🚨🚨 **不许假装正常在听。** 这条支路原来无论接不接得回单号都用同一句
+        //    空提示 `hint: ""`，界面上跟"一切正常"长得一模一样——而没接回单号时，
+        //    `tapMic()` 的 `.listening` 分支照样会调 `stopListening()`（那条不看
+        //    `remoteSeq`，直接 `KbBridge.send("stop", …)`，机制上能停），但结果送回来
+        //    要靠 `remoteSeq` 认领，认不出来的话稿子就丢在共享区没人取。
+        //    → 用不同的 hint 把这个差别说穿：他按下去大概率能停，但别装作什么事都没有。
+        setPhase(.listening, hint: orphaned ? L.kb_rec_orphaned : "")
         // 🚨 计时要用**宿主真正起录的时刻**，不是键盘出现的时刻 ——
         //    否则末尾倒计时会晚一大截，他会在毫不知情时被自动停。
         listenSince = since
@@ -1883,7 +1901,11 @@ final class KeyboardViewController: UIInputViewController {
             pollTimer?.invalidate(); pollTimer = nil
             remoteSeq = -1
         }
-        deliverLocal(zh: p.zh, out: p.out)
+        // 🚨 `writeHistory: false`——这份稿子来自 `postPending`（跳转路），
+        //    `KbVoiceHost.done(seq:)` 落盘那一刻已经写过 `History.add` 了
+        //    （见那边 0/2.2 09-15 定案②的注释）。`postPending` 全仓库只有
+        //    那一个调用点，这里不会误伤别的来源。
+        deliverLocal(zh: p.zh, out: p.out, writeHistory: false)
         // 🚨 抬的是**我刚投的这一份**的序号，不是"当前最新那份" ——
         //    否则主 App 在这中间又出一份新稿会被一起抬掉、静默蒸发。
         //    （第四轮审查 高-1）
@@ -5051,7 +5073,12 @@ final class KeyboardViewController: UIInputViewController {
 
     /// 直录这条路的落地。**跟 `deliver()` 干的是同一件事** ——
     /// 🚨 两处要一起改（历史、朗读按钮、插字、回到待命，一条都不能少）。
-    private func deliverLocal(zh: String, out: String) {
+    /// - Parameter writeHistory: **来自 `postPending`（跳转路）的稿子传 `false`** ——
+    ///   0/2.2 09-15 定案②：主 App 出稿那一刻已经在 `KbVoiceHost.done(seq:)` 里
+    ///   写过 `History.add` 了（不再依赖键盘 90 秒内回来取），`History.add` 自己
+    ///   没有去重，这里要是再写一遍，同一句话会在历史里变成两条。
+    ///   键盘自己直录出的结果（下面那个调用点）不受影响，照旧写。
+    private func deliverLocal(zh: String, out: String, writeHistory: Bool = true) {
         // 🚨🚨 H-2（第 2 轮审查）：**宿主路径有这道 guard，直录路径漏了。**
         //    后端 200 但 `out` 为空串（只录到语气词/静音时的常见返回）时：
         //    插入空字符串、提示被清空、`heardLabel` 也清空 ——
@@ -5093,9 +5120,11 @@ final class KeyboardViewController: UIInputViewController {
             return
         }
         let mode = KbBridge.prefs.string(forKey: "vime.mode") ?? "en"
-        History.add(mode: mode, tone: tone, zh: zh, out: out, durMs: lastSpokeMs,
-                    // 🚨 KPI ④ 按目标语言去重：只有翻译档（en）才有目标语言，整理/逐字传空。
-                    lang: mode == "en" ? (KbBridge.prefs.string(forKey: "vime.lang") ?? "en") : "")
+        if writeHistory {
+            History.add(mode: mode, tone: tone, zh: zh, out: out, durMs: lastSpokeMs,
+                        // 🚨 KPI ④ 按目标语言去重：只有翻译档（en）才有目标语言，整理/逐字传空。
+                        lang: mode == "en" ? (KbBridge.prefs.string(forKey: "vime.lang") ?? "en") : "")
+        }
         lastOut = out
         heardLabel.text = ""
         textDocumentProxy.insertText(out)

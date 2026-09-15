@@ -27,9 +27,12 @@ enum Lang {
     static let de = "de"
     static let es = "es"
     static let ar = "ar"
+    // 🚨 2026-09-14 加（Kevin 点名东南亚语种）。
+    static let vi = "vi"
+    static let th = "th"
 
     /// 顺序跟安卓弹窗一致：跟随系统 → 简体 → 繁體 → English
-    static let all = [sys, zh, hant, en, ja, de, es, ar]
+    static let all = [sys, zh, hant, en, ja, de, es, ar, vi, th]
 
     /// **选择器里真正列出来的**。
     ///
@@ -42,7 +45,11 @@ enum Lang {
     ///    **加它之前那一版探针只强制了书写方向、界面还是中文** ——
     ///    等于在看「中文字排成 RTL」，测了个半拉。
     ///    真正要看的是阿拉伯字母本身：连写、词宽、折行。
-    static let selectable = [sys, zh, hant, en, ja, de, es, ar]
+    /// 🚨 2026-09-14 加 vi/th——**跟 PC 那次不一样**：iOS 的 `Strings.swift`
+    ///    是整份从 `i18n_map.STRINGS` + `i18n_out/ui_i18n_<lang>.json` 一次性
+    ///    生成的（不像 PC 有 T4 那张手写的补充表），vi/th 数据一补齐、重新生成，
+    ///    覆盖率就是整份文案一起到位，不存在"半成品"那个坑，可以直接进选择器。
+    static let selectable = [sys, zh, hant, en, ja, de, es, ar, vi, th]
 
     private static let service = "com.kevin.transless.prefs"
     private static let account = "lang.ui"
@@ -106,6 +113,8 @@ enum Lang {
         case de: return "Deutsch"
         case es: return "Español"
         case ar: return "العربية"
+        case vi: return "Tiếng Việt"
+        case th: return "ไทย"
         default: return L.lang_follow_system
         }
     }

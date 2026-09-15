@@ -256,6 +256,12 @@ final class KbVoiceHost {
 
     private var armedArgs: (tone: String, mode: Backend.Mode, lang: String) =
         ("", .en, "en")
+    /// 🚨 0/2.2 09-15 定案②：跳转路（`beginJump()`）出稿时**主 App 自己写 history**，
+    ///    不再指望键盘 90 秒内回来取（`peekPending` 过期会静默丢稿）。
+    ///    `done()` 是异步回调，写 history 那一刻已经没有 `begin(seq:args:)` 的局部
+    ///    `args` 可读了——跟 `armedArgs` 同一个理由，存成实例属性带过去。
+    private var jumpArgs: (tone: String, mode: Backend.Mode, lang: String) =
+        ("", .en, "en")
     private var altRecorder: AVAudioRecorder?
     private var altCapture: AVCaptureSession?
     private var altSink: AltAudioSink?
@@ -1696,326 +1702,19 @@ final class KbVoiceHost {
         "youdaoPro": ["yddict","yddictProapp","yddictinfoline"],   // 网易有道词典
     ]
 
-    /// **认不出宿主时，挨个试的候选表**（照 Typeless 的做法）。
-    ///
-    /// 依据：从他手机上读出的 Typeless 2.5.0 的 `Info.plist` ——
-    /// `LSApplicationQueriesSchemes` 列了 **50 个**别的 App 的 scheme，
-    /// 而那个键**只有用 `canOpenURL` 才需要声明**。
-    /// → **它不认宿主，它是猜的。** Apple DTS 说没有认宿主的 API，是对的；
-    ///   我三天找错了方向 —— 这条路根本不需要认。
-    ///
-    /// 🚨🚨 **一个系统 scheme 都不许放进来**（`sms:` / `mailto:` /
-    ///    `message://` / `x-web-search://`）：它们**永远返回可打开**，
-    ///    放进去就会永远第一个命中，把他从微信劫持到短信。
-    /// 🚨 **这个做法的天花板**：他从不在表里的 App 用就猜不中；
-    ///    表里装了多个时只能按顺序赌第一个。
-    ///    他说的「偶尔一次回不去」**不是偶然，就是这个限制**。
-    /// 🚨 顺序按他的实际使用频率排，不是按字母。要改顺序改这里一处。
-    /// **运行时可改的顺序**：共享区 `Library/Caches/backorder.txt`，
-    /// 一行一个 scheme（`weixin://`），`#` 开头是注释。文件没有就用下面的默认表。
-    ///
-    /// 🚨 为什么要它：这个做法唯一的调节钮就是顺序（表里装了多个时只能赌第一个），
-    ///    而**每调一次顺序就重装一次包，代价太高**。
-    /// 🚨 只认默认表里已有的 scheme —— 不在 `LSApplicationQueriesSchemes` 里声明过的，
-    ///    `canOpenURL` **一律返回 false**，写进去也是白写，还会让人以为配了没生效。
-    static var guessBackOrderLive: [(scheme: String, name: String)] {
-        guard let dir = FileManager.default.containerURL(
-                forSecurityApplicationGroupIdentifier: KbBridge.group),
-              let t = try? String(contentsOf: dir.appendingPathComponent(
-                "Library/Caches/backorder.txt"), encoding: String.Encoding.utf8)
-        else { return guessBackOrder }
-        let want = t.split(whereSeparator: { $0.isNewline }).map {
-            $0.trimmingCharacters(in: CharacterSet.whitespaces)
-        }.filter { !$0.isEmpty && !$0.hasPrefix("#") }
-        let byScheme = Dictionary(uniqueKeysWithValues:
-            guessBackOrder.map { ($0.scheme, $0) })
-        let picked = want.compactMap { byScheme[$0] }
-        guard !picked.isEmpty else { return guessBackOrder }
-        KbBridge.note("回程顺序：用了 backorder.txt（" + String(picked.count) + " 条）")
-        return picked + guessBackOrder.filter { g in !picked.contains { $0.scheme == g.scheme } }
-    }
+    // 🚨🚨🚨 09-15 彻底删除"认不出宿主就猜"整条机制（guessBackOrder 248 条候选表 /
+    //    guessBackOrderLive / guessBackEnabled 开关，连同它们支撑的"挨个试"逻辑）。
+    //    Kevin 当面否掉了此前"默认关但留开关"的折中："我不是让你把『语音说完自动切回』
+    //    给删了吗？你根本就没有改呀""这是一个残废功能"。这条机制不认识真实宿主，
+    //    只是按写死顺序试候选表第一个装着的 App，微信永远排第一、永远装着，
+    //    所以"猜"在实践里等于"总是微信"——不管他在短信/WhatsApp/哪个 App 里用。
+    //    真正认宿主的「查表」（backSchemes / hostSchemeMap，靠真实探到的宿主 scheme）
+    //    不受影响，见下面 backSchemes 和 returnToPreviousApp()。
+    //    🚨 这个目录不是 git 仓库，没有历史可翻——要复活得重新写一遍
+    //    （248 条候选表来自 `py D:\_build\gen_host_scheme_map.py` 导出他手机
+    //    真实装的 App，重新导出即可；开关和"挨个试"逻辑本身不复杂，参照
+    //    这条注释描述的形状重写）。
 
-    /// 用户自己在「设置→偏好」里选的取舍：语音结束后要不要自动猜开回原来那个 App。
-    ///
-    /// 🚨🚨 09-14 09:xx Kevin 当场否掉默认开（那次候选表只有 21 个通用 App，
-    ///    在【信息】里被误送去微信）——改默认关，回到"不猜、留在原地点一下"。
-    /// 🚨🚨 09-14 12:0x Kevin 明确要求重新打开：「那你开了先啊」，
-    ///    这次候选表已经换成从他手机真实导出的 248 个 App（见 `guessBackOrder`
-    ///    上面的注释），命中率跟上次开的时候不是同一个量级——
-    ///    但**猜的本质没变**，仍然只对表里有、且真是那个 App 的场景命中；
-    ///    真正遇到不在表里的 App（比如那个 eMPF 式的特例），还是会送错。
-    ///    这条是他在知道这个代价之后明确要求的，不是我自己又替他决定一次。
-    static var guessBackEnabled: Bool {
-        get { UserDefaults.standard.object(forKey: "guessBackEnabled") as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: "guessBackEnabled") }
-    }
-
-    /// 🚨🚨 09-14 12:0x：Kevin「你把我后台所有的 App 都加上才行」——
-    ///    从他手机真机真实导出的（`py D:\_build\gen_host_scheme_map.py`，
-    ///    走 `ideviceinstaller list --all --xml` 读每个 App 的 CFBundleURLTypes），
-    ///    **248 个真实装在他手机上的 App**，不是手打的通用列表。
-    ///    已剔除：系统内部服务类（名字含 UIService/ViewService/SpringBoard/
-    ///    Preferences 等——这些会跟 09-02 那次 `prefs` 一样把他错送进系统设置，
-    ///    不是真正能"正在使用"的 App）、禁用的系统 scheme（sms/mailto/tel/facetime）。
-    ///    🚨 这份表**只对 Kevin 这台设备有效**——换一个用户装这个 App，
-    ///    我们没有任何合法途径读到他手机上装了什么（`LSApplicationWorkspace.
-    ///    allInstalledApplications` 对沙盒 App 恒返回 0 个，苹果专门堵这条），
-    ///    别的用户只能用一份写死在 App 里的通用候选表，猜中率天然更低，
-    ///    这是这条路径的结构性上限，不是这次没做好。
-    ///    🚨 这**仍然不能**解释 eMPF 那个特例（一个连 URL scheme 都没声明的
-    ///    小众港式 App，不太可能进任何候选表）——那个疑点仍未解开，
-    ///    见 `回程_已验死的路.md` "09-14 10:1x" 那一节，没有回避它。
-    ///    他装新 App 会让这张表过期，重新导出跑上面那条命令即可。
-    static let guessBackOrder: [(scheme: String, name: String)] = [
-        ("weixin://", "微信"),
-        ("lark://", "飞书"),
-        ("mqq://", "QQ"),
-        ("xhsdiscover://", "小红书"),
-        ("awemesso://", "抖音"),
-        ("taobao://", "淘宝"),
-        ("alipay://", "支付宝"),
-        ("perplexity-app://", "Perplexity"),
-        ("suno://", "Suno"),
-        ("xai-grok://", "Grok"),
-        ("ahffafihgg://", "中国移动"),
-        ("cn.12306://", "铁路12306"),
-        ("hsbcchina://", "汇丰银行"),
-        ("ftnn://", "富途牛牛"),
-        ("its://", "个人所得税"),
-        ("travelguide://", "马蜂窝"),
-        ("polymtrade.http://", "Polymtrade"),
-        ("jdpay://", "京东"),
-        ("com.JobsDB.JobsDBApp://", "Jobsdb"),
-        ("sidestore://", "SideStore"),
-        ("agoda://", "Agoda"),
-        ("idirect://", "AIA+ HK"),
-        ("airbnb://", "爱彼迎"),
-        ("alipayhk://", "AlipayHK"),
-        ("aijk://", "蚂蚁阿福"),
-        ("claude://", "Claude"),
-        ("airplay://", "隔空播放"),
-        ("macappstore://", "App Store"),
-        ("bridge://", "Watch"),
-        ("climate://", "温控"),
-        ("radio://", "广播"),
-        ("ContinuitySing://", "唱歌"),
-        ("shareablecredentialsuiservice://", "钱包"),
-        ("smb://", "文件"),
-        ("facetime-open-link://", "FaceTime通话"),
-        ("fitnessapp://", "健身"),
-        ("x-apple-health://", "健康"),
-        ("ens://", "暴露通知"),
-        ("com.apple.Home://", "家庭"),
-        ("homeutil://", "家庭"),
-        ("com.apple.iwork.keynote-share://", "Keynote讲演"),
-        ("apple-magnifier://", "放大器"),
-        ("map://", "地图"),
-        ("contact://", "通讯录"),
-        ("music://", "音乐"),
-        ("com.apple.iwork.numbers-share://", "Numbers表格"),
-        ("com.apple.iwork.pages-share://", "Pages文稿"),
-        ("wallet://", "钱包"),
-        ("apple-otpauth://", "密码"),
-        ("voicememos://", "语音备忘录"),
-        ("applefeedback://", "反馈"),
-        ("camera://", "相机"),
-        ("clips://", "可立拍"),
-        ("family://", "家人共享"),
-        ("findmy://", "查找"),
-        ("freeform://", "无边记"),
-        ("games://", "游戏"),
-        ("ibooks://", "图书"),
-        ("imovie://", "iMovie 剪辑"),
-        ("moments://", "手记"),
-        ("webcal://", "日历"),
-        ("garageband://", "库乐队"),
-        ("mobilenotes://", "备忘录"),
-        ("photos://", "照片"),
-        ("applenews://", "News"),
-        ("podcast://", "播客"),
-        ("x-apple-reminderkit://", "提醒事项"),
-        ("shortcuts://", "快捷指令"),
-        ("stocks://", "股市"),
-        ("applestore://", "Apple Store"),
-        ("x-apple-tips://", "提示"),
-        ("videos://", "TV"),
-        ("weather://", "天气"),
-        ("webapp://", "Web"),
-        ("tweetie://", "X"),
-        ("iosamap://", "高德地图"),
-        ("avatr://", "阿维塔"),
-        ("bdmap://", "百度地图"),
-        ("baiduyun://", "百度网盘"),
-        ("SuperDuer://", "小度"),
-        ("xgjapp://", "班级小管家"),
-        ("bankabc://", "中国农业银行"),
-        ("luckycoffee://", "瑞幸咖啡"),
-        ("bloomberg://", "Bloomberg"),
-        ("bocpay://", "中国银行"),
-        ("bochkxbk://", "BOCHK 中银香港"),
-        ("doubao://", "豆包"),
-        ("barcelona://", "Threads"),
-        ("instagram://", "Instagram"),
-        ("dreamina://", "即梦AI"),
-        ("caixin://", "财新"),
-        ("canvaeditor://", "Canva可画"),
-        ("cctvvideo://", "央视频"),
-        ("centaline://", "中原地产"),
-        ("credit://", "发现精彩"),
-        ("usedcar://", "二手车之家"),
-        ("csapp://", "MyLink"),
-        ("uppayx65://", "招商银行"),
-        ("cmblife://", "掌上生活"),
-        ("fileExtractActionExtensionCopy://", "解压缩"),
-        ("tc://", "币安"),
-        ("AlipaypayCloudbirds://", "千鸟物联"),
-        ("dpsk://", "DeepSeek"),
-        ("dianping://", "大众点评"),
-        ("douban://", "豆瓣"),
-        ("wsj://", "WSJ"),
-        ("businessapp://", "328 营商理财"),
-        ("duo://", "Duo Mobile"),
-        ("bocmcht://", "天天基金"),
-        ("fb://", "Facebook"),
-        ("pay.gd.10086.cn://", "中国移动广东"),
-        ("iting://", "喜马拉雅"),
-        ("glassdoor://", "Glassdoor"),
-        ("googledrive://", "云端硬盘"),
-        ("googlegmail://", "Gmail"),
-        ("google://", "Google"),
-        ("googlemaps://", "Google Maps"),
-        ("googletranslate://", "Google 翻译"),
-        ("googlegemini://", "Gemini"),
-        ("youtube://", "YouTube"),
-        ("grab://", "Grab"),
-        ("discord://", "Discord"),
-        ("com.hikauto.hikdashcam://", "海康慧眼"),
-        ("hkabp://", "螞蟻銀行"),
-        ("hk01://", "香港01"),
-        ("ak1536344566584539://", "飛的"),
-        ("hkstp.parksapp://", "HKSTP"),
-        ("BossZP://", "BOSS直聘"),
-        ("com.hse28v4://", "28Hse"),
-        ("upcppLily://", "中国工商银行"),
-        ("iflybuds://", "viaim 讯飞版"),
-        ("tjapp://", "讯飞听见"),
-        ("ikapp://", "爱康"),
-        ("indeedjobsearch://", "Indeed找工作"),
-        ("canvas-courses://", "Canvas"),
-        ("esign://", "银河港生活"),
-        ("ibtws://", "IBKR"),
-        ("camscanner://", "扫描全能王"),
-        ("jdma.jdjch://", "京东养车"),
-        ("jin10://", "金十数据"),
-        ("localdevvpn://", "LocalDevVPN"),
-        ("mining://", "尊嘉金融"),
-        ("klook://", "客路旅行"),
-        ("app1933://", "APP1933 - KMB . LWB"),
-        ("kucoin://", "KuCoin"),
-        ("kling://", "可灵AI"),
-        ("ljmobile://", "贝壳找房"),
-        ("lptd://", "猎聘"),
-        ("rocket://", "Shadowrocket"),
-        ("lihkg://", "LIHKG"),
-        ("linkedin://", "LinkedIn"),
-        ("joyrun://", "悦跑圈"),
-        ("cx://", "Cathay Pacific"),
-        ("gmalite://", "McDonald's"),
-        ("mtxx://", "美图秀秀"),
-        ("iMeituan://", "美团"),
-        ("excel://", "Excel"),
-        ("ms-outlook://", "Outlook"),
-        ("word://", "Word"),
-        ("msauth://", "Authenticator"),
-        ("http-intunemam://", "Edge"),
-        ("officemobile://", "Copilot"),
-        ("onenote://", "OneNote"),
-        ("ms-onedrive://", "OneDrive"),
-        ("msteams://", "Teams"),
-        ("kimi://", "Kimi"),
-        ("mtrmobile://", "MTR Mobile"),
-        ("cnbcsf://", "CNBC"),
-        ("mailmaster://", "网易邮箱大师"),
-        ("newsapp://", "网易新闻"),
-        ("nflx://", "Netflix"),
-        ("tamjai://", "谭仔云南米线"),
-        ("googlesnapseed://", "Snapseed"),
-        ("octopus://", "八達通"),
-        ("openai://", "ChatGPT"),
-        ("oslmobile://", "OSL HK"),
-        ("ppbmapp://", "Pan Pacific DISCOVERY"),
-        ("anelicaiapp://", "平安证券"),
-        ("paebqw://", "平安口袋银行"),
-        ("carowner://", "平安好车主"),
-        ("smts20140702://", "好福利"),
-        ("iqiyi://", "爱奇艺"),
-        ("xidp8c5qt://", "齐俊杰看财经"),
-        ("quark://", "夸克"),
-        ("scmobile://", "SC Mobile"),
-        ("weibosso://", "微博"),
-        ("singtaodaily://", "星島頭條"),
-        ("luna://", "汽水音乐"),
-        ("uppayx9://", "浦发银行"),
-        ("newsDypay://", "今日头条"),
-        ("sztecard://", "深圳通"),
-        ("talkclub://", "妙鸭"),
-        ("fleamarket://", "闲鱼"),
-        ("tmall://", "天猫"),
-        ("alitrip://", "飞猪旅行"),
-        ("qmkege://", "全民K歌"),
-        ("qqmusic://", "QQ音乐"),
-        ("yuanbao://", "元宝"),
-        ("imacopilot://", "ima"),
-        ("txvideo://", "腾讯视频"),
-        ("wemeet://", "腾讯会议"),
-        ("qqmail://", "QQ邮箱"),
-        ("weread://", "微信读书"),
-        ("wetype://", "微信输入法"),
-        ("workbuddy://", "WorkBuddy"),
-        ("carousell://", "Carousell"),
-        ("tr-news://", "Reuters"),
-        ("tmri12123://", "交管12123"),
-        ("umetrip://", "航旅纵横"),
-        ("typeless://", "Typeless"),
-        ("uber://", "Uber"),
-        ("chsp://", "云闪付"),
-        ("xmq://", "知识星球"),
-        ("steammobile://", "Steam"),
-        ("wdkhema://", "盒马"),
-        ("wftapp://", "Wind金融终端"),
-        ("iosdidi://", "滴滴"),
-        ("mihome://", "米家"),
-        ("eumpm://", "专业节拍器"),
-        ("bd21373216://", "小天才"),
-        ("xunlei://", "迅雷"),
-        ("pinduoduo://", "拼多多"),
-        ("Todesk://", "ToDesk"),
-        ("paypal://", "PayPal"),
-        ("uppaykfcapp://", "肯德基"),
-        ("usthing://", "USThing"),
-        ("zhihu://", "知乎"),
-        ("musically://", "TikTok"),
-        ("zhipuai://", "智谱清言"),
-        ("quickfox://", "QuickFox"),
-        ("ctrip://", "携程旅行"),
-        ("hkcomhsbchsbchkmobilebanking://", "汇丰香港"),
-        ("hsbcpaymeapp://", "PayMe"),
-        ("hk.gov.immd.contactless://", "非触式e-道"),
-        ("hk.gov.iamsmart://", "智方便"),
-        ("hk-ust-studentapp://", "HKUST Student"),
-        ("line://", "LINE"),
-        ("klingsgp://", "KLINGAI"),
-        ("locspc://", "我的天文台"),
-        ("obsidian://", "Obsidian"),
-        ("whatsapp://", "‎WhatsApp"),
-        ("openrice://", "OpenRice"),
-        ("tg://", "Telegram"),
-        ("bilibili://", "哔哩哔哩"),
-        ("viutv://", "ViuTV"),
-        ("bbcx://", "BBC"),
-        ("zoomus://", "Zoom"),
-        ("yddict://", "网易有道词典"),
-    ]
 
     static let backSchemes: [String: String] = [
         "com.tencent.xin": "weixin://",             // 微信
@@ -2163,15 +1862,11 @@ final class KbVoiceHost {
             DispatchQueue.main.asyncAfter(deadline: .now() + d) { exit(0) }
             return
         }
-        // 🚨🚨🚨 **认不出来源 → 挨个试**（2026-09-01，照 Typeless 的做法）。
-        //    在此之前这里只能 `exitToOpener`（实测＝留在原地，他什么都没得到）。
-        //    现在有依据了：Typeless 的 `Info.plist` 里
-        //    `LSApplicationQueriesSchemes` 列了 50 个别的 App 的 scheme。
-        //    🚨 **这是猜，不是认**。猜不中的情况写在 `guessBackOrder` 的注释里。
-        // 🚨🚨🚨 **先查，查不到才猜**（2026-09-02）。
-        //    键盘那边已经把宿主 bundleID 问出来并放进共享区了；
-        //    这里翻表拿到它的 scheme，按顺序开，`open()` 回调说成了就停。
-        //    这条路没有"猜"的天花板 —— 短信、淘宝、语音备忘录一样回得去。
+        // 🚨 09-01～09-14 这段时间试过"认不出来源就挨个猜"（照 Typeless 的做法，
+        //    候选表来自 Typeless `Info.plist` 里 50 个 `LSApplicationQueriesSchemes`，
+        //    后来换成 Kevin 手机真机导出的 248 个）。09-15 已整个删除，见上面
+        //    `returnToPreviousApp()` 开头那段说明——认不出来源现在直接落到
+        //    下面的 `exitToOpener`，不再猜。
         // 🚨🚨🚨 **先试系统原语 `suspendReturningToLastApp:`**（2026-09-02 08:4x 扒表扒出来的）。
         //    依据：Kevin 实测 Typeless 能回到 **eMPF**（一个没有任何 URL scheme 的 App）
         //    → 它不是靠 open(URL)，是靠"回上一个 App"的系统原语，**不需要知道宿主是谁**。
@@ -2190,54 +1885,29 @@ final class KbVoiceHost {
         //    ② 它用 `@convention(c)` IMP 直调返回对象，Swift 对返回值多 retain 一次，
         //       与 ObjC 自动释放撞车 → **over-release → 主 App 在 autoreleasepool pop 时 SIGSEGV**
         //       （崩溃栈：objc_release ← AutoreleasePoolPage::releaseUntil，Kevin 16:22 每按必崩）。
-        //    回程回到「查表→猜微信」这条 Kevin 用了一整天没崩的基线。
+        //    回程回到「查表」这条 Kevin 用了一整天没崩的基线。
         if let host = KbBridge.lastHost() {
             if let cands = KbVoiceHost.hostSchemeMap[host], !cands.isEmpty {
                 KbBridge.note("回程·查表：宿主 = " + host + " → 试 " + cands.joined(separator: "、"))
                 openFirstWorking(cands, host: host, why: why)
                 return
             }
-            KbBridge.note("回程·查表：宿主 = " + host + "，但表里没有它的 scheme → 退回挨个猜")
+            KbBridge.note("回程·查表：宿主 = " + host + "，但表里没有它的 scheme → 退回原来那条")
         } else {
-            KbBridge.note("回程·查表：共享区没有宿主（键盘没问到或已过期）→ 退回挨个猜")
+            KbBridge.note("回程·查表：共享区没有宿主（键盘没问到或已过期）→ 退回原来那条")
         }
-        // 2026-09-02 Kevin 在【短信】里按，被送去了【微信】：这个「挨个猜」在任何非微信宿主里都会送错。
-        //    当时因此把它默认关掉，认不出宿主就走 exitToOpener（=一次手动点返回胶囊）。
-        //
-        // 🚨🚨 09-14 改默认开。原因：
-        //    ① `认出宿主是谁`这条路已经穷尽判死（本文件同一函数上方的注释、
-        //       以及 `回程_已验死的路.md` 全文 15+ 条独立取法、外加 Apple DTS
-        //       官方书面回复"没有这个 API"）——**这不是我们没做到，是 iOS 结构性不给**，
-        //       连 Typeless／Wispr Flow 这类竞品在 iOS 26.4+ 上也一样卡在这堵墙前。
-        //    ② Kevin 的实际使用场景**从头到尾只有微信**——本项目所有相关对话、
-        //       录屏、真机复现，没有一次是别的宿主。`guessBackOrder` 第一位就是
-        //       `weixin://`，对他"总是猜对"。
-        //    ③ 09-14 00:39 真机端到端实测（`UITests/TranslessInWeChat.swift`）：
-        //       按麦克风 → `open(weixin://) = true ✅` → **回程准度**核对 PID
-        //       前后一致（同一个微信进程，不是重新拉起的）→ 键盘用同一个序号
-        //       （seq=1821）接回录音 → 30 秒内累计帧数持续增长（后台真实在录）。
-        //       零点击、落点准、录音不断——三个判据全过。
-        //    ④ 代价没变：换到微信以外的宿主会猜错（09-02 的短信那次，
-        //       09-14 早上 09:00 在【信息】里又真实撞了一次——不是偶尔，
-        //       是"只要不是微信，一定猜错"，因为微信永远装着）。
-        //       这个代价大到必须让 Kevin 自己选，不能替他定死 → 见下面的开关。
-        if KbVoiceHost.guessBackEnabled, let hit = KbVoiceHost.guessBackOrderLive.first(where: {
-            URL(string: $0.scheme).map { UIApplication.shared.canOpenURL($0) } ?? false
-        }), let u = URL(string: hit.scheme) {
-            KbBridge.note("回程·挨个试：第一个装着的是 " + hit.name
-                          + "（" + hit.scheme + "）→ 开它")
-            let waited = Date().timeIntervalSince(foregroundAt)
-            DispatchQueue.main.asyncAfter(deadline: .now() + max(0, 1.0 - waited)) {
-                UIApplication.shared.open(u, options: [:]) { ok in
-                    if ok { KbBridge.markOpenedScheme(hit.scheme) }   // 🚨 回程准度
-                    KbBridge.note("回程·挨个试：open(" + hit.scheme + ") = " + String(ok)
-                                  + (ok ? " ✅" : " → 退回原来那条"))
-                    if !ok { self.exitToOpener(why) }
-                }
-            }
-            return
-        }
-        KbBridge.note("回程·挨个试：候选表里一个都没装 → 退回原来那条")
+        // 🚨🚨🚨 09-15 彻底删除"认不出宿主就猜"这条路（不是默认关，是整个删掉）。
+        //    这条链的历史：09-02 Kevin 撞到「在短信里按却被送去微信」→ 默认关但留着开关
+        //    → 09-14 白天改成默认开 → 09-14 深夜 Kevin 真机连续三次被拽去微信
+        //    （短信/【信息】/WhatsApp 各一次）+ 连带录音失败 → 回滚成"默认关、
+        //    开关还给他" → **Kevin 当面否掉这个折中**：「『偏好』里我不是让你把
+        //    『语音说完自动切回』给删了吗？你根本就没有改呀」「这是一个残废功能」。
+        //    他要的不是"关掉"，是"不存在"——因为这条机制**结构性做不到它承诺的事**：
+        //    它不认识真实宿主是谁，只是按写死的顺序试候选表里第一个装着的 App，
+        //    而微信几乎人人都装、永远排第一，所以"猜"在实践里等于"总是微信"。
+        //    上面的「查表」（`backSchemes`/`hostSchemeMap`，靠真实探到的宿主 scheme）
+        //    是**认**，不是猜，那条留着；删的只是"认不出来就编一个"这一段。
+        KbBridge.note("回程：查不到真实宿主 → 不猜，退回原来那条（" + why + "）")
         exitToOpener(why)
     }
 
@@ -4293,16 +3963,11 @@ final class KbVoiceHost {
     ///    而且 `open()` 的回调是异步的，for 循环里连着发根本读不到结果。
     private func openFirstWorking(_ schemes: [String], host: String, why: String, _ i: Int = 0) {
         guard i < schemes.count else {
-            KbBridge.note("回程·查表：" + host + " 的 scheme 全试完都没开成 → 退回挨个猜")
-            if let hit = KbVoiceHost.guessBackOrderLive.first(where: {
-                URL(string: $0.scheme).map { UIApplication.shared.canOpenURL($0) } ?? false
-            }), let u = URL(string: hit.scheme) {
-                UIApplication.shared.open(u, options: [:]) { ok in
-                    KbBridge.note("回程·挨个试（兜底）：open(" + hit.scheme + ") = " + String(ok))
-                    if !ok { self.exitToOpener(why) }
-                }
-                return
-            }
+            // 🚨 09-15：以前这里还有个"猜"的兜底（试候选表第一个装着的 App）。
+            //    整个猜的机制已经删了（见 `returnToPreviousApp` 里的说明），
+            //    这里也不例外——已知宿主但它自己的 scheme 全试失败，
+            //    不改猜别的 App，直接退回原来那条。
+            KbBridge.note("回程·查表：" + host + " 的 scheme 全试完都没开成 → 退回原来那条")
             exitToOpener(why)
             return
         }
@@ -4488,6 +4153,23 @@ final class KbVoiceHost {
         //    宿主自己的播放只有宿主能停。
         Speaker.stop()
         if beginArmed(seq: seq, args: args) { return }
+        // 🚨🚨🚨 **`busySeq = seq` 必须在这儿，不能留在老位置（原 4263 行）。**
+        //    0 09-15 从真机痕迹揪出的那条「🚨 键盘：宿主在录但共享区没有单号
+        //    ——接不回来」，根因不是 `arm`/`.dispatched` 跳转里的 `completeRequest`
+        //    时机（那条分支这时候根本还没有单号可写），而是**这个函数自己**：
+        //    下面 `KbBridge.markRecording(true, seq: busySeq)` 原来写在
+        //    `busySeq = seq` 之前（旧 4187 行 vs 旧 4263 行）——冷路径起录时，
+        //    写进共享区的 `kb.rec.seq` 用的是**上一条录音留下的旧 `busySeq`**
+        //    （常态是 `markRecording(false)` 清尾时置的 `-1`），不是这一条的
+        //    真实 `seq`。`KbBridge.markRecording` 那边 `if seq >= 0` 才写
+        //    `recSeq`，`-1` 直接被吞掉——`recSince` 照写，`recSeq` 却始终没有，
+        //    跟 `beginJump()`（`ios/App/AppDelegate.swift` 里 `TRANSLESS_RECURL`
+        //    分支的默认出口，就是他日常"跳转录音"那条真实产品路径）传的
+        //    `jumpSeq = -99` 一比对，正好对上：**这不是一次性的时序竞态，
+        //    是每次冷路径起录都必然发生的顺序错误**，`beginArmed()` 那条快路径
+        //    （旧 3839 行）本来就是「先 `busySeq = seq` 再 `markRecording`」，
+        //    这里补齐同一个顺序。
+        busySeq = seq
         // 🚨🚨 **后台又没有灵动岛时，别硬录。**
         //    `Activity.request` 要求 App 在前台（真机原文
         //    `灵动岛：起不来 —— Target is not foreground`），
@@ -4601,7 +4283,9 @@ final class KbVoiceHost {
                       + " → 保住会话=" + String(keepSess)
                       + "｜复用不重配=" + String(reuseOK))
         if voice.running { voice.stop(keepSession: keepSess) }
-        busySeq = seq
+        // 🚨 `busySeq = seq` 已经在函数开头（`beginArmed` 分流之后）赋过了，
+        //    这里不再重复赋——留着两处会让下一个人以为"真正生效的赋值在这儿"，
+        //    回到这次同一个错误的顺序。
         // 键盘那条波形的数据源。清一次再接，别把上一轮的尾巴带进来。
         KbBridge.clearLevels()
         voice.onLevel = { KbBridge.pushLevel($0) }
@@ -4637,6 +4321,9 @@ final class KbVoiceHost {
         let tone = Prompts.normalize(args["tone"])
         let mode = Backend.Mode(rawValue: args["mode"] ?? "en") ?? .en
         let lang = args["lang"] ?? "en"
+        // 🚨 只有跳转路（`seq == Self.jumpSeq`）才会用到 `jumpArgs`——`done()` 到时候
+        //    按 seq 分流，这里无差别存一份不影响非跳转路径（它们不读这个属性）。
+        jumpArgs = (tone, mode, lang)
         // 🚨 **产品路径这条链原来一个音量都不收** —— 而 `runSelfTest` /
         //    `runLongRec` 两条诊断链都收。**同一条规矩，产品那个出口漏了。**
         var jPeak: Float = 0
@@ -5197,6 +4884,20 @@ Backend.transcribe(wav: wav, rid: rid) { [weak self] t in
                let d = body.data(using: .utf8),
                let j = try? JSONSerialization.jsonObject(with: d) as? [String: String],
                let out = j["out"], !out.isEmpty {
+                // 🚨🚨 0/2.2 09-15 定案②：**落盘的同时就写 history，不等键盘来取。**
+                //    根因：`postPending` 是个 90 秒过期的信箱（`KbBridge.swift`
+                //    `peekPending(within: 90)`），键盘要是这 90 秒内没重新弹出来
+                //    （他按停止之后可能就留在微信打字，不会立刻再点一次麦克风），
+                //    这份转写会被 `markDelivered` 悄悄标记"已投递"、内容直接丢弃——
+                //    Kevin 原话「说的话没记下来很浪费时间」，丢字不是能调参数的容忍度。
+                //    → 主 App 这边稿子一到手就是真凭据，不依赖键盘的存在。
+                // 🚨 `History.add` 没有去重——这里写了，键盘 `takePendingIfAny()`
+                //    投递【来自 pending 的】那一份就不能再写一遍，否则一条稿子两条
+                //    history。这条只加在 `KeyboardViewController.deliverPending`那个
+                //    专属出口，`deliverLocal` 本身（键盘自己产出的那条路）继续照旧写。
+                History.add(mode: jumpArgs.mode.rawValue, tone: jumpArgs.tone,
+                            zh: j["zh"] ?? "", out: out,
+                            durMs: Int(tally.sec * 1000), lang: jumpArgs.lang)
                 KbBridge.postPending(zh: j["zh"] ?? "", out: out)
                 // 🚨🚨 **这一行正是他复制出来会看到的那行**（0 从他手机上那份
                 //    诊断查出来的：每一行都是 `0.0s 0KB`，连成功那次也是）。
@@ -5387,10 +5088,22 @@ private final class AudioHold {
         if AudioGate.off { return }
         let e = AVAudioEngine()
         let p = AVAudioPlayerNode()
-        guard let fmt = AVAudioFormat(standardFormatWithSampleRate: 44100,
+        // 🚨🚨 09-14 Kevin 要求：这段保活播的是纯静音（全零缓冲），
+        //    但采样率原来写的是 44100（CD 音质那个档）——静音听不出任何区别，
+        //    采样率只决定硬件每秒要处理多少个点，跟"听起来怎么样"无关。
+        //    降到 8000（电话音质，iOS 标准支持档位，不是随手编的数）：
+        //    硬件每秒处理的点数降到约 1/5.5，音频子系统占空比同比例降。
+        //    缓冲区大小跟着采样率走，仍然精确是"一秒"，循环节奏不变。
+        // 🚨 09-14 第二轮：Kevin 要求再往下压。4000 仍是常见的合法采样率
+        //    （AVAudioFormat 不挑食，语音电话场景常见档位），静音本来就没有
+        //    "音质"这回事，继续降没有任何可听差异。低于这个继续压边际收益很小，
+        //    没有必要冒"极端采样率导致引擎在某些路由下起不来"的风险去换。
+        // 🚨 09-14 第三轮：Kevin 问 200/300 行不行——先真机试，不凭经验拦他。
+        let sampleRate: Double = 200
+        guard let fmt = AVAudioFormat(standardFormatWithSampleRate: sampleRate,
                                       channels: 1),
               let buf = AVAudioPCMBuffer(pcmFormat: fmt,
-                                         frameCapacity: 44100) else { return }
+                                         frameCapacity: AVAudioFrameCount(sampleRate)) else { return }
         buf.frameLength = buf.frameCapacity          // 全零 = 一秒静音
         e.attach(p)
         e.connect(p, to: e.mainMixerNode, format: fmt)

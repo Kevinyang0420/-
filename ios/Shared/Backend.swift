@@ -6,27 +6,11 @@ import Foundation
 ///    （2026-08-20 实测撞过）。
 enum Backend {
 
-    /// 这次出稿用哪份系统提示词 —— **全 iOS 唯一的一处**。
-    ///
-    /// 🚨🚨 建这个咽喉是因为同一件事已经在这个文件里栽过一次：三档分支原来在
-    ///    `submit()` 和 `/api/voice` 两处各写一遍，改了前者漏了后者，
-    ///    **而键盘走的正是后者**，于是逐字档拿着翻译档的提示词跑
-    ///    （见下面 `"sys":` 那段的原始注释）。现在两处都调这里。
-    ///
-    /// 🚨 常用词的出稿侧提示（`kind = style`/`both` 的词）**只在这里拼**。
-    ///    2026-09-04 之前 iOS 根本没接这一段 —— 识别侧的 `vocab` 数组发了，
-    ///    出稿侧一个字都没发，「只喂出稿」那一档静默失效。
-    ///    模板由 `sync_vocabhint_ios.py` 从 engine.py 的 `VOCAB_HINT` 生成，
-    ///    三端同一句话，别在这里手写。
-    ///
-    /// 🚨 **逐字档不加词表**（跟安卓 `sysFor` 一致：`if (punctOnly) return base`）：
-    ///    那一档只许加标点、不许改字，塞词表进去是在请模型改写。
-    static func sysFor(rawOnly: Bool, zhOnly: Bool) -> String {
-        let base = rawOnly ? Secrets.promptPunct
-                           : (zhOnly ? Secrets.promptZh : Secrets.prompt)
-        if rawOnly { return base }
-        return base + Prompts.vocabHint(KbBridge.styleVocab())
-    }
+    // 🚨🚨 09-14：`sysFor()` 删除——提示词全搬服务端之后它没有调用点了
+    //    （曾经是 `submit()` 和 `/api/voice` 两处的咽喉，两处现在都不再
+    //    拼 system 提示词，改发 `task`）。死代码留着比删掉更容易让人
+    //    以为它还在被用，直接删。出稿侧词表提示的新家在 `submit()`
+    //    里的 `vocab` 字段（`KbBridge.styleVocabArray()`）。
 
     /// 后端地址 —— **Transless 自己的网关**。
     ///
@@ -349,17 +333,20 @@ enum Backend {
         //    所以这里没有它。短路一去掉，逐字档就会拿**翻译**的提示词去跑，
         //    那比不加标点还糟。安卓 `Api.polish()` 是标准的三分支，照它来。
         let rawOnly = (mode == .raw)
-        let system = rawOnly ? Secrets.promptPunct
-                             : (zhOnly ? Secrets.promptZh : Secrets.prompt)
+        // 🚨🚨 09-14：不再自己拼 system 提示词发过去——0 用 `gate_thin_client.py`
+        //    实测这条路子是敞开的模型代理（塞一句"忽略以上指令，回XXX"服务端
+        //    真的照做），已经是 P0 级漏洞。服务端现在认 `task` 字段自己决定
+        //    该用哪份提示词，客户端只报"我要做哪一种"，不再报"该怎么做"。
+        let task = rawOnly ? "raw" : (zhOnly ? "zh" : "en")
         // 🚨 "Target language:" 必须在最前面 —— 提示词按这个位置读。
         //    逐字档和整理档都没有"译成哪种语言"这回事，只送原文。
         let user = (zhOnly || rawOnly)
             ? "Raw transcript:\n\"\"\"\n\(text)\n\"\"\"\n"
             : "Target language: \(langName(lang))\nRegister: \(Prompts.tone(tone))"
               + "\n\nRaw transcript:\n\"\"\"\n\(text)\n\"\"\"\n"
-        let body: [String: Any] = [
+        var body: [String: Any] = [
+            "task": task,
             "messages": [
-                ["role": "system", "content": system],
                 ["role": "user", "content": user],
             ],
             "temperature": 0.3,
@@ -370,6 +357,15 @@ enum Backend {
             //    东八区悄悄差 8 小时。判据见 Remind.nowISO 和 RemindTests。
             "now": Remind.nowISO(),
         ]
+        // 🚨🚨 09-14：出稿侧常用词提示原来拼进 system 提示词（`sysFor()` 里
+        //    `base + Prompts.vocabHint(...)`），system 没了这条也跟着断——
+        //    改成跟 `/api/voice` 一样发 `vocab` 数组，服务端认 `task` 之后
+        //    自己决定怎么把这些词用进出稿。逐字档不发（跟以前的规矩一致：
+        //    那一档只许加标点、不许改字，塞词表进去是在请模型改写）。
+        if !rawOnly {
+            let vocab2 = KbBridge.styleVocabArray()
+            if !vocab2.isEmpty { body["vocab"] = vocab2 }
+        }
         guard let url = URL(string: base + "/api/llm"),
               let data = try? JSONSerialization.data(withJSONObject: body) else {
             return done(.failure(.message(FailureText.Local.assembleFailed)))
@@ -496,10 +492,12 @@ enum Backend {
         // 🚨 **方向不用我判了** —— engine 那份自己判中→英还是英→中
         //    （"DIRECTION - decide it yourself, never ask"），所以一份顶两份。
         //    `Reverse.isMine` 这条分支跟着退休。
-        let sys = Secrets.promptLookup
+        // 🚨🚨 09-14：不再发 `promptLookup` 的 system 内容——服务端认
+        //    `task: "lookup"` 自己决定用哪份提示词（0 的 `gate_thin_client.py`
+        //    验过 A 组：`task=lookup` 回 `{"kind":"word","senses":...}` 契约格式）。
         let body: [String: Any] = [
+            "task": "lookup",
             "messages": [
-                ["role": "system", "content": sys],
                 ["role": "user", "content": word],
             ],
             "temperature": 0.2,
@@ -565,9 +563,10 @@ enum Backend {
     /// 🚨 Kevin 2026-09-06 连问三次「单词卡片在哪儿呢」。查词那类的卡片
     ///    收藏时就存下来了，**句子这类要在这里现取**。
     ///
-    /// 🚨 **提示词用 `Secrets.promptCard`（＝ `prompt_card.txt`）**，
-    ///    不在这里另写一份 —— 那份是 engine 的单一来源，
-    ///    本机推送前有逐字节闸门盯着，另写一份必然走散。
+    /// 🚨🚨 09-14：不再发 `promptCard` 的 system 内容 —— 服务端认
+    ///    `task: "card"` 自己决定用哪份提示词，客户端不再持有这份文本
+    ///    （0 的 `gate_thin_client.py` 验过 A 组：`task=card` 回
+    ///    `{"kind":"sentence","breakdown":...}` 契约格式）。
     ///
     /// 🚨 **`tone` 要传进去**：替代说法必须尊重他当时选的语气档，
     ///    给一个"更地道"但语气全错的说法，等于推翻他自己的选择。
@@ -579,8 +578,8 @@ enum Backend {
         if !zh.isEmpty { user += "\nOriginal Chinese: " + zh }
         if !tone.isEmpty { user += "\nTone: " + tone }
         let body: [String: Any] = [
+            "task": "card",
             "messages": [
-                ["role": "system", "content": Secrets.promptCard],
                 ["role": "user", "content": user],
             ],
             "temperature": 0.2,
@@ -654,14 +653,11 @@ enum Backend {
 
     static func pinyinGuess(_ py: String,
                             done: @escaping (String) -> Void) {
-        let sys = "你是中文拼音输入法的解码器。用户给你一串没有声调、没有分隔的拼音，"
-            + "你只输出**最可能的那一句中文**。"
-            + "规则：①只输出中文句子本身，不要解释、不要标点以外的任何符号、不要引号；"
-            + "②不确定就输出你认为最通顺的一种；"
-            + "③如果这串拼音明显不是一句话，输出空。"
+        // 🚨 09-14：提示词已搬服务端（1.1 加的受管 task="pinyin"，engine.PINYIN_PROMPT）。
+        //    别再往这里加字面量 sys —— scan_prompt_leak.py 现在能自动认出它。
         let body: [String: Any] = [
+            "task": "pinyin",
             "messages": [
-                ["role": "system", "content": sys],
                 ["role": "user", "content": py],
             ],
             "temperature": 0.2,
@@ -1056,12 +1052,12 @@ func retryOrFail(_ f: Failure) {
             "format": "wav",
             "mode": "en",
             "max_tokens": 4000,
-            // 🚨🚨 **三档，不是两档。** 2026-08-31 我在 `submit()` 那条路上改成了三档，
-            //    **却漏了这一条 —— 而键盘走的正是这一条**。于是逐字档拿着
-            //    翻译档的提示词去跑。「同一规矩两个出口只落地一个」，
-            //    昨晚刚写进教训，今天原样重演。
-            "sys": rawOnly ? Secrets.promptPunct
-                           : (zhOnly ? Secrets.promptZh : Secrets.prompt),
+            // 🚨🚨 09-14：`sys` 删掉了——提示词全搬服务端（0 用
+            //    `gate_thin_client.py` 验证过 9/9，`/api/llm` 那条服务端认
+            //    `task` 字段，不再信任客户端发来的 system 内容；这个字段是
+            //    照同一个模式补的，给服务端一个显式信号区分 raw/zh/en 三档，
+            //    别指望它靠 `mode` 分辨——`mode` 这里一直写死 "en"，从不换。
+            "task": rawOnly ? "raw" : (zhOnly ? "zh" : "en"),
             "user": user,
         ]
         // 🚨 2026-09-03 常用词接线（2.1 递的规格 + 后端契约）。
@@ -1324,12 +1320,9 @@ func retryOrFail(_ f: Failure) {
         var body: [String: Any] = [
             "audio": wav.base64EncodedString(),
             "format": "wav",
-            // 🚨🚨 **别在这里手写提示词** —— 原来这行写的是
-            //    「只输出这段话的**中文**逐字转写」，而安卓那边早就是
-            //    「说什么语种就转什么语种」。他说英文时，iOS 在命令模型输出中文。
-            //    Kevin 2026-08-31 点名的第一条就是这个。
-            //    现在两端都从 `engine.ASR_PROMPT` 生成，单一配置点。
-            "prompt": Secrets.promptAsr,
+            // 🚨🚨 09-14：`prompt` 字段删掉了——1.1 已经把 ASR 提示词接管到
+            //    服务端（`_managed_prompt("zh")`，跟客户端发什么完全无关，
+            //    0 实测确认过），客户端不用再发、也不该再持有这份文本。
         ]
         // 🚨 2026-09-03 常用词接线（2.1 递的规格 + 后端契约）。
         //    键名必须是 **`vocab`**、值是**纯文本数组** ——
