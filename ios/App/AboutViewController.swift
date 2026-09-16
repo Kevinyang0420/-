@@ -110,11 +110,14 @@ final class AboutViewController: UIViewController {
         gap(14)
         add(text(L.about_legal_title, 17, .semibold, Skin.text))
         add(link(L.prefs_privacy, #selector(tapPrivacy)), id: "about.privacy.link")
-        // 🚨 **服务条款那一行只在真有页面时才出现**（`Links.terms` 现在是 nil）。
-        //    draft 列了它，但全树只有 privacy 一个地址 —— **不许编一个 URL**，
-        //    点开 404 比没有这一行更糟。站点上线后加一行常量，这里自动出现。
+        // 🚨 **服务条款那一行只在真有页面时才出现**——`Links.terms` 09-16 核实后
+        //    已经不是 nil 了（站点已上线，见 `Links.swift` 头注释），这一行
+        //    现在会正常出现。🚨 09-16 顺手修了一个旧 bug：这里原来错写成
+        //    `L.prefs_privacy`（复制隐私那行时漏改），点进去文字是"隐私政策"
+        //    但目标其实是服务条款——因为 `Links.terms` 之前一直是 nil、
+        //    这一行从来没画出来过，这个错字从没被人看见过。
         if Links.terms != nil {
-            add(link(L.prefs_privacy, #selector(tapTerms)), id: "about.terms.link")
+            add(link(L.prefs_pro_terms, #selector(tapTerms)), id: "about.terms.link")
         }
         add(text(L.about_contact + L.sep_colon + Self.supportMail,
                  15, .regular, Skin.dim),
@@ -167,11 +170,15 @@ final class AboutViewController: UIViewController {
 
     // MARK: - 链接
 
-    @objc private func tapPrivacy() { open(Links.privacy) }
-    @objc private func tapTerms() { if let t = Links.terms { open(t) } }
-
-    private func open(_ s: String) {
-        guard let u = URL(string: s) else { return }
-        UIApplication.shared.open(u)
+    // 🚨 09-16 改：端内原生页，不跳系统浏览器 —— 跟 `PrefsViewController.openPrivacy()`
+    //    那条主入口一致（#97①，Kevin 原话「不要跳出 App」）。这两行原来是
+    //    `UIApplication.shared.open(...)`，是这一页自己没跟上主入口那次改动的
+    //    遗留，这次一起补上，不再留一条不一致的次要路径。
+    @objc private func tapPrivacy() {
+        navigationController?.pushViewController(PrivacyViewController(), animated: true)
+    }
+    @objc private func tapTerms() {
+        guard Links.terms != nil else { return }
+        navigationController?.pushViewController(TermsViewController(), animated: true)
     }
 }

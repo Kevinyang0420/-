@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Transless 隐私政策</title>
+<link rel="icon" href="favicon.ico" sizes="any"><link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+html,body{overflow-x:hidden}
+body{margin:0;min-height:100vh;padding:24px 18px 60px;
+ /* 2026-09-16: Kevin -- this page was flat near-black (#14141a),
+    didn't match the rest of the site's purple theme. Same gradient +
+    fixed attachment as index.html's body. */
+ background:linear-gradient(165deg, #0F1B4F 0%, #2A1358 45%, #431661 100%);background-attachment:fixed;color:#C9C2DE;
+ font:16px/1.75 -apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+ max-width:760px;margin-inline:auto}
+h1{font-size:26px;margin:0 0 6px;color:#fff}
+h2{font-size:19px;margin:32px 0 10px;color:#B98BE8;border-left:3px solid #B98BE8;padding-left:10px}
+p{margin:10px 0}
+ul{margin:10px 0;padding-left:22px}li{margin:5px 0}
+strong{color:#fff}
+code{background:rgba(255,255,255,.08);padding:1px 6px;border-radius:5px;font-size:14px;color:#D9BEF0}
+blockquote{margin:14px 0;padding:10px 14px;background:rgba(255,255,255,.05);border-left:3px solid rgba(185,139,232,.35);
+ border-radius:0 8px 8px 0;color:#A99DC6;font-size:14.5px}
+hr{border:0;border-top:1px solid rgba(185,139,232,.18);margin:26px 0}
+.tw{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px;table-layout:fixed}
+th,td{border:1px solid rgba(185,139,232,.18);padding:8px 9px;text-align:left;vertical-align:top;word-break:break-word;overflow-wrap:anywhere}
+th{background:rgba(255,255,255,.07);color:#fff}
+a{color:#B98BE8}
+.back{color:#A99DC6;text-decoration:none;font-size:14px}
+.back-link{
+  display:inline-flex;align-items:center;gap:8px;width:fit-content;
+  margin:0 0 36px;padding:7px 14px 7px 10px;border-radius:999px;
+  border:1px solid rgba(185,139,232,.18);background:rgba(255,255,255,.05);
+  color:#A99DC6;font-family:inherit;font-size:13px;font-weight:500;
+  letter-spacing:.01em;line-height:1;text-decoration:none;
+  transition:color 160ms ease,background-color 160ms ease,border-color 160ms ease,transform 160ms ease;
+}
+.back-link svg{
+  display:block;width:14px;height:14px;flex-shrink:0;fill:none;
+  stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;
+  transition:transform 160ms ease;
+}
+.back-link:hover{color:#F4F1FB;background:rgba(185,139,232,.12);border-color:rgba(185,139,232,.18)}
+.back-link:hover svg{transform:translateX(-2px)}
+.back-link:active{transform:translateY(1px)}
+.back-link:focus-visible{outline:2px solid #B98BE8;outline-offset:3px}
+.back:hover{color:#F4F1FB}
+</style></head><body>
+<a class="back-link" href="/"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8 10 12.5" /></svg>回官网</a>
+<h1>Transless 隐私政策</h1>
+<p><strong>生效日期：2026-08-28</strong>　|　<strong>版本：v2.2</strong></p>
+<p><strong>运营方（也就是本政策下的数据控制者）</strong>：
+Luminate Pacific Consulting Service Limited，香港注册公司。
+联系方式：<a href="mailto:support@transless.net">support@transless.net</a>。</p>
+<p>本次变更（v2.1 → v2.2）：<strong>账号体系已经上线</strong>，本页据此更新了「我们处理什么」「第三方共享与跨境传输」「你的权利」三节，写明了登录信息、地区信号，以及所有参与处理的服务商。<span style="display:none">v2.1 说明（存档）：</span>
+之前整份政策只有"我们"和一个邮箱，没有可识别的法律主体 ——
+而 GDPR 第 13 条要求披露控制者身份。数据处理方式本身没有任何改动。</p>
+<hr>
+
+<h2>一、我们处理什么</h2>
+<p>Transless 是一个输入法，把你说的中文整理成英文（或其他目标语言）。为了做到这件事，我们处理以下内容：</p>
+<div class="tw"><table><thead><tr><th>类型</th><th>内容</th><th>为什么需要</th></tr></thead><tbody>
+<tr><td><strong>语音</strong></td><td>你按下说话键时录制的音频</td><td>识别你说了什么</td></tr>
+<tr><td><strong>文本</strong></td><td>识别出的文字、以及生成的译文</td><td>整理和翻译</td></tr>
+<tr><td><strong>设备标识符</strong></td><td>App 首次启动时生成的一串随机编号（设备令牌）</td><td>防止滥用、按设备计算 7 天免费试用期、统计有多少人在用</td></tr>
+</tbody></table></div>
+<p><strong>关于那串设备编号</strong>：它由 App 随机生成，<strong>不包含</strong>你的手机号、IMEI、
+广告标识或任何来自你手机的身份信息，我们<strong>无法</strong>用它反查出你是谁。
+它的作用只是让服务器分得清"这是同一台设备的请求"。卸载 App 即失效。</p>
+<p><strong>我们不收集</strong>：姓名、身份证、位置、通讯录、相册、
+广告标识符（Advertising ID）、系统级设备标识（IMEI／Android ID／IDFA）。<br>
+（登录用的手机号或邮箱见下面「账号信息」一段。）</p>
+<h3>账号信息</h3>
+<p><strong>账号体系已经上线。</strong>不登录也可以使用基础功能；使用需要认得出你的功能（例如付费额度）时才需要登录。登录用<strong>手机号或邮箱 + 验证码</strong>，<strong>不设密码</strong>。</p>
+<p>创建账号时我们会记录：</p>
+<ul>
+<li><strong>你用来登录的手机号或邮箱</strong>；</li>
+<li><strong>四项用于按国家统计用户的信号</strong>：你设备的地区设置、时区、语言，以及由你当时的 IP 地址推算出的<strong>两位国家代码</strong>。</li>
+</ul>
+<p>🔒 <strong>我们不保存你的 IP 地址，也不会把它发给任何第三方</strong> —— 国家代码（例如 <code>HK</code>、<code>CN</code>）是在我们自己的服务器上<strong>用一份离线的地址段对照表查出来的</strong>，你的 IP 不会离开我们的服务器，查完只留下那两个字母。</p>
+<p>之所以同时看四项，是因为任何单一信号都可能失真（地区可以自己设、IP 会被 VPN 改变），交叉对照才能得到大致准确的国家分布。</p>
+<p>🔒 手机号登录使用阿里云「号码认证服务」——<strong>验证码由阿里云生成和校验，我们自始至终看不到那 6 位数字</strong>。</p>
+<strong>不登录不影响基础功能。</strong></p>
+
+<h2>二、这是一个输入法，所以要特别说清楚一件事</h2>
+<p>输入法在技术上可以读取你在任何输入框里键入的内容。Transless 需要你在系统设置里
+开启"允许完全访问"才能联网工作。因此我们把边界写明：</p>
+<ul>
+<li><strong>只有在你主动按下说话键之后</strong>，我们才开始录音并上传。</li>
+<li>其余任何时刻，我们<strong>不读取、不记录、不上传</strong>你键入的内容。</li>
+<li>"翻译光标前的中文"这个功能，只在你<strong>主动点击它</strong>时读取光标前的一段文字。</li>
+<li>我们<strong>不做</strong>键盘记录（keylogging），也不采集你的输入习惯用于任何分析。</li>
+</ul>
+
+<h2>三、这些内容去了哪里、留多久</h2>
+<p>1. <strong>你的语音</strong>上传到我们的服务器，转发给语音识别服务商。
+我们的服务器<strong>不把你的语音和文字写入磁盘</strong>，处理完即丢弃。<br>（使用量记录是另一回事 —— 它只有时间、用到了哪个功能和一个哈希代号，<strong>不含任何内容</strong>，见第十节。）</p>
+<p>2. <strong>识别出的文字</strong>发送给 AI 模型服务商（见第四节）进行整理与翻译。</p>
+<p>3. <strong>生成的译文</strong>（以及朗读功能产生的合成语音）会在我们服务器的<strong>内存</strong>中
+短暂停留，等你的设备来取。<strong>你的设备一取走，我们就把它标记为可清除</strong>，
+<strong>1 分钟</strong>内自动清掉；万一你的设备一直没来取（比如中途断网），
+最多 <strong>3 分钟</strong>后也会被清掉。</p>
+<blockquote>为什么要暂存：我们采用"提交任务 → 轮询取结果"的方式（网关对长请求会超时），
+结果必须留到你的设备来取。<strong>只在内存，服务重启即消失，不写磁盘。</strong><br>
+为什么取走后还留 1 分钟而不是当场删：万一结果在回程路上丢了，你的设备会重试 ——
+当场删会让你看到"说了话没出字"。这 1 分钟是留给重试的。</blockquote>
+<p>4. <strong>我们不建立任何形式的历史记录、对话存档或用户画像。</strong></p>
+
+<h2>四、第三方共享与跨境传输</h2>
+<p>为完成识别与翻译，你的语音和文字会发送给以下服务商处理：</p>
+<div class="tw"><table><thead><tr><th>服务商</th><th>处理什么</th><th>服务器所在地</th></tr></thead><tbody>
+<tr><td><strong>DeepSeek</strong>（杭州深度求索）</td><td>文字整理与翻译（主要处理方）</td><td><strong>中国大陆</strong></td></tr>
+<tr><td><strong>火山引擎</strong>（北京字节跳动旗下）</td><td>语音识别；文字处理的备用通道；使用量记录的存储</td><td><strong>中国大陆</strong></td></tr>
+<tr><td><strong>阿里云</strong>（号码认证服务）</td><td>手机号登录时下发并校验验证码</td><td><strong>中国大陆</strong></td></tr>
+<tr><td><strong>Resend</strong></td><td>邮箱登录时投递验证码邮件</td><td><strong>美国</strong></td></tr>
+<tr><td><strong>Supabase</strong></td><td>存放账号记录（登录用的手机号或邮箱、上述地区信号）</td><td><strong>新加坡</strong></td></tr>
+</tbody></table></div>
+<p><strong>请注意，不同的数据去往不同的地方：</strong></p>
+<ul>
+<li><strong>你的语音和文字内容</strong> → <strong>中国大陆</strong>（DeepSeek、火山引擎）。如果你不在中国大陆，这是一次跨境传输。</li>
+<li><strong>你的账号信息</strong>（登录用的手机号或邮箱、地区信号）→ <strong>新加坡</strong>（Supabase）。</li>
+<li><strong>验证码投递</strong> → 邮箱走<strong>美国</strong>（Resend），手机号走<strong>中国大陆</strong>（阿里云）。</li>
+</ul>
+<p>这些服务商对数据的处理受其自身隐私政策约束。</p>
+<p>基于这一点，我们建议你不要口述以下内容：</p>
+<ul>
+<li>密码、银行卡号、身份证号等敏感个人信息</li>
+<li>商业机密或受保密协议约束的内容</li>
+</ul>
+<p>我们<strong>不会</strong>将你的内容出售、出租或用于广告。</p>
+<p>App 内<strong>没有集成任何第三方分析、崩溃上报或广告 SDK</strong>。
+手写识别在你的设备本地完成，不联网。</p>
+
+<h2>五、你的数据不会被用来训练模型</h2>
+<p><strong>我们自己不会</strong>用你的语音或文字训练任何模型，也不会用于广告、
+不会出售或出租。</p>
+<p>关于第三方服务商，我们如实分开讲：</p>
+<ul>
+<li><strong>DeepSeek（文字整理与翻译的主要处理方）</strong>——
+其开放平台条款<strong>未就"API 数据是否用于训练"作出明确表态</strong>。
+我们无法代它承诺，所以在这里如实说明，而不是给你一句我们担保不了的话。</li>
+<li><strong>火山引擎（语音识别；文字处理的备用通道）</strong>——
+其公开承诺为「未经您授权，火山引擎不会访问或使用您的数据」，
+并提供全链路加密与隔离方案。</li>
+</ul>
+<blockquote>为什么要写这一段：我们宁可把话说清楚，也不写一句我们担保不了的承诺。
+本节内容我们会定期复核；最近一次复核：2026-08-25。</blockquote>
+
+<h2>六、我们没有的东西</h2>
+<p>这些是很多同类产品会做、而我们<strong>没有做</strong>的：</p>
+<ul>
+<li><strong>App 内没有任何第三方分析、崩溃上报或广告 SDK。</strong></li>
+<li><strong>官网没有任何追踪脚本</strong>（没有 Google Analytics、没有广告像素）。</li>
+<li><strong>不收集</strong>你的浏览记录、网址、窗口标题或应用使用情况。</li>
+<li><strong>手写识别在你的设备本地完成</strong>，笔迹不上传。</li>
+</ul>
+
+<h2>七、安全措施</h2>
+<ul>
+<li>客户端与服务器之间<strong>全程 HTTPS 加密</strong>传输。</li>
+<li>我们的服务器<strong>不把你的语音或文字写入磁盘</strong>，只在内存中中转。</li>
+<li>调用第三方服务所需的密钥<strong>只保存在服务端</strong>，不下发到 App 里。</li>
+</ul>
+
+<h2>八、AI 生成内容提示</h2>
+<p>译文由人工智能生成，<strong>可能存在错误或遗漏</strong>。请在发送前自行核对。
+App 内相应位置已作明确标示。</p>
+
+<h2>九、内容审查</h2>
+<p>依据适用法规与服务商要求，我们会对输入和输出进行<strong>自动化的违规内容识别</strong>。
+该识别为程序化的关键词与规则匹配，<strong>不涉及人工阅读你的内容</strong>。</p>
+
+<h2>十、你的权利</h2>
+<p>我们<strong>不保存</strong>你的语音和文字内容，因此不存在可供查询、导出或删除的内容档案。你随时可以卸载 App 终止全部处理。</p>
+<p>你可以随时要求我们删除你的账号 —— 通过下面的邮箱联系即可。收到请求后，我们会删除账号本身，以及其中<strong>可以直接识别你的信息</strong>（登录用的手机号或邮箱）。</p>
+<p>为了统计使用量、防止滥用和保障服务稳定，我们会保留一份<strong>不包含任何内容</strong>的使用记录 —— 里面只有时间、用到了哪个功能，以及一个<strong>经过加盐哈希处理的代号</strong>。账号删除之后，我们<strong>无法再把这份记录关联到你本人</strong>。
+<p>如果你身处欧洲经济区、英国或瑞士，就我们处理你数据的法律依据而言：
+处理语音与文字的依据是<strong>履行合同所必需</strong>（你要求我们翻译）；
+处理设备编号的依据是<strong>正当利益</strong>（防止滥用、维持服务）。
+向中国大陆的传输依据是<strong>履行合同所必需</strong>（GDPR 第 49(1)(b) 条）。</p>
+<p>如果你是加利福尼亚州居民：我们<strong>不出售、不"共享"</strong>（CCPA/CPRA 定义下）
+你的个人信息，也不用于跨平台行为广告。</p>
+<p>要行使任何权利、或对本政策有疑问，联系：
+<a href="mailto:support@transless.net">support@transless.net</a>。</p>
+
+<h2>十一、儿童</h2>
+<p>本 App 不面向 <strong>13 岁</strong>以下儿童设计，也不会有意收集其信息。
+在欧洲经济区，本 App 不面向 <strong>16 岁</strong>以下（或所在成员国规定的更低年龄）的用户。
+如果你认为孩子向我们提供了信息，请通过上面的邮箱联系我们。</p>
+
+<h2>十二、变更与联系</h2>
+<p>政策变更会更新本页顶部的版本与日期。</p>
+<p>问题联系：<a href="mailto:support@transless.net">support@transless.net</a></p>
+<p style="margin-top:24px"><a class="back" href="/">← 回官网</a> · <a class="back" href="/terms.html">服务条款</a> · <a class="back" href="/company.html">公司信息</a> · <a class="back" href="/download.html">下载页</a></p>
+</body></html>

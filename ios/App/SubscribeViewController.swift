@@ -192,19 +192,15 @@ final class SubscribeViewController: UIViewController {
         }
     }
 
-    // 🚨 时间紧：这两个链接先直接跳系统浏览器，**不是**在 App 内嵌渲染。
-    //    苹果审核指南 3.1.2(a) 只要求"functional links"，不强制内嵌；
-    //    Kevin 之前要求隐私政策不跳出 App 是**那一屏专属的产品决定**
-    //    （`_规格_同步入口oneoff_20260907.md`），不是这里的硬性红线。
-    //    真要内嵌，照抄 `PrivacyViewController` 那套 bundled-html 方案即可。
+    // 🚨 09-16 改：端内原生页，不跳系统浏览器——Kevin 亲口点名这两个链接
+    //    不该弹网页。照抄 `PrivacyViewController` 那套 bundled-html 方案，
+    //    `TermsViewController` 是同一天新建的对应件（服务条款那边原来
+    //    没有随包页面，`Links.terms` 一直是 nil，这次一起补上，见
+    //    `Links.swift` 和 `push_ios.py` 的 `RES_EXT`）。
     @objc private func openTerms() {
-        if let u = URL(string: "https://transless.net/terms") {
-            UIApplication.shared.open(u)
-        }
+        navigationController?.pushViewController(TermsViewController(), animated: true)
     }
     @objc private func openPrivacyLink() {
-        if let u = URL(string: "https://transless.net/privacy") {
-            UIApplication.shared.open(u)
-        }
+        navigationController?.pushViewController(PrivacyViewController(), animated: true)
     }
 }

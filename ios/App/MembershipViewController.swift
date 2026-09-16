@@ -68,21 +68,20 @@ final class MembershipViewController: UIViewController {
         return b
     }
 
-    /// 苹果标准的订阅管理入口（系统「订阅」设置页），不是我们自己造一套管理界面——
+    /// 苹果标准的订阅管理入口（系统「订阅」设置页）——这个必须跳系统，
+    /// 不是我们自己的页面，Apple 也没给第三方 App 内嵌这个界面的办法。
     /// 这正是 Guideline 3.1.2 要求的"要有管理入口"。
     @objc private func tapManage() {
         if let u = URL(string: "https://apps.apple.com/account/subscriptions") {
             UIApplication.shared.open(u)
         }
     }
+    // 🚨 09-16 改：这两个改成端内原生页，不跳系统浏览器——照
+    // `SubscribeViewController` 同一天的改法（Kevin 亲口点名）。
     @objc private func openTerms() {
-        if let u = URL(string: "https://transless.net/terms") {
-            UIApplication.shared.open(u)
-        }
+        navigationController?.pushViewController(TermsViewController(), animated: true)
     }
     @objc private func openPrivacyLink() {
-        if let u = URL(string: "https://transless.net/privacy") {
-            UIApplication.shared.open(u)
-        }
+        navigationController?.pushViewController(PrivacyViewController(), animated: true)
     }
 }

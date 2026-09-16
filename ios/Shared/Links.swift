@@ -8,9 +8,13 @@ import Foundation
 enum Links {
     static let privacy = "https://transless.net/privacy.html"
 
-    // 🚨 **服务条款目前没有页面**（全树只有 privacy 一个地址）。
-    //    draft 的「法律与联系」里列了「服务条款 ›」，但我们没有那个页面 ——
-    //    **不许编一个 URL 放上去**，点开是 404 比没有这一行更糟。
-    //    等站点上线之后在这里加一行，「关于」页会自动多出那个入口。
-    static let terms: String? = nil
+    /// 🚨 09-16 核实：**这条不再是 nil** —— 之前留 nil 是因为站点还没有这个页面
+    ///    （见下面旧注释，仍留着说明历史）。WebFetch 实测 `transless.net/terms`
+    ///    现在是真实条款正文（v1.2，生效日 2026-09-13），不是空页/404。
+    ///    随包副本在 `ios/Resources/terms.html`，跟 `dist/terms.html` 字节一致。
+    ///
+    /// （旧注释，历史存档）服务条款目前没有页面：draft 的「法律与联系」里列了
+    /// 「服务条款 ›」，但当时没有那个页面 —— 不许编一个 URL 放上去，点开是
+    /// 404 比没有这一行更糟。这条规矩本身没变，只是前提（有没有页面）现在变了。
+    static let terms: String? = "https://transless.net/terms"
 }

@@ -64,14 +64,28 @@ def find_binaries(root):
 
 
 def scan(path):
-    """返回 {符号: 次数}，只列非 0 的。"""
-    try:
-        raw = subprocess.run(["strings", "-a", path], capture_output=True).stdout
-    except FileNotFoundError:
-        # 没有 strings 就自己扒可打印串（判据不能因为缺工具就失效）
-        raw = open(path, "rb").read()
-    txt = raw.decode("latin-1", "replace")
-    return {s: txt.count(s) for s in BANNED if s in txt}
+    """返回 {符号: 次数}，只列非 0 的。
+
+    🚨🚨 2026-09-16 · **`strings` 这条路已删除，别再加回来。**
+    上一版是「有 `strings` 就用它，没有就自己扒字节」——**同一个判据两条实现**，
+    而它们在两个平台上分叉了，分叉方向正好是最坏的那个：
+
+        Windows（没有 strings）→ 走扒字节 → 坏样本全部命中 ✅
+        macOS（有 strings）    → `strings -a` 对这些文件**一个串都不吐**
+                               → 坏样本**全部漏掉** ❌
+
+    也就是说：我在 Windows 上自测全绿，而**真正出包上架的那台 Mac 上这道闸是瞎的**，
+    它会对着一个带私有符号的二进制报「干净」。
+    是 CI 里那趟 `--selftest` 把它抓出来的 —— 这就是为什么闸门必须在
+    **它真正要跑的那个环境里**先过自测（📖 `feedback_same_rule_two_impls_drifts`、
+    `feedback_crash_reads_as_green`）。
+
+    现在只有一条实现：**整个文件按字节搜**。符号名都是 ASCII，
+    不依赖任何外部工具，跨平台结果完全一致。
+    """
+    data = open(path, "rb").read()
+    return {s: data.count(s.encode("ascii")) for s in BANNED
+            if s.encode("ascii") in data}
 
 
 def run(root):

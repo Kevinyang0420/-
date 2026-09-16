@@ -33,7 +33,10 @@ enum ProStatus {
     /// **当前这一刻是不是会员** —— 只读缓存，不发网络请求。
     /// 用于界面立刻着色（先給一个大概率对的答案），**不用于放行判断**。
     static var isProCached: Bool {
-        cachedUntil > Date().timeIntervalSince1970
+        // GATE-OK: 纯展示占位，不做放行判断。权威结果由 refresh() 覆盖 ——
+        //   AccountViewController 在 viewDidLoad/viewWillAppear/登录回调三处调 refresh()，
+        //   回来后重写 proState，memberRow() 照权威结果画（0 2026-09-16 逐个查过调用链）。
+        cachedUntil > Date().timeIntervalSince1970  // GATE-OK: 占位，refresh() 覆盖
     }
 
     /// 缓存的到期时间本身（只读）。给界面画"乐观占位"用，比如页面刚出现、
