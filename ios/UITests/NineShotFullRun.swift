@@ -68,6 +68,218 @@ final class NineShotFullRun: XCTestCase {
         NSLog("NSFR 快测完")
     }
 
+    /// 🚨🚨 0 09-16 验收 `sceneStateLine()` 那条诊断专用——只做一件事：
+    ///    **强制走跳转冷启动路**，让 `AppDelegate.handleRecURL()` 真的执行一次，
+    ///    而不是走"宿主已经架着"的快路径。
+    ///    跟 `testMicLevelProbeOnly()` 的区别就在这：那条特意先
+    ///    `host.activate()` 把引擎预热好，为的是测"快路径收不收得到声音"；
+    ///    这条反过来 `host.terminate()` 杀掉主进程，为的是测"跳转那条链上
+    ///    的诊断有没有真的打印"——两条测的是相反的路径，别当成同一条改错。
+    ///    判据：跑完去 `kb.trail` 里找「起录URL后 3 秒｜...场景=」，
+    ///    确认那一行**真的出现**、场景层的值**不是空、不是 unknown**。
+    func testSceneStateDiagnosticOnly() {
+        let notes = XCUIApplication(bundleIdentifier: "com.apple.mobilenotes")
+        notes.launch()
+        XCTAssertTrue(notes.wait(for: .runningForeground, timeout: 15), "场景诊断：备忘录没起来")
+        Thread.sleep(forTimeInterval: 1.5)
+        XCTAssertTrue(openNewNoteWithKeyboard(notes), "场景诊断：输入框没找到")
+        XCTAssertTrue(switchToTranslessKeyboard(notes), "场景诊断：没切到 Transless 键盘")
+        // 🚨 核心：杀掉主App进程，逼 `hostAlive` 读假，逼键盘走跳转那条链。
+        let host = XCUIApplication(bundleIdentifier: "com.kevin.transless")
+        host.terminate()
+        Thread.sleep(forTimeInterval: 1.5)
+        let mic = notes.buttons["transless.mic"]
+        XCTAssertTrue(mic.waitForExistence(timeout: 5), "场景诊断：找不到麦克风")
+        mic.tap()
+        NSLog("NSFR 场景诊断：已点麦克风（主App刚被杀），等跳转链跑完")
+        // 🚨 不等 phase.listening——跳转链大概率走不到那一步，
+        //    这条测的是"诊断行打没打"，不是"最后录成没成"。
+        Thread.sleep(forTimeInterval: 8)
+        if notes.buttons["transless.mic"].exists { notes.buttons["transless.mic"].tap() }
+        NSLog("NSFR 场景诊断完——去 kb.trail 里找「起录URL后 N 秒｜...场景=」那几行")
+    }
+
+    /// 🚨🚨 0 09-16 五分钟插队任务：**已是会员的账号点"订阅"按钮，屏幕上真的
+    ///    弹出什么？**——不是靠代码推断。走已装在Kevin手机上的`TRANSLESS_PAGE=account`
+    ///    入口（不重新装包），点"会员"行进订阅页，点"订阅"按钮，截图看结果：
+    ///    苹果标准的"你已订阅"弹窗＝安全网接住了；转圈/报错/卡住＝真的是bug。
+    func testTapSubscribeAsExistingMember() {
+        let app = XCUIApplication(bundleIdentifier: "com.kevin.transless")
+        app.launchEnvironment["TRANSLESS_PAGE"] = "account"
+        app.launch()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15), "会员点击测试：App没起来")
+        Thread.sleep(forTimeInterval: 2.0)
+
+        let a0 = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        a0.name = "00_账户页"; a0.lifetime = .keepAlways; add(a0)
+
+        // 会员行没有 accessibilityIdentifier，按标题文字找，点它触发父控件的 tapMemberRow
+        let memberLabel = app.staticTexts["会员"]
+        XCTAssertTrue(memberLabel.waitForExistence(timeout: 8), "会员点击测试：找不到「会员」这一行")
+        memberLabel.tap()
+        Thread.sleep(forTimeInterval: 2.0)
+
+        let a1 = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        a1.name = "01_点会员行之后"; a1.lifetime = .keepAlways; add(a1)
+
+        let subscribeBtn = app.buttons["订阅"]
+        if subscribeBtn.waitForExistence(timeout: 5) {
+            subscribeBtn.tap()
+            NSLog("MEMBERTAP 已点订阅按钮，等待系统弹窗/结果出现")
+            Thread.sleep(forTimeInterval: 4.0)
+            let a2 = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            a2.name = "02_点订阅按钮之后"; a2.lifetime = .keepAlways; add(a2)
+        } else {
+            NSLog("MEMBERTAP 🚨 没找到「订阅」按钮——可能页面结构不一样，看01号截图")
+        }
+        NSLog("MEMBERTAP 完——去看三张截图判断是系统弹窗还是卡住/报错")
+    }
+
+    /// 🚨 09-16：截一张付费墙给苹果订阅审核用——模拟器 + `Transless.storekit`
+    ///    配置（project.yml 里为这个用途专门挂的），走 `TRANSLESS_PAGE=subscribe`
+    ///    直达页面，不用凑"试用到期"那个真实状态，也完全不碰 Kevin 的真机
+    ///    （他账号是白名单Pro，看不到购买界面，模拟器这份是干净的未订阅状态）。
+    func testSubscribePageShot() {
+        let app = XCUIApplication(bundleIdentifier: "com.kevin.transless")
+        app.launchEnvironment["TRANSLESS_PAGE"] = "subscribe"
+        app.launch()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15), "付费墙截图：App没起来")
+        Thread.sleep(forTimeInterval: 3.0)   // 给 StoreKit 商品信息留时间从配置文件加载
+        let a = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        a.name = "subscribe_paywall"
+        a.lifetime = .keepAlways
+        add(a)
+        NSLog("SUBSCRIBESHOT 截图已附加到 xcresult")
+    }
+
+    /// 🚨🚨 0 09-16 Pico 标定重新设计用：**不靠看指针，靠键盘当已知网格**。
+    ///    这条不碰 Pico、不需要 Kevin 插线——先把「当前这个键盘」上几个字母键的
+    ///    真实屏幕坐标（`.frame`）读出来，供离线设计 HID 位移目标用。
+    ///    🚨 特意**不切键盘**：如果当前是 Typeless 在用，这条测的就是「Typeless
+    ///    自己的键位置能不能被 XCUITest 直接读到」——能读到就更好，标定直接对
+    ///    准 Typeless 自己，不用假设它跟系统键盘长得一样；读不到再退回系统键盘。
+    func testProbeKeyboardKeyFrames() {
+        let notes = XCUIApplication(bundleIdentifier: "com.apple.mobilenotes")
+        notes.launch()
+        XCTAssertTrue(notes.wait(for: .runningForeground, timeout: 15), "键位探测：备忘录没起来")
+        Thread.sleep(forTimeInterval: 1.5)
+        XCTAssertTrue(openNewNoteWithKeyboard(notes), "键位探测：输入框没找到")
+        Thread.sleep(forTimeInterval: 1.5)
+
+        let screen = XCUIScreen.main.screenshot().image.size
+        NSLog("KEYPROBE 屏幕尺寸(截图) width=%.1f height=%.1f", screen.width, screen.height)
+        NSLog("KEYPROBE App frame: %@", NSCoder.string(for: notes.frame))
+
+        // 取几个分散在键盘不同区域的键，够算出「HID 位移 -> 屏幕像素」的线性映射
+        // （至少 2 个点解出 斜率+截距，3+ 个点顺带验是否线性）。
+        let targets = ["Q", "P", "A", "L", "Z", "M", "space"]
+        for t in targets {
+            let k = notes.keys[t]
+            if k.waitForExistence(timeout: 3) {
+                NSLog("KEYPROBE key=%@ frame=%@ exists=true hittable=%d",
+                      t, NSCoder.string(for: k.frame), k.isHittable ? 1 : 0)
+            } else {
+                NSLog("KEYPROBE key=%@ 不存在（.keys 查不到——可能是第三方键盘没暴露成 XCUIElementTypeKey）", t)
+            }
+        }
+        // 🚨 兜底：如果 .keys 整体查不到（第三方键盘常见），退一步看 .buttons，
+        //    某些键盘把字母键做成普通按钮而不是 Key 类型元素。
+        for t in targets {
+            let b = notes.buttons[t]
+            if b.exists {
+                NSLog("KEYPROBE (buttons兜底) key=%@ frame=%@", t, NSCoder.string(for: b.frame))
+            }
+        }
+        // 🚨 只有 space 能查到，别的字母键都查不到——先看清楚当前到底是哪个键盘，
+        //    再决定要不要显式切到系统键盘（系统键盘保证每个字母都是 XCUIElementTypeKey）。
+        NSLog("KEYPROBE keyboards.count=%d（第三方键盘时这个数恒为0，只作参考不当判据）",
+              notes.keyboards.count)
+        let allKeys = notes.keys.allElementsBoundByIndex
+        NSLog("KEYPROBE .keys 总数=%d", allKeys.count)
+        for (i, el) in allKeys.enumerated() where i < 20 {
+            NSLog("KEYPROBE .keys[%d] label=%@ frame=%@", i, el.label, NSCoder.string(for: el.frame))
+        }
+        let allBtns = notes.buttons.allElementsBoundByIndex
+        NSLog("KEYPROBE .buttons 总数=%d", allBtns.count)
+        for (i, el) in allBtns.enumerated() where i < 30 {
+            NSLog("KEYPROBE .buttons[%d] label=%@ frame=%@", i, el.label, NSCoder.string(for: el.frame))
+        }
+        NSLog("KEYPROBE 完——去 xcodebuild 日志里 grep KEYPROBE 拿数据")
+    }
+
+    /// 🚨🚨 0 09-16：验 `CalibGridViewController` 这页本身靠不靠谱——
+    ///    不靠 Pico，直接用 XCUITest 自己的 `.tap()` 点几个已知格子 +
+    ///    背景空白处一次，读 `calib.log`，确认行数、顺序、内容都对得上。
+    ///    这条过了，才能放心让 Pico 去点这一页（而不是在真机上先撞一次才发现
+    ///    页面本身有 bug）。
+    func testCalibGridSelfCheck() {
+        let app = XCUIApplication(bundleIdentifier: "com.kevin.transless")
+        app.launchEnvironment["TRANSLESS_PAGE"] = "calib"
+        app.launch()
+        Thread.sleep(forTimeInterval: 2.0)
+
+        let cellR0C0 = app.buttons["calib.cell.R0C0"]
+        XCTAssertTrue(cellR0C0.waitForExistence(timeout: 8), "标定页：R0C0 格子没出现——页面没起来或网格没铺开")
+        cellR0C0.tap()
+        Thread.sleep(forTimeInterval: 0.3)
+
+        let cellR5C3 = app.buttons["calib.cell.R5C3"]
+        XCTAssertTrue(cellR5C3.exists, "标定页：R5C3 格子不存在——行列数或坐标算错了")
+        cellR5C3.tap()
+        Thread.sleep(forTimeInterval: 0.3)
+
+        let cellR9C5 = app.buttons["calib.cell.R9C5"]
+        XCTAssertTrue(cellR9C5.exists, "标定页：R9C5（右下角）格子不存在——网格没铺满整个屏幕")
+        cellR9C5.tap()
+        Thread.sleep(forTimeInterval: 0.3)
+
+        // 🚨 反向控制：网格四周留了 20pt 的边（`CalibGridViewController.margin`），
+        //    专门为了让"点不中任何按钮"这件事有可能发生——铺满整个屏幕的网格
+        //    没有这回事，`verify_calib.py` 强制要求的反向控制步就无解。
+        //    🚨 第一版点 (5,5)（屏幕左上角）没记上——大概率被 iOS 自己的角落
+        //    手势/状态栏拦截了，压根没传到 App 的手势识别器。改点左边缘中段
+        //    (5, 400)，离顶部/底部那些系统手势热区远，落在 20pt 边里必须读到 MISS。
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+            .withOffset(CGVector(dx: 5, dy: 400)).tap()
+        Thread.sleep(forTimeInterval: 0.3)
+
+        // 同一格连点两次，验证「同一格连点两次」会记两行，不是去重成一行。
+        cellR0C0.tap()
+        Thread.sleep(forTimeInterval: 0.3)
+
+        let count = app.staticTexts["calib.count"]
+        XCTAssertTrue(count.waitForExistence(timeout: 4), "标定页：计数标签没找到")
+        NSLog("CALIBSELFCHECK count.label=%@", count.label)
+        XCTAssertEqual(count.label, "5", "标定页：点了5次，计数应该是5，实际=\(count.label)")
+
+        let log = app.staticTexts["calib.log"]
+        XCTAssertTrue(log.exists, "标定页：日志标签没找到")
+        let logText = (log.value as? String) ?? log.label
+        NSLog("CALIBSELFCHECK log.value=%@", logText)
+        let lines = logText.split(separator: "\n").map(String.init)
+        XCTAssertEqual(lines, ["R0C0", "R5C3", "R9C5", "MISS", "R0C0"],
+                       "标定页：日志顺序/内容对不上，实际=\(lines)")
+        NSLog("CALIBSELFCHECK 全过（含反向控制 MISS 一条）——页面本身可靠，Pico 可以安全点这一页")
+    }
+
+    /// 🚨🚨 0 09-16 点名要分开量的两件事：「手机上装了哪些键盘」跟
+    ///    「此刻这个输入框在用哪个键盘」不是同一个对象——`keyboards.count`
+    ///    读的是后者，之前那条"现在是系统9键拼音"只回答了后者，
+    ///    不能拿它推"Transless/Typeless被关了"这种结论。这条把前者也测出来。
+    func testProbeInstalledKeyboardsList() {
+        let settings = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
+        settings.launch()
+        Thread.sleep(forTimeInterval: 1.5)
+        navigateToKeyboardsList(settings)
+        Thread.sleep(forTimeInterval: 1.0)
+        let cells = settings.cells.allElementsBoundByIndex
+        NSLog("KEYPROBE 已装键盘列表页 cells 数=%d", cells.count)
+        for (i, c) in cells.enumerated() where i < 20 {
+            NSLog("KEYPROBE 已装键盘[%d] label=%@", i, c.label)
+        }
+        NSLog("KEYPROBE 已装键盘列表探测完")
+    }
+
     /// 🚨 九镜里第 8 镜把删号**真的演完整**（进 7 天冷静期）之后，用这条把它撤销。
     ///    判据是 `del.hint` 变成「已撤销」那句，不是「我点了 del.cancel」。
     ///    🚨 录屏里不出现这一步 —— 它单独跑，免得审核员以为删号是假的。

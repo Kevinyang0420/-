@@ -1199,7 +1199,12 @@ final class KeyboardViewController: UIInputViewController {
         //    几小时前加 csops 时已经把键盘搞崩过一次，我摘了 csops
         //    **却把整段留在了每次按麦克风都跑的路径上**。
         //    它是诊断件，不是产品功能 —— 默认不跑。
+        // 🚨🚨🚨 09-16 苹果 2.5.1 拒审后，`probeHostApp()` 本体收进了
+        //    `#if DEBUG`（用了 LSApplicationWorkspace/RBSProcessHandle 等私有
+        //    API 名字），这个调用点跟着收，不然 Release 编译报找不到符号。
+        #if DEBUG
         if KbBridge.flag("probehost") { probeHostApp() }
+        #endif
         KbBridge.note("键盘麦克风实验：开始（宿主活着=" + String(KbBridge.hostAlive)
                       + "｜引擎架着=" + String(KbBridge.hostArmed())
                       + "｜完全访问=" + String(hasFullAccess) + "）")
@@ -1521,6 +1526,12 @@ final class KeyboardViewController: UIInputViewController {
                       + "｜相位=" + String(describing: phase))
     }
 
+    // 🚨🚨🚨 09-16 苹果 2.5.1 拒审：`probeHostProcessViaRBS()` 用
+    //    `NSClassFromString("RBSProcessHandle")`（私有 API），而它自己的
+    //    调用点早就被摘了（"已摘（IMP 直调 currentProcess 返回对象 →
+    //    over-release 崩键盘）"，见下面 1596 行附近注释）——零调用点的死代码，
+    //    收进 `#if DEBUG`。
+    #if DEBUG
     /// **键盘自己的 RBS 句柄 → hostProcess → bundle**（读自己的句柄不需要权限）+ 扒宿主代理协议。
     private static var didHostProc = false
     private func probeHostProcessViaRBS() {
@@ -1584,6 +1595,7 @@ final class KeyboardViewController: UIInputViewController {
         }
         // 🚨 扒协议表那段已删（2026-09-02 12:12 它让键盘 SIGSEGV：返回的不是 Protocol 对象）
     }
+    #endif
 
     private static var didLogSel = false
     private static var didProbeCtx = true   // 🚨 扒表已有定论，默认不跑（20 行/次会冲掉环形缓冲）
@@ -3517,6 +3529,14 @@ final class KeyboardViewController: UIInputViewController {
     ///    只报一句"拿不到"的话，下次排查分不清是"没这个键"还是"取值失败"。
     /// 🚨 用到的都是**非公开取值**：自用开发版可以，上架前必须换掉或去掉。
     ///    这一点要跟 Kevin 讲清楚，不能偷偷用。
+    // 🚨🚨🚨 09-16 苹果 2.5.1 拒审：这整个函数（522 行，到下面
+    //    `probeCaptureStack()` 开始前结束）一路用
+    //    `NSClassFromString("LSApplicationWorkspace"/"LSApplicationProxy"/
+    //    "RBSProcessHandle"/...)` 这类私有 API 名字探宿主身份，调用点本身
+    //    就挂在 `KbBridge.flag("probehost")` 这个运行时开关后面（默认不跑），
+    //    上面那段注释也早写明"上架前必须换掉或去掉"。收进 `#if DEBUG`，
+    //    Release 二进制里这些私有 API 字符串就不会出现。
+    #if DEBUG
     private func probeHostApp() {
         KbBridge.note("探宿主App：进来了")
         guard let ctx = extensionContext else {
@@ -4037,6 +4057,7 @@ final class KeyboardViewController: UIInputViewController {
         if hostBid != "?" { KbBridge.rememberSource(hostBid) }
         if let sc = schemes.first { KbBridge.rememberSourceScheme(sc) }
     }
+    #endif
 
 
 

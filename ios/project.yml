@@ -15,6 +15,20 @@ settings:
     ENABLE_BITCODE: NO
     SWIFT_VERSION: "5.0"
     TARGETED_DEVICE_FAMILY: "1,2"
+  # 🚨🚨🚨 09-16 苹果 2.5.1 拒审后发现的真根因：XcodeGen 生成的工程**从来没有
+  #    定义过内建 `DEBUG` 标志**——`SWIFT_ACTIVE_COMPILATION_CONDITIONS` 全程
+  #    没写过，手写 `.pbxproj` 会自带这条默认值，XcodeGen 的空白工程没有。
+  #    实测验证过：在补这条之前，`_devbuild`（`dev_install.py` 用的 Debug 配置）
+  #    编出来的二进制 `strings` 查不到任何 `#if DEBUG` 包住的字符串——
+  #    也就是说这工程里的 `#if DEBUG` 从加进来那一刻起就是**死代码，
+  #    Debug/Release 两边都被排除**，不是只排除了 Release 那一半。
+  #    跟 `Shared/KbBridge.swift:76` 提到的"`#if <自定义标志>` 有意外行为"
+  #    不是同一件事——那条是自定义标志的诡异行为，这条是**内建 `DEBUG`
+  #    标志压根没被任何配置定义过**，标准、可解释、按官方文档补一行就好。
+  configs:
+    Debug:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG"
+      GCC_PREPROCESSOR_DEFINITIONS: "$(inherited) DEBUG=1"
 
 targets:
   # 容器 App：iOS 规定键盘扩展必须挂在一个 App 里。
@@ -91,7 +105,7 @@ targets:
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: Transless
         CFBundleShortVersionString: "20260915.1375"
-        CFBundleVersion: "1375.1"
+        CFBundleVersion: "1375.2"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -269,7 +283,7 @@ targets:
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
         CFBundleShortVersionString: "20260915.1375"
-        CFBundleVersion: "1375.1"
+        CFBundleVersion: "1375.2"
         UILaunchScreen: {}
         # 🚨 声明支持的语言。不声明的话
         #    `Bundle.main.preferredLocalizations` 永远只返回
@@ -429,7 +443,7 @@ targets:
       properties:
         CFBundleDisplayName: Transless 录音状态
         CFBundleShortVersionString: "20260915.1375"
-        CFBundleVersion: "1375.1"
+        CFBundleVersion: "1375.2"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
@@ -462,7 +476,7 @@ targets:
         UIUserInterfaceStyle: Dark
         CFBundleDisplayName: TransProbe
         CFBundleShortVersionString: "20260915.1375"
-        CFBundleVersion: "1375.1"
+        CFBundleVersion: "1375.2"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.keyboard-service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ProbeKeyboardViewController
@@ -521,7 +535,7 @@ targets:
       properties:
         CFBundleDisplayName: Transless
         CFBundleShortVersionString: "20260915.1375"
-        CFBundleVersion: "1375.1"
+        CFBundleVersion: "1375.2"
         # 🚨🚨 **键盘扩展自己也要声明支持哪些语言**（2026-08-28 补）。
         #    Kevin 真机截图：主 App 是中文，**键盘里全是英文**
         #    （Translate / Transcribe / History / Casual / Work / Email…）。

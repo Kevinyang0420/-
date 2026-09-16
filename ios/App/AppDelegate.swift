@@ -279,6 +279,18 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
 
+    // 🚨🚨🚨 09-16 苹果 2.5.1 拒审：二进制里扫到 `LSApplicationWorkspace`（非公开 API）。
+    //    下面这四个函数（到 `dumpLSWorkspaceAndTryOpen` 结束）全是诊断探针，
+    //    经 0 逐个核过调用点：`openAppByBundleID` 零调用点是死代码，
+    //    `resolveHostBundleID` 注释写着"已摘除 2026-09-02"，其余三个全挂在
+    //    Darwin 通知开关后面，没有一个在主路径上跑。
+    //    🚨 不删——横跨三个文件用正则/字符串匹配去删，`feedback_deleting_code_broke_it`
+    //    那个坑（贪婪匹配吃掉隔壁函数）在这种范围里最容易踩。改用 `#if DEBUG`
+    //    在编译期整段排除：Release 二进制里连字符串都不会出现，
+    //    苹果的自动扫描器扫的正是这个，运行时开关（判据不一样）挡不住它。
+    //    这四个函数在 `KbVoiceHost.swift` 里各有一段 Darwin 通知注册（调用点），
+    //    同一批 `#if DEBUG` 包住，不然 Release 编译会报"找不到这个符号"。
+    #if DEBUG
     /// **扒「回上一个 App」的系统原语**（2026-09-02 08:4x）。
     ///
     /// 🚨 依据：Kevin 实测 Typeless 能回到 **eMPF**（一个没有任何 URL scheme 的 App）
@@ -516,6 +528,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             if ok { return }
         }
     }
+    #endif
 
     /// 通用链接也可能走 AppDelegate 这条（不走 Scene）—— 两边都接，打出来源
     func application(_ application: UIApplication, continue userActivity: NSUserActivity,
@@ -864,9 +877,13 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         awaitingActive = true
         startWhenTrulyActive()
         // ⑤ 会不会自己跳回去：**如实记，不预设。**
+        //    场景层状态并排打——App 级 `applicationState` 停在"后台"时，
+        //    场景层要么也没激活（问题在键盘侧 open 调用），要么已经
+        //    `foregroundActive`（问题实锤在三个状态源没对齐，见 `sceneStateLine()`）。
         for t in [1.0, 3.0, 6.0] {
             DispatchQueue.main.asyncAfter(deadline: .now() + t) {
-                KbBridge.note(String(format: "起录URL后 %.0f 秒｜", t) + Self.appStateLine())
+                KbBridge.note(String(format: "起录URL后 %.0f 秒｜", t) + Self.appStateLine()
+                              + "｜场景=" + Self.sceneStateLine())
             }
         }
     }
@@ -935,9 +952,11 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                 KbBridge.note("放弃起录：把本次打开的待机关回去｜读回="
                               + String(KbVoiceHost.shared.standby))
             }
-            KbBridge.note("起录闸：6 秒没等到前台（此刻 " + Self.appStateLine() + "），放弃")
+            KbBridge.note("起录闸：6 秒没等到前台（此刻 " + Self.appStateLine()
+                          + "｜场景=" + Self.sceneStateLine() + "），放弃")
             RecLog.add(sec: 0, bytes: 0, result: "起录闸放弃",
-                       detail: "6 秒没等到前台，此刻 " + Self.appStateLine())
+                       detail: "6 秒没等到前台，此刻 " + Self.appStateLine()
+                           + "｜场景=" + Self.sceneStateLine())
         }
     }
 
@@ -1061,6 +1080,35 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         case .background: return "后台"
         @unknown default: return "未知"
         }
+    }
+
+    /// 🚨🚨🚨 0 09-16 交接技术债：`startWhenTrulyActive()` 等的是 App 级的
+    ///    `didBecomeActiveNotification`，而起录 URL 走的是 Scene 级的
+    ///    `scene(_:openURLContexts:)`，本工程别处（`PipKeepAlive.swift:128`）
+    ///    又在用 `$0.activationState == .foregroundActive` 判"真的在前台"——
+    ///    **三个状态源没对齐，根因没碰**，现在是靠"待机常开+看门狗修复"绕过去的。
+    ///    这一行只加诊断、不改行为（碰后台音频前先给方案，别直接改）：
+    ///    跟 `appStateLine()` 并排打印场景层的 `activationState`，下次真机卡在
+    ///    "后台"时，能直接看出是场景层也没激活（问题在键盘那侧 `open` 调用有没有
+    ///    真成功），还是场景已经 `foregroundActive` 而 App 级通知迟迟不来
+    ///    （问题就实锤在这三个状态源没对齐上）。
+    private static func sceneStateLine() -> String {
+        let scenes = UIApplication.shared.connectedScenes
+        // 🚨 0 09-16 提醒的范围坑：主 App 被划掉/还没启动时 `connectedScenes`
+        //    可能是**空集合**，那时拼出来的是空字符串，跟"场景存在但没激活"
+        //    长得一样——都在这行日志里看不出区别，等于白加了这行诊断。
+        //    带上 `count=` 前缀，空集合会显式写成「count=0｜」，不会跟
+        //    "有场景、状态未知"混在一起。
+        let states = scenes.map {
+            switch $0.activationState {
+            case .foregroundActive: return "前台活跃"
+            case .foregroundInactive: return "前台非活跃"
+            case .background: return "后台"
+            case .unattached: return "未附着"
+            @unknown default: return "未知"
+            }
+        }.joined(separator: ",")
+        return "count=" + String(scenes.count) + "｜" + states
     }
 
     func application(_ app: UIApplication,
@@ -1547,7 +1595,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //    而那整条机制（`guessBackOrder`）已经被删掉了，见 `KbVoiceHost.swift`
         //    `returnToPreviousApp()` 上面的说明。
         KbVoiceHost.shared.armDebugStress()
+        #if DEBUG
         KbVoiceHost.shared.armDebugForceArm()
+        #endif
         KbVoiceHost.shared.armDebugMute()
         // 🚨🚨🚨 **冷启动进后台的那一瞬间，立刻试着架引擎（从没测过的一条）。**
         //    Typeless 的形态：三个进程从全无到全有只用了 6 秒
@@ -2069,6 +2119,16 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             // 拼音引擎对拍（期望值来自独立的 Python 参照实现）
             case "pysplit": nav.pushViewController(PinyinSelfTestController(),
                                                    animated: false)
+            // 🚨🚨 0 09-16：Pico HID 标定专用——满屏我们自己定义的按钮网格，
+            //    点哪都无害，替掉在系统/Typeless 键盘上标定那条会踩中
+            //    globe 键/删除键"地雷"的老路。见 `CalibGridViewController`
+            //    文件头注释，含 Pico 那边怎么读这一页产出的日志。
+            case "calib": nav.pushViewController(CalibGridViewController(), animated: false)
+            // 🚨 09-16：直达订阅/付费墙页，给苹果订阅审核截图用——正常入口是
+            //   `presentTrialExpiredIfNeeded()`（试用到期才弹），走那条要先
+            //   凑出"试用已到期"这个状态，绕远。这条只是同一个视图控制器的
+            //   另一个入口，不是重新做了一份订阅页。
+            case "subscribe": nav.pushViewController(SubscribeViewController(), animated: false)
             default: break
             }
             w.rootViewController = nav

@@ -2778,6 +2778,12 @@ final class KbVoiceHost {
         }
     }
 
+    // 🚨🚨🚨 09-16 苹果 2.5.1 拒审：这整个函数（到本文件 3348 行结束）是一个
+    //    560 行的诊断总闸，一路注册 Darwin 通知触发各种探针，里面有多处
+    //    `NSClassFromString("LSApplicationWorkspace"/"FBSSystemService"/...)`
+    //    这类私有 API 名字（09-16 搜过，不止 0 最初报的那一处）。
+    //    整段收进 `#if DEBUG`——它本来就是纯诊断，一次产品路径都不占。
+    #if DEBUG
     /// **在后台强行架待命档** —— 从没试过的一条。
     ///
     /// 🚨 我一直测的是「后台起录」（`begin`），**没测过「后台架待命档」**
@@ -3140,6 +3146,13 @@ final class KbVoiceHost {
             "com.kevin.transless.debug.intentrec" as CFString,
             nil, .deliverImmediately)
 
+        // 🚨🚨🚨 09-16 苹果 2.5.1 拒审：这四条 Darwin 通知注册调的是
+        //    `AppDelegate.swift` 里已经收进 `#if DEBUG` 的四个诊断探针
+        //    （用 `NSClassFromString("LSApplicationWorkspace")` 等私有 API 名字，
+        //    苹果自动扫描器直接扫二进制字符串）。函数定义不在 Release 里之后，
+        //    这四处调用点必须跟着收进同一个 `#if DEBUG`，否则 Release 编译
+        //    会报"找不到符号"。
+        #if DEBUG
         CFNotificationCenterAddObserver(
             CFNotificationCenterGetDarwinNotifyCenter(),
             Unmanaged.passUnretained(self).toOpaque(),
@@ -3177,6 +3190,7 @@ final class KbVoiceHost {
             },
             "com.kevin.transless.debug.dumpret" as CFString,
             nil, .deliverImmediately)
+        #endif
 
         // 🚨 `sysctl` 按 pid 取进程信息 —— 跟 `proc_pidpath` **不是一套权限**，
         //    苹果论坛那串失败技法里也没有这一条。只在主 App 里跑。
@@ -3338,6 +3352,7 @@ final class KbVoiceHost {
             "com.kevin.transless.debug.wantrec" as CFString,
             nil, .deliverImmediately)
     }
+    #endif
 
     /// 冷启动进后台时立刻架引擎（验 Typeless 那条假设）。
     func tryArmOnColdLaunch() {
@@ -3946,6 +3961,13 @@ final class KbVoiceHost {
         return "arg=" + String(arg)
     }
 
+    // 🚨🚨🚨 09-16 苹果 2.5.1 拒审：这两个函数用 `RBSProcessIdentifier`/
+    //    `RBSProcessHandle`/`LSApplicationWorkspace` 这几个私有 API 名字，
+    //    经 0 核过：`resolveHostBundleID` 的调用点早在 09-02 就摘掉了，
+    //    `openAppByBundleID` 全仓库零调用点——两个都是死代码，但**不删**
+    //    （`feedback_deleting_code_broke_it`：跨文件用模式匹配删容易带伤隔壁），
+    //    收进 `#if DEBUG`，Release 二进制里这两个私有 API 名字就不会出现。
+    #if DEBUG
     /// **宿主 PID → bundle ID**（RunningBoard 反查；2026-09-02 实测 iOS 26.6 可用）。
     ///
     /// 🚨 私有 API。链路：键盘 `_extensionHostAuditToken` 拿 PID 存共享区 →
@@ -3983,6 +4005,7 @@ final class KbVoiceHost {
         typealias Fn = @convention(c) (AnyObject, Selector, NSString) -> Bool
         return unsafeBitCast(method_getImplementation(m), to: Fn.self)(ws, sel, bid as NSString)
     }
+    #endif
 
     /// **按顺序开这些 scheme，第一个成功的就停。**
     ///
