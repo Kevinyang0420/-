@@ -2535,7 +2535,11 @@ final class HomeViewController: UIViewController {
             let r = UILabel()
             r.accessibilityIdentifier = "app.selftest"
             r.isAccessibilityElement = true
-            r.text = HomeStatsCore.selfTest() ?? KpiWords.selfTest() ?? "OK"
+            //    🚨 09-17 追加第三份：`Auth.selftestAccountSwitch()` —— 换账号该不该
+            //    清本地资料的判据（跟安卓 `AccountSwitchCheck.selfTest()` 逐条对齐）。
+            //    接在这里而不是新起一条链，是因为这条链已经是"自测的单一出口"。
+            r.text = HomeStatsCore.selfTest() ?? KpiWords.selfTest()
+                ?? Auth.selftestAccountSwitch() ?? "OK"
             r.accessibilityLabel = r.text
             r.font = .systemFont(ofSize: 9)
             r.textColor = .clear

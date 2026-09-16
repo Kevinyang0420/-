@@ -176,6 +176,15 @@ enum Auth {
     private static let kNick = "transless.auth.nickname"
     private static let kBirth = "auth_birthday"
 
+    /// 🚨🚨 **这台设备上一次真正登录成功的 uid** —— `signOut()` **故意不清它**。
+    ///
+    /// 为什么不能直接用 `kUser` 当"上一个人"：`signOut()` 把 `kUser` 清成了空，
+    /// 事后就分不出「同一个人退出再登回来」和「换了另一个人登进来」。
+    /// 这两种情况的正确行为**相反**（前者不许清他自己的资料，后者必须清），
+    /// 所以必须有一个独立的、不随登出消失的字段来记住身份。
+    /// （2.4 在 PC 端踩过这个坑后单独加了 `Settings.LastSignedUid`，三端同一个做法。）
+    private static let kLastUid = "transless.auth.lastSignedUid"
+
     /// 登录了没有。
     static var loggedIn: Bool { current != nil }
 
@@ -185,13 +194,80 @@ enum Auth {
         return Session(userId: u, isNew: false)
     }
 
+    /// 这次登录算不算「换了个账号」，需不需要先把上一个人的本地数据清掉。
+    ///
+    /// 🚨 跟安卓 `AccountSwitchCheck.shouldClear` **同一份语义**，五条判据逐条对齐。
+    ///    同一个规矩两端各写一套必漂（项目里已经栽过好几次），改这里必须两端一起改。
+    ///
+    /// - Parameters:
+    ///   - prev: 这台设备上一次记住的 uid（从没登录过是空串）
+    ///   - new:  这次要写入的 uid
+    static func shouldClearOnSwitch(prev: String, new: String) -> Bool {
+        if new.isEmpty { return false }
+        if prev.isEmpty { return false }     // 第一次登录，没有上一个人可清
+        return prev != new
+    }
+
+    /// 把**上一个账号**留在这台设备上的资料痕迹清掉。
+    ///
+    /// 🚨 **只在真的换了人时调**（`shouldClearOnSwitch` 说了算）。
+    ///    Kevin 2026-09-16 亲口否掉过"一律清"的方案：
+    ///    「那这个肯定要跟着账号走了，怎么可能还要让所有人退出登录一遍，
+    ///    　还要再填一遍这些信息呢？」——无条件清 = 把他自己填的东西也删了。
+    ///
+    /// 🚨 **昵称和账号各有两个键，两个都要清**：`profileKeys` 里是
+    ///    `auth_nickname` / `auth_account`（账户页在用），而 `kNick` / `kAccount`
+    ///    是另一对（首页显示名、注册流程在用）。只清表里那份，
+    ///    首页仍会显示上一个人的名字。
+    ///    （这两对键本身就是"同一件事两处实现"的老账，该收成一份——
+    ///    但那是独立的重构，不在今晚范围，已记给 2.2 下一稿。）
+    static func clearLocalProfile() {
+        let d = UserDefaults.standard
+        for kv in profileKeys { d.removeObject(forKey: kv.key) }
+        d.removeObject(forKey: kNick)
+        d.removeObject(forKey: kAccount)
+        d.removeObject(forKey: kBirth)
+    }
+
     private static func save(_ s: Session) {
+        // 🚨🚨 09-17 Kevin 亲报：「我之前登录过的账号，登进去之后居然还要我
+        //    再选一次生日」——生日其实是**上一个账号**的，串到了新账号头上。
+        //    比"资料丢了"更糟：那是**数据串了**，A 的生日/国家/职业被 B 看见。
+        //    根因是 `profileKeys` 这些字段按**设备**存、不跟账号走，换账号时没人清。
+        //    真正的解是把资料存到服务端（队列④，1.1 在做）；在那之前先堵串号这个洞。
+        let prev = UserDefaults.standard.string(forKey: kLastUid) ?? ""
+        if shouldClearOnSwitch(prev: prev, new: s.userId) { clearLocalProfile() }
+
         UserDefaults.standard.set(s.userId, forKey: kUser)
+        UserDefaults.standard.set(s.userId, forKey: kLastUid)
         // 🚨🚨 09-17：新会话建立（登录成功的唯一咽喉，见 postVerify 的注释）
         //    也要清——哪怕是同一个人重新登进来，也该让 refresh() 重新问一遍
         //    服务端，而不是继续信上一段会话留下的缓存。清了绝不会比不清更错，
         //    真实状态照样在 viewDidLoad/viewWillAppear/登录回调那几处 refresh() 里补上。
+        //    🚨 会员缓存跟资料不一样：会员真值服务端随时问得到，清了必被 refresh 补回；
+        //    资料清了就真没了，所以资料只在换人时清、会员每次都清。
         ProStatus.clearCache()
+    }
+
+    /// 自测：好样本过 + 坏样本响。全过返回 `nil`。
+    /// 🚨 逐条对齐安卓 `AccountSwitchCheck.selfTest()` —— 两端判据必须一模一样。
+    static func selftestAccountSwitch() -> String? {
+        if shouldClearOnSwitch(prev: "", new: "u1") {
+            return "第一次登录（没有上一个人）不该清"
+        }
+        // 🚨🚨 反向控制：同账号重登不许清——那会把这个人自己填的资料当成
+        //    "上一个人的痕迹"删掉，正是 Kevin 否掉的那个方案。
+        if shouldClearOnSwitch(prev: "u1", new: "u1") {
+            return "🚨 同一账号重登不该清（会把他自己的本地资料也删掉）"
+        }
+        // 🚨🚨 坏样本 = 这次要修的洞本身：换了不同账号必须判要清
+        if !shouldClearOnSwitch(prev: "u1", new: "u2") {
+            return "🚨 换了不同账号却没判要清（就是串账号那个 bug 的根因本身）"
+        }
+        if shouldClearOnSwitch(prev: "u1", new: "") {
+            return "newUid 为空（不该发生的调用）不该判要清"
+        }
+        return nil
     }
 
     static func signOut() {
