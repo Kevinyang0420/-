@@ -202,9 +202,21 @@ enum Auth {
     /// - Parameters:
     ///   - prev: 这台设备上一次记住的 uid（从没登录过是空串）
     ///   - new:  这次要写入的 uid
+    /// 🚨🚨🚨 2026-09-17 晨·`prev` 为空不再放行。
+    /// 旧写法是 `if prev.isEmpty { return false }`，**那正是 Kevin 用真实新账号
+    /// `yanghx2005@qq.com` 撞出来的洞**：`kLastUid` 是这次修复才加的键，
+    /// **从旧版本升级上来的设备压根没有这个键**，读出来是空串，
+    /// 旧判据据此当成“第一次登录、没有上一个人可清”，
+    /// 于是旧版本写的会员缓存原封不动留给新账号 —— 新注册的邮箱
+    /// 登进去直接显示“已是会员”。
+    ///
+    /// 🚨 关键是两种“prev 为空”**不对称**，而这个函数的输入根本区分不了：
+    ///   - 真·首次安装：没有任何残留，清一个空的 —— **无害**
+    ///   - 升级后首次登录：`kLastUid` 没有，但会员缓存/资料可能有残留 —— **有害**
+    ///   一边代价是 0、另一边代价是真会员 bug，**就该往“清”那边倒**。
+    ///   跟安卓 `AccountSwitchCheck.shouldClear` 同步改过（同一份语义）。
     static func shouldClearOnSwitch(prev: String, new: String) -> Bool {
         if new.isEmpty { return false }
-        if prev.isEmpty { return false }     // 第一次登录，没有上一个人可清
         return prev != new
     }
 
@@ -252,8 +264,13 @@ enum Auth {
     /// 自测：好样本过 + 坏样本响。全过返回 `nil`。
     /// 🚨 逐条对齐安卓 `AccountSwitchCheck.selfTest()` —— 两端判据必须一模一样。
     static func selftestAccountSwitch() -> String? {
-        if shouldClearOnSwitch(prev: "", new: "u1") {
-            return "第一次登录（没有上一个人）不该清"
+        // 🚨🚨 2026-09-17 晨更正：这一条以前断言“不该清”，
+        //    **把被 Kevin 撞出来的那个 bug 本身钉成了正确答案** ——
+        //    只改函数不改这里，自测会当场把修复报成错误。
+        //    现在钉的是“升级设备（lastUid 读不到）也必须清”。
+        if !shouldClearOnSwitch(prev: "", new: "u1") {
+            return "🚨 prev 为空（真首次安装或从旧版本升级）却判不清"
+                + " —— 升级设备残留的会员缓存会漏清，就是 Kevin 真机撞到的洞"
         }
         // 🚨🚨 反向控制：同账号重登不许清——那会把这个人自己填的资料当成
         //    "上一个人的痕迹"删掉，正是 Kevin 否掉的那个方案。
