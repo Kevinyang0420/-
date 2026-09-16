@@ -170,23 +170,47 @@ enum Prompts {
         let ask = ((o["ask"] as? String) ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // 只有一条就写成一句话，不编号（他要的是"多条才 1、2、3"）
-        if texts.count == 1 {
-            let one = (lead.isEmpty ? texts[0] : lead + "。" + texts[0])
+        // 🚨🚨 09-16 ③步：呈现形态改由服务端的 `format` 字段决定，
+        //    不再是「items 个数 ≥2 就编号」——283 条实测过：那条判据让我们
+        //    282/283 全部编号，而 Typeless 只有 27% 会列表，**判断力为零**。
+        //    📖 规格 `_规格_呈现形态_Kevin已批_20260916.md` §6.2/§6.4。
+        //    🚨 **只认字段值，不做字段值以外的推断**（硬约束①）——
+        //    不许再按 texts.count 加任何隐藏分支，那正是上一版的病根。
+        //    🚨 **字段缺失 → `prose`**（硬约束②）：三态里"最不显眼"的那个，
+        //    默认值必须站在"过度编号"这个缺陷的反面，不能默认编号。
+        let format = (o["format"] as? String) ?? "prose"
+
+        switch format {
+        case "list":
+            // 🚨🚨 2026-09-06 Kevin：「它只是分了点，但是没有分段，这个也不太行，也要分点加分段」「你现在 1、2、3 都是写在同一段，就很丑嘛」
+            //    条目之间**空一行**（NL+NL）。编号只是把它们切开，
+            //    空行才是把它们分开。`ask` 那里本来就是双换行，差的是条目之间。
+            var lines: [String] = []
+            if !lead.isEmpty { lines.append(lead + "：") }
+            for (i, x) in texts.enumerated() { lines.append("\(i + 1). " + x) }
+            var out = lines.joined(separator: NL + NL)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            // 🚨 空行隔开，让它在视觉上**明确不属于那串编号**。
+            if !ask.isEmpty { out += NL + NL + ask }
+            return out.isEmpty ? numberPoints(t) : out
+
+        case "segments":
+            // 🚨 几件事，但不是要点式清单感——每条独立一段、**同样空行分隔**，
+            //    但不加编号、不加任何前缀符号（跟 list 唯一的区别就是没有 "N. "）。
+            var lines: [String] = []
+            if !lead.isEmpty { lines.append(lead + "：") }
+            lines.append(contentsOf: texts)
+            var out = lines.joined(separator: NL + NL)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !ask.isEmpty { out += NL + NL + ask }
+            return out.isEmpty ? numberPoints(t) : out
+
+        default: // "prose"：短、只说一件事——拼成一段连续文字，不分段、不加任何前缀。
+            let body = texts.joined()
+            let one = (lead.isEmpty ? body : lead + "。" + body)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             return ask.isEmpty ? one : one + NL + NL + ask
         }
-        // 🚨🚨 2026-09-06 Kevin：「它只是分了点，但是没有分段，这个也不太行，也要分点加分段」「你现在 1、2、3 都是写在同一段，就很丑嘛」
-        //    条目之间**空一行**（NL+NL）。编号只是把它们切开，
-        //    空行才是把它们分开。`ask` 那里本来就是双换行，差的是条目之间。
-        var lines: [String] = []
-        if !lead.isEmpty { lines.append(lead + "：") }
-        for (i, x) in texts.enumerated() { lines.append("\(i + 1). " + x) }
-        var out = lines.joined(separator: NL + NL)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        // 🚨 空行隔开，让它在视觉上**明确不属于那串编号**。
-        if !ask.isEmpty { out += NL + NL + ask }
-        return out.isEmpty ? numberPoints(t) : out
     }
 
     /// **最后一道：看起来像 JSON 但解析不出来时，把人话捞出来。**
