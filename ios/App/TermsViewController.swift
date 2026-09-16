@@ -7,9 +7,15 @@ import WebKit
 /// 渲染方式（原生外壳 + `WKWebView` 渲染随包 HTML），只是没有隐私政策那边的
 /// "上云状态"卡片——那是隐私页专属功能，服务条款没有对应的东西。
 ///
-/// 🚨 **文档随包走，不联网**——`Resources/terms.html`，跟 `dist/terms.html`
-///    保持字节一致（09-16 发现 `push_ios.py` 之前漏推 `.html`，已经修在
-///    `RES_EXT` 那张白名单上，terms.html 和 privacy.html 一起补上）。
+/// 🚨 **文档随包走，不联网**——`Resources/terms.html`，正文跟着 `dist/terms.html`
+///    走（09-16 发现 `push_ios.py` 之前漏推 `.html`，已经修在 `RES_EXT` 那张
+///    白名单上，terms.html 和 privacy.html 一起补上）。
+///
+/// 🚨🚨 09-16 再改：随包这份**不再跟 `dist/terms.html` 逐字节一致**——
+///    Kevin 点名「App 端内为什么还要搞返回官网」，随包版的死链导航
+///    （回官网/公司信息/下载页，`href="/"` 在 bundle 里指不到任何地方）已经
+///    删掉/改成相对路径，只留隐私政策互链（改成 `privacy.html` 相对路径）。
+///    判据：`voice_ime/verify_bundled_html_links.py`。
 final class TermsViewController: UIViewController {
 
     private let web = WKWebView()
