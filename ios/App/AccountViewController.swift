@@ -37,6 +37,14 @@ final class AccountViewController: PushedViewController {
         super.viewDidLoad()
         UI.paintBg(self)
         title = L.account_page
+        // 🚨🚨 09-17 Kevin 沙盒实测：买完成功了，停在这一页还是「未订阅」，
+        //    退出去再回来才刷新。根因是 `refreshSoonAfterPurchase()` 的轮询
+        //    查到会员后只写了本地缓存，没通知正停在这一页的人。
+        //    判据是「不离开这一页，几秒内自己变」，不是「重进能看到」——
+        //    那条本来就有。订阅 `ProStatus.didChange`，收到就照当前状态重画。
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(proStatusDidChange),
+            name: ProStatus.didChange, object: nil)
 
         let scroll = UIScrollView()
         scroll.translatesAutoresizingMaskIntoConstraints = false
@@ -58,6 +66,18 @@ final class AccountViewController: PushedViewController {
             stack.bottomAnchor.constraint(equalTo: scroll.bottomAnchor,
                                           constant: -28),
         ])
+        refresh()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: ProStatus.didChange, object: nil)
+    }
+
+    /// 🚨 只用通知带来的 `result` 重画，**绝不在这里再调 `ProStatus.refresh()`**——
+    ///    那样会跟 refresh() 自己发的 `didChange` 通知连成死循环。
+    @objc private func proStatusDidChange(_ n: Notification) {
+        guard let result = n.userInfo?["result"] as? ProCheckResult else { return }
+        proState = result
         refresh()
     }
 

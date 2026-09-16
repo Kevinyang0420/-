@@ -53,6 +53,14 @@ enum ProStatus {
         cachedUntil = 0
     }
 
+    /// 🚨🚨 09-17 Kevin 沙盒实测：买完立刻回账户页还是「未订阅」，退出去再回来
+    ///    才变「已是会员」——`refreshSoonAfterPurchase()` 的轮询查到 `.pro` 后
+    ///    只 `return`，没通知任何人。界面只在 `viewDidLoad`/`viewWillAppear`
+    ///    问一次服务端，轮询命中的那一刻**已经没人在听**。
+    ///    用广播而不是回调：关心会员状态的不止一个页面（账户页/会员页/首页角标/
+    ///    键盘额度提示都可能要跟着变），回调只能接住调用它的那一个。
+    static let didChange = Notification.Name("ProStatus.didChange")
+
     /// 🚨🚨 **真正要不要放行，必须调这个、等回调，不能只看 `isProCached`。**
     ///    - `.unreachable`（网络失败 / 非 200，含 503）：调用方按"保守放行还是保守拒绝"
     ///      自己决定（这个类不替调用方做这个决定——不同功能的容错策略不一样），
@@ -85,7 +93,15 @@ enum ProStatus {
             let result = ProCheck.classify(isPro: isPro, until: until, hasReason: j["reason"] != nil)
             KbBridge.note("会员状态：pro=" + String(isPro) + " until=" + String(Int(until))
                           + " reason=" + ((j["reason"] as? String) ?? "（无）"))
-            DispatchQueue.main.async { onResult(result) }
+            DispatchQueue.main.async {
+                // 🚨🚨 结果通过 `userInfo` 带出去，**订阅者不许拿到通知后又调一次
+                //    `refresh()`**——那样会连成 refresh→post→收到→refresh→post…
+                //    的死循环（这个类没有去重/节流，全靠调用方不这么写）。
+                //    正确用法：收到通知直接用 `userInfo["result"]` 重画，别再问服务端。
+                NotificationCenter.default.post(
+                    name: didChange, object: nil, userInfo: ["result": result])
+                onResult(result)
+            }
         }.resume()
     }
 
