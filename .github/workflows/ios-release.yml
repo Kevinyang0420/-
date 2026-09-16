@@ -401,6 +401,50 @@ jobs:
           test "$FAIL" -eq 0 || { echo "::error::签名闸门未过"; exit 1; }
           echo "=== 双 target 签名闸门 PASS（查的是 IPA）==="
 
+      # ---- 私有 API 闸：苹果 2026-09-16 第二次拒（Guideline 2.5.1）的那一族 ----
+      # 🚨 **为什么这道闸以前不存在**：源码层我手动查过、也清干净了，
+      #    但「源码干净」和「包里没有」之间一直没有任何自动检查 ——
+      #    典型的「检查写对了 ≠ 检查在跑」。苹果是二十分钟自动扫，我们零次扫。
+      #
+      # 🚨 判据挂在 **IPA 解开后的包** 上，不挂 archive：
+      #    传给苹果的是 IPA，archive 只是中间物（同一条教训：签名闸门 2026-08-25
+      #    也是为此从 archive 挪过来的）。这里直接复用上一步已经解好的 ipacheck。
+      - name: 私有 API 闸（扫包里每个 Mach-O）
+        run: |
+          set -euo pipefail
+          G="${GITHUB_WORKSPACE}/ios/verify_no_private_api.py"
+          APP="$RUNNER_TEMP/ipacheck/Payload/Transless.app"
+
+          # 🚨🚨 先让闸门自己过自测（好样本过 + 坏样本响 + 退出码对）。
+          #    「检查器崩了/失效了」会被读成「零缺陷」—— 今天已经栽过：
+          #    verify 在 V8 里崩掉，`grep -c ✗` 得 0，被我报成全绿两轮。
+          #    自测里包含**故意植入私有符号的坏样本**，它不响这一步就红。
+          echo "--- 闸门自测（含坏样本注入）---"
+          python3 "$G" --selftest
+
+          echo "--- 扫真包 ---"
+          set +e
+          python3 "$G" "$APP"
+          RC=$?
+          set -e
+          # 🚨 三态分开，**「没查成」不许混进「合格」**：
+          #    这个脚本原来收尾写 `sys.exit(max(0, run(...)))`，
+          #    扫错目录返回 -1 被压成 0＝PASS，路径一写错就一路绿到苹果那儿。
+          case "$RC" in
+            0) echo "=== 私有 API 闸全过 ===" ;;
+            2) echo "::error::私有 API 闸【没查成】—— 一个 Mach-O 都没找到，这不是干净"
+               ls -la "$APP" 2>&1 | head -20 || true
+               exit 1 ;;
+            *) echo "::error::包里带着私有 API 符号，Guideline 2.5.1 必拒"
+               exit 1 ;;
+          esac
+
+          # 🚨 报闸门分两行：坏样本够真 ≠ 覆盖面够全。
+          echo "闸门覆盖：IPA 里【所有】 Mach-O（按文件头魔数找，不按扩展名）——"
+          echo "         主二进制 + PlugIns 下每个 appex + Frameworks 下的动态库"
+          echo "闸门【未】覆盖：运行时拼出来的类名（把字符串切成两段再拼），"
+          echo "               以及 BANNED 表之外的私有类"
+
       # 🚨 **撞号要在上传之前红**，而不是让苹果去拒。
       #    号从安卓 manifest 同步过来，而同步不在这条链路上 ——
       #    安卓不出包时连发两轮就是同一个号。苹果拒重复构建的报错很隐蔽，
