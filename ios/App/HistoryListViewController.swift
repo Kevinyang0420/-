@@ -338,7 +338,10 @@ final class HistoryListViewController: UIViewController {
         //    不是等同步跑完才打勾）——这条没变。变的是下面：不再经过
         //    「正在传…」那一步，直接显示终态文案。
         paintCheckbox(checked: true)
-        syncLabel.text = L.hs_synced
+        // 🚨🚨 09-16 §8.1：原来那个"已同步"文案是动作完成陈述——没有真实
+        //    上传发生时它就是假话。现在这个"已开启"是状态陈述，
+        //    不会因为后台还没接就变成假话。2.1 已入源，9 语言都在。
+        syncLabel.text = L.hs_on_state
         // 🚨 停留一小段让他看清终态（不是"假进度"——这里不再切换任何文案，
         //    只是给收起动画留一个起跳前的停顿）再收起。
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in

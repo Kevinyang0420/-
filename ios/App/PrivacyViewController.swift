@@ -300,7 +300,9 @@ final class PrivacyViewController: UIViewController {
         tick.tintColor = .systemGreen
         tick.accessibilityIdentifier = "privacy.sync.tick"
         let state = UILabel()
-        state.text = L.hs_synced
+        // 🚨🚨 09-16 §8.1：同一条替换，跟 HistoryListViewController 那处
+        //    同一个理由——"已同步"是没发生的动作完成陈述，"已开启"是状态陈述。
+        state.text = L.hs_on_state
         state.font = .systemFont(ofSize: 15)
         state.textColor = Theme.text
         state.accessibilityIdentifier = "privacy.sync.state"
