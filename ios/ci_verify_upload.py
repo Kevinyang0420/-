@@ -24,6 +24,14 @@
 
 需要环境变量：`ASC_KEY_ID` / `ASC_ISSUER_ID` / `ASC_KEY_B64` / `WANT_BUILD`
 """
+import sys
+
+# 🚨 2026-09-16：这个脚本在 CI（UTF-8）跑得好好的，
+#    本地 Windows 控制台（GBK）打 ✅ 直接 UnicodeEncodeError 崩掉，
+#    退出码 1 —— 而它已经判定通过了。
+#    “检查器崩了”被看成“上传失败”。先把输出编码固定住。
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 import base64
 import datetime
 import json

@@ -23,6 +23,12 @@ final class SubscribeViewController: UIViewController {
     private let spinner = UIActivityIndicatorView(style: .medium)
     private let statusLabel = UILabel()
     private var product: Product?
+    /// 🚨🚨 09-16 App Completeness(2.1)修复：`_iOS送审前必过清单_20260916.md`⑧——
+    ///    审核员账号已是会员，点「订阅」却真走进了一次购买流程（Kevin 真机实测坐实）。
+    ///    根因是这一屏进页面前一次都没读过会员状态。`isKnownPro` 在 `checkProStatus()`
+    ///    确认为 `.pro` 后置 true，购买按钮隐藏 + `tapSubscribe()` 兜底拒绝，
+    ///    两道闸都挂，防的是 `loadProduct()`/`checkProStatus()` 两个异步回调谁先回来的竞态。
+    private var isKnownPro = false
 
     /// 这一屏自己的一次性提示——**不复用** `AppDelegate` 那个 `setOneOff`，
     /// 那个是"随便说点啥"那一屏的专属状态机（挂在 `phase`/`oneOff` 上），
@@ -99,6 +105,26 @@ final class SubscribeViewController: UIViewController {
         linksRow.addArrangedSubview(linkButton(L.prefs_pro_privacy, action: #selector(openPrivacyLink)))
 
         loadProduct()
+        checkProStatus()
+    }
+
+    private func checkProStatus() {
+        ProStatus.refresh { [weak self] result in
+            guard let self = self else { return }
+            if case .pro = result {
+                self.showAlreadyMember()
+            }
+        }
+    }
+
+    /// 已确认是会员：收起购买入口，不给一个已经付过钱的人第二次购买的机会。
+    private func showAlreadyMember() {
+        isKnownPro = true
+        spinner.stopAnimating()
+        priceLabel.text = L.prefs_pro_active
+        trialLabel.isHidden = true
+        subscribeBtn.isHidden = true
+        restoreBtn.isHidden = true
     }
 
     private func linkButton(_ t: String, action: Selector) -> UIButton {
@@ -114,6 +140,7 @@ final class SubscribeViewController: UIViewController {
         spinner.startAnimating()
         IAP.fetchProduct { [weak self] result in
             guard let self = self else { return }
+            guard !self.isKnownPro else { return }   // checkProStatus 已抢先确认是会员，别再把购买按钮打开
             self.spinner.stopAnimating()
             switch result {
             case .success(let p):
@@ -130,6 +157,7 @@ final class SubscribeViewController: UIViewController {
     }
 
     @objc private func tapSubscribe() {
+        guard !isKnownPro else { return }   // 兜底：万一按钮在确认结果前被点了，也不许真的发起购买
         guard let p = product else { return }
         subscribeBtn.isEnabled = false
         spinner.startAnimating()
