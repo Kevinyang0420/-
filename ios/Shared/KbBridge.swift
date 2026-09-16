@@ -257,6 +257,15 @@ enum KbBridge {
     ///    主 App 的界面他根本看不到 —— 在那边弹提示等于没弹。
     /// 🚨 **不许静默**：权限被拒也要让他看到「记下了、但到点不会弹」，
     ///    否则他以为记下了、到点什么都没有。这是 0 定的硬要求。
+    ///
+    /// 🚨🚨 09-16：目前**没有任何代码调用这个写入端**——原来在
+    ///    `KbVoiceHost.makeSegments()` 里的调用点被拿掉了，因为那条路是
+    ///    "拿到就自动建提醒"，违反规格「是问不是自动建」。新的确认流程
+    ///    （`MainViewController.askRemind`）只在**主 App 界面本身可见时**
+    ///    弹确认框，覆盖不到"人在键盘里、App 在后台被拉起来处理"这条路径。
+    ///    键盘那边 `takeRemindHint()` 的三个读取点还在，不会崩，只是现在
+    ///    永远读到 nil。**这条路径要不要一起补上确认步骤是 0 排期的事**，
+    ///    这次插队修复的范围明确是"主 App 那条路径"（0 原话）。
     static func setRemindHint(_ text: String) {
         guard let st = store else { return }
         st.set(text, forKey: "kb.remind.hint")

@@ -4037,6 +4037,11 @@ final class MainViewController: UIViewController {
     private let speakButton = UIButton(type: .system)
     private var lastOut = ""
 
+    /// 09-16 #90 插队修复：认出的提醒**先摆在这儿等他点**，不是拿到就建。
+    /// 🚨 一次只等一个——新的一条认出来直接顶替旧的（旧的还没点就被替换掉，
+    ///    这是"没点=不成立"的自然推论，别为它另加排队逻辑）。
+    private var pendingRemind: Remind?
+
     // MARK: - 连续模式（Kevin 2026-08-26 的"随手翻译"同传场景）
 
     /// 连续模式开关。点一次一直听，说一句出一句。
@@ -4132,6 +4137,17 @@ final class MainViewController: UIViewController {
         //    只验"这里变成查词了"的话，把权限入口一起做没了也会全绿。
         navigationItem.rightBarButtonItem = UIBarButtonItem(
             title: L.dict_title, style: .plain, target: self, action: #selector(openDict))
+
+        // 🚨🚨 09-16 0 插队指出的违规：原来 `Remind.onParsed` 在 `KbVoiceHost.
+        //    makeSegments()` 里直接调 `RemindScheduler.schedule`，听出时间就
+        //    自动建，**违反规格 `_规格_记事本_20260907.md:54`「是问，不是自动建」**
+        //    ——猜错了他不会发现，直到该响的时候没响，或者在他没约的时候响了。
+        //    照抄安卓 `RemindPrompt.java` 的语义：先问，**他点了才成立**。
+        //    挪到这里（而不是留在 `KbVoiceHost`）是因为"要不要问、问完怎么办"
+        //    是这一屏的 UI 决定，不该让一个不碰 UIKit 的 host 类替它做主。
+        Remind.onParsed = { [weak self] r in
+            DispatchQueue.main.async { self?.askRemind(r) }
+        }
 
         // 🚨 两级 Tab（Kevin 2026-08-21：「按你最初的那个方案来」）：
         //    第一级只有 翻译 / 转写；子档位（结构化 / 逐字）放第二级小 chip。
@@ -6085,6 +6101,45 @@ final class MainViewController: UIViewController {
         //    （比如从别的路径来的结果），会把**上一句的时长**记到这一句头上。
         //    KPI③ 多算比少算更难发现。
         lastSpokeMs = 0
+    }
+
+    /// 09-16 #90 插队修复：**是问，不是自动建**（`_规格_记事本_20260907.md:54`
+    /// 原话）。照抄安卓 `RemindPrompt.java` 的语义——先问，他点了才成立。
+    /// 🚨 反向判据（比正向更要紧）：不点 / 点「不用」→
+    ///    `RemindScheduler.schedule` 一次都不许被调用，`confirmRemind()`
+    ///    是这个类里**唯一**调它的地方。
+    private func askRemind(_ r: Remind) {
+        // 🚨 已经有一条在等他点了——**不覆盖、直接丢掉这条新的**。
+        //    不这么挡的话：`present` 会在"已经在弹一个 alert"时静默失败
+        //    （系统只打一行警告），但 `pendingRemind` 已经被新的这条覆盖，
+        //    他这时点旧的那个对话框，建的会是**看不见的第二条**，不是他正看着的那条。
+        //    「宁可不问，别乱问」——两条撞在一起，情愿丢掉后来的，不许答非所问。
+        guard pendingRemind == nil else {
+            KbBridge.note("提醒：上一条还没答，这条新的丢了，不许覆盖")
+            return
+        }
+        pendingRemind = r
+        let body = String(format: L.remind_ask_body, r.whenLabel())
+        let a = UIAlertController(title: L.remind_ask_title, message: body,
+                                  preferredStyle: .alert)
+        a.addAction(UIAlertAction(title: L.remind_skip, style: .cancel) { [weak self] _ in
+            self?.pendingRemind = nil
+        })
+        a.addAction(UIAlertAction(title: L.remind_confirm, style: .default) { [weak self] _ in
+            self?.confirmRemind()
+        })
+        present(a, animated: true)
+    }
+
+    /// 他点了「设为提醒」才走到这儿。
+    private func confirmRemind() {
+        guard let r = pendingRemind else { return }
+        pendingRemind = nil
+        RemindScheduler.schedule(r) { [weak self] granted in
+            // 🚨 两种情况说不同的话：权限被拒也要让他知道「记下了、但到点
+            //    不会弹」——静默失败是最糟的一档（0 的硬要求）。
+            self?.toastOnce(granted ? L.remind_set : L.remind_no_perm)
+        }
     }
 
     private func polish(_ zh: String, ep: Int) {

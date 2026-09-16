@@ -4071,18 +4071,14 @@ final class KbVoiceHost {
         //    它还编进不含 KbBridge 的测试目标）。接在这里是因为
         //    gate_single_factory.py 钉死了这里只有一个创建点。
         Segments.note = { KbBridge.note($0) }
-        // 🚨 提醒的出口也接在这儿（#90）。跟 Segments.note 同一个理由：
-        //    Remind 是纯逻辑、也编进键盘和测试目标，不许它自己去调通知接口。
-        //    键盘扩展**不接**这个 —— 它是另一个进程，排了主 App 也管不着。
-        if Remind.onParsed == nil {
-            Remind.onParsed = { r in
-                RemindScheduler.schedule(r) { granted in
-                    // 🚨 **两种情况说不同的话**：权限被拒时也要让他知道
-                    //    「记下了、但到点不会弹」—— 静默失败是最糟的一档。
-                    KbBridge.setRemindHint(granted ? L.remind_set : L.remind_no_perm)
-                }
-            }
-        }
+        // 🚨🚨 09-16 `Remind.onParsed` 的赋值**搬去了 `MainViewController.
+        //    viewDidLoad()`**（0 插队指出：这里原来拿到就直接
+        //    `RemindScheduler.schedule`，**没问就建**，违反规格「是问不是
+        //    自动建」）。挪走的理由：要不要问、问完弹什么 UI，是那一屏的
+        //    决定，不该让这个不碰 UIKit 的 host 类替它做主——跟
+        //    `Segments.note` 那半"纯逻辑不许自己调通知接口"是同一条道理，
+        //    只是这次改成**由 UI 层自己接线**，不是继续放在这个唯一创建点里。
+        //    键盘扩展仍然**不接**这个 —— 它是另一个进程，排了主 App 也管不着。
         return Segments(transcribe: { [weak self] wav, done in
             // 🚨 **每段都计入本轮总量。** 分段是"边录边传"，
             //    不在这里加的话，「出稿完成」那行只会有最后一段的量 ——

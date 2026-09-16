@@ -67,6 +67,25 @@ struct Remind: Equatable {
         return Remind(at: at, what: what)
     }
 
+    /// 09-16 #90 插队修复补的：给他看的那行**完整时刻**，比如「明天 15:00」。
+    ///
+    /// 🚨 **必须显示完整时刻**（规格原话：「三点提醒你」这种省略写法正是
+    ///    他没法一眼看出算对没有的那种）——`hm` 永远带、不许省。
+    ///    照抄安卓 `RemindCore.whenParts` 的分桶逻辑（今天/明天/带日期），
+    ///    按**日历日**比较，不是按 24 小时切——「现在 23:50，明天 00:10 提醒」
+    ///    只差 20 分钟，但要落进"明天"那一桶，不是"今天"。
+    func whenLabel(now: Date = Date()) -> String {
+        let cal = Calendar.current
+        let hm = String(format: "%02d:%02d",
+                        cal.component(.hour, from: at), cal.component(.minute, from: at))
+        let days = cal.dateComponents([.day],
+            from: cal.startOfDay(for: now), to: cal.startOfDay(for: at)).day ?? 0
+        if days == 0 { return String(format: L.remind_today, hm) }
+        if days == 1 { return String(format: L.remind_tomorrow, hm) }
+        return String(format: L.remind_dated,
+                      cal.component(.month, from: at), cal.component(.day, from: at), hm)
+    }
+
     /// 🚨 **必须带时区才收**。
     ///
     ///    `ISO8601DateFormatter` 不带 `.withTimeZone` 时会把无时区的串
@@ -130,6 +149,22 @@ struct Remind: Equatable {
         // 反向对照：合法的解析结果要跟直接解出来的一致
         if Remind.parseISO("2026-09-08T15:00:00+08:00") != ok {
             bad.append("同一个串两次解出不同结果")
+        }
+
+        // whenLabel 三个桶——照抄安卓 RemindCore 自测那三条样本。
+        let n = Remind.parseISO("2026-09-11T16:00:00+08:00")!
+        let tomorrow = Remind(at: Remind.parseISO("2026-09-12T15:00:00+08:00")!, what: "x")
+        if !tomorrow.whenLabel(now: n).contains("15:00") {
+            bad.append("明天那桶：时分没显示出来（" + tomorrow.whenLabel(now: n) + "）")
+        }
+        let today = Remind(at: Remind.parseISO("2026-09-11T18:30:00+08:00")!, what: "x")
+        if !today.whenLabel(now: n).contains("18:30") {
+            bad.append("今天那桶：时分没显示出来（" + today.whenLabel(now: n) + "）")
+        }
+        let dated = Remind(at: Remind.parseISO("2026-09-20T09:05:00+08:00")!, what: "x")
+        let datedLabel = dated.whenLabel(now: n)
+        if !datedLabel.contains("9") || !datedLabel.contains("20") || !datedLabel.contains("09:05") {
+            bad.append("带日期那桶：月/日/时分没都显示出来（" + datedLabel + "）")
         }
         return bad
     }
