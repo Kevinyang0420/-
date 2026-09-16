@@ -94,8 +94,7 @@ final class DeleteAccountViewController: PushedViewController {
                 case .pending(let d):
                     self.cancelBtn?.isHidden = false
                     // 🚨 用现成的 `del_acct_grace`，**不新加键** ——
-                    //    台账正在合并 `del_acct_*` / `acct_del_*` 两套，
-                    //    这时候再加一个键只会让合并更难。
+                    //    `del_acct_*` 是唯一一套（三端共用），`acct_del_*` 已废弃。
                     //    天数写在那句话里了（7 天），`d` 只留痕不上屏。
                     KbBridge.note("删账号：冷静期还剩 \(d) 天")
                     self.hint.text = L.del_acct_grace
