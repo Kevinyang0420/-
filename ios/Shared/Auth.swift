@@ -187,11 +187,19 @@ enum Auth {
 
     private static func save(_ s: Session) {
         UserDefaults.standard.set(s.userId, forKey: kUser)
+        // 🚨🚨 09-17：新会话建立（登录成功的唯一咽喉，见 postVerify 的注释）
+        //    也要清——哪怕是同一个人重新登进来，也该让 refresh() 重新问一遍
+        //    服务端，而不是继续信上一段会话留下的缓存。清了绝不会比不清更错，
+        //    真实状态照样在 viewDidLoad/viewWillAppear/登录回调那几处 refresh() 里补上。
+        ProStatus.clearCache()
     }
 
     static func signOut() {
         UserDefaults.standard.removeObject(forKey: kUser)
         UserDefaults.standard.removeObject(forKey: kAccount)
+        // 🚨🚨 09-17：身份变了，会员本地缓存必须跟着清——不然下一个登进来的
+        //    账号在 refresh() 网络回来之前，界面读到的是上一个人的会员状态。
+        ProStatus.clearCache()
     }
 
     // MARK: - 账号显示（跟安卓 `Onboard` 同口径）

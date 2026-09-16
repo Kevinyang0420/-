@@ -43,6 +43,16 @@ enum ProStatus {
     /// 还没问完服务端时先按这个显示，回来后立刻用权威结果纠正。
     static var cachedUntilValue: TimeInterval { cachedUntil }
 
+    /// 🚨🚨 09-17 Kevin 真机撞到：换一个从没注册过的邮箱登进去，界面直接显示会员。
+    ///    `isProCached` 只是"乐观占位"，真值靠 `refresh()` 网络回来才纠正——
+    ///    但账号切换和 `refresh()` 完成之间有个窗口期，这个窗口期内读到的是
+    ///    **上一个账号**的缓存，不是"还没查到"，是"查错了人"。
+    ///    在身份真正换掉的那一刻**同步、立刻**清零缓存，别等网络：
+    ///    `Auth.save()`（新会话建立）和 `Auth.signOut()` 两处调用。
+    static func clearCache() {
+        cachedUntil = 0
+    }
+
     /// 🚨🚨 **真正要不要放行，必须调这个、等回调，不能只看 `isProCached`。**
     ///    - `.unreachable`（网络失败 / 非 200，含 503）：调用方按"保守放行还是保守拒绝"
     ///      自己决定（这个类不替调用方做这个决定——不同功能的容错策略不一样），
