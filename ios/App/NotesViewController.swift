@@ -14,12 +14,17 @@ import UIKit
 /// 🚨 视觉沿用单词本那一屏（同样的圆角、间距、危险色），**没有新设计**。
 /// 🚨 明确**不做**：日历视图 / 共享 / 重复提醒 / 富文本 / 文件夹 ——
 ///    Kevin 已批的收窄版，判据是「这条路的尽头是不是飞书钉钉的地盘」。
-final class NotesViewController: PushedViewController, UITextFieldDelegate {
+///
+/// 🚨 09-16 0 点名：删除入口原来挂在长按上，**入口从可见变成隐藏手势**——
+///    改用 `UITableView` + `trailingSwipeActionsConfigurationForRowAt`
+///    （左滑露出删除），这是 iOS 标准做法，不是自己发明的手势。
+///    卡片本身的圆角/间距/字号一个值都没改，只换了容器（stack → table）。
+final class NotesViewController: PushedViewController, UITextFieldDelegate,
+        UITableViewDataSource, UITableViewDelegate {
 
-    private let scroll = UIScrollView()
-    private let body = UIStackView()
+    private let table = UITableView(frame: .zero, style: .plain)
     private let searchField = UITextField()
-    private var editingId = ""
+    private var items: [NotesCore.Item] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -40,13 +45,16 @@ final class NotesViewController: PushedViewController, UITextFieldDelegate {
         searchField.translatesAutoresizingMaskIntoConstraints = false
         search.addSubview(searchField)
 
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-        body.axis = .vertical
-        body.spacing = 10
-        body.translatesAutoresizingMaskIntoConstraints = false
+        table.translatesAutoresizingMaskIntoConstraints = false
+        table.backgroundColor = .clear
+        table.separatorStyle = .none
+        table.dataSource = self
+        table.delegate = self
+        table.rowHeight = UITableView.automaticDimension
+        table.estimatedRowHeight = 100
+        table.register(NoteCell.self, forCellReuseIdentifier: "note")
         view.addSubview(search)
-        view.addSubview(scroll)
-        scroll.addSubview(body)
+        view.addSubview(table)
         let g = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
             search.topAnchor.constraint(equalTo: g.topAnchor, constant: 12),
@@ -59,14 +67,10 @@ final class NotesViewController: PushedViewController, UITextFieldDelegate {
                                                   constant: -14),
             searchField.centerYAnchor.constraint(equalTo: search.centerYAnchor),
 
-            scroll.topAnchor.constraint(equalTo: search.bottomAnchor, constant: 12),
-            scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scroll.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            body.topAnchor.constraint(equalTo: scroll.topAnchor),
-            body.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 21),
-            body.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -21),
-            body.bottomAnchor.constraint(equalTo: scroll.bottomAnchor, constant: -28),
+            table.topAnchor.constraint(equalTo: search.bottomAnchor, constant: 12),
+            table.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            table.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            table.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
         paint()
     }
@@ -85,14 +89,11 @@ final class NotesViewController: PushedViewController, UITextFieldDelegate {
     // MARK: - 画
 
     private func paint() {
-        body.arrangedSubviews.forEach {
-            body.removeArrangedSubview($0); $0.removeFromSuperview()
-        }
         // 🚨 搜索走 `Notes.search`（转 `NotesCore.search`）——
         //    **不在这一屏再写一遍过滤**。规格判据「要搜得到原话」
         //    钉在那一层，界面再写一套的话这条判据就守不住这一屏。
-        let items = Notes.search(searchField.text ?? "")
-        guard !items.isEmpty else {
+        items = Notes.search(searchField.text ?? "")
+        if items.isEmpty {
             let l = UILabel()
             // 🚨 空态要告诉他**怎么才会有东西**，不是干写一句"暂无"。
             l.text = (searchField.text ?? "").isEmpty ? L.note_empty
@@ -100,70 +101,35 @@ final class NotesViewController: PushedViewController, UITextFieldDelegate {
             l.font = .systemFont(ofSize: 15)
             l.textColor = Skin.dim
             l.numberOfLines = 0
+            l.textAlignment = .center
             l.accessibilityIdentifier = "note.empty"
-            body.addArrangedSubview(l)
-            return
+            table.backgroundView = l
+        } else {
+            table.backgroundView = nil
         }
-        for it in items { body.addArrangedSubview(card(it)) }
+        table.reloadData()
     }
 
-    private func card(_ it: NotesCore.Item) -> UIView {
-        let box = UIControl()
-        box.backgroundColor = UIColor.white.withAlphaComponent(0.06)
-        box.layer.cornerRadius = 14
-        box.accessibilityIdentifier = "note.row"
-        box.translatesAutoresizingMaskIntoConstraints = false
+    // MARK: - UITableViewDataSource
 
-        let t = UILabel()
-        t.text = it.title
-        t.font = .systemFont(ofSize: 16, weight: .semibold)
-        t.textColor = Skin.text
-        t.numberOfLines = 2
-        t.translatesAutoresizingMaskIntoConstraints = false
-
-        let b = UILabel()
-        // 🚨 正文只露一行 —— 列表是用来找的，不是用来读的。
-        b.text = it.body
-        b.font = .systemFont(ofSize: 14)
-        b.textColor = Skin.dim
-        b.numberOfLines = 2
-        b.translatesAutoresizingMaskIntoConstraints = false
-
-        let tag = UILabel()
-        tag.text = it.tags.joined(separator: "  ·  ")
-        tag.font = .systemFont(ofSize: 12)
-        tag.textColor = Skin.accentHi
-        tag.translatesAutoresizingMaskIntoConstraints = false
-
-        box.addSubview(t); box.addSubview(b); box.addSubview(tag)
-        NSLayoutConstraint.activate([
-            t.topAnchor.constraint(equalTo: box.topAnchor, constant: 12),
-            t.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 14),
-            t.trailingAnchor.constraint(equalTo: box.trailingAnchor, constant: -14),
-            b.topAnchor.constraint(equalTo: t.bottomAnchor, constant: 4),
-            b.leadingAnchor.constraint(equalTo: t.leadingAnchor),
-            b.trailingAnchor.constraint(equalTo: t.trailingAnchor),
-            tag.topAnchor.constraint(equalTo: b.bottomAnchor, constant: 6),
-            tag.leadingAnchor.constraint(equalTo: t.leadingAnchor),
-            tag.trailingAnchor.constraint(equalTo: t.trailingAnchor),
-            tag.bottomAnchor.constraint(equalTo: box.bottomAnchor, constant: -12),
-        ])
-        let tap = TapNote(target: self, action: #selector(tapRow(_:)))
-        tap.id = it.id
-        box.addGestureRecognizer(tap)
-        let hold = HoldNote(target: self, action: #selector(holdRow(_:)))
-        hold.id = it.id
-        box.addGestureRecognizer(hold)
-        return box
+    func tableView(_ tv: UITableView, numberOfRowsInSection section: Int) -> Int {
+        items.count
     }
 
-    // MARK: - 编辑
+    func tableView(_ tv: UITableView, cellForRowAt ip: IndexPath) -> UITableViewCell {
+        let cell = tv.dequeueReusableCell(withIdentifier: "note", for: ip) as! NoteCell
+        cell.configure(items[ip.row])
+        return cell
+    }
+
+    // MARK: - UITableViewDelegate
 
     /// 🚨 点一下＝看/改正文（0 台账点名：存进去了但点不进去看正文）。
     ///    照抄 `WordBookViewController:392` 的调法——同一个
     ///    `NoteEditViewController`，同样只回文本、由调用方决定怎么写回。
-    @objc private func tapRow(_ g: TapNote) {
-        guard let it = Notes.list().first(where: { $0.id == g.id }) else { return }
+    func tableView(_ tv: UITableView, didSelectRowAt ip: IndexPath) {
+        tv.deselectRow(at: ip, animated: true)
+        let it = items[ip.row]
         let vc = NoteEditViewController(word: it.title, note: it.body)
         vc.onSave = { [weak self] text in
             Notes.update(id: it.id, body: text)
@@ -173,30 +139,26 @@ final class NotesViewController: PushedViewController, UITextFieldDelegate {
         present(nav, animated: true)
     }
 
-    /// 长按＝原来那个菜单（改标题/加标签走 `editText`、删掉）——
-    /// 单纯挪了触发手势，一行逻辑没改，标题/标签编辑能力不丢。
-    @objc private func holdRow(_ g: HoldNote) {
-        guard g.state == .began,
-              let it = Notes.list().first(where: { $0.id == g.id })
-        else { return }
-        editingId = it.id
-        let a = UIAlertController(title: it.title, message: it.body,
-                                  preferredStyle: .actionSheet)
-        a.addAction(UIAlertAction(title: L.wb_note_edit, style: .default) {
-            [weak self] _ in self?.editText(it)
-        })
-        a.addAction(UIAlertAction(title: L.wb_delete, style: .destructive) {
-            [weak self] _ in
+    /// 🚨 左滑＝系统标准删除手势，入口可见（不再是长按才有的隐藏菜单）。
+    ///    「编辑」（改标题/加标签）同一排一起露出，走原来的 `editText`。
+    func tableView(_ tv: UITableView, trailingSwipeActionsConfigurationForRowAt ip: IndexPath)
+        -> UISwipeActionsConfiguration? {
+        let it = items[ip.row]
+        let del = UIContextualAction(style: .destructive, title: L.wb_delete) {
+            [weak self] _, _, done in
             Notes.remove(id: it.id)
             self?.paint()
-        })
-        a.addAction(UIAlertAction(title: L.cancel, style: .cancel))
-        // iPad 上 actionSheet 要锚点，不然会崩。
-        a.popoverPresentationController?.sourceView = view
-        a.popoverPresentationController?.sourceRect =
-            CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1)
-        present(a, animated: true)
+            done(true)
+        }
+        let edit = UIContextualAction(style: .normal, title: L.wb_note_edit) {
+            [weak self] _, _, done in
+            self?.editText(it)
+            done(true)
+        }
+        return UISwipeActionsConfiguration(actions: [del, edit])
     }
+
+    // MARK: - 编辑
 
     /// 改标题 / 改正文 / 改标签 —— 三样在一个弹窗里，走 `Notes.update` 一个出口。
     private func editText(_ it: NotesCore.Item) {
@@ -225,10 +187,66 @@ final class NotesViewController: PushedViewController, UITextFieldDelegate {
     }
 }
 
-private final class TapNote: UITapGestureRecognizer {
-    var id: String = ""
-}
+/// 卡片视觉跟原来的 `card(_:)` 逐值照搬（圆角 14 / 背景 alpha 0.06 / 内边距
+/// 12·14·4·6，`body.spacing`=10 的间距现在靠卡片自身的上下各 5pt 撑出来）——
+/// 只是从「每次 `paint()` 重建的 `UIView`」换成「`UITableView` 复用的 cell」。
+private final class NoteCell: UITableViewCell {
+    private let box = UIView()
+    private let t = UILabel()
+    private let b = UILabel()
+    private let tag = UILabel()
 
-private final class HoldNote: UILongPressGestureRecognizer {
-    var id: String = ""
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        backgroundColor = .clear
+        selectionStyle = .none
+
+        box.backgroundColor = UIColor.white.withAlphaComponent(0.06)
+        box.layer.cornerRadius = 14
+        box.accessibilityIdentifier = "note.row"
+        box.translatesAutoresizingMaskIntoConstraints = false
+
+        t.font = .systemFont(ofSize: 16, weight: .semibold)
+        t.textColor = Skin.text
+        t.numberOfLines = 2
+        t.translatesAutoresizingMaskIntoConstraints = false
+
+        // 🚨 正文只露一行 —— 列表是用来找的，不是用来读的。
+        b.font = .systemFont(ofSize: 14)
+        b.textColor = Skin.dim
+        b.numberOfLines = 2
+        b.translatesAutoresizingMaskIntoConstraints = false
+
+        tag.font = .systemFont(ofSize: 12)
+        tag.textColor = Skin.accentHi
+        tag.translatesAutoresizingMaskIntoConstraints = false
+
+        box.addSubview(t); box.addSubview(b); box.addSubview(tag)
+        contentView.addSubview(box)
+        NSLayoutConstraint.activate([
+            box.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 5),
+            box.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 21),
+            box.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -21),
+            box.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -5),
+
+            t.topAnchor.constraint(equalTo: box.topAnchor, constant: 12),
+            t.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 14),
+            t.trailingAnchor.constraint(equalTo: box.trailingAnchor, constant: -14),
+            b.topAnchor.constraint(equalTo: t.bottomAnchor, constant: 4),
+            b.leadingAnchor.constraint(equalTo: t.leadingAnchor),
+            b.trailingAnchor.constraint(equalTo: t.trailingAnchor),
+            tag.topAnchor.constraint(equalTo: b.bottomAnchor, constant: 6),
+            tag.leadingAnchor.constraint(equalTo: t.leadingAnchor),
+            tag.trailingAnchor.constraint(equalTo: t.trailingAnchor),
+            tag.bottomAnchor.constraint(equalTo: box.bottomAnchor, constant: -12),
+        ])
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) 不用") }
+
+    func configure(_ it: NotesCore.Item) {
+        t.text = it.title
+        b.text = it.body
+        tag.text = it.tags.joined(separator: "  ·  ")
+    }
 }
