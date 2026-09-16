@@ -22,7 +22,7 @@ import UIKit
 /// 🚨 生日**三个都选了才存**，少一个就当没填、一个字都不存。
 ///    不拿"年份填了就存个 xxxx-01-01"糊弄 —— 那样存的是垃圾数据，
 ///    以后没法区分"他生日就是元旦"和"他只选了年份"。
-final class ProfileViewController: UIViewController {
+final class ProfileViewController: PushedViewController {
 
     private let nickField = UITextField()
     private let yearButton = UIButton(type: .system)

@@ -26,7 +26,7 @@ import UIKit
 ///
 /// XCUITest 只需要读一次 `accessibilityValue`（见 `logLabel`），
 /// 按分隔符拆开就是完整、按顺序排好的点击结果，不用猜。
-final class CalibGridViewController: UIViewController {
+final class CalibGridViewController: PushedViewController {
 
     /// 🚨 行列数刻意留大一点（覆盖满整个屏幕、格子不算太小）——
     ///    格子越多，标定用的候选落点越密，最后从这些格子里挑 3 个量级

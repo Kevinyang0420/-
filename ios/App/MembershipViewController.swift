@@ -11,7 +11,7 @@ import UIKit
 /// `_规格_会员到期日展示契约_待2.1定案_20260916.md`（选项 A/B/C 都还没定）。
 /// 这一版先用最保守的 A1：只显示状态词，不显示具体到期日——不预判 2.1 的选择，
 /// 以后真要加，只需要在这一屏加一行，不用再动路由。
-final class MembershipViewController: UIViewController {
+final class MembershipViewController: PushedViewController {
 
     private let titleLabel = UILabel()
     private let statusLabel = UILabel()

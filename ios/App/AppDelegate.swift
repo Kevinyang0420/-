@@ -4381,7 +4381,15 @@ final class MainViewController: UIViewController {
         //    当成两件事各做一遍 —— 其实是同一件事说了两次。
         //    他最后定的是 **[单词本][日记本] 两颗**。
         bigButton.setTitle(L.note_book, for: .normal)
-        bigButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        // 🚨🚨 09-16 Kevin 亲口：「你都加个省略号了，别人怎么知道你想说啥呢……
+        //    字可以小一点，但不能用省略号代替」——15pt 在 92pt 定宽按钮里放不下
+        //    「日记本」，`德语 Tagebuch`/`西语 Diario` 更长，一律被截断。
+        //    16→13 只是把地板抬高一点，真正兜底的是下面那行 `adjustsFontSizeToFitWidth`。
+        bigButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
+        // 🚨 **宁可字小，不许截断**——默认的 `.byTruncatingTail` 就是产生那个
+        //    省略号的元凶。改成自动缩字号 + `.byClipping`（缩到底线之后不截断，
+        //    而不是再去截字符）。`minimumScaleFactor` 别定太低，太小会读不清。
+        applyShrinkToFit(bigButton)
         // 🚨 图标用 **SF Symbols 对语义**，不另发明形状（2.1 规格）。
         //    转写区这一档 20pt，图标右侧 6pt 跟文字。
         applyChipIcon(bigButton, systemName: "bookmark")
@@ -4390,7 +4398,8 @@ final class MainViewController: UIViewController {
         bigButton.layer.cornerRadius = 16
         paintOutputButtons()
         keepButton.setTitle(L.kb_keep, for: .normal)
-        keepButton.titleLabel?.font = .systemFont(ofSize: 15, weight: .medium)
+        keepButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
+        applyShrinkToFit(keepButton)
         applyChipIcon(keepButton, systemName: "character.book.closed")
         keepButton.setTitleColor(Theme.text, for: .normal)
         keepButton.backgroundColor = Theme.key
@@ -4536,8 +4545,13 @@ final class MainViewController: UIViewController {
             actionRow.bottomAnchor.constraint(
                 equalTo: micButton.topAnchor, constant: -12),
             actionRow.heightAnchor.constraint(equalToConstant: 36),
-            bigButton.widthAnchor.constraint(equalToConstant: 92),
-            keepButton.widthAnchor.constraint(equalToConstant: 92),
+            // 🚨🚨 09-16：写死 92pt 是「日记本」被截成省略号的根因——
+            //    图标20+图标间距6+左右内边距各12=50pt 硬开销，92pt 只剩42pt
+            //    给文字，「日记本」15pt 就放不下，更别说德语 `Tagebuch`。
+            //    改成**按内容自适应**（不设 width，`UIStackView` 用 intrinsic size）
+            //    + **最小宽度兜底**（避免两字的语言把按钮挤成一个丑的小方块）。
+            bigButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 72),
+            keepButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 72),
 
             // 「说过的话」挪到**结果框上面**（原来在操作行下面）——
             // 操作行已经跟着麦克风沉到底了，它留在那儿会被压扁。
@@ -5892,6 +5906,17 @@ final class MainViewController: UIViewController {
         b.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
     }
 
+    /// 09-16：字宁可小、也不许被省略号吃掉——`bigButton`/`keepButton` 专用。
+    /// 🚨 `numberOfLines` 必须是 1，`adjustsFontSizeToFitWidth` 才有意义；
+    ///    `minimumScaleFactor` 不敢定太低，西语 `Vocabulario` 这种长词缩到看不清
+    ///    比截断更糟，0.7（13pt→约9pt）是能读的下限。
+    private func applyShrinkToFit(_ b: UIButton) {
+        b.titleLabel?.numberOfLines = 1
+        b.titleLabel?.adjustsFontSizeToFitWidth = true
+        b.titleLabel?.minimumScaleFactor = 0.7
+        b.titleLabel?.lineBreakMode = .byClipping
+    }
+
     /// 把这一条**存进日记本**（转写区左边那颗）。
     ///
     /// 🚨 正文用**他说的原话**（`lastZh`），不是译文 —— 跟说话记录那屏
@@ -6119,7 +6144,7 @@ final class MainViewController: UIViewController {
 ///    ① 没有宿主输入框，`textDocumentProxy` 是空的 → 能验版面，不能验上屏
 ///    ② `hasFullAccess` 在容器 App 里恒 false → 预览里会看到那行红字，
 ///       那是预览环境的限制，不代表真机也这样
-final class KeyboardPreviewController: UIViewController {
+final class KeyboardPreviewController: PushedViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // 🚨🚨 2026-09-03：配色改成跟宿主外观分叉之后，这里**必须先设

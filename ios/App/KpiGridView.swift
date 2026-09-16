@@ -265,7 +265,7 @@ final class KpiGridView: UIView {
 
 /// 🚨 **只给我截图核对 KPI 组件用**的调试宿主（`TRANSLESS_PAGE=kpi`）。
 /// 正式首页怎么放这个组件，等 2.1 出 iOS 首页图给 Kevin 点头后再定。
-final class KpiDebugController: UIViewController {
+final class KpiDebugController: PushedViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "KPI 组件（调试）"

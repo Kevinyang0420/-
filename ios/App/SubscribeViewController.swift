@@ -12,7 +12,7 @@ import StoreKit
 /// 🚨 **不许出现"还能免费用 N 次"**（核心翻译不限次，那句是假的）；
 /// 🚨 **不许写"解锁高级功能"**（要说清解锁的是哪个具体功能）——
 ///    两条都是 Kevin 给 `loginGate` 那份文案定的规矩，这一屏是同一类文案，照搬。
-final class SubscribeViewController: UIViewController {
+final class SubscribeViewController: PushedViewController {
 
     private let titleLabel = UILabel()
     private let priceLabel = UILabel()

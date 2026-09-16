@@ -20,7 +20,7 @@ import UIKit
 ///
 /// 🚨 **只有点选，零滑动手势**：PC 端做不了滑动，三端会走散
 ///    （所以没有 iOS 常见的左滑删除 —— 这是决定，不是漏做）。
-final class VocabViewController: UIViewController {
+final class VocabViewController: PushedViewController {
 
     /// 「我不要的」折叠条默认收起。**不持久化**，退出即复位（跟安卓一致）。
     private var showRejected = false

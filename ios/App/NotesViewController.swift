@@ -14,7 +14,7 @@ import UIKit
 /// 🚨 视觉沿用单词本那一屏（同样的圆角、间距、危险色），**没有新设计**。
 /// 🚨 明确**不做**：日历视图 / 共享 / 重复提醒 / 富文本 / 文件夹 ——
 ///    Kevin 已批的收窄版，判据是「这条路的尽头是不是飞书钉钉的地盘」。
-final class NotesViewController: UIViewController, UITextFieldDelegate {
+final class NotesViewController: PushedViewController, UITextFieldDelegate {
 
     private let scroll = UIScrollView()
     private let body = UIStackView()

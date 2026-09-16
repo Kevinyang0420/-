@@ -18,7 +18,7 @@ import UIKit
 ///
 /// 🚨 视觉不用我设计（draft：「按各平台原生设置页风格走，不需要额外设计」），
 ///    所以这一屏的字号/间距/颜色全部沿用设置页那套。
-final class AboutViewController: UIViewController {
+final class AboutViewController: PushedViewController {
 
     private let scroll = UIScrollView()
     private let col = UIStackView()

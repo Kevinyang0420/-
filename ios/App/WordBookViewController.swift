@@ -23,7 +23,7 @@ import UIKit
 ///
 /// 🚨 一行纯逻辑都不写在这里：去重、插入、封顶、该不该复习在 `WordBookCore`，
 ///    间隔重复在 `Srs`，两者都进了 `gate_pure_logic.py`。
-final class WordBookViewController: UIViewController {
+final class WordBookViewController: PushedViewController {
 
     /// 复习卡正面朝哪一面。存本机，切了记住。跟安卓同一个键名。
     private static let kFront = "wordbook_front"

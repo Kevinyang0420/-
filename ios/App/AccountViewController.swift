@@ -19,7 +19,7 @@ import UIKit
 ///    多一个模式就多一处状态，而用户只想改一个字段。
 ///    生日那项跳到 `ProfileViewController` 的三个下拉，
 ///    **不在这里再写一套日期选择**（写第二套哪天口径变了必然漏改一处）。
-final class AccountViewController: UIViewController {
+final class AccountViewController: PushedViewController {
 
     private let stack = UIStackView()
 

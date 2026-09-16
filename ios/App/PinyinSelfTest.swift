@@ -9,7 +9,7 @@ import UIKit
 ///
 /// 🚨 坏样本：`TRANSLESS_PYTEST_BAD=1` 会把第一条的期望值改掉。
 ///    跑一次看它变红，才证明这一屏绿是真的绿。
-final class PinyinSelfTestController: UIViewController {
+final class PinyinSelfTestController: PushedViewController {
 
     /// 切分用例。左＝输入，右＝期望（`/` 分隔）。
     private static let splitCases: [(String, String)] = [

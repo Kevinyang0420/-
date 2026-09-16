@@ -14,7 +14,7 @@ import UIKit
 /// 🚨 这个页面**没有正式入口**，只有 `TRANSLESS_PAGE=kbwake` 能进。
 /// 🚨 它**不做判断**：判断在外面读日志的脚本里。
 ///    这里只负责制造现场 —— 所以不该有断言（跟 `HoldKeyboardUp` 同一个道理）。
-final class KeyboardWakeController: UIViewController {
+final class KeyboardWakeController: PushedViewController {
 
     private let field = UITextField()
 

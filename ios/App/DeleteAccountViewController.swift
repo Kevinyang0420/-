@@ -7,7 +7,7 @@ import UIKit
 ///
 /// 🚨 视觉沿用账户页那套（同样的圆角、间距、危险色），**没有新设计** ——
 ///    Kevin 定过我不许自己设计 UI。
-final class DeleteAccountViewController: UIViewController {
+final class DeleteAccountViewController: PushedViewController {
 
     private let stack = UIStackView()
     private let codeField = UITextField()
