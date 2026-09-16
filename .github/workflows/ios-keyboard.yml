@@ -42,7 +42,18 @@ jobs:
         run: |
           python3 ios/gen_buildstamp.py "ci-$(date +%m%d-%H%M%S)"
           grep -q "enum BuildStamp" ios/Shared/BuildStamp.swift
-      - name: 生成 Secrets.swift（口令来自 Secret，提示词来自仓库里的 prompt.txt）
+      # 🚨🚨 09-17 修：这一步一直在断言一个**按设计已经不存在**的东西。
+      #    09-14 提示词全部搬到服务端后，`sync_prompts.FILES` 清空，
+      #    `secrets_body()` 生成的 `Secrets.swift` 从此**只有口令，不再带任何
+      #    提示词文本**——这是有意的（客户端不该再持有提示词）。
+      #    而这一步还在读 `ios/prompt.txt` 要求含 "PASS 2 - STRUCTURE"、
+      #    还断言生成物里也有这串、还要求生成物 >3000 字节——三条全部
+      #    对着一个不会再发生的旧行为，**必然失败，不看改了什么代码**。
+      #    `c9b10beb9cdf` 之后每一次推送都在这一步炸，Kevin 手机上什么
+      #    新东西都没收到，根子在这儿，不在被推的那些修复本身。
+      #    改法照抄 `ci-release-workflow.yml`（那份已经是对的）：
+      #    只验口令真的写进去了，不再验一个已经不该存在的提示词标记。
+      - name: 生成 Secrets.swift（口令来自 Secret，提示词已搬到服务端不再随包带）
         env:
           ALEX_PASS: ${{ secrets.ALEX_PASS }}
         run: |
@@ -54,20 +65,9 @@ jobs:
           python3 - <<'PY'
           import json, os, pathlib
           root = pathlib.Path("ios")
-          prompt = (root / "prompt.txt").read_text(encoding="utf-8")
-          if "PASS 2 - STRUCTURE" not in prompt:
-              raise SystemExit("prompt.txt 不对劲，缺特征串")
           pw = os.environ["ALEX_PASS"]
-          def swift(s):
-              return json.dumps(s, ensure_ascii=False).replace("\\u", "\\u{").replace("}", "}")
-          out = root / "Shared" / "Secrets.swift"
-          body = "// 构建时生成，勿提交。提示词来自 ios/prompt.txt（源头是 engine.py）。\n"
-          # 🚨 成员表**从 sync_prompts.PAIRS 派生**，不在这里手写。
-          #    2026-09-06 查出：本机生成器 5 个成员、这两份 CI 各只有 3 个，
-          #    而 Swift 用 5 个（Secrets.promptPunct 在 Backend.swift:25）——
-          #    这条路一旦跑起来必然 cannot find 'promptPunct' in scope。
-          #    Kevin 09-05 叫停了触发 CI，所以这个洞一直没人撞到。
-          #    三个生成器现在共用 sync_prompts.secrets_body，加 prompt 只改 PAIRS。
+          # 🚨 成员表**从 sync_prompts.FILES 派生**，不在这里手写——见
+          #    sync_prompts.py 顶部注释：09-14 起 FILES 恒空，这是有意的。
           import sys as _sys
           _sys.path.insert(0, str(root))
           import sync_prompts as _sp
@@ -75,6 +75,7 @@ jobs:
               root, pw, lambda s: json.dumps(s, ensure_ascii=False))
           if _bad:
               raise SystemExit("Secrets 生成失败：" + "; ".join(_bad))
+          out = root / "Shared" / "Secrets.swift"
           out.write_text(body, encoding="utf-8")
           # 闸门就在这儿验，别等编译完去 strings 二进制 ——
           # ALEX_PASS 只有 14 字符，Swift 的小字符串优化(<=15 字节)会把它编成
@@ -82,9 +83,7 @@ jobs:
           # 查错对象 = 白查。
           written = out.read_text(encoding="utf-8")
           assert pw in written, "Secrets.swift 里没有口令"
-          assert "PASS 2 - STRUCTURE" in written, "Secrets.swift 里没有提示词"
-          assert len(written) > 3000, "Secrets.swift 太小，提示词八成没进去"
-          print("Secrets.swift 生成完毕：prompt %d 字符，口令已注入，%d 字节" % (len(prompt), len(written)))
+          print("Secrets.swift 生成完毕：口令已注入，%d 字节" % len(written))
           PY
 
       - name: 生成 Xcode 工程
@@ -125,24 +124,25 @@ jobs:
           /usr/libexec/PlistBuddy -c "Print :NSMicrophoneUsageDescription" "$APP/Info.plist" >/dev/null \
             || { echo "::error::App Info.plist 缺 NSMicrophoneUsageDescription"; exit 1; }
 
-          # 闸门：提示词必须真的编进键盘二进制。
-          # 用它而不是口令 —— 提示词 3588 字节，一定落在 __cstring 里，strings 找得到；
-          # 口令只有 14 字符，被 Swift 小字符串优化编成立即数，strings 永远找不到（踩过）。
-          # 🚨🚨 **不许写成 `strings ... | grep -q`**（2026-08-28 实撞）。
-          #    `grep -q` 一匹配就退出 -> 管道读端关闭 -> `strings` 吃 SIGPIPE 非零退出
-          #    -> `set -euo pipefail` 判整条管道失败 -> 走 `||` 报「没编进去」。
-          #    **字符串越是真的在里面，它越早退出，这条闸门越容易红** ——
-          #    它是在"通过"的时候失败，而且报出来的话指向相反的结论。
-          #    日志里的原文：`strings: failed to flush output`。
-          #    → 先落盘，再对文件 grep。顺带让正判据和阴性对照读**同一份快照**。
+          # 🚨🚨 09-17 修：这条原来验「提示词必须编进二进制」，
+          #    是 09-14 提示词搬服务端**之前**的规矩——那之后 Secrets.swift
+          #    不再带任何提示词文本，这条正判据变成永远不可能通过的假检查
+          #    （跟上面 Secrets.swift 生成步同一个病根，同一次一起改）。
+          #    现在的规矩反过来了：客户端**不该再持有提示词**，
+          #    所以判据也反过来——查它**没有**泄进二进制。
+          #    先落盘再 grep（同样是为了绕开 `strings | grep -q` 的 SIGPIPE 坑，
+          #    见下面注释），正判据和阳性对照读同一份快照。
           strings "$EXT/Keyboard" > "$RUNNER_TEMP/kbstr.txt"
-          grep -q "PASS 2 - STRUCTURE" "$RUNNER_TEMP/kbstr.txt" \
-            || { echo "::error::提示词没编进键盘二进制"; exit 1; }
-          # 阴性对照：一个绝不该出现的串必须查不到，否则说明这条 grep 是恒真的
-          if grep -q "ZZ-THIS-MUST-NOT-EXIST-ZZ" "$RUNNER_TEMP/kbstr.txt"; then
-            echo "::error::阴性对照命中了，这道闸是假的"; exit 1
+          # 阳性对照：换成一个**确定会在**二进制里的串——`KbBridge.group`
+          # (`group.com.kevin.transless`，App Group 标识符，源码里是字面量常量，
+          # `Shared` 目录整份编进 Keyboard target，26 字节远超小字符串优化阈值)，
+          # 证明这份 strings 快照本身是干净可用的，不是空文件糊弄过关。
+          grep -q "group.com.kevin.transless" "$RUNNER_TEMP/kbstr.txt" \
+            || { echo "::error::阳性对照没命中，strings 快照本身有问题，这道闸测不出东西"; exit 1; }
+          if grep -q "PASS 2 - STRUCTURE" "$RUNNER_TEMP/kbstr.txt"; then
+            echo "::error::提示词泄进了键盘二进制——现在这东西该只在服务端"; exit 1
           fi
-          echo "二进制含提示词 ✓（阴性对照未命中 ✓）"
+          echo "二进制不含提示词 ✓（阳性对照命中，快照可信 ✓）"
 
           # 闸门：icon 必须真的被编进去。
           # 判据不是「Assets.xcassets 目录在仓库里」—— 那只证明源文件在，
