@@ -2538,8 +2538,12 @@ final class HomeViewController: UIViewController {
             //    🚨 09-17 追加第三份：`Auth.selftestAccountSwitch()` —— 换账号该不该
             //    清本地资料的判据（跟安卓 `AccountSwitchCheck.selfTest()` 逐条对齐）。
             //    接在这里而不是新起一条链，是因为这条链已经是"自测的单一出口"。
+            //    🚨 顺手接上第四份：`ProStatus.selftest()`——它写在 `ProStatus.swift`
+            //    (`isProCached` 清零/设成未来/设成过去三条断言)，**同一晚在同一个文件**
+            //    引入了 `clearCache()`，而这份自测本身从建起来那天起零调用点，
+            //    没接的话这次改动根本没被验过。跟上面几份同一个病根。
             r.text = HomeStatsCore.selfTest() ?? KpiWords.selfTest()
-                ?? Auth.selftestAccountSwitch() ?? "OK"
+                ?? Auth.selftestAccountSwitch() ?? ProStatus.selftest().first ?? "OK"
             r.accessibilityLabel = r.text
             r.font = .systemFont(ofSize: 9)
             r.textColor = .clear
