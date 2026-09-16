@@ -194,7 +194,7 @@ private final class NoteCell: UITableViewCell {
     private let box = UIView()
     private let t = UILabel()
     private let b = UILabel()
-    private let tag = UILabel()
+    private let tagLabel = UILabel()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -217,11 +217,11 @@ private final class NoteCell: UITableViewCell {
         b.numberOfLines = 2
         b.translatesAutoresizingMaskIntoConstraints = false
 
-        tag.font = .systemFont(ofSize: 12)
-        tag.textColor = Skin.accentHi
-        tag.translatesAutoresizingMaskIntoConstraints = false
+        tagLabel.font = .systemFont(ofSize: 12)
+        tagLabel.textColor = Skin.accentHi
+        tagLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        box.addSubview(t); box.addSubview(b); box.addSubview(tag)
+        box.addSubview(t); box.addSubview(b); box.addSubview(tagLabel)
         contentView.addSubview(box)
         NSLayoutConstraint.activate([
             box.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 5),
@@ -235,10 +235,10 @@ private final class NoteCell: UITableViewCell {
             b.topAnchor.constraint(equalTo: t.bottomAnchor, constant: 4),
             b.leadingAnchor.constraint(equalTo: t.leadingAnchor),
             b.trailingAnchor.constraint(equalTo: t.trailingAnchor),
-            tag.topAnchor.constraint(equalTo: b.bottomAnchor, constant: 6),
-            tag.leadingAnchor.constraint(equalTo: t.leadingAnchor),
-            tag.trailingAnchor.constraint(equalTo: t.trailingAnchor),
-            tag.bottomAnchor.constraint(equalTo: box.bottomAnchor, constant: -12),
+            tagLabel.topAnchor.constraint(equalTo: b.bottomAnchor, constant: 6),
+            tagLabel.leadingAnchor.constraint(equalTo: t.leadingAnchor),
+            tagLabel.trailingAnchor.constraint(equalTo: t.trailingAnchor),
+            tagLabel.bottomAnchor.constraint(equalTo: box.bottomAnchor, constant: -12),
         ])
     }
 
@@ -247,6 +247,6 @@ private final class NoteCell: UITableViewCell {
     func configure(_ it: NotesCore.Item) {
         t.text = it.title
         b.text = it.body
-        tag.text = it.tags.joined(separator: "  ·  ")
+        tagLabel.text = it.tags.joined(separator: "  ·  ")
     }
 }
