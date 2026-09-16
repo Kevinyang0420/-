@@ -215,7 +215,12 @@ final class AccountViewController: UIViewController {
                 self.proState = result
                 self.refresh()
             }
-        case .pro, .notSubscribed:
+        case .pro:
+            // 🚨🚨 09-16 症状C修复：已是会员不许再被带去付费墙（见闸门
+            //    verify_pro_no_paywall.py 和 MembershipViewController 头注释）。
+            navigationController?.pushViewController(MembershipViewController(),
+                                                     animated: true)
+        case .notSubscribed:
             navigationController?.pushViewController(SubscribeViewController(),
                                                      animated: true)
         }
