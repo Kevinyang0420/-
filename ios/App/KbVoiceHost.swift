@@ -1307,6 +1307,24 @@ final class KbVoiceHost {
             //    成不成都要留痕 —— 这条日志就是判据本身。
             KbBridge.note("预架：键盘在前台，此刻 " + KbVoiceHost.where_()
                           + "｜已架=" + String(voice.arming))
+            // 🚨🚨🚨 **09-15 真机第十二/十三轮追查的根因：已经架着时这里原来
+            //    整块被 `if !voice.arming` 跳过 —— 连着 `KbBridge.markArmed(true)`
+            //    一起漏掉了。**
+            //    `hostArmed(maxAge: 12)` 是个**一次性时间戳**，12 秒不刷新就报假，
+            //    跟引擎真实是否架着是两回事。键盘那边 `armInBackgroundThenStart`
+            //    正是在这个时间戳过期时，靠发一条 `prearm` 等 1.2 秒指望它被刷新——
+            //    而"引擎本来就架着"这个最常见的分支从来没刷新过它，1.2 秒必然超时，
+            //    键盘转头去跑"拉起主 App"那条老的跳转/卡死路径。
+            //    宿主活着、引擎架着、麦克风静音待命（0 09-15 冷启动实验已证实这个状态本身没问题）
+            //    ≠ 键盘这边看到的"架着"信号是新鲜的 —— 这才是 `phase` 进不了 `listening` 的真因。
+            //    `armForBackground()`（591/695 行）早就是这么处理"已经架着"这个分支的
+            //    （"已经架着就别再喊一遍 —— 只把共享标记补上，当成功"），
+            //    这里是同一条规矩的第三个出口，唯独这个没照抄，是同族漂移。
+            if voice.arming {
+                KbBridge.markArmed(true)
+                KbBridge.markKeyboardSeen()
+                KbBridge.note("预架：已经架着 → 只刷新新鲜度时间戳，不重新架")
+            }
             if !voice.arming {
                 voice.armIdle(reuseSession: KbVoiceHost.holdIsPlayRec) { err in
                     if let e = err {
@@ -3743,6 +3761,14 @@ final class KbVoiceHost {
     private var recToken = 0
     private var segs: Segments?
 
+    /// 🚨🚨🚨 0 09-15 真机第十遍抓到的新 P0：一条录音的共享区单号（`KbBridge.recSeq`）
+    ///    跟键盘对不上时（他 17:44 撞过、今晚录屏第十遍又撞了一次：连录 2 分 50 秒，
+    ///    键盘一直显示"宿主在录=false"——单号已经没了但引擎没人叫停），**没有任何
+    ///    机制会主动收尾**，只能 SIGKILL 主 App。用户后果：麦克风一直开着、
+    ///    电一直掉、后面每次按麦克风都拿不到音频，而普通用户不会想到"杀掉 App"
+    ///    这条路。见 `startTicketWatchdog`。
+    private var ticketWatchdog: Timer?
+
     /// **出稿失败时留着的那一段音频**，供「再点一次直接重发」用。
     ///
     /// 🚨 Kevin 2026-08-31：「已经录了，我不想再重新录一遍」。
@@ -3823,7 +3849,7 @@ final class KbVoiceHost {
         //    我在画中画上试的三轮（前台请求／退后台触发／等就绪）全部无效，
         //    留着只会让每次按下去**白等 8 秒**。
         //    🚨 「等不到就往下走」这种兜底不能当免死金牌 —— **等待本身就是代价**。
-        begin(seq: Self.jumpSeq, args: ["tone": tone, "mode": mode, "lang": lang])
+        begin(seq: KbBridge.jumpSeq, args: ["tone": tone, "mode": mode, "lang": lang])
     }
 
     /// **待命档下的起录** —— 只是打开闸门，不新建录音会话。
@@ -3862,6 +3888,7 @@ final class KbVoiceHost {
         // 🚨 这里**不再自增** —— `beginArmed` 只有 `begin` 一个调用点，而 `begin` 已经加过了；
         //    双加会让痕迹里的代际号跳着走，排查时误导人（交叉审查 低-1）。
         KbBridge.markRecording(true, seq: busySeq)
+        startTicketWatchdog(seq: busySeq)
         lastUseAt = Date()
         KbBridge.note("待命档：开闸留声音（没有新建录音，所以后台也成）")
         return true
@@ -4208,6 +4235,7 @@ final class KbVoiceHost {
         // 🚨 让**键盘**知道「现在正在录」—— 它随时会被销毁重建，
         //    唯一靠得住的地方是共享区，不是它自己的内存。
         KbBridge.markRecording(true, seq: busySeq)
+        startTicketWatchdog(seq: busySeq)
         // 🚨🚨 **起录那一刻的音频会话现场**（0 2026-08-29 点名要的三个数）。
         //    `Voice.diagnostics()` 早就打这些，但它**只挂在失败分支上** ——
         //    而这个 bug 走的是**成功分支**（录满 63 秒），所以一次都没打印过。
@@ -4670,6 +4698,24 @@ Backend.transcribe(wav: wav, rid: rid) { [weak self] t in
     ///       出稿链拿的是 `armedArgs`，而它在这一刻之后没有任何人会改。
     ///       **别在出稿回调里再去读当前档位**，那会把第二半破坏掉。
     func finish(args: [String: String] = [:]) {
+        // 🚨🚨🚨 0 09-16 12:3x 真机量死的 bug（Kevin：「这个引擎很不给力，很不稳定，
+        //    第二遍处理卡住 30 多秒还是没出来」）—— 不是慢，是**结果被我们自己扔了**：
+        //
+        //      12:38:51  键盘：停止                       ← 键盘把共享区单号清成 -1
+        //      12:38:53  开始润色：/api/llm 46 字
+        //      12:38:53  🚨 看门狗：录音在飞(seq=91)但共享区单号已经不是它了(现在=-1)
+        //      12:38:53  上一条录音已作废（他又按了一次）  ← 他根本没按，这行文案也是错的
+        //      12:38:55  润色回来时已经是下一条了（代际 3≠4），丢弃   ← 2 秒就回来了
+        //
+        //    `startTicketWatchdog` 是给「录音在飞却没人认领」用的，但它的存活条件是
+        //    `busySeq == seq`，而 `busySeq` 在**整个出稿过程**里都还是这条 —— 于是
+        //    它一路管到了「已经点停、正在出稿」那个窗口，而那个窗口里共享区单号
+        //    本来就该是 -1。它把一条正常录音作废、推掉代际号，回来的结果就成了过期货。
+        //
+        // 📌 又一次「判据的范围缺了一整块」：没区分【在录】和【录完了正在出稿】。
+        // 🚨 修法挂在这里而不是改看门狗的判据 —— 点停这一刻就是「不再算在录」的
+        //    唯一准确时刻；改判据等于再猜一次边界。
+        ticketWatchdog?.invalidate(); ticketWatchdog = nil
         // 🚨 只覆盖**给了的那几项**：停止命令没带某一项时保留开录时的值，
         //    不要拿空串把它冲掉（那会让语言退回 "en"，而他可能选的是日文）。
         if let m = args["mode"], let mode = Backend.Mode(rawValue: m) {
@@ -4757,6 +4803,9 @@ Backend.transcribe(wav: wav, rid: rid) { [weak self] t in
         busySeq = -1
         KbBridge.markRecording(false)
         recStartedAt = nil
+        // 🚨 看门狗自己会在下一拍因为 `busySeq` 变了而自行退出，这里主动
+        //    invalidate 只是让它别再空转到下一拍——不是必须的安全条件。
+        ticketWatchdog?.invalidate(); ticketWatchdog = nil
         // 🚨🚨 **待命档下不许 `voice.stop()`** —— 它会摘 tap、停引擎，
         //    而**后台再也起不回来**（iOS 不许后台新建录音）。
         //    表现会是：他按第二次想重说，结果引擎被拆了，
@@ -4771,6 +4820,38 @@ Backend.transcribe(wav: wav, rid: rid) { [weak self] t in
         voice.onLevel = nil
         KbBridge.clearLevels()
         KbBridge.note("上一条录音已作废（他又按了一次）")
+    }
+
+    /// 🚨🚨🚨 0 09-15 新 P0 的修法：录音在飞时，每 8 秒核一次共享区那个单号
+    /// （`KbBridge.recordingSeq()`）是不是还等于自己手上这个 `seq`——如果已经
+    /// 不是了（被清了、或者已经换成别的），说明**这条录音没有任何人能接得回去
+    /// 了**，主动 `cancelCurrent()` 收尾，不靠用户发现"怎么还在录"再去杀 App。
+    ///
+    /// 🚨 判据故意挂在"单号还对不对"，不挂在**时长**上——挂时长会误伤 Kevin
+    /// 要的合法长录音（分段录音最长 15 分钟是**已经上线的产品功能**，不是这次
+    /// 要拿掉的东西）；挂"单号还对不对"只会命中真正失联的那种，因为合法的长
+    /// 录音全程用的都是同一个单号，这条检查全程都会读到"对得上"，不会被误伤。
+    /// 🚨 用 `recToken` 做世代闸——换了一条新录音，旧的看门狗读到 `recToken`
+    /// 已经变了就自己退出，不需要任何外部代码显式去关它（同一条规矩只有一处
+    /// 判断，改成别处调用也不会漏）。
+    private func startTicketWatchdog(seq: Int) {
+        ticketWatchdog?.invalidate()
+        let myGen = recToken
+        ticketWatchdog = Timer.scheduledTimer(withTimeInterval: 8, repeats: true) {
+            [weak self] t in
+            guard let self = self else { t.invalidate(); return }
+            guard self.recToken == myGen, self.busySeq == seq else {
+                t.invalidate(); return
+            }
+            let shared = KbBridge.recordingSeq()
+            if shared != seq {
+                KbBridge.note("🚨 看门狗：录音在飞(seq=" + String(seq)
+                              + ")但共享区单号已经不是它了(现在=" + String(shared)
+                              + ")——没人能接回去了，主动收尾，不等他发现再去杀App")
+                t.invalidate()
+                self.cancelCurrent()
+            }
+        }
     }
 
     /// 出错那一刻主 App 在哪 —— 前台 / 后台 / 非活跃。
@@ -4800,8 +4881,10 @@ Backend.transcribe(wav: wav, rid: rid) { [weak self] t in
         return d.flatMap { String(data: $0, encoding: .utf8) } ?? ""
     }
 
-    /// 跳转路径的哨兵序号。**不是真命令**，键盘没发过任何命令。
-    static let jumpSeq = -99
+    // 🚨🚨 09-15 第十三遍：`jumpSeq` 常量搬去了 `KbBridge.jumpSeq`
+    //    （`Shared/KbBridge.swift`）——`markRecording` 的写入闸就在那边，
+    //    两处各存一份 `-99` 正是这次「跳转录音被自己的看门狗误杀」的病根之一。
+    //    这里不再重复定义，下面两处用 `KbBridge.jumpSeq`。
 
     /// 用留着的那段音频**重跑一次出稿**（他按了「再点一次」）。
     /// 🚨 复用 `uploadAndDeliver`，不新造第二条链。
@@ -4879,7 +4962,7 @@ Backend.transcribe(wav: wav, rid: rid) { [weak self] t in
         //    而且用户切回来时键盘很可能已经是新实例）。
         //    → 稿子改成"放一份在共享区，谁先回来谁取走"，
         //      跟「起录条子」同一个形状。**管线只有这一条，没复制第二份。**
-        if seq == Self.jumpSeq {
+        if seq == KbBridge.jumpSeq {
             if kind == "text",
                let d = body.data(using: .utf8),
                let j = try? JSONSerialization.jsonObject(with: d) as? [String: String],

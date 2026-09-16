@@ -601,6 +601,11 @@ final class KeyboardViewController: UIInputViewController {
         tabTranscribe.setTitle(L.kb_transcribe, for: .normal)
         langButton.setTitle(langTitle() + " ▾", for: .normal)
         histButton.accessibilityIdentifier = "kb.hist"     // UITest 用
+        // 🚨 0 09-16 第十八遍九镜栽在第 5 镜：语气按钮只在【翻译档】才显示
+        //    （`toneRow?.isHidden = !isTranslate`），而这两颗切档按钮从来
+        //    没设过 identifier —— 测试根本点不到翻译档，于是三个语气档全找不到。
+        tabTranslate.accessibilityIdentifier = "kb.tab.translate"
+        tabTranscribe.accessibilityIdentifier = "kb.tab.transcribe"
         // 🚨 量「这颗 chip 实际能占多少宽」要用它 —— 2.1 要这个数去送 Grok
         //    判「异常组合（葡→印尼 260pt）要不要退化、退化到什么程度」。
         langButton.accessibilityIdentifier = "kb.lang"
@@ -686,6 +691,13 @@ final class KeyboardViewController: UIInputViewController {
             b.tag = i
             b.addTarget(self, action: #selector(pickTone(_:)),
                         for: .touchUpInside)
+            // 🚨 0 09-15 九镜真机跑出来的：UITest 拿 "casual"/"work"/"email"
+            //    （`Prompts.all` 的内部 key）去 `buttons[...]` 找，一个都找不到——
+            //    这几个按钮从来没设过 `accessibilityIdentifier`，能被查到的只有
+            //    `.setTitle` 那个**本地化中文标题**（"随意"/"工作"/"邮件"）。
+            //    跟 `transless.mic`/`account.delete` 同一个规矩：给稳定的英文
+            //    identifier，别指望测试代码去猜或去认当前语言下的中文文案。
+            b.accessibilityIdentifier = "tone." + Prompts.all[i]
         }
         let toneRow = UIStackView(arrangedSubviews: toneButtons)
         toneRow.axis = .horizontal
@@ -1832,7 +1844,15 @@ final class KeyboardViewController: UIInputViewController {
         var orphaned = false
         if remoteSeq < 0 {
             let sq = KbBridge.recordingSeq()
-            if sq >= 0 {
+            // 🚨🚨🚨 09-16 00:5x：**这个洞今晚只修了一半，第十六遍栽在剩下那一半上。**
+            //    写入侧已经改成 `KbProtocol.shouldPersistRecSeq` 放行 `jumpSeq(-99)`，
+            //    但这里的读取侧还是 `sq >= 0` —— **-99 照样被挡在外面**，
+            //    于是键盘认为"这一单接不回来"(orphaned)，它的「停止」永远发不出去。
+            //    真机第十六遍：00:47:17 主App 真的起录了，00:47:36 测试点了停止，
+            //    而录音一路切到第 2 段、直到我 SIGKILL 才停 —— 正是 Kevin 17:44
+            //    "说了三分钟按停止没反应"那件事。
+            //    → 用跟写入侧**同一个纯函数**判，别在这儿另写一套条件。
+            if KbProtocol.shouldPersistRecSeq(sq, jumpSeq: KbBridge.jumpSeq) {
                 remoteSeq = sq
                 KbBridge.note("键盘：接回在飞的那一单 seq=" + String(sq))
             } else {
@@ -2942,6 +2962,12 @@ final class KeyboardViewController: UIInputViewController {
         // 🚨 秒表挂在 `setPhase` 这**一个**出口上 —— 进 thinking 就开、
         //    离开就停。44 个调用点各写一遍必漏一处。
         if p == .thinking { startThinkTicker() } else { stopThinkTicker() }
+        // 🚨 0/2.2 09-15 九镜真机录屏那晚补的：UITest 需要一个"真的在录了"的信号，
+        //    别再靠固定 `sleep` 猜——固定等待要么等短了（放音频的时候引擎还没起来，
+        //    9.8 秒真话被放给一台没在听的手机）要么等长了（浪费）。这个 value
+        //    只给测试读，跟 `transless.hist.row`/语言按钮拿 `accessibilityValue`
+        //    当状态载体是同一个规矩，不影响任何视觉/产品行为。
+        micButton.accessibilityValue = "phase." + String(describing: p)
         switch p {
         case .idle:
             micButton.setTitle("", for: .normal)
@@ -4461,6 +4487,13 @@ final class KeyboardViewController: UIInputViewController {
                 //    「拉不起主 App」，而引擎其实已经就地架好了。
                 //    宽松的 `default` 会把新 case 静默吞掉并**说假话**。
                 self.setPhase(.idle, hint: L.kb_rearming)
+                // 🚨🚨 09-15 追查 phase 进不了 listening 时找到的第二处漏口：
+                //    `tapMic()` 自己那条 `!hostAlive` 分支的 `.armedInPlace`
+                //    （3323 行）就地架好之后会调 `waitArmedThenRecord()` 接着录——
+                //    这里是**同一个 case 的第二个出口**，原来只改了提示就没了下文。
+                //    注释里那句「就地架好之后没有'回来'这个时刻，所以要在这儿自己等」
+                //    对这条路一样成立，漏掉等于让他多点一下才有反应。
+                self.waitArmedThenRecord()
             case .dispatched:
                 self.setPhase(.idle, hint: L.kb_rearming)
                 if let ctx = self.extensionContext {

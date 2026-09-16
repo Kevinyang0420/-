@@ -14,8 +14,14 @@ import Foundation
 ///      · 一条结果是不是回给我这一轮的（弄错 → 上一轮的结果插进这一轮）
 ///    这三条不碰存储，现在就能测 —— **别把"测不了跨进程"当成"什么都测不了"。**
 ///
-/// 自测：`swift Shared/KbProtocol.swift`（Mac 上直接跑，不用模拟器），
+/// 自测：`D:\_build\gate_kb_protocol.py`（Mac 上直接 `swiftc` 跑，不用模拟器），
 /// 或在 App 里调 `KbProtocol.selfTest()`。
+///
+/// 🚨 09-15 起 `selfTest()` 里有一条读 `KbBridge.jumpSeq`（单号常量的唯一来源，
+///    见 `Shared/KbBridge.swift`）——**跨文件引用**这一条不是这个文件自己能跑的
+///    单文件脚本了，`gate_kb_protocol.py` 已经把 `KbBridge.swift`/`VocabCore.swift`
+///    一并编进 swiftc 命令行；`KbBridge` 只 `import Foundation`，不碰
+///    UIKit/网络，standalone 编译没有额外代价。
 enum KbProtocol {
 
     // ------------------------------------------------------------ 命令去重
@@ -36,6 +42,21 @@ enum KbProtocol {
     ///    这种错**只在第二次使用时出现**，第一次测永远测不到。
     static func alignOnStandby(currentSeq: Int) -> Int {
         return currentSeq
+    }
+
+    // ------------------------------------------------------------ 单号该不该写共享区
+
+    /// 这个 `seq` 该不该写进共享区的「正在录」单号（`KbBridge.markRecording`）。
+    ///
+    /// 🚨🚨 09-15 真机第十三遍查出来的根因：这道闸原来是 `seq >= 0`，
+    ///    本意是**挡默认参数 `-1`**（没传 seq 的调用不该覆盖已有单号）——
+    ///    但跳转路径的哨兵 `jumpSeq`（`-99`）也 `< 0`，被一起挡在外面，
+    ///    从来没写进共享区。看门狗读回 `-1`、判成"没人认领"，
+    ///    把一条正在录、已经录了 7 秒的合法跳转录音主动作废掉。
+    ///    `-1` 是"没传"，`jumpSeq` 是一个**有意义的真单号**——两者都 `<0`
+    ///    不代表该同等对待，这条判断要把它们分开认。
+    static func shouldPersistRecSeq(_ seq: Int, jumpSeq: Int) -> Bool {
+        return seq >= 0 || seq == jumpSeq
     }
 
     // ------------------------------------------------------------ 宿主死活
@@ -80,6 +101,21 @@ enum KbProtocol {
            "刚打开待机时，残留的那条命令不该被当成新的")
         ck(isNewCommand(seq: 8, lastSeen: alignOnStandby(currentSeq: 7)),
            "对齐之后，真正的新命令仍然要收")
+
+        // --- 单号该不该写共享区
+        // 🚨🚨 0 09-15 当场点出来的：这里原来是本地 `let jumpSeq = -99`，
+        //    跟 `KbBridge.jumpSeq` 各存一份——注释里刚写完「别把逻辑抄两份」
+        //    自己就在魔数上犯了同一条。改用 `KbBridge.jumpSeq`，
+        //    这样 `KbBridge.jumpSeq` 改了值，这条自测跟着改，不用手动同步两处。
+        //    （`gate_kb_protocol.py` 的 swiftc 编译行已经把 `KbBridge.swift`
+        //    带进来，所以这里能直接引用它。）
+        ck(shouldPersistRecSeq(5, jumpSeq: KbBridge.jumpSeq), "正常单号(>=0)应该写")
+        ck(shouldPersistRecSeq(KbBridge.jumpSeq, jumpSeq: KbBridge.jumpSeq),
+           "🚨 跳转路径的哨兵单号也应该写——挡住它就是 09-15 那次真机误杀的根因")
+        ck(!shouldPersistRecSeq(-1, jumpSeq: KbBridge.jumpSeq),
+           "没传 seq 的默认值(-1)不该覆盖共享区已有单号")
+        ck(!shouldPersistRecSeq(-2, jumpSeq: KbBridge.jumpSeq),
+           "跟 jumpSeq 不同的其它负数照样不该写——只放行 jumpSeq 这一个特例")
 
         // --- 宿主死活
         let stale: TimeInterval = 6

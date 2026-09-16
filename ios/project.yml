@@ -358,6 +358,15 @@ targets:
       #    我一度以为重复了、删掉这条，UITests 当场编译失败。
       #    「清单里有」不等于「这个 target 里有」，别按文件名去重。
       - path: Shared/KbProtocol.swift
+      # 🚨🚨 09-16：`KbProtocol.selfTest()` 里有一条读 `KbBridge.jumpSeq`
+      #    （单号常量的唯一来源，0 09-15 点出别把它抄成第二份字面量之后改的）——
+      #    这两行不带的话 UITests target 编译报 "cannot find 'KbBridge' in scope"。
+      #    `KbBridge.swift` 只 `import Foundation`（见它文件头），需要的
+      #    `VocabCore.swift` 同理，两个都进测试包没有额外代价（`D:\_build\
+      #    gate_kb_protocol.py` 那条 standalone swiftc 闸门已经验过这两个文件
+      #    能干净编译，这里只是把同一件事在 Xcode target 里也接上）。
+      - path: Shared/KbBridge.swift
+      - path: Shared/VocabCore.swift
       - path: Shared/WordCard.swift
       # WordCard.fromDict 要它 —— DictEntry 也是纯模型
       - path: Shared/DictEntry.swift

@@ -572,6 +572,15 @@ enum KbBridge {
         return Date().timeIntervalSince(d) <= maxAge ? d : nil
     }
 
+    /// 跳转路径的哨兵序号。**不是真命令**，键盘没发过任何命令
+    /// （`beginJump()` 每次都用同一个常量，不是逐单递增）。
+    ///
+    /// 🚨🚨 09-15 真机第十三遍查出来的：这个常量原来只存在于 `KbVoiceHost`
+    ///    （App target），**`Shared/KbBridge.swift` 够不着，写死过一份 `-99`
+    ///    字面量当哨兵值用**——两处各抄一份，是今晚栽的同一族坑
+    ///    （改名/改值只改了一处）。提到这儿，两边共用同一个来源。
+    static let jumpSeq = -99
+
     /// - Parameter seq: 这一单的序号。**键盘被系统销毁后要靠它接回来**，
     ///   所以必须存进共享区 —— 存在键盘进程的内存里，进程一没就跟着没了。
     ///
@@ -582,10 +591,25 @@ enum KbBridge {
     ///    代码里"切走不撤单"那条判断只管**隐藏**，管不住**销毁**。
     ///    → 改成销毁也不撤单；那就必须让回来的那个新键盘知道
     ///      「宿主还在录，单号是几」，否则他按停止没有任何反应。
+    ///
+    /// 🚨🚨🚨 09-15 真机第十三遍：**跳转路合法录音被自己的看门狗误杀。**
+    ///    原来这里是 `if seq >= 0`——`jumpSeq = -99` 被这道闸挡在外面，
+    ///    从来没写进共享区；`recordingSeq()` 于是永远读回 `-1`，
+    ///    2.2 加的看门狗把它判成「seq 对不上、没人认领」，主动 `cancelCurrent()`，
+    ///    杀掉一段正在录、已经录了 7 秒的合法录音。
+    ///    `>= 0` 这道闸本意是**挡默认参数 `-1`**（没传 seq 的调用不该覆盖已有单号），
+    ///    不该连一起把 `jumpSeq` 也当成"没有单号"挡掉——`-99` 和 `-1` 都 `< 0`，
+    ///    但只有 `-1` 是"没传"，`jumpSeq` 是一个**有意义的真单号**。
     static func markRecording(_ on: Bool, seq: Int = -1) {
         if on {
             store?.set(Date().timeIntervalSince1970, forKey: K.recSince)
-            if seq >= 0 { store?.set(seq, forKey: K.recSeq) }
+            // 🚨 判断挪进 `KbProtocol`（纯函数、不碰存储、能在 Mac 上直接
+            //    `swiftc` 测）——这里只管调用，别把逻辑抄两份（09-15 那次
+            //    "两处各存一份 jumpSeq" 就是同一族坑）。见
+            //    `KbProtocol.shouldPersistRecSeq` 和 `gate_kb_protocol.py`。
+            if KbProtocol.shouldPersistRecSeq(seq, jumpSeq: jumpSeq) {
+                store?.set(seq, forKey: K.recSeq)
+            }
         } else {
             store?.removeObject(forKey: K.recSince)
             store?.removeObject(forKey: K.recSeq)

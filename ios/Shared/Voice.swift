@@ -141,6 +141,16 @@ final class Voice: NSObject {
     fileprivate var hbFrames = 0
     fileprivate var hbNext = 0
 
+    /// 🚨🚨🚨 0 09-16：`KbBridge.markArmed(true)` 的刷新节拍，**跟上面那对
+    ///    心跳计数分开**——日志多久打一条和"架着"这个信号多久刷新一次
+    ///    是两件事，绑在一起就是"日志频率"和"刷新频率"混成一件事
+    ///    （0 原话）。这对独立用 5 秒阈值，不管 `keeping` 是真录音还是纯待命
+    ///    都刷，**只要 tap 真收到数据就说明引擎真的还在跑**——
+    ///    跟心跳同一个道理：不用 Timer，Timer 在 tap 死掉之后照样会准时刷，
+    ///    那就是"永远不会失败的检查"，比没有还糟。
+    fileprivate var armFrames = 0
+    fileprivate var armNext = 0
+
     /// 🚨🚨 **全局：此刻有几个 `Voice` 实例真的在收音。**
     ///
     ///    立它的原因（2026-09-04 实测抓到）：`KbVoiceHost` 那个
@@ -626,6 +636,10 @@ final class Voice: NSObject {
         //    从上一段的秒数接着数，日志里那个「第 N 秒」就不是这一次的。
         hbFrames = 0
         hbNext = 0
+        // 🚨 `markArmed` 刷新节拍同理归零——新 tap 装上时旧阈值可能早超过了
+        //    当前帧数，不归零的话第一次刷新会拖到旧阈值那么远，白等一段。
+        armFrames = 0
+        armNext = 0
         Voice.recEnter()
         // 🚨 **参数和闭包签名一律写死类型** —— 不是风格，是修 CI 编译失败。
         //    2026-09-06 CI（macos-15 / Xcode 16）在这一行报
@@ -876,11 +890,43 @@ final class Voice: NSObject {
         //    没注入就打「?」，不猜。
         self.hbFrames += n
         if self.hbFrames >= self.hbNext {
-            self.hbNext = self.hbFrames + Int(Voice.SAMPLE_RATE * 5)
+            // 🚨🚨🚨 0 09-15 查出来的：trail 只有 201 行、环形覆盖，
+            //    待命期心跳每 5 秒一条，17 分钟就能把整个缓冲刷完一轮——
+            //    「键盘出现／按下麦克风／架引擎」这些真正要紧的行
+            //    在他去看之前就被这条噪声挤没了（0 原话：「不是没发生，
+            //    是证据在我看到之前被 App 自己的心跳挤出去了」）。
+            //    **App 自己的日志摧毁了自己的可诊断性。**
+            //    → 只有 `keeping`（真的在收真录音）才 5 秒一条；
+            //      纯待命（架着但转完就扔）降到 60 秒一条——
+            //      不是全关：09-15 那次冷启动实验能证实「引擎真架着、
+            //      没假死」，靠的正是待命期还留着的心跳，全关会连这个
+            //      都查不出来，变成"出事时更查不到"。
+            let periodSec: Double = self.keeping ? 5 : 60
+            self.hbNext = self.hbFrames + Int(Voice.SAMPLE_RATE * periodSec)
             let secs = Double(self.hbFrames) / Voice.SAMPLE_RATE
             KbBridge.note("录音心跳：第 " + String(Int(secs)) + " 秒｜累计帧="
                           + String(self.hbFrames) + "｜"
-                          + (Voice.appStateProbe?() ?? "?"))
+                          + (Voice.appStateProbe?() ?? "?")
+                          + (self.keeping ? "" : "｜待命(60秒一条)"))
+        }
+        // 🚨🚨🚨 0 09-16：**"架着"这个共享信号该由"引擎真的在跑"驱动，
+        //    不该是个 12 秒会过期的一次性时间戳。** 十四遍真机全废在同一处：
+        //    键盘按麦克风时读 `KbBridge.hostArmed(maxAge:12)`，而上一次刷新
+        //    可能是好几十秒前（切键盘那一步实测就要 ~21 秒）——引擎明明还在
+        //    跑，这个信号却报"没架"。修法不是拉长测试节奏去凑那 12 秒
+        //    （0 试过、发现凑不出来：拉回前台必然离开宿主 App，测试路根本
+        //    没有"刷新又不离开宿主"这个中间态），是让这个信号**自己跟上
+        //    引擎的真实状态**：tap 每收到一批数据就说明引擎真的还在跑，
+        //    顺手把时间戳刷新一次，就再也不会过期。
+        //    🚨 独立于上面的日志节拍（那个不管 5/60 秒都只是"要不要打印"，
+        //       这个是"信号新不新鲜"）——**别把这两件事绑成一个开关**。
+        //    🚨 判据挂在 tap 真收到帧上，跟心跳同一个道理：引擎死了 tap 不
+        //       会再涨，这里也就跟着停止刷新，`hostArmed()` 会在 12 秒后
+        //       自然过期变回 false——**这正是要的反向控制**，不用另外写。
+        self.armFrames += n
+        if self.armFrames >= self.armNext {
+            self.armNext = self.armFrames + Int(Voice.SAMPLE_RATE * 5)
+            KbBridge.markArmed(true)
         }
         // 🚨🚨 **待命档：转完就扔，不进缓冲。**
         //    这是整套「不跳转」的地基：iOS **不许后台从零开始录音**
@@ -1283,6 +1329,23 @@ final class Voice: NSObject {
             Voice.confirmUnmuted(coldStart: coldStart)
         }
         keeping = true
+        // 🚨🚨🚨 0 09-15 真机第十二遍查出来的：`hbFrames`/`hbNext`（「录音心跳：
+        //    第 N 秒」那个计数）**只在 `installTap` 装新 tap 时才归零**（那段代码
+        //    自己的注释也写着"不归零的话第二段录音会从上一段的秒数接着数"）——
+        //    但 `beginKeep()` 复用的是**已经架好的待命档引擎**，根本不会重新装
+        //    tap，这条归零逻辑走不到。结果：心跳报的"第 N 秒"是**从 tap 第一次
+        //    装上算起的累计**，可能含着待命期间（静音、`keeping=false`，
+        //    帧被丢弃但计数照跳）的时间，不是"这一条录音真的录了多久"。
+        //    0 用这条日志去判断某次录音是不是"卡死了"，这个偏差会直接带偏结论——
+        //    这里 `beginKeep()` 成功、真的要开始收音的那一刻，同样把它归零。
+        hbFrames = 0
+        hbNext = 0
+        // 🚨 `markArmed` 刷新节拍不是必须在这儿归零（不归零也至多晚5秒刷新一次，
+        //    无害），但跟 hbFrames/hbNext 这对兄弟计数保持同样的重置点，
+        //    别留一个"看起来该归零却没归零"的特例，省得下一个人来查这段
+        //    时多想一层。
+        armFrames = 0
+        armNext = 0
         return nil
     }
 

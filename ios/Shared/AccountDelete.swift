@@ -108,11 +108,47 @@ enum AccountDelete {
             if let en = obj["enabled"] as? Bool, en == false {
                 return done(.failure(.notEnabled((obj["reason"] as? String) ?? "")))
             }
-            guard code == 200 else {
+            // 🚨🚨🚨 0 09-16 13:1x 真机抓到的：服务端（网关）回的是 **HTTP 202**，
+            //    而这里只认 200 —— 于是在**删账号**这条最敏感的流程上，
+            //    屏幕上写的是「没成功，再试一次」。用户会以为没删、再点一次。
+            //    痕迹原文：`删账号失败：HTTP 202｜`（body 是空的）。
+            //
+            // 🚨 但修法**不是**把 202 也放进白名单 —— 那还是拿状态码当结论。
+            //    202 是网关的「已受理」异步回执，**不代表处理完了**：
+            //    这次 202 回来之后 `del.cancel` 并没有出现，说明删号其实没生效。
+            //    → 2xx 只当「请求送到了」，**真正的判据是回头读一次状态**
+            //      （`stage == pending` 才算受理成功）。跟今天别处同一条规矩：
+            //      判观察到的状态，不判「我发出去了」。
+            guard (200...299).contains(code) else {
                 return done(.failure(.http(code, (obj["error"] as? String)
                                            ?? (obj["reason"] as? String) ?? "")))
             }
-            done(.success(obj))
+            if code == 200 && !obj.isEmpty { return done(.success(obj)) }
+            // 🚨 只有 **POST**（发码/确认/撤销）才回头核状态。
+            //    `status()` 自己也走这个 `send`，GET 再递归进来就是死循环。
+            guard method != "GET" else { return done(.success(obj)) }
+            // 🚨 **只有「确认删除」和「撤销」才该用 stage 当判据。**
+            //    发验证码那一步成功之后状态本来就还是 `none` —— 拿 pending 去要求它，
+            //    等于给一个【永远不可能通过】的判据（我自己列过的假检查形态之一，
+            //    差点在同一小时里现造一个）。
+            let expectsPending = (body?["code"] != nil)
+            let expectsNone = (body?["cancel"] != nil)
+            guard expectsPending || expectsNone else { return done(.success(obj)) }
+            // 202 / 或 200 但空 body：回头核一次真实状态，别拿回执当结果
+            status { st in
+                switch st {
+                case .pending:
+                    if expectsPending { done(.success(obj.isEmpty ? ["stage": "pending"] : obj)) }
+                    else { done(.failure(.http(code, "撤销回了 " + String(code)
+                                               + "，但状态还是 pending —— 没真的撤掉"))) }
+                case .none, .anon:
+                    if expectsNone { done(.success(obj.isEmpty ? ["stage": "none"] : obj)) }
+                    else { done(.failure(.http(code, "服务端回了 " + String(code)
+                                               + " 但状态仍不是 pending —— 请求没真的落下去"))) }
+                case .notEnabled(let why):
+                    done(.failure(.notEnabled(why)))
+                }
+            }
         }.resume()
     }
 }
