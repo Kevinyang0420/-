@@ -261,6 +261,13 @@ final class HistoryListViewController: UIViewController {
         navigationController?.setNavigationBarHidden(false, animated: animated)
         // 🚨 每次进来都重读盘 —— 键盘那边可能刚加了新的一条。
         refresh()
+        // 🚨🚨 Kevin 09-17 实测抓到：这一屏是 tab 常驻的，`viewDidLoad` 只跑一次，
+        //    而 `paintSync()` 原来只在那里调用一次。从隐私页关掉同步、切回来，
+        //    `HistSync.oneOffDone` 早被 `turnOff()` 复位成 false 了，
+        //    但这一屏的复选框行**从没重新读过这个状态**，停在关同步之前那个
+        //    「已收起」的画面——用户看到的是「根本没有入口」，其实是**没重画**，
+        //    不是没有路。每次进来都要照当前状态重画一次。
+        paintSync()
     }
 
     override func viewDidLayoutSubviews() {
