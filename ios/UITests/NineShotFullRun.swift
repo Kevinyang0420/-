@@ -552,10 +552,40 @@ final class NineShotFullRun: XCTestCase {
                 let typed = (code.value as? String) ?? ""
                 NSLog("NSFR 第8镜：验证码框读回=「%@」", typed)
                 XCTAssertEqual(typed, "583920", "第8镜：验证码没打进 del.code，点确认没意义")
+                // 🚨🚨 0 09-16 13:4x 第 38 遍：发码到了、验证码也确实填进去了、
+                //    按钮也不是灰的 —— 可 hint 纹丝不动。因为**填完码软键盘还杵在那儿，
+                //    正好盖住确认按钮**；XCUITest 按元素坐标点，元素在键盘底下也照点，
+                //    点到的是键盘。`isEnabled` 真、`isHittable` 假。
+                // 📌 「能点」和「点得到」是两件事 —— 判据要挂在后者上。
                 let confirm = app4.buttons["del.confirm"]
                 XCTAssertTrue(confirm.waitForExistence(timeout: 6), "第8镜：找不到 del.confirm")
+                if !confirm.isHittable {
+                    NSLog("NSFR 第8镜：确认按钮被挡住了（多半是软键盘），先收键盘")
+                    if app4.keyboards.buttons["return"].exists {
+                        app4.keyboards.buttons["return"].tap()
+                    } else if app4.keyboards.buttons["换行"].exists {
+                        app4.keyboards.buttons["换行"].tap()
+                    } else {
+                        app4.staticTexts["del.body"].tap()   // 点正文收键盘
+                    }
+                    Thread.sleep(forTimeInterval: 1.0)
+                }
+                NSLog("NSFR 第8镜：确认按钮 可点=%@ 点得到=%@",
+                      confirm.isEnabled ? "是" : "否", confirm.isHittable ? "是" : "否")
                 XCTAssertTrue(confirm.isEnabled, "第8镜：确认按钮是灰的（填码之后本该可点）")
+                XCTAssertTrue(confirm.isHittable, "第8镜：确认按钮点不到（被挡着），点了也是白点")
                 confirm.tap()
+                // 🚨🚨🚨 0 09-16 13:5x 第 39 遍查出来的：点 `del.confirm` 之后**还有一层
+                //    系统确认弹框**（`tapConfirm` 里 present 的 UIAlertController，
+                //    「取消 / 确认删除账号」），真正发请求的是弹框里那个 destructive。
+                //    测试从来没点过那一层 —— 所以按钮可点、点得到、也点了，
+                //    而 hint 连变都没变。**「点到了按钮」不等于「动作发生了」。**
+                //    （产品这么设计是对的：删号该二次确认。录屏里也会拍到这一层。）
+                let alertOK = app4.alerts.buttons["确认删除账号"]
+                XCTAssertTrue(alertOK.waitForExistence(timeout: 8),
+                              "第8镜：二次确认弹框没出来（或按钮文案变了）")
+                alertOK.tap()
+                NSLog("NSFR 第8镜：二次确认弹框已点「确认删除账号」")
                 var hint = ""
                 for _ in 0..<25 {
                     Thread.sleep(forTimeInterval: 1.0)
