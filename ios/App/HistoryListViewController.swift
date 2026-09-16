@@ -48,6 +48,12 @@ final class HistoryListViewController: UIViewController {
     /// 同步那一行**隐藏时**用的：标签直接贴安全区顶，**不给它留位置**。
     private var tabsTopNoRow: NSLayoutConstraint!
     private let syncLabel = UILabel()
+    /// 🚨 09-16 Kevin 亲口：「同步那里有点太不明显了，别人看上去都不知道这个是
+    ///    要点的」—— 加箭头 + 换成按钮式配色，**照抄这个 App 里已经在用、他看过点头的
+    ///    两套样式**，不新配色（他定过「你不要自己设计了」）：
+    ///      · `Theme.accent` 实心底 + 白字 ＝照抄 `SubscribeViewController.subscribeBtn`
+    ///      · 尾部箭头 ＝照抄 `AccountViewController.memberRow()` 那个 RTL-aware chevron
+    private let syncChevron = UILabel()
 
     private let scroll = UIScrollView()
     private let stack = UIStackView()
@@ -101,24 +107,39 @@ final class HistoryListViewController: UIViewController {
         view.addSubview(tabs)
 
         // 上云那一行 —— **一直在**，不因为他没点就消失。
-        syncRow.backgroundColor = Theme.key
+        // 🚨 09-16 改成按钮式：实心 accent 底 + 白字 + 尾部箭头，
+        //    原来是 `Theme.key`（跟卡片底色一样淡）+ `Theme.dim` 灰字，
+        //    看不出是能点的东西。
+        syncRow.backgroundColor = Theme.accent
         syncRow.layer.cornerRadius = 14
         syncRow.accessibilityIdentifier = "hist.sync.row"
         syncRow.translatesAutoresizingMaskIntoConstraints = false
-        syncLabel.font = .systemFont(ofSize: 14)
+        syncLabel.font = .systemFont(ofSize: 14.5, weight: .semibold)
+        syncLabel.textColor = .white
         syncLabel.numberOfLines = 0
         syncLabel.translatesAutoresizingMaskIntoConstraints = false
         syncRow.addSubview(syncLabel)
+        // 尾部箭头：跟 `AccountViewController.memberRow()` 同一份写法，
+        // 同一个 App 里"这一行能点进去"统一用这个符号，不再造一个新的提示方式。
+        syncChevron.text = UIView.userInterfaceLayoutDirection(for: .unspecified)
+            == .rightToLeft ? "‹" : "›"
+        syncChevron.textColor = .white
+        syncChevron.font = .systemFont(ofSize: 18, weight: .semibold)
+        syncChevron.translatesAutoresizingMaskIntoConstraints = false
+        syncRow.addSubview(syncChevron)
         syncRow.addTarget(self, action: #selector(tapSync), for: .touchUpInside)
         view.addSubview(syncRow)
         NSLayoutConstraint.activate([
-            syncLabel.topAnchor.constraint(equalTo: syncRow.topAnchor, constant: 10),
+            syncLabel.topAnchor.constraint(equalTo: syncRow.topAnchor, constant: 12),
             syncLabel.bottomAnchor.constraint(equalTo: syncRow.bottomAnchor,
-                                              constant: -10),
+                                              constant: -12),
             syncLabel.leadingAnchor.constraint(equalTo: syncRow.leadingAnchor,
                                                constant: 14),
-            syncLabel.trailingAnchor.constraint(equalTo: syncRow.trailingAnchor,
-                                                constant: -14),
+            syncLabel.trailingAnchor.constraint(equalTo: syncChevron.leadingAnchor,
+                                                constant: -8),
+            syncChevron.trailingAnchor.constraint(equalTo: syncRow.trailingAnchor,
+                                                  constant: -14),
+            syncChevron.centerYAnchor.constraint(equalTo: syncRow.centerYAnchor),
         ])
         // 🚨🚨 **藏起来还占位** —— Kevin 09-07：「已同步完之后，为什么它还在
         //    上面留这么大的空间呢？这个时候就该把空间往上移一点了嘛」
@@ -200,7 +221,10 @@ final class HistoryListViewController: UIViewController {
         }
         setSyncRow(visible: true)
         syncLabel.text = L.hs_title + " · " + L.hs_off_now
-        syncLabel.textColor = Theme.dim
+        // 🚨 09-16：底色现在是实心 `Theme.accent`，文字**固定白色**——
+        //    不再跟着状态换文字颜色（原来换成 `Theme.dim`/`.systemGreen`
+        //    在实心底上会读不清）。状态差异靠文字内容本身区分。
+        syncLabel.textColor = .white
     }
 
     /// **同步那一行显示/隐藏的唯一出口。**
@@ -222,7 +246,8 @@ final class HistoryListViewController: UIViewController {
     /// 🚨 绿勾用 `.systemGreen` —— **不自己配色**（他定过「你不要自己设计了」）。
     private func runSyncedAnimation() {
         syncLabel.text = L.hs_syncing
-        syncLabel.textColor = Theme.accent
+        // 🚨 09-16：底色是实心 `Theme.accent`，文字全程白色，不再换色——
+        //    状态差异靠文字内容（"正在传"→"✓ 已同步"）区分。
         // 🚨 这里没有真的"传完"的信号可等（上传端点还没接）——
         //    所以这一段是**按时间走的**，不是按真实进度。
         //    **等 1.1 的上传端点上线后要改成等真信号**，否则它跟
@@ -230,7 +255,6 @@ final class HistoryListViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
             guard let self = self else { return }
             self.syncLabel.text = "✓ " + L.hs_synced
-            self.syncLabel.textColor = .systemGreen
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                 // 🚨🚨 **收起这一步原来是"噔一下"跳上去的**（Kevin 09-07 亲口：
                 //    「现在的画面像楼梯一样噔一下直接跳上去了，有点太草台」）。
