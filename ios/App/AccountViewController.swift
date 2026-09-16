@@ -101,7 +101,7 @@ final class AccountViewController: PushedViewController {
 
         // 🚨🚨 **删除账号入口**（0 台账 #72，**卡 iOS 提交**）。
         //    App Store 明确要求 App 内可达 —— 网页那条（已上线）不算。
-        //    点这个按钮进 `:144` 的 `openDelete()` → `DeleteAccountViewController`，
+        //    点这个按钮进下面的 `openDelete()` → `DeleteAccountViewController`，
         //    三端均已接。文案对应 `hs_ask_3`（同步确认弹窗上的删号承诺）。
         //
         //    🚨 放在退出登录**上面**：删除比退出更重，但退出是更常用的那个，
