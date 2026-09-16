@@ -322,6 +322,13 @@ final class HistoryListViewController: UIViewController {
     /// 🚨 1.2 秒是 2.1 定的、**不是他说的**，真机给他看一眼再调。
     /// 🚨 绿勾用 `.systemGreen` —— **不自己配色**（他定过「你不要自己设计了」）。
     private func runSyncedAnimation() {
+        // 🚨🚨 09-16 2.1 推演揪出的 race：这段动画跑的 ~2.4 秒里 `HistSync.isOn`
+        //    已经是 true 了（`askBacklog()` 在调 `runSyncedAnimation()` 之前就
+        //    `HistSync.set(true)` 了），而复选框这时候还在响应点击——
+        //    这时候点一下会走 `tapSync()` 的【关闭】分支，把刚打开的同步关掉，
+        //    用户完全不知道自己点掉了什么。锁掉交互，动画收尾时（跟checkbox/label
+        //    复位同一个completion）再放开——**别忘了放开，锁死了才是更糟的那种bug**。
+        syncCheckbox.isEnabled = false
         // 🚨 09-16：勾**点下去那一刻就打上**（Grok 方案："用户点一下复选框后打上勾"，
         //    不是等同步跑完才打勾）。文字还是走"正在传→已同步"叙事，
         //    跟以前一样只是**按钮底色换文字色**这条老办法废了——现在勾本身就是状态。
@@ -367,6 +374,9 @@ final class HistoryListViewController: UIViewController {
                         //    已经打勾、写着"已同步"的行（那会像是"这次没生效"）。
                         self.syncLabel.text = L.hs_title + " · " + L.hs_off_now
                         self.paintCheckbox(checked: false)
+                        // 🚨 反向控制配对：锁在动画开头，必须在这唯一的收尾点解锁，
+                        //    别漏掉——漏了这一行会把复选框永久锁死，比原来那个 race 更糟。
+                        self.syncCheckbox.isEnabled = true
                     })
                 })
             }
