@@ -42,18 +42,26 @@ final class HistoryListViewController: UIViewController {
     ///    不然他在哪儿点？」）。
     ///    规格 `_规格_历史同步开关UI_20260906.md` 原来写的是"设置页隐私组"，
     ///    **以他最后说的为准**。
-    private let syncRow = UIControl()
+    /// 🚨 09-16 二次改版。第一版（`Theme.accent` 实心底 + 箭头，照抄app内已有样式）
+    ///    Kevin 当场打回：「这个是找Grok设计的吗？怎么还是很丑」——那版是我自己抄的，
+    ///    没真的问过 Grok。这版是**真的**发给 Grok（深紫玻璃拟态主题 + 现有四色）
+    ///    要的方案，出了 mockup 给他看过、他点头「可以，就按照这个做吧」才写的。
+    ///    `syncRow` 现在是纯容器（不可点，靠 border+阴影），真正能点的只有
+    ///    `syncCheckbox`（44pt热区，比 20pt 的视觉方块大，方便手指点）。
+    private let syncRow = UIView()
     /// 同步那一行**显示时**用的：标签排在它下面。
     private var tabsTopWithRow: NSLayoutConstraint!
     /// 同步那一行**隐藏时**用的：标签直接贴安全区顶，**不给它留位置**。
     private var tabsTopNoRow: NSLayoutConstraint!
     private let syncLabel = UILabel()
-    /// 🚨 09-16 Kevin 亲口：「同步那里有点太不明显了，别人看上去都不知道这个是
-    ///    要点的」—— 加箭头 + 换成按钮式配色，**照抄这个 App 里已经在用、他看过点头的
-    ///    两套样式**，不新配色（他定过「你不要自己设计了」）：
-    ///      · `Theme.accent` 实心底 + 白字 ＝照抄 `SubscribeViewController.subscribeBtn`
-    ///      · 尾部箭头 ＝照抄 `AccountViewController.memberRow()` 那个 RTL-aware chevron
-    private let syncChevron = UILabel()
+    /// 玻璃底：Grok 方案指定 `.systemUltraThinMaterialDark`，上面叠 accent/白两层薄色。
+    private let syncGlass = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialDark))
+    /// 44×44 的可点区域（比视觉方块大，热区标准做法），只挂在这一个控件上。
+    private let syncCheckbox = UIControl()
+    /// 20×20 的可见方块——圆角方（6pt），不是圆形。未选=空心紫描边，已选=实心紫底。
+    private let syncCheckboxBox = UIView()
+    /// 打勾符号，只在"已选"状态显示。
+    private let syncCheckmark = UIImageView()
 
     private let scroll = UIScrollView()
     private let stack = UIStackView()
@@ -107,39 +115,96 @@ final class HistoryListViewController: UIViewController {
         view.addSubview(tabs)
 
         // 上云那一行 —— **一直在**，不因为他没点就消失。
-        // 🚨 09-16 改成按钮式：实心 accent 底 + 白字 + 尾部箭头，
-        //    原来是 `Theme.key`（跟卡片底色一样淡）+ `Theme.dim` 灰字，
-        //    看不出是能点的东西。
-        syncRow.backgroundColor = Theme.accent
-        syncRow.layer.cornerRadius = 14
+        // 🚨 09-16 三版：Grok 出的方案——单行矮条（40pt）、深色玻璃拟态、
+        //    右边一个真的方形复选框，不是按钮不是箭头。配色全部落在现有四色上，
+        //    没有引入任何新色相（Theme.accent/text/dim + 白/黑，都是已有常量）。
+        syncRow.backgroundColor = .clear
+        syncRow.layer.cornerRadius = 12
+        syncRow.layer.borderWidth = 1
+        syncRow.layer.borderColor = Theme.text.withAlphaComponent(0.12).cgColor
+        syncRow.clipsToBounds = true
         syncRow.accessibilityIdentifier = "hist.sync.row"
         syncRow.translatesAutoresizingMaskIntoConstraints = false
-        syncLabel.font = .systemFont(ofSize: 14.5, weight: .semibold)
-        syncLabel.textColor = .white
-        syncLabel.numberOfLines = 0
+
+        syncGlass.translatesAutoresizingMaskIntoConstraints = false
+        syncRow.addSubview(syncGlass)
+        // 玻璃上叠两层薄色（Grok：accent@0.10 + 白@0.06），铺满整个玻璃层。
+        let syncTint = UIView()
+        syncTint.backgroundColor = Theme.accent.withAlphaComponent(0.10)
+        syncTint.translatesAutoresizingMaskIntoConstraints = false
+        syncGlass.contentView.addSubview(syncTint)
+        let syncBright = UIView()
+        syncBright.backgroundColor = UIColor.white.withAlphaComponent(0.06)
+        syncBright.translatesAutoresizingMaskIntoConstraints = false
+        syncGlass.contentView.addSubview(syncBright)
+        NSLayoutConstraint.activate([
+            syncTint.topAnchor.constraint(equalTo: syncGlass.contentView.topAnchor),
+            syncTint.leadingAnchor.constraint(equalTo: syncGlass.contentView.leadingAnchor),
+            syncTint.trailingAnchor.constraint(equalTo: syncGlass.contentView.trailingAnchor),
+            syncTint.bottomAnchor.constraint(equalTo: syncGlass.contentView.bottomAnchor),
+            syncBright.topAnchor.constraint(equalTo: syncGlass.contentView.topAnchor),
+            syncBright.leadingAnchor.constraint(equalTo: syncGlass.contentView.leadingAnchor),
+            syncBright.trailingAnchor.constraint(equalTo: syncGlass.contentView.trailingAnchor),
+            syncBright.bottomAnchor.constraint(equalTo: syncGlass.contentView.bottomAnchor),
+        ])
+
+        syncLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        syncLabel.textColor = Theme.dim
+        // 🚨 Kevin 09-16：「不要换行，显得很粗、很高」—— 单行 + 尾部截断，
+        //    条高固定 40pt，不再由文字撑高。
+        syncLabel.numberOfLines = 1
+        syncLabel.lineBreakMode = .byTruncatingTail
         syncLabel.translatesAutoresizingMaskIntoConstraints = false
         syncRow.addSubview(syncLabel)
-        // 尾部箭头：跟 `AccountViewController.memberRow()` 同一份写法，
-        // 同一个 App 里"这一行能点进去"统一用这个符号，不再造一个新的提示方式。
-        syncChevron.text = UIView.userInterfaceLayoutDirection(for: .unspecified)
-            == .rightToLeft ? "‹" : "›"
-        syncChevron.textColor = .white
-        syncChevron.font = .systemFont(ofSize: 18, weight: .semibold)
-        syncChevron.translatesAutoresizingMaskIntoConstraints = false
-        syncRow.addSubview(syncChevron)
-        syncRow.addTarget(self, action: #selector(tapSync), for: .touchUpInside)
+
+        syncCheckboxBox.layer.cornerRadius = 6   // 圆角方，不是圆——Grok 方案明确写的
+        syncCheckboxBox.isUserInteractionEnabled = false
+        syncCheckboxBox.translatesAutoresizingMaskIntoConstraints = false
+        syncRow.addSubview(syncCheckboxBox)
+
+        syncCheckmark.image = UIImage(
+            systemName: "checkmark",
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: 11, weight: .semibold))
+        syncCheckmark.tintColor = Theme.text
+        syncCheckmark.contentMode = .center
+        syncCheckmark.isHidden = true    // 未选中时不画勾
+        syncCheckmark.translatesAutoresizingMaskIntoConstraints = false
+        syncCheckboxBox.addSubview(syncCheckmark)
+
+        // 🚨 **只有这个 44×44 控件能点**，`syncRow` 本身不再是 UIControl——
+        //    Grok 方案原话「只让 checkbox（含 44pt 热区）响应点击」。
+        //    视觉方块只有 20pt，热区做大是标准触控做法，不是我加的花样。
+        syncCheckbox.accessibilityIdentifier = "hist.sync.checkbox"
+        syncCheckbox.translatesAutoresizingMaskIntoConstraints = false
+        syncCheckbox.addTarget(self, action: #selector(tapSync), for: .touchUpInside)
+        syncRow.addSubview(syncCheckbox)
+
         view.addSubview(syncRow)
         NSLayoutConstraint.activate([
-            syncLabel.topAnchor.constraint(equalTo: syncRow.topAnchor, constant: 12),
-            syncLabel.bottomAnchor.constraint(equalTo: syncRow.bottomAnchor,
-                                              constant: -12),
-            syncLabel.leadingAnchor.constraint(equalTo: syncRow.leadingAnchor,
-                                               constant: 14),
-            syncLabel.trailingAnchor.constraint(equalTo: syncChevron.leadingAnchor,
-                                                constant: -8),
-            syncChevron.trailingAnchor.constraint(equalTo: syncRow.trailingAnchor,
-                                                  constant: -14),
-            syncChevron.centerYAnchor.constraint(equalTo: syncRow.centerYAnchor),
+            syncGlass.topAnchor.constraint(equalTo: syncRow.topAnchor),
+            syncGlass.leadingAnchor.constraint(equalTo: syncRow.leadingAnchor),
+            syncGlass.trailingAnchor.constraint(equalTo: syncRow.trailingAnchor),
+            syncGlass.bottomAnchor.constraint(equalTo: syncRow.bottomAnchor),
+
+            syncRow.heightAnchor.constraint(equalToConstant: 40),
+
+            syncCheckboxBox.trailingAnchor.constraint(equalTo: syncRow.trailingAnchor, constant: -12),
+            syncCheckboxBox.centerYAnchor.constraint(equalTo: syncRow.centerYAnchor),
+            syncCheckboxBox.widthAnchor.constraint(equalToConstant: 20),
+            syncCheckboxBox.heightAnchor.constraint(equalToConstant: 20),
+
+            syncCheckmark.centerXAnchor.constraint(equalTo: syncCheckboxBox.centerXAnchor),
+            syncCheckmark.centerYAnchor.constraint(equalTo: syncCheckboxBox.centerYAnchor),
+
+            syncCheckbox.centerXAnchor.constraint(equalTo: syncCheckboxBox.centerXAnchor),
+            syncCheckbox.centerYAnchor.constraint(equalTo: syncCheckboxBox.centerYAnchor),
+            syncCheckbox.widthAnchor.constraint(equalToConstant: 44),
+            syncCheckbox.heightAnchor.constraint(equalToConstant: 44),
+
+            syncLabel.centerYAnchor.constraint(equalTo: syncRow.centerYAnchor),
+            syncLabel.leadingAnchor.constraint(equalTo: syncRow.leadingAnchor, constant: 14),
+            syncLabel.trailingAnchor.constraint(
+                lessThanOrEqualTo: syncCheckboxBox.leadingAnchor, constant: -12),
         ])
         // 🚨🚨 **藏起来还占位** —— Kevin 09-07：「已同步完之后，为什么它还在
         //    上面留这么大的空间呢？这个时候就该把空间往上移一点了嘛」
@@ -221,10 +286,22 @@ final class HistoryListViewController: UIViewController {
         }
         setSyncRow(visible: true)
         syncLabel.text = L.hs_title + " · " + L.hs_off_now
-        // 🚨 09-16：底色现在是实心 `Theme.accent`，文字**固定白色**——
-        //    不再跟着状态换文字颜色（原来换成 `Theme.dim`/`.systemGreen`
-        //    在实心底上会读不清）。状态差异靠文字内容本身区分。
-        syncLabel.textColor = .white
+        paintCheckbox(checked: false)
+    }
+
+    /// 复选框的两态——Grok 方案定的颜色值，逐条照抄：
+    ///   未选＝空心，`accent` 描边 1.5pt @0.85、底填 `text` @0.06、不画勾；
+    ///   已选＝实心 `accent`、勾用 `text` 色。
+    private func paintCheckbox(checked: Bool) {
+        if checked {
+            syncCheckboxBox.backgroundColor = Theme.accent
+            syncCheckboxBox.layer.borderWidth = 0
+        } else {
+            syncCheckboxBox.backgroundColor = Theme.text.withAlphaComponent(0.06)
+            syncCheckboxBox.layer.borderWidth = 1.5
+            syncCheckboxBox.layer.borderColor = Theme.accent.withAlphaComponent(0.85).cgColor
+        }
+        syncCheckmark.isHidden = !checked
     }
 
     /// **同步那一行显示/隐藏的唯一出口。**
@@ -245,16 +322,18 @@ final class HistoryListViewController: UIViewController {
     /// 🚨 1.2 秒是 2.1 定的、**不是他说的**，真机给他看一眼再调。
     /// 🚨 绿勾用 `.systemGreen` —— **不自己配色**（他定过「你不要自己设计了」）。
     private func runSyncedAnimation() {
+        // 🚨 09-16：勾**点下去那一刻就打上**（Grok 方案："用户点一下复选框后打上勾"，
+        //    不是等同步跑完才打勾）。文字还是走"正在传→已同步"叙事，
+        //    跟以前一样只是**按钮底色换文字色**这条老办法废了——现在勾本身就是状态。
+        paintCheckbox(checked: true)
         syncLabel.text = L.hs_syncing
-        // 🚨 09-16：底色是实心 `Theme.accent`，文字全程白色，不再换色——
-        //    状态差异靠文字内容（"正在传"→"✓ 已同步"）区分。
         // 🚨 这里没有真的"传完"的信号可等（上传端点还没接）——
         //    所以这一段是**按时间走的**，不是按真实进度。
         //    **等 1.1 的上传端点上线后要改成等真信号**，否则它跟
         //    `hs_on_now` 是同一个病：进行时的文案对不上真实进行。
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
             guard let self = self else { return }
-            self.syncLabel.text = "✓ " + L.hs_synced
+            self.syncLabel.text = L.hs_synced
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                 // 🚨🚨 **收起这一步原来是"噔一下"跳上去的**（Kevin 09-07 亲口：
                 //    「现在的画面像楼梯一样噔一下直接跳上去了，有点太草台」）。
@@ -283,6 +362,11 @@ final class HistoryListViewController: UIViewController {
                         self.view.layoutIfNeeded()      // ← 必须在块【内】
                     }, completion: { _ in
                         self.syncRow.alpha = 1          // 复位，下次还能用
+                        // 🚨 连文字带勾一起复位回"未选"态——万一他从隐私政策页
+                        //    反勾选、这一行将来又冒出来，看到的不能是一个
+                        //    已经打勾、写着"已同步"的行（那会像是"这次没生效"）。
+                        self.syncLabel.text = L.hs_title + " · " + L.hs_off_now
+                        self.paintCheckbox(checked: false)
                     })
                 })
             }
