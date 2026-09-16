@@ -151,13 +151,34 @@ final class NotesViewController: PushedViewController, UITextFieldDelegate {
         let tap = TapNote(target: self, action: #selector(tapRow(_:)))
         tap.id = it.id
         box.addGestureRecognizer(tap)
+        let hold = HoldNote(target: self, action: #selector(holdRow(_:)))
+        hold.id = it.id
+        box.addGestureRecognizer(hold)
         return box
     }
 
     // MARK: - 编辑
 
+    /// 🚨 点一下＝看/改正文（0 台账点名：存进去了但点不进去看正文）。
+    ///    照抄 `WordBookViewController:392` 的调法——同一个
+    ///    `NoteEditViewController`，同样只回文本、由调用方决定怎么写回。
     @objc private func tapRow(_ g: TapNote) {
         guard let it = Notes.list().first(where: { $0.id == g.id }) else { return }
+        let vc = NoteEditViewController(word: it.title, note: it.body)
+        vc.onSave = { [weak self] text in
+            Notes.update(id: it.id, body: text)
+            self?.paint()
+        }
+        let nav = UINavigationController(rootViewController: vc)
+        present(nav, animated: true)
+    }
+
+    /// 长按＝原来那个菜单（改标题/加标签走 `editText`、删掉）——
+    /// 单纯挪了触发手势，一行逻辑没改，标题/标签编辑能力不丢。
+    @objc private func holdRow(_ g: HoldNote) {
+        guard g.state == .began,
+              let it = Notes.list().first(where: { $0.id == g.id })
+        else { return }
         editingId = it.id
         let a = UIAlertController(title: it.title, message: it.body,
                                   preferredStyle: .actionSheet)
@@ -205,5 +226,9 @@ final class NotesViewController: PushedViewController, UITextFieldDelegate {
 }
 
 private final class TapNote: UITapGestureRecognizer {
+    var id: String = ""
+}
+
+private final class HoldNote: UILongPressGestureRecognizer {
     var id: String = ""
 }
