@@ -317,12 +317,17 @@ final class HistoryListViewController: UIViewController {
         (visible ? tabsTopWithRow : tabsTopNoRow)?.isActive = true
     }
 
-    /// 打开之后那段动画：正在传 → 已同步✓ → 淡出收起。
+    /// 打开之后那段动画：**直接显示终态** → 淡出收起。
     ///
-    /// 🚨 1.2 秒是 2.1 定的、**不是他说的**，真机给他看一眼再调。
+    /// 🚨🚨 09-16 0 插队指出：「正在传…→已同步✓」两步都是假的——服务端
+    ///    连接收端点都没有，这个绿勾从没传过任何一条记录。规格
+    ///    `_规格_同步状态清单_20260916.md` §8.2：**没有真实上传在发生，
+    ///    "正在传"本身也是假话**，删掉这两步假进度，勾选确认后直接显示终态。
+    ///    `hs_syncing` 这个 key 留着不删——等 1.1 的真上传端点接通、这一段
+    ///    改回等真信号时，它才是那时候需要的真实进度文案，到时候直接复用。
     /// 🚨 绿勾用 `.systemGreen` —— **不自己配色**（他定过「你不要自己设计了」）。
     private func runSyncedAnimation() {
-        // 🚨🚨 09-16 2.1 推演揪出的 race：这段动画跑的 ~2.4 秒里 `HistSync.isOn`
+        // 🚨🚨 09-16 2.1 推演揪出的 race：这段动画跑的那几秒里 `HistSync.isOn`
         //    已经是 true 了（`askBacklog()` 在调 `runSyncedAnimation()` 之前就
         //    `HistSync.set(true)` 了），而复选框这时候还在响应点击——
         //    这时候点一下会走 `tapSync()` 的【关闭】分支，把刚打开的同步关掉，
@@ -330,56 +335,51 @@ final class HistoryListViewController: UIViewController {
         //    复位同一个completion）再放开——**别忘了放开，锁死了才是更糟的那种bug**。
         syncCheckbox.isEnabled = false
         // 🚨 09-16：勾**点下去那一刻就打上**（Grok 方案："用户点一下复选框后打上勾"，
-        //    不是等同步跑完才打勾）。文字还是走"正在传→已同步"叙事，
-        //    跟以前一样只是**按钮底色换文字色**这条老办法废了——现在勾本身就是状态。
+        //    不是等同步跑完才打勾）——这条没变。变的是下面：不再经过
+        //    「正在传…」那一步，直接显示终态文案。
         paintCheckbox(checked: true)
-        syncLabel.text = L.hs_syncing
-        // 🚨 这里没有真的"传完"的信号可等（上传端点还没接）——
-        //    所以这一段是**按时间走的**，不是按真实进度。
-        //    **等 1.1 的上传端点上线后要改成等真信号**，否则它跟
-        //    `hs_on_now` 是同一个病：进行时的文案对不上真实进行。
+        syncLabel.text = L.hs_synced
+        // 🚨 停留一小段让他看清终态（不是"假进度"——这里不再切换任何文案，
+        //    只是给收起动画留一个起跳前的停顿）再收起。
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
             guard let self = self else { return }
-            self.syncLabel.text = L.hs_synced
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                // 🚨🚨 **收起这一步原来是"噔一下"跳上去的**（Kevin 09-07 亲口：
-                //    「现在的画面像楼梯一样噔一下直接跳上去了，有点太草台」）。
-                //
-                //    病根：换约束和 `layoutIfNeeded()` 写在**淡出的 completion 里**
-                //    —— 淡出动画结束之后才改布局，而那一步**不在任何动画块里**，
-                //    于是下面整块内容**瞬移**到新位置。看着就是一级台阶。
-                //
-                //    改法：**两段接力，各自都在动画里**
-                //      ① 淡出（0.28s，easeOut）—— 那一行"淡淡地退掉"
-                //      ② 收起并上滑（0.34s，easeInOut）—— 换约束 **+
-                //         `layoutIfNeeded()` 写在动画块【内】**，
-                //         下面那块才会平滑地滑上来，而不是跳。
-                //    🚨 关键就是 `layoutIfNeeded()` 在不在动画块里：
-                //       在里面 = 逐帧插值；在外面（原来那样）= 一帧到位。
-                UIView.animate(withDuration: 0.28, delay: 0,
-                               options: [.curveEaseOut], animations: {
-                    self.syncRow.alpha = 0
+            // 🚨🚨 **收起这一步原来是"噔一下"跳上去的**（Kevin 09-07 亲口：
+            //    「现在的画面像楼梯一样噔一下直接跳上去了，有点太草台」）。
+            //
+            //    病根：换约束和 `layoutIfNeeded()` 写在**淡出的 completion 里**
+            //    —— 淡出动画结束之后才改布局，而那一步**不在任何动画块里**，
+            //    于是下面整块内容**瞬移**到新位置。看着就是一级台阶。
+            //
+            //    改法：**两段接力，各自都在动画里**
+            //      ① 淡出（0.28s，easeOut）—— 那一行"淡淡地退掉"
+            //      ② 收起并上滑（0.34s，easeInOut）—— 换约束 **+
+            //         `layoutIfNeeded()` 写在动画块【内】**，
+            //         下面那块才会平滑地滑上来，而不是跳。
+            //    🚨 关键就是 `layoutIfNeeded()` 在不在动画块里：
+            //       在里面 = 逐帧插值；在外面（原来那样）= 一帧到位。
+            UIView.animate(withDuration: 0.28, delay: 0,
+                           options: [.curveEaseOut], animations: {
+                self.syncRow.alpha = 0
+            }, completion: { _ in
+                HistSync.oneOffDone = true
+                UIView.animate(withDuration: 0.34, delay: 0,
+                               options: [.curveEaseInOut], animations: {
+                    // 🚨 走**同一个出口** —— 单独写 syncRow.isHidden 的话，
+                    //    约束不会跟着换，空白就留下了（原来正是这么漏的）。
+                    self.setSyncRow(visible: false)
+                    self.view.layoutIfNeeded()      // ← 必须在块【内】
                 }, completion: { _ in
-                    HistSync.oneOffDone = true
-                    UIView.animate(withDuration: 0.34, delay: 0,
-                                   options: [.curveEaseInOut], animations: {
-                        // 🚨 走**同一个出口** —— 单独写 syncRow.isHidden 的话，
-                        //    约束不会跟着换，空白就留下了（原来正是这么漏的）。
-                        self.setSyncRow(visible: false)
-                        self.view.layoutIfNeeded()      // ← 必须在块【内】
-                    }, completion: { _ in
-                        self.syncRow.alpha = 1          // 复位，下次还能用
-                        // 🚨 连文字带勾一起复位回"未选"态——万一他从隐私政策页
-                        //    反勾选、这一行将来又冒出来，看到的不能是一个
-                        //    已经打勾、写着"已同步"的行（那会像是"这次没生效"）。
-                        self.syncLabel.text = L.hs_title + " · " + L.hs_off_now
-                        self.paintCheckbox(checked: false)
-                        // 🚨 反向控制配对：锁在动画开头，必须在这唯一的收尾点解锁，
-                        //    别漏掉——漏了这一行会把复选框永久锁死，比原来那个 race 更糟。
-                        self.syncCheckbox.isEnabled = true
-                    })
+                    self.syncRow.alpha = 1          // 复位，下次还能用
+                    // 🚨 连文字带勾一起复位回"未选"态——万一他从隐私政策页
+                    //    反勾选、这一行将来又冒出来，看到的不能是一个
+                    //    已经打勾、写着"已同步"的行（那会像是"这次没生效"）。
+                    self.syncLabel.text = L.hs_title + " · " + L.hs_off_now
+                    self.paintCheckbox(checked: false)
+                    // 🚨 反向控制配对：锁在动画开头，必须在这唯一的收尾点解锁，
+                    //    别漏掉——漏了这一行会把复选框永久锁死，比原来那个 race 更糟。
+                    self.syncCheckbox.isEnabled = true
                 })
-            }
+            })
         }
     }
 

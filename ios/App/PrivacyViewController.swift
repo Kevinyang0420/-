@@ -287,9 +287,15 @@ final class PrivacyViewController: UIViewController {
         row.addTarget(self, action: #selector(tapStop), for: .touchUpInside)
         row.translatesAutoresizingMaskIntoConstraints = false
 
-        // 左：绿勾 + 「已同步」——**状态**
+        // 左：绿点 + 「已同步」——**状态**
+        // 🚨🚨 09-16 0 插队指出：原来那个打勾图标（symbol 名字里带
+        //    "checkmark" 那个）本身就是「完成/已验证」的宣告，而服务端连
+        //    接收端点都没有，那个勾从没验证过任何东西。规格
+        //    `_规格_同步状态清单_20260916.md` §8.3：改成纯圆点（不带勾，
+        //    symbol 名字就是下面这行的字面量），颜色仍保留绿色
+        //    （读作"开着/激活中"），但不再暗示"已经验证完成"。
         let tick = UIImageView(image: UIImage(
-            systemName: "checkmark.circle.fill",
+            systemName: "circle.fill",
             withConfiguration: UIImage.SymbolConfiguration(pointSize: 17)))
         tick.tintColor = .systemGreen
         tick.accessibilityIdentifier = "privacy.sync.tick"
