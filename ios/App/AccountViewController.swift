@@ -200,8 +200,17 @@ final class AccountViewController: PushedViewController {
             //    读 `IAP.cachedDisplayPrice`（`AppDelegate` 启动时已预热），
             //    不在这里发网络请求。没缓存（比如全新安装、还没拉到过一次）
             //    就退化成原来那句纯状态词，不显示空价格。
+            //
+            // 🚨 同一份规格：还有免费试用没用的账号/设备要显示试用文案而不是
+            //    纯价格——判据是 `ProStatus.trialDaysLeftCached`（服务端
+            //    `trial_days_left`），走 `ProCheck.showsTrial` 统一判断，
+            //    跟 `SubscribeViewController` 那边共用同一条判据，不各自算一遍。
             if let price = IAP.cachedDisplayPrice {
-                s.text = String(format: L.prefs_pro_upgrade_price, price)
+                if ProCheck.showsTrial(ProStatus.trialDaysLeftCached) {
+                    s.text = String(format: L.prefs_pro_trial_price, price)
+                } else {
+                    s.text = String(format: L.prefs_pro_upgrade_price, price)
+                }
             } else {
                 s.text = L.prefs_pro_inactive
             }

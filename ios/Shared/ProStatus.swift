@@ -17,6 +17,8 @@ import Foundation
 ///    调用方**没有任何办法**区分这两种状态。见 `ProCheckResult`。
 enum ProStatus {
     private static let key = "pro.until.cached"
+    private static let trialKey = "pro.trial_days_left.cached"
+    private static let trialHasKey = "pro.trial_days_left.has_value"
 
     // 🚨 `ProCheckResult` 和判定函数 `ProCheck.classify` 在 `Shared/ProCheck.swift`——
     //    那边拆出来是为了 UI 测试能编到它（这个文件牵着 Backend/KbBridge，
@@ -43,6 +45,30 @@ enum ProStatus {
     /// 还没问完服务端时先按这个显示，回来后立刻用权威结果纠正。
     static var cachedUntilValue: TimeInterval { cachedUntil }
 
+    /// 🚨 09-17 `_规格_价格呈现口径_20260917.md`：`/api/pro` 的 `trial_days_left`
+    ///    字段——`nil` = 已是会员/查不到这台设备，`0` = 试用已用完，正整数 = 还剩
+    ///    N 天试用。`refresh()` 每次拿到 200 都原样覆盖（服务端说什么就存什么，
+    ///    不做客户端加工），供界面在下一帧优化显示前先顶一个乐观值，
+    ///    也供 `AccountViewController`/`SubscribeViewController` 两处入口共用
+    ///    同一份状态（判据统一走 `ProCheck.showsTrial`，不在这两处各自判断）。
+    private static var trialDaysLeft: Int? {
+        get {
+            guard UserDefaults.standard.bool(forKey: trialHasKey) else { return nil }
+            return UserDefaults.standard.integer(forKey: trialKey)
+        }
+        set {
+            if let v = newValue {
+                UserDefaults.standard.set(v, forKey: trialKey)
+                UserDefaults.standard.set(true, forKey: trialHasKey)
+            } else {
+                UserDefaults.standard.set(false, forKey: trialHasKey)
+            }
+        }
+    }
+
+    /// 缓存的 `trial_days_left`（只读）。语义见上面 `trialDaysLeft` 的注释。
+    static var trialDaysLeftCached: Int? { trialDaysLeft }
+
     /// 🚨🚨 09-17 Kevin 真机撞到：换一个从没注册过的邮箱登进去，界面直接显示会员。
     ///    `isProCached` 只是"乐观占位"，真值靠 `refresh()` 网络回来才纠正——
     ///    但账号切换和 `refresh()` 完成之间有个窗口期，这个窗口期内读到的是
@@ -51,6 +77,10 @@ enum ProStatus {
     ///    `Auth.save()`（新会话建立）和 `Auth.signOut()` 两处调用。
     static func clearCache() {
         cachedUntil = 0
+        // 🚨 09-17 试用天数跟账号绑定，账号切换/登出时也要跟着清——不清的话
+        //    新账号在自己 `/api/pro` 响应回来之前，会先借用上一个账号的试用状态，
+        //    跟 `cachedUntil` 那条真机 bug 是同一个窗口期问题（见类头 09-17 注释）。
+        trialDaysLeft = nil
     }
 
     /// 🚨🚨 09-17 Kevin 沙盒实测：买完立刻回账户页还是「未订阅」，退出去再回来
@@ -90,6 +120,10 @@ enum ProStatus {
             // 🚨 服务端返回什么就存什么，不做"看起来快过期了就多留一会"这种加工——
             //    那种加工正是"墙立在没人走到的地方"的另一种写法。
             cachedUntil = until
+            // 🚨 JSON `null` 用 `JSONSerialization` 读出来是 `NSNull`，`as? NSNumber`
+            //    对它会失败 → 自然落到 nil，跟"键缺失"是同一个结果，符合契约里
+            //    "null = 已是会员/查不到这台设备"这句——不用额外判断 NSNull。
+            trialDaysLeft = (j["trial_days_left"] as? NSNumber)?.intValue
             let result = ProCheck.classify(isPro: isPro, until: until, hasReason: j["reason"] != nil)
             KbBridge.note("会员状态：pro=" + String(isPro) + " until=" + String(Int(until))
                           + " reason=" + ((j["reason"] as? String) ?? "（无）"))

@@ -27,4 +27,14 @@ enum ProCheck {
         if isPro { return .pro(until: until) }
         return hasReason ? .notLoggedIn : .notSubscribed
     }
+
+    /// 🚨🚨 09-17 `_规格_价格呈现口径_20260917.md`：要不要显示"7 天免费试用"
+    ///    文案的判据——`AccountViewController`（入口行）和 `SubscribeViewController`
+    ///    （付费页价格行）两处共用这一条，不许各自写一遍（同一条规矩两处实现＝必漂）。
+    ///    只认 `trial_days_left` 这个服务端字段本身，`nil`/`0` 都不显示，
+    ///    不在客户端另算"第几天"（后端已经算好了）。
+    static func showsTrial(_ trialDaysLeft: Int?) -> Bool {
+        guard let d = trialDaysLeft else { return false }
+        return d > 0
+    }
 }

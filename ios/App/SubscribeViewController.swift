@@ -86,8 +86,14 @@ final class SubscribeViewController: PushedViewController {
         //    不让用户先看到"加载中"再跳成价格——`loadProduct()` 稍后还是会
         //    发起真实请求，拿到权威值后原样覆盖这一行，缓存只管**这一帧**
         //    显示什么，不代替那次真实请求。
-        priceLabel.text = IAP.cachedDisplayPrice.map { $0 + L.prefs_pro_per_month_suffix }
-            ?? L.prefs_pro_loading
+        //    试用文案同理用上一次缓存的 `trialDaysLeftCached` 顶一帧，
+        //    `checkProStatus()`/`loadProduct()` 谁先拿到权威值谁调
+        //    `applyTrialAwarePrice()` 纠正——判据统一走 `ProCheck.showsTrial`。
+        let optimisticTrial = ProCheck.showsTrial(ProStatus.trialDaysLeftCached)
+        priceLabel.text = IAP.cachedDisplayPrice.map { price in
+            optimisticTrial ? String(format: L.prefs_pro_trial_price, price)
+                             : price + L.prefs_pro_per_month_suffix
+        } ?? L.prefs_pro_loading
 
         trialLabel.font = .systemFont(ofSize: 13)
         trialLabel.textColor = Theme.dim
@@ -95,7 +101,10 @@ final class SubscribeViewController: PushedViewController {
         trialLabel.numberOfLines = 0
         // 🚨 这里说的是【我们自己的】7 天试用（服务端按设备算），
         //    不是苹果 introductory offer——那个已经删了。措辞不能暗示"苹果给的折扣"。
+        //    🚨 09-17 试用已经用完的账号不该再看到这句提示——跟价格行那句
+        //    试用文案同一个判据，避免"到期后还在说免费试用"这种假话。
         trialLabel.text = L.prefs_pro_trial_note
+        trialLabel.isHidden = !optimisticTrial
 
         subscribeBtn.setTitle(L.prefs_pro_subscribe, for: .normal)
         subscribeBtn.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
@@ -131,10 +140,28 @@ final class SubscribeViewController: PushedViewController {
                 //    `.notLoggedIn`/`.notSubscribed` 两条不动（反向控制：
                 //    没订阅的人这一屏该照常能点，别改成谁都买不了）。
                 self.showProStatusUnknown()
-            case .notLoggedIn, .notSubscribed:
+            case .notLoggedIn:
                 break
+            case .notSubscribed:
+                // 🚨 09-17 这次 `/api/pro` 响应里带了权威的 `trial_days_left`，
+                //    用它纠正价格行的试用文案——跟 `loadProduct()` 共用
+                //    `applyTrialAwarePrice()`，谁的异步回调后到谁负责纠正。
+                self.applyTrialAwarePrice()
             }
         }
+    }
+
+    /// 🚨 09-17 价格来自 StoreKit（`loadProduct()`），试用状态来自 `/api/pro`
+    ///    （`checkProStatus()`）——两条独立异步请求，谁先回来谁先画一次，
+    ///    都收尾调这个方法，不在两处各写一份判断（同一条规矩两处实现＝必漂）。
+    private func applyTrialAwarePrice() {
+        guard !isKnownPro else { return }
+        guard let price = product?.displayPrice ?? IAP.cachedDisplayPrice else { return }
+        let trial = ProCheck.showsTrial(ProStatus.trialDaysLeftCached)
+        priceLabel.text = trial
+            ? String(format: L.prefs_pro_trial_price, price)
+            : price + L.prefs_pro_per_month_suffix
+        trialLabel.isHidden = !trial
     }
 
     /// 已确认是会员：收起购买入口，不给一个已经付过钱的人第二次购买的机会。
@@ -181,7 +208,8 @@ final class SubscribeViewController: PushedViewController {
                 self.product = p
                 // 🚨 直接用 StoreKit 给的本地化价格串，不自己拼货币符号/汇率——
                 //    那样每个地区都得自己维护一份，还容易跟真实售价对不上。
-                self.priceLabel.text = p.displayPrice + L.prefs_pro_per_month_suffix
+                //    是否要套试用文案交给 `applyTrialAwarePrice()` 统一判断。
+                self.applyTrialAwarePrice()
                 self.subscribeBtn.isEnabled = true
             case .failure:
                 self.priceLabel.text = L.prefs_pro_load_failed
