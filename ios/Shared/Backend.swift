@@ -241,10 +241,18 @@ enum Backend {
         langs.first { $0.code == code }?.name ?? "English"
     }
 
+    /// 🚨🚨 09-17 `_规格_语言名称按界面语言显示_20260917.md`：目标语言的显示名
+    ///    跟着**界面语言**走，不再是固定一张自称表——`GenLangs.labelsByUi`
+    ///    按 `Lang.current`（界面语言，每次都活读，见 `Lang.swift`）现查现取，
+    ///    不经过上面那张冻在编译期的 `langs`/`langsForUI`（那张的 `label` 列
+    ///    还是旧的固定自称，只给 `langName()` 那种"喂给模型"的场合用）。
+    ///    找不到（含 `TRANSLESS_FAKE_LANGS` 注入的假码）落回 `langsForUI`
+    ///    的占位标签——保住 `KbLangLabelWidthTests` 那条"宽字形能滚到底"
+    ///    的坏样本覆盖，不能因为这次改动让它失去测试对象。
     static func langLabel(_ code: String) -> String {
-        // 🚨 用 `langsForUI` 而不是 `langs`：注入的假语言也要能显示出名字，
-        //    否则坏样本跑起来 40 门全叫「英文」，看着像通过其实什么都没验。
-        langsForUI.first { $0.code == code }?.label ?? "英文"
+        if let v = GenLangs.labelsByUi[Lang.current]?[code] { return v }
+        if let v = GenLangs.labelsByUi["en"]?[code] { return v }
+        return langsForUI.first { $0.code == code }?.label ?? "英文"
     }
 
     static func polish(text: String, tone: String, mode: Mode = .en,
