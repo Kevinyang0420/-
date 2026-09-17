@@ -278,7 +278,15 @@ final class AccountViewController: PushedViewController {
 
     private func row(_ title: String, _ value: String, _ id: String) -> UIView {
         let box = UIControl()
-        box.backgroundColor = UIColor.white.withAlphaComponent(0.06)
+        // 🚨🚨 09-17 0派活③：邮箱行原来跟其余可编辑字段用**同一套视觉**——
+        //    同样的底色、同样"空了写「点这里填写」"的邀请式占位，点进去
+        //    却只弹一句"改不了"。Kevin原话「为什么这里还要让我填写邮箱呢」，
+        //    根子不是"看得到邮箱"（这条信息有用，删号前正该确认清楚登的是
+        //    哪个账号），是"看着像能填、其实填不了"这个视觉误导。
+        //    改法：只读态的行**只读值的颜色和底色跟着变淡**，不再暗示可编辑；
+        //    不整行拿掉——账户页找不到自己登的是哪个邮箱，是另一种更糟的迷惑。
+        let readOnly = (id == "account")
+        box.backgroundColor = UIColor.white.withAlphaComponent(readOnly ? 0.03 : 0.06)
         box.layer.cornerRadius = 14
         box.accessibilityIdentifier = "profile_" + id
 
@@ -289,10 +297,16 @@ final class AccountViewController: PushedViewController {
 
         let v = UILabel()
         let empty = value.isEmpty
-        // 🚨 空的时候写「点这里填写」而不是留空 —— 留空看不出是"能填"还是"坏了"。
-        v.text = empty ? L.account_edit : value
+        if readOnly {
+            // 只读态没有"点这里填写"这句——那句本身就是在邀请编辑。
+            v.text = value
+            v.textColor = Skin.dim
+        } else {
+            // 🚨 空的时候写「点这里填写」而不是留空 —— 留空看不出是"能填"还是"坏了"。
+            v.text = empty ? L.account_edit : value
+            v.textColor = empty ? Skin.dim : Skin.text
+        }
         v.font = .systemFont(ofSize: 16)
-        v.textColor = empty ? Skin.dim : Skin.text
 
         let col = UIStackView(arrangedSubviews: [l, v])
         col.axis = .vertical
@@ -336,8 +350,12 @@ final class AccountViewController: PushedViewController {
         }
         // 🚨 生日跳到注册那一页的三个下拉，**不在这里再写一套日期选择**。
         if id == "birthday" {
-            navigationController?.pushViewController(
-                ProfileViewController(), animated: true)
+            let vc = ProfileViewController()
+            // 🚨🚨 09-17 0派活②：从这里（账户页）进去必须能退出来——
+            //    `ProfileViewController`默认不给返回键是给**注册流程**用的，
+            //    这条路不是注册流程，Kevin真机撞到"进去出不来"。
+            vc.allowBack = true
+            navigationController?.pushViewController(vc, animated: true)
             return
         }
         let a = UIAlertController(title: label(for: id), message: nil,
@@ -348,7 +366,12 @@ final class AccountViewController: PushedViewController {
         //    服务端全丢，这正是资料"跟不着账号走"的另一个出口。
         a.addAction(UIAlertAction(title: L.save, style: .default) { [weak self] _ in
             let v = a.textFields?.first?.text ?? ""
-            Auth.saveProfile([id: v]) { ok in
+            // 🚨 `_规格_昵称显示口径_20260917.md`§2.1 判据②：从账户页主动
+            //    保存过一次昵称，**无条件**标 true——不跟旧值比较，专门跑
+            //    来这一页改资料这个动作本身已经说明了动机。只在改的是
+            //    "nick"这个字段时传这个标记，别的字段（生日/国家/职业）不相关。
+            let flag: Bool? = (id == "nick") ? true : nil
+            Auth.saveProfile([id: v], nicknameIsCustom: flag) { ok in
                 guard let self = self else { return }
                 self.refresh()
                 if !ok {

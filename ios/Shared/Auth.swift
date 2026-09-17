@@ -433,6 +433,19 @@ enum Auth {
         setProfile("country", (p["country"] as? String) ?? "")
         setProfile("region", (p["region"] as? String) ?? "")
         setProfile("job", (p["job"] as? String) ?? "")
+        // 🚨 09-17 `_规格_昵称显示口径_20260917.md`：首页第三态要不要显示
+        //    "我的账户"就看这个标记，服务端已经在带（默认 false）。
+        UserDefaults.standard.set((p["nickname_is_custom"] as? Bool) ?? false,
+                                  forKey: kNicknameCustom)
+    }
+
+    private static let kNicknameCustom = "transless.auth.nicknameIsCustom"
+
+    /// 昵称是不是用户自己改过（不是预填的邮箱前缀原样留着）。
+    /// 🚨 只从服务端读，本地从不自己算——见 `_规格_昵称显示口径_20260917.md`
+    ///    §2.1：**不许**用"昵称是不是等于邮箱前缀"反推，那是 Kevin 亲口否掉的做法。
+    static var nicknameIsCustom: Bool {
+        UserDefaults.standard.bool(forKey: kNicknameCustom)
     }
 
     static func fetchProfile(onResult: @escaping (ProfileFetchResult) -> Void) {
@@ -470,13 +483,19 @@ enum Auth {
     ///    已保存**——服务端可能截断超长值、丢弃未知字段，`saved` 是它
     ///    实际存了什么。调用方在 `onResult(true)` 之前看到的本地值
     ///    还是旧的，是有意的：没保存成功就不该让用户以为保存成功了。
+    /// 🚨 `nicknameIsCustom` 独立于 `fields`——它是布尔，`fields`的值全是
+    ///    String（走`serverFieldName`翻译成服务端字段名）。只在真的要改这个
+    ///    标记时传（调用方按`_规格_昵称显示口径_20260917.md`§2.1 的两条
+    ///    触发规则决定传不传、传 true 还是 false），不传就是这次调用不碰它。
     static func saveProfile(_ fields: [String: String],
+                            nicknameIsCustom: Bool? = nil,
                             onResult: @escaping (Bool) -> Void) {
-        var body: [String: String] = [:]
+        var body: [String: Any] = [:]
         for (id, v) in fields {
             guard let key = serverFieldName(id) else { continue }
             body[key] = v
         }
+        if let flag = nicknameIsCustom { body["nickname_is_custom"] = flag }
         guard !body.isEmpty else {
             return DispatchQueue.main.async { onResult(false) }
         }

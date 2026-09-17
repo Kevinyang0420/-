@@ -35,14 +35,28 @@ final class ProfileViewController: PushedViewController {
     private var month = 0
     private var day = 0
 
+    /// 🚨🚨 09-17 0 派活修复：原来无条件`hidesBackButton = true`——那是
+    ///    **故意**的（注册流程收尾，不许中途跑掉），但从账户页点"生日"
+    ///    进来编辑资料，退不出去是真 bug（Kevin 真机撞到）。
+    ///    按入口区分，不是删掉这条规矩：`LoginViewController`那条登录后
+    ///    自动跳转**留默认 false**（注册流，不能退）；`AccountViewController`
+    ///    点生日行进来的那次**传 true**（账户页编辑，要能退）。
+    var allowBack = false
+
+    /// 🚨🚨 09-17 `_规格_昵称显示口径_20260917.md`§2.1：判"改没改过"的唯一
+    ///    依据是"保存那一刻的值 跟 打开这页时的预填值 是否不同"——**打开时**
+    ///    就要存好这份快照，不能等保存那一刻现算（那样如果邮箱前缀凑巧
+    ///    跟当前显示值一样会算错）。
+    private var prefilledNickname = ""
+
     override func viewDidLoad() {
         super.viewDidLoad()
         UI.paintBg(self)
         title = L.profile_title
-        // 🚨 不给返回键：这一步是登录之后的收尾，滑回去只会看到已经
+        // 🚨 默认不给返回键：这一步是登录之后的收尾，滑回去只会看到已经
         //    `pop` 掉的登录页。填完点「完成」是唯一出口（昵称已预填，
-        //    所以这不是死路）。
-        navigationItem.hidesBackButton = true
+        //    所以这不是死路）。`allowBack=true` 时（账户页进来编辑）才给。
+        navigationItem.hidesBackButton = !allowBack
 
         let stack = UIStackView()
         stack.axis = .vertical
@@ -71,6 +85,9 @@ final class ProfileViewController: PushedViewController {
         nickField.placeholder = L.profile_nick_ph
         // 🚨 预填成邮箱 @ 前那截 —— 见类注释，这是让"必填"不添堵的关键。
         nickField.text = Auth.displayName
+        // 🚨 这一行必须紧跟在上一行后面——快照的是"刚设完预填值那一刻"，
+        //    不是别的时间点。
+        prefilledNickname = Auth.displayName
         nickField.returnKeyType = .done
         nickField.addTarget(self, action: #selector(nickChanged),
                             for: .editingChanged)
@@ -242,7 +259,10 @@ final class ProfileViewController: PushedViewController {
         var fields = ["nick": nick]
         let b = birthday
         if !b.isEmpty { fields["birthday"] = b }
-        Auth.saveProfile(fields) { [weak self] ok in
+        // 🚨 §2.1 判据①：跟打开页面时的预填快照比，不同才是"改过"。
+        //    相同 = 用户没动这个字段，还留着预填值本身，不许标 true。
+        let isCustom = (nick != prefilledNickname)
+        Auth.saveProfile(fields, nicknameIsCustom: isCustom) { [weak self] ok in
             guard let self = self else { return }
             if ok {
                 self.navigationController?.popToRootViewController(animated: true)

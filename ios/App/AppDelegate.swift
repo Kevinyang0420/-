@@ -2608,15 +2608,28 @@ final class HomeViewController: UIViewController {
         return v
     }
 
-    /// 账号胶囊：`👤 昵称` / `👤 注册 / 登录`。**一个入口两种状态。**
+    /// 账号胶囊：`👤 昵称` / `👤 我的账户` / `👤 注册 / 登录`。**一个入口三种状态。**
     ///
     /// 🚨 未登录也显示（Kevin 08-26 拍板 D2）：不显示的话他根本找不到登录入口。
     ///    做成两套控件就是两个配置点，改一处等于没改 —— 所以只有一个函数。
+    /// 🚨🚨 09-17 `_规格_昵称显示口径_20260917.md`：已登录但昵称还是预填的
+    ///    邮箱前缀（没主动改过）时，**不显示这个预填值**——Kevin 亲口定：
+    ///    那不算他真正取的名字，显示"我的账户"（复用 `account_page`，
+    ///    这个词组已经是"我的账户"/"My account"，不新写一份翻译）。
+    ///    判据只认 `Auth.nicknameIsCustom` 这个显式标记，不许拿"昵称是不是
+    ///    等于邮箱前缀"反推——那是 Kevin 点名否掉的做法。
     private func accountChip() -> UIView {
         let signedIn = Auth.loggedIn
+        let title: String
+        if !signedIn {
+            title = L.home_login
+        } else if Auth.nicknameIsCustom {
+            title = Auth.displayName
+        } else {
+            title = L.account_page
+        }
         let b = UIButton(type: .system)
-        b.setTitle("👤  " + (signedIn ? Auth.displayName : L.home_login),
-                   for: .normal)
+        b.setTitle("👤  " + title, for: .normal)
         b.setTitleColor(signedIn ? Skin.text : Skin.dim, for: .normal)
         b.titleLabel?.font = .systemFont(ofSize: 13)
         b.alpha = signedIn ? 1 : 0.75
