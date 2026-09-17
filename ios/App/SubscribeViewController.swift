@@ -28,6 +28,13 @@ final class SubscribeViewController: PushedViewController {
     ///    根因是这一屏进页面前一次都没读过会员状态。`isKnownPro` 在 `checkProStatus()`
     ///    确认为 `.pro` 后置 true，购买按钮隐藏 + `tapSubscribe()` 兜底拒绝，
     ///    两道闸都挂，防的是 `loadProduct()`/`checkProStatus()` 两个异步回调谁先回来的竞态。
+    ///
+    /// 🚨🚨 09-17 0 补的口子（付费状态枚举 S9×E1）：名字叫"已知是会员"，
+    ///    但两道闸真正锁的是「买按钮准不准开」，不是"这个人是不是会员"——
+    ///    `.unreachable`（服务端此刻查不到）**同样该锁住按钮**，跟"确认是会员"
+    ///    共用这一个闸：都不该让人发起购买，只是理由不同（一个是已经买过，
+    ///    一个是不知道买没买过）。别为这条另开一个变量，两条路径本来就要
+    ///    同一套竞态防护（`loadProduct()`/`checkProStatus()` 谁先回来）。
     private var isKnownPro = false
 
     /// 这一屏自己的一次性提示——**不复用** `AppDelegate` 那个 `setOneOff`，
@@ -111,8 +118,16 @@ final class SubscribeViewController: PushedViewController {
     private func checkProStatus() {
         ProStatus.refresh { [weak self] result in
             guard let self = self else { return }
-            if case .pro = result {
+            switch result {
+            case .pro:
                 self.showAlreadyMember()
+            case .unreachable:
+                // 🚨 09-17 S9×E1：查不到不代表任何真实状态，不许放行购买——
+                //    `.notLoggedIn`/`.notSubscribed` 两条不动（反向控制：
+                //    没订阅的人这一屏该照常能点，别改成谁都买不了）。
+                self.showProStatusUnknown()
+            case .notLoggedIn, .notSubscribed:
+                break
             }
         }
     }
@@ -125,6 +140,20 @@ final class SubscribeViewController: PushedViewController {
         trialLabel.isHidden = true
         subscribeBtn.isHidden = true
         restoreBtn.isHidden = true
+    }
+
+    /// 服务端此刻查不到会员状态：**锁住购买按钮，但不下结论**——
+    /// 不是「他不是会员」（那样没订阅的人会被误锁），也不是「他是会员」
+    /// （那样是会员的人这一屏会消失订阅入口）。跟 `showAlreadyMember()`
+    /// 共用 `isKnownPro` 这一个闸，理由见类头那条 09-17 注释。
+    /// 🚨 文案复用 `L.prefs_pro_unknown`（账户页会员行同一句"暂时查不到，
+    /// 点一下重试"），不新写一份——另写一份就是下一次漂移的起点。
+    private func showProStatusUnknown() {
+        isKnownPro = true
+        spinner.stopAnimating()
+        priceLabel.text = L.prefs_pro_unknown
+        subscribeBtn.isEnabled = false
+        trialLabel.isHidden = true
     }
 
     private func linkButton(_ t: String, action: Selector) -> UIButton {
