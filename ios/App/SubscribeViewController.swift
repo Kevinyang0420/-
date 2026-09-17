@@ -82,7 +82,12 @@ final class SubscribeViewController: PushedViewController {
         priceLabel.textColor = Theme.text
         priceLabel.textAlignment = .center
         priceLabel.numberOfLines = 0
-        priceLabel.text = L.prefs_pro_loading
+        // 🚨🚨 09-17 `_规格_价格呈现口径_20260917.md`：先用缓存价格顶上，
+        //    不让用户先看到"加载中"再跳成价格——`loadProduct()` 稍后还是会
+        //    发起真实请求，拿到权威值后原样覆盖这一行，缓存只管**这一帧**
+        //    显示什么，不代替那次真实请求。
+        priceLabel.text = IAP.cachedDisplayPrice.map { $0 + L.prefs_pro_per_month_suffix }
+            ?? L.prefs_pro_loading
 
         trialLabel.font = .systemFont(ofSize: 13)
         trialLabel.textColor = Theme.dim

@@ -1137,6 +1137,11 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //    别学上面那段血泪史：续订/退款/家长同意延迟批准这些事件
         //    只从这条通道来，不挂在这儿就等于永远收不到，而且不报错。
         IAP.startObservingTransactionUpdates()
+        // 🚨🚨 09-17 `_规格_价格呈现口径_20260917.md`：账户页的升级行要在
+        //    "进付费页之前"就带上价格，不能等用户点进去才发起 StoreKit 请求。
+        //    这里只是预热缓存，不等结果——真正要价格的地方读
+        //    `IAP.cachedDisplayPrice`，读的是**上一次**成功拉到的那份。
+        IAP.prefetchProduct()
 
         // 前台标记探针 —— 让主 App 在**任意时刻**报一次它此刻的值。
         // 🚨 自检写完立刻读是没用的（必然为真）；要量的是「N 秒之后还真不真」。

@@ -194,7 +194,17 @@ final class AccountViewController: PushedViewController {
         switch proState {
         case .pro: s.text = L.prefs_pro_active
         case .notLoggedIn: s.text = L.prefs_pro_logged_out
-        case .notSubscribed: s.text = L.prefs_pro_inactive
+        case .notSubscribed:
+            // 🚨🚨 09-17 `_规格_价格呈现口径_20260917.md`：升级入口要**立刻**
+            //    带上价格，不能等用户点进付费页才发起 StoreKit 请求——
+            //    读 `IAP.cachedDisplayPrice`（`AppDelegate` 启动时已预热），
+            //    不在这里发网络请求。没缓存（比如全新安装、还没拉到过一次）
+            //    就退化成原来那句纯状态词，不显示空价格。
+            if let price = IAP.cachedDisplayPrice {
+                s.text = String(format: L.prefs_pro_upgrade_price, price)
+            } else {
+                s.text = L.prefs_pro_inactive
+            }
         case .unreachable: s.text = L.prefs_pro_unknown
         }
         s.textColor = Skin.sub

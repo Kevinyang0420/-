@@ -26,6 +26,31 @@ import StoreKit
 enum IAP {
     static let proMonthlyId = "com.kevin.transless.pro.monthly"
 
+    // MARK: - 价格缓存（09-17 `_规格_价格呈现口径_20260917.md`）
+    //
+    // 🚨🚨 进付费页**之前**（账户页那一行）就要看到价格，不能等用户点进去
+    // 才发起 StoreKit 请求——那时候异步请求还没开始，用户会先看到空白/占位。
+    // 落盘（不只是内存）是因为**冷启动**时这个值必须立刻可读：App 刚起来、
+    // 用户还没进设置页，`prefetch()` 的网络请求多半还没回来，这时候读的
+    // 是上一次成功拉到的那份缓存，不是这次的。
+
+    private static let kCachedPrice = "ios.iap.cachedDisplayPrice"
+
+    /// 账户页/设置页渲染时读这个——**不发起网络请求**，只读上次缓存。
+    /// 没有缓存（比如全新安装、从没成功拉到过商品）就是 `nil`，
+    /// 调用方自己决定怎么退化（多半是不显示价格那一段，不是显示空字符串）。
+    static var cachedDisplayPrice: String? {
+        UserDefaults.standard.string(forKey: kCachedPrice)
+    }
+
+    /// 应用启动时调一次，**预热缓存**，不关心结果、不通知任何人——
+    /// 真正等结果的地方（`SubscribeViewController`）自己会再调一次
+    /// `fetchProduct` 拿权威值。这次调用纯粹是为了让 `cachedDisplayPrice`
+    /// 尽早从 `nil` 变成有值，账户页第一次出现时大概率已经不是空的。
+    static func prefetchProduct() {
+        fetchProduct { _ in }
+    }
+
     enum PurchaseError: Error {
         case productNotFound
         case userCancelled
@@ -49,6 +74,10 @@ enum IAP {
                         onResult(.failure(PurchaseError.productNotFound))
                     }
                 }
+                // 🚨 拿到就存——`displayPrice` 已经是 StoreKit 按这台设备的
+                //    区域本地化好的字符串，跟 `SubscribeViewController` 用的
+                //    是同一个字段，两处不会显示不一致的价格。
+                UserDefaults.standard.set(p.displayPrice, forKey: kCachedPrice)
                 DispatchQueue.main.async { onResult(.success(p)) }
             } catch {
                 KbBridge.note("内购：拉商品失败 —— " + error.localizedDescription)
