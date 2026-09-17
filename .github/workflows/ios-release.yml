@@ -131,6 +131,29 @@ jobs:
           print("Secrets.swift OK, %d 字节" % len(written))
           PY
 
+      # 🚨🚨 2026-09-17：这条流水线原来 13 步、4 道闸门，**全是产物闸**
+      #    （结构/签名/私有 API/撞号）—— 查的是"打出来的包对不对"，
+      #    **没有任何一步跑逻辑**。于是 `Auth.selftestAccountSwitch()` 这类
+      #    自测「写了，但从来没人跑」，等于一道挂在墙上没通电的闸门。
+      #
+      #    当晚的实例：iOS 的 `shouldClearOnSwitch` 留着 `prev.isEmpty -> false`，
+      #    正是 Kevin 用 `yanghx2005@qq.com` 撞出来的那个会员 bug 的另一半，
+      #    而它的自测**把 bug 本身钉成了正确答案**。CI 一次都没查过。
+      #
+      #    放在 xcodegen 之前：纯 Python、几百毫秒，**越早失败越省 CI 时间**，
+      #    而且不需要 macOS/swiftc（那正是这条一直没接的借口）。
+      - name: 逻辑闸门（换账号清本地数据的判据）
+        working-directory: ios
+        run: |
+          set -euo pipefail
+          # 🚨 先跑闸门自己的自测：好样本过 + 坏样本响 + 逃逸写法被抓。
+          #    闸门坏了却报绿，比没有闸门更糟。
+          python3 ../gate_account_switch_parity.py --selftest
+          # 🚨 再真扫。CI 仓库里没有安卓源码（push_ios.py 只推 ios/），
+          #    所以它会降级成「只验 iOS 这一半」——**但会明确吼出来**，
+          #    不是静默跳过。两端一致性仍要在本机跑全量。
+          python3 ../gate_account_switch_parity.py
+
       - name: 生成 Xcode 工程
         working-directory: ios
         run: |
