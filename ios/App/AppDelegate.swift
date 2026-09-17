@@ -3532,6 +3532,14 @@ final class PrefsViewController: UIViewController {
         //    唯一入口：不主动刷新的话，本机缓存能撑到下次自然过期，
         //    看起来像是"退了款但还在用"，这正是这条判据要卡住的洞。
         ProStatus.refresh { [weak self] _ in self?.build() }
+        // 🚨🚨 09-17：资料跟账号走(B1)原来只在两处触发——刚登录那一刻、
+        //    进「账户」那一页那一刻。**已登录用户更新 App 之后，如果既不
+        //    重新登录也不点进账户页，这两处一次都不会跑**，服务端看到的
+        //    是"一个profile请求都没有"，而这不代表功能没接上，是压根没被
+        //    触发过。跟 `ProStatus` 同一个理由、同一个入口：这一屏是
+        //    "设置"页，比"账户"子页访问频率高得多，蹭同一次 `onAppear()`
+        //    保证只要登录着、迟早会被同步一次，不用非得点进那一个具体子页。
+        if Auth.loggedIn { Auth.fetchProfile { _ in } }
     }
 
     private func build() {
