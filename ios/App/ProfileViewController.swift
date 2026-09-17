@@ -230,13 +230,29 @@ final class ProfileViewController: PushedViewController {
         doneButton.alpha = ok ? 1 : 0.4
     }
 
+    /// 🚨🚨 09-17 契约 B2：**发到服务端、拿到确认了才算存了**，不是写完
+    ///    本地就算数——这一页原来只写本地，跨设备/重装全丢，正是 Kevin
+    ///    「怎么还要再填一遍」那句抱怨的源头之一。失败就留在这一页，
+    ///    不假装存成功了。
     @objc private func tapDone() {
         let nick = (nickField.text ?? "")
             .trimmingCharacters(in: .whitespaces)
         guard !nick.isEmpty else { return }   // 按钮已经灰了，这是兜底
-        Auth.setNickname(nick)
+        doneButton.isEnabled = false
+        var fields = ["nick": nick]
         let b = birthday
-        if !b.isEmpty { Auth.setBirthday(b) }
-        navigationController?.popToRootViewController(animated: true)
+        if !b.isEmpty { fields["birthday"] = b }
+        Auth.saveProfile(fields) { [weak self] ok in
+            guard let self = self else { return }
+            if ok {
+                self.navigationController?.popToRootViewController(animated: true)
+            } else {
+                self.doneButton.isEnabled = true
+                let a = UIAlertController(title: nil, message: L.profile_save_failed,
+                                          preferredStyle: .alert)
+                a.addAction(UIAlertAction(title: "OK", style: .default))
+                self.present(a, animated: true)
+            }
+        }
     }
 }

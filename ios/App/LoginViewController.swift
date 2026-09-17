@@ -287,20 +287,34 @@ final class LoginViewController: UIViewController {
                     //    `acct` 在发起验证**之前**就取好了 ——
                     //    回调里输入框可能已经被清了。
                     Auth.setAccount(loginAccount)
-                    // 🚨 昵称**没填过**才去完善资料（Kevin 2026-08-26：
-                    //    「让用户在注册时输入昵称和出生日期」）。
-                    //    判据是"填过没"而不是"是不是新注册" ——
-                    //    老用户也该有机会填一次，填过的不该被反复拦。
+                    // 🚨🚨 09-17 契约 B1+B3：判据是**服务端**填过没，不是本地
+                    //    `Auth.hasNickname`——本地那份从没被服务端数据填过，
+                    //    永远读到空，于是每次登录都被当成"没填过"重新拦一次
+                    //    （Kevin 原话：「我点进去还让我完善资料，完善个锤子啊」）。
+                    //    这里先问一次服务端（顺带完成 B1：把服务端资料写进本地），
+                    //    再按**这次问到的**结果决定要不要去完善资料页。
                     //
                     // 🚨 用 push **替换**掉 pop，不能两个都做：
                     //    先 pop 再 push 的话，导航栈在同一帧里被动两次，
                     //    完善资料页会带着一次可见的回退动画闪出来。
-                    if !Auth.hasNickname {
-                        s.navigationController?.pushViewController(
-                            ProfileViewController(), animated: true)
-                    } else {
-                        // 回首页 —— 那边会重建，「设为当前输入法」这时才冒出来
-                        s.navigationController?.popViewController(animated: true)
+                    Auth.fetchProfile { result in
+                        let needsProfile: Bool
+                        switch result {
+                        case .ok(let nickname, _, _, _, _):
+                            needsProfile = nickname.trimmingCharacters(in: .whitespaces).isEmpty
+                        case .unreachable:
+                            // 🚨 B4：查不到不能当成"没填过"，那样网络一抖就把
+                            //    填过资料的老用户又拦一次去重填。查不到就不拦，
+                            //    真实状态等下次拉到了再判。
+                            needsProfile = false
+                        }
+                        if needsProfile {
+                            s.navigationController?.pushViewController(
+                                ProfileViewController(), animated: true)
+                        } else {
+                            // 回首页 —— 那边会重建，「设为当前输入法」这时才冒出来
+                            s.navigationController?.popViewController(animated: true)
+                        }
                     }
                 case .failure(let e):
                     s.say(s.text(for: e), bad: true)

@@ -94,6 +94,16 @@ final class AccountViewController: PushedViewController {
             self.proState = result
             self.refresh()
         }
+        // 🚨🚨 09-17 契约 B3/B4：资料这几行照服务端那份显示——
+        //    查不到就**原样保留本地缓存**，不把「查不到」画成「是空的」，
+        //    也不弹完善引导（那条判断只在登录那一刻做一次，见
+        //    `LoginViewController`，这里只是把最新值同步过来重画）。
+        Auth.fetchProfile { [weak self] _ in
+            // 结果不管 ok 还是 unreachable 都不用另外处理：
+            // ok 时 `applyServerProfile` 已经把本地写好了，重画一次就是；
+            // unreachable 时本地没被动过，重画出来的还是原来那份，正是 B4 要的。
+            self?.refresh()
+        }
     }
 
     /// 照 `Auth.profileKeys` 画。加字段只改那张表。
@@ -323,9 +333,21 @@ final class AccountViewController: PushedViewController {
         let a = UIAlertController(title: label(for: id), message: nil,
                                   preferredStyle: .alert)
         a.addTextField { $0.text = Auth.profile(id) }
+        // 🚨🚨 09-17 契约 B2：真发到服务端，**用响应回写本地**——原来这里
+        //    直接 `Auth.setProfile` 写本地就算数，下次登录/换设备一问
+        //    服务端全丢，这正是资料"跟不着账号走"的另一个出口。
         a.addAction(UIAlertAction(title: L.save, style: .default) { [weak self] _ in
-            Auth.setProfile(id, a.textFields?.first?.text ?? "")
-            self?.refresh()
+            let v = a.textFields?.first?.text ?? ""
+            Auth.saveProfile([id: v]) { ok in
+                guard let self = self else { return }
+                self.refresh()
+                if !ok {
+                    let f = UIAlertController(title: nil, message: L.profile_save_failed,
+                                              preferredStyle: .alert)
+                    f.addAction(UIAlertAction(title: "OK", style: .default))
+                    self.present(f, animated: true)
+                }
+            }
         })
         a.addAction(UIAlertAction(title: L.cancel, style: .cancel))
         present(a, animated: true)

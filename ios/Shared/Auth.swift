@@ -384,6 +384,124 @@ enum Auth {
             v.trimmingCharacters(in: .whitespaces), forKey: kv.key)
     }
 
+    // MARK: - 资料跟账号走（09-17 契约 `_profile跟账号走_客户端契约_20260917.md`）
+    //
+    // 🚨🚨 Kevin 09-17 亲口：「这个会员信息跟着账户走，不是存在本机…
+    //    我点进去还让我完善资料，完善个锤子啊！」——本地那份 `profileKeys`
+    //    从来没被服务端数据填过，`hasNickname` 永远读到空，所以每次登录
+    //    都被当成"没填过"重新拦一次。服务端 `/api/profile` 才是权威，
+    //    本地只降级成缓存（离线也要能显示），**方向永远是服务端→本地**。
+
+    /// GET /api/profile 的结果。
+    enum ProfileFetchResult {
+        case ok(nickname: String, birthday: String, country: String,
+                region: String, job: String)
+        /// 🚨 B4：网络失败/非 200，**绝不能当成"资料是空的"**——
+        ///    调用方原样保留本地缓存，不弹完善引导、不清空。
+        ///    契约坏样本⑤就是钉这条：断网时不许弹完善引导、不许清本地。
+        case unreachable
+    }
+
+    /// 服务端字段名 —— 只有 "nick"（界面/`profileKeys` 用的 id）
+    /// 对应服务端的 "nickname" 不一样，其余四个本来就同名。
+    /// "account" 不在服务端字段里（契约§〇：那是登录凭据派生的只读显示值），
+    /// 传进来直接丢弃，不发请求。
+    private static func serverFieldName(_ id: String) -> String? {
+        switch id {
+        case "nick": return "nickname"
+        case "birthday", "country", "region", "job": return id
+        default: return nil
+        }
+    }
+
+    /// B1/B3 的落地点：GET 到什么就**原样**写进本地，包括空字符串
+    /// （服务端说没有就该显示没有，不是"保留上次那份"——那样就不是缓存
+    /// 是过期数据了）。
+    ///
+    /// 🚨 昵称同时写两个键：`setNickname` 写 `kNick`（`hasNickname`/
+    ///    `displayName` 读这个，首页用）、`setProfile("nick",…)` 写
+    ///    `auth_nickname`（账户页读这个）。这两个键本该是一个——是旧账，
+    ///    2.2 下一稿收成一份——但**这次同步必须两边都写**，否则要么账户页
+    ///    看得到昵称首页看不到，要么反过来，一样是"改了一半"。
+    ///    生日不用两次写：`kBirth` 和 `profileKeys` 里的 "auth_birthday"
+    ///    本来就是同一个 key。
+    private static func applyServerProfile(_ p: [String: Any]) {
+        let nick = (p["nickname"] as? String) ?? ""
+        setNickname(nick)
+        setProfile("nick", nick)
+        setBirthday((p["birthday"] as? String) ?? "")
+        setProfile("country", (p["country"] as? String) ?? "")
+        setProfile("region", (p["region"] as? String) ?? "")
+        setProfile("job", (p["job"] as? String) ?? "")
+    }
+
+    static func fetchProfile(onResult: @escaping (ProfileFetchResult) -> Void) {
+        guard let url = URL(string: Backend.base + "/api/profile") else {
+            return DispatchQueue.main.async { onResult(.unreachable) }
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        req.setValue(DeviceId.pass, forHTTPHeaderField: "X-Alex-Pass")
+        req.timeoutInterval = 15
+        URLSession.shared.dataTask(with: req) { data, resp, err in
+            guard err == nil, let data = data,
+                  let http = resp as? HTTPURLResponse, http.statusCode == 200,
+                  let j = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let p = j["profile"] as? [String: Any]
+            else {
+                return DispatchQueue.main.async { onResult(.unreachable) }
+            }
+            applyServerProfile(p)
+            DispatchQueue.main.async {
+                onResult(.ok(nickname: (p["nickname"] as? String) ?? "",
+                             birthday: (p["birthday"] as? String) ?? "",
+                             country: (p["country"] as? String) ?? "",
+                             region: (p["region"] as? String) ?? "",
+                             job: (p["job"] as? String) ?? ""))
+            }
+        }.resume()
+    }
+
+    /// POST /api/profile —— `fields` 的键是**界面 id**（跟 `profileKeys`/
+    /// `serverFieldName` 一致），不是服务端字段名，这里负责翻译。
+    /// 可以一次带多个字段（partial update，没提到的字段服务端保持原样）。
+    ///
+    /// 🚨🚨 B2：**用响应里的 `profile` 回写本地，不是把这次传的值直接当成
+    ///    已保存**——服务端可能截断超长值、丢弃未知字段，`saved` 是它
+    ///    实际存了什么。调用方在 `onResult(true)` 之前看到的本地值
+    ///    还是旧的，是有意的：没保存成功就不该让用户以为保存成功了。
+    static func saveProfile(_ fields: [String: String],
+                            onResult: @escaping (Bool) -> Void) {
+        var body: [String: String] = [:]
+        for (id, v) in fields {
+            guard let key = serverFieldName(id) else { continue }
+            body[key] = v
+        }
+        guard !body.isEmpty else {
+            return DispatchQueue.main.async { onResult(false) }
+        }
+        guard let url = URL(string: Backend.base + "/api/profile") else {
+            return DispatchQueue.main.async { onResult(false) }
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue(DeviceId.pass, forHTTPHeaderField: "X-Alex-Pass")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        req.timeoutInterval = 15
+        URLSession.shared.dataTask(with: req) { data, resp, err in
+            guard err == nil, let data = data,
+                  let http = resp as? HTTPURLResponse, http.statusCode == 200,
+                  let j = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let p = j["profile"] as? [String: Any]
+            else {
+                return DispatchQueue.main.async { onResult(false) }
+            }
+            applyServerProfile(p)
+            DispatchQueue.main.async { onResult(true) }
+        }.resume()
+    }
+
     // MARK: - 网络
 
     private static func post(_ path: String, _ body: [String: Any],
