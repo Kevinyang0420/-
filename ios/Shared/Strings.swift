@@ -388,6 +388,7 @@ enum L {
     static var kb_back: String { s(["zh": "‹ 返回", "en": "‹ Back", "hant": "‹ 返回", "ja": "‹ 戻る", "de": "‹ Zurück", "es": "‹ Volver", "ar": "‹ رجوع", "vi": "‹ Quay lại", "th": "‹ ย้อนกลับ"]) }
     static var kb_pinyin: String { s(["zh": "拼音", "en": "Pinyin", "hant": "拼音", "ja": "ピンイン", "de": "Pinyin", "es": "Pinyin", "ar": "بينيين", "vi": "Bính âm", "th": "พินอิน"]) }
     static var kb_wubi: String { s(["zh": "五笔", "en": "Wubi", "hant": "五筆", "ja": "五筆", "de": "Wubi", "es": "Wubi", "ar": "ووبي", "vi": "Ngũ bút", "th": "อู๋ปี่"]) }
+    static var kb_cangjie: String { s(["zh": "速成", "en": "Quick", "hant": "速成"]) }
     static var kb_hand: String { s(["zh": "手写", "en": "Handwriting", "hant": "手寫", "ja": "手書き", "de": "Handschrift", "es": "Escritura a mano", "ar": "كتابة يدوية", "vi": "Viết tay", "th": "เขียนด้วยมือ"]) }
     static var kb_english: String { s(["zh": "英文", "en": "English", "hant": "英文", "ja": "英語", "de": "Englisch", "es": "Inglés", "ar": "الإنجليزية", "vi": "Tiếng Anh", "th": "อังกฤษ"]) }
     static var kb_pinyin_s: String { s(["zh": "拼", "en": "PY", "hant": "拼", "ja": "拼", "de": "PY", "es": "PY", "ar": "PY", "vi": "PY", "th": "พิน"]) }

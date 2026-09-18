@@ -293,6 +293,19 @@ enum Auth {
         // 🚨🚨 09-17：身份变了，会员本地缓存必须跟着清——不然下一个登进来的
         //    账号在 refresh() 网络回来之前，界面读到的是上一个人的会员状态。
         ProStatus.clearCache()
+        // 🚨🚨 09-18：1.1 核实的真洞——退出登录之前服务端从没清过设备记录的
+        //    user_id，换人同设备不登录，`checkout_link` 这类按设备令牌解人的端点
+        //    还是解出上一个账号，钱记到前一个人头上。本地清得再干净也堵不住这条，
+        //    洞在服务端那份记录上，必须真发这个请求才算堵上。
+        // 🚨 fire-and-forget：这条不影响退出登录本身的用户体验——本地状态已经
+        //    清完，界面已经弹回去了；这个请求失败不该也不能拦住他退出登录，
+        //    失败了下次登录/登出时机还有机会（1.1 说这个端点是幂等的）。
+        guard let url = URL(string: Backend.base + "/api/auth/logout") else { return }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue(DeviceId.pass, forHTTPHeaderField: "X-Alex-Pass")
+        req.timeoutInterval = 15
+        URLSession.shared.dataTask(with: req).resume()
     }
 
     // MARK: - 账号显示（跟安卓 `Onboard` 同口径）
