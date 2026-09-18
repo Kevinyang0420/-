@@ -81,25 +81,26 @@ final class AboutViewController: PushedViewController {
         let nTranslate = GenLangs.langs.count
         // 界面语言：`selectable` 里的 `sys`（跟随系统）不是一门语言，不算。
         let nUI = Lang.selectable.filter { $0 != Lang.sys }.count
-        add(text(L.fill(L.about_langs_translate, String(nTranslate)),
+        // 🚨🚨 09-19 撤销旧方案：0 亲自 grep 出 `GenLangs.langs` 里粵語
+        //    (`yue`) 正好排第 9——`prefix(8)` 会把它正好挤掉，而 Kevin
+        //    定过「粤普都要」，港粤用户打开这一屏第一眼找的就是它。
+        //    改成**显式名单**（1.1/0 定案）：en/zh/zht/ja/de/es/ko/yue，
+        //    去掉 fr、保留 yue，不再用 `prefix(N)` 这种"排第几个算第几个"的写法。
+        //    尾巴也从"…等 N 种"（会让人读成 9+N）换成两占位符句 +
+        //    「完整列表见设置」，不再需要算"剩余数"。
+        let sampleCodes = ["en", "zh", "zht", "ja", "de", "es", "ko", "yue"]
+        let byCode = Dictionary(uniqueKeysWithValues: GenLangs.langs.map { ($0.code, $0.label) })
+        let sample = sampleCodes.compactMap { byCode[$0] }.joined(separator: "  ·  ")
+        add(text(L.fill(L.about_langs_translate, String(nTranslate), String(sampleCodes.count)),
                  15, .regular, Skin.dim), id: "about.langs.translate")
-        // 列前 9 个的自称，再加「…还有 N 种」
-        // 🚨🚨 **这里传的是「剩余数」，不是总数**（2.1 09-07 在 PC 的关于页
-        //    截图上发现的，iOS 同款）。原来传 `nTranslate`，于是这一屏写着：
-        //        「可翻译成 31 种语言，包括：」＋ 列 9 个 ＋「…等 31 种」
-        //    德语更明显：`und 31 weitere`＝「还有 31 种」——
-        //    **读者会以为一共 40 种（9+31）**。
-        //    数字本身没算错，是**它回答的问题跟这句话问的不是同一个**。
-        let listed = 9
-        let sample = GenLangs.langs.prefix(listed).map { $0.label }
-            .joined(separator: "  ·  ")
-        add(text(sample, 15, .regular, Skin.text), id: "about.langs.sample")
-        // 🚨 剩余数为 0 时整行不画 —— 语言少于 9 门时「还有 0 种」很蠢。
-        let rest = max(0, nTranslate - listed)
-        if rest > 0 {
-            add(text(L.fill(L.about_langs_more, String(rest)),
-                     14, .regular, Skin.dim), id: "about.langs.more")
-        }
+        // 「完整列表见设置」拼在样例后面（1.1 09-19 原话），不是拼在上面那句
+        // 介绍句后面——跟 `about.langs.sample` 同一行，保留这个 id 不变，
+        // `AboutPageSpec.swift` 的 `testHasRealContent` 认的就是它。
+        add(text(sample + L.about_langs_full_list_hint, 15, .regular, Skin.text),
+            id: "about.langs.sample")
+        // 🚨 09-19：跟上面那句物理隔开成独立段落——8(此处列出) ≠ 9(界面语言数)
+        //    不需要澄清句（2.1 定案），但挤在一起会让人以为在说同一件事。
+        gap(10)
         add(text(L.fill(L.about_langs_ui, String(nUI)), 15, .regular, Skin.dim),
             id: "about.langs.ui")
         gap(4)

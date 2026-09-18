@@ -68,4 +68,11 @@ extension L {
         }
         return t
     }
+
+    /// 09-19 补：两个占位符的版本（`about_langs_translate` 这类 `%1$@`+`%2$@`）——
+    /// 单参数版只换第一个命中的 `%@`/`%1$@` 就 `return`，两个占位符会漏第二个。
+    static func fill(_ tpl: String, _ a: String, _ b: String) -> String {
+        tpl.replacingOccurrences(of: "%1$@", with: a)
+           .replacingOccurrences(of: "%2$@", with: b)
+    }
 }
