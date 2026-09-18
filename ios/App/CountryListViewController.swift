@@ -8,12 +8,19 @@ import UIKit
 ///
 /// 🚨🚨 09-18 三订：Kevin 真机反馈「这一个下拉菜单弄太长了……国家地区也是，
 ///    搞这么大、这么长」——249 项要能快速找到，三件事一起做：
-///    ①**行高压紧**（`rowHeight`），目标一屏 12 行以上，不是默认 44pt 的 7 行；
+///    ①**行高压紧**（`rowHeight`），目标一屏 ≥17 行（09-18 四订③改的判据，
+///    不再是这里最初写的 12 行），不是默认 44pt 的 7 行；
 ///    ②**常用置顶**（`ProfileCodes.commonCountryCodes`）+ 分隔线，下面才是
 ///    按字母排的全量表；③**右侧 A-Z 索引条**（`sectionIndexTitles`，iOS 原生
-///    机制，不是自己发明的手势）——索引按**英文名首字母**分组，不是拼音首字母：
-///    拼音索引需要一张"汉字→拼音声母"映射表，那类映射表 0 明确说了不许凭记忆
-///    手写；英文首字母是数据里现成的字段，排序/分组不用编任何东西。
+///    机制，不是自己发明的手势）。
+///
+/// 🚨🚨 09-18 四订：③的分组键改了。三订那版按**英文名首字母**分组——Grok
+///    审出这是真 bug：中文界面显示的是中文名，拿英文字母分组，"中国"按
+///    英文字母会掉进 Z（Zhongguo）或 C（China），自相打架。**分组键现在
+///    直接读 `ProfileCodes.allCountries` 里的 `idx`**——1.1 在数据表里发了
+///    拼音索引字段（多音字已消歧），中文/繁体界面自动切到拼音分桶，英文界面
+///    仍是英文首字母。这里不再自己从 `.en` 现场取首字母，也**不许用
+///    `CFStringTransform` 现场转拼音**——同一条规矩不许三端各转一份。
 ///
 /// 🚨 选完直接吐给 `onDone`，**不在这里自己 pop**——pop 到哪一屏，只有发起
 ///    这条流程的调用方（`AccountViewController`）知道，pop 的责任留给它。
@@ -28,16 +35,18 @@ final class CountryListViewController: PushedViewController,
     /// 第二个参数是省州 code，没有可选省州时传空串。
     var onDone: ((_ country: String, _ region: String) -> Void)?
 
-    /// 每行高度——48pt 比默认 44pt 略大方便点击，但比原来那种自动撑开的
-    /// 高度小得多；实测（见截图/UITest）一屏能看到 12 行以上。
-    private static let rowHeight: CGFloat = 48
+    /// 每行高度——**读 `ProfileCodes.listRowHeight`，别在这里再写一份字面量**
+    /// （0 09-18 点名：country/region 两屏各写了一份 48，是「同一规矩多处
+    /// 各一份必漂」的形态，改一处不改另一处两屏就悄悄不一致）。
+    /// 09-18 四订③：判据从「12+ 行算过」改成「一屏 ≥17 行」，最终数字
+    /// 靠真机/UITest 数可见格数核实，不拿算式当结论。
     private static let commonSectionIndex = "★"
 
     private let table = UITableView(frame: .zero, style: .plain)
     private let searchField = UITextField()
 
-    /// (code, label, 供搜索用的 zh/zht/en 拼接串, 原始英文名——分组用)
-    private typealias Item = (code: String, label: String, searchText: String, en: String)
+    /// (code, label, 供搜索用的 zh/zht/en/alt 拼接串, 分组键——中文拼音/英文首字母)
+    private typealias Item = (code: String, label: String, searchText: String, idx: String)
     private var common: [Item] = []
     private var lettered: [(letter: String, items: [Item])] = []
     private var all: [Item] = []
@@ -49,19 +58,20 @@ final class CountryListViewController: PushedViewController,
         UI.paintBg(self)
         title = L.profile_country
         all = ProfileCodes.allCountries
-        let commonSet = Set(ProfileCodes.commonCountryCodes)
-        common = ProfileCodes.commonCountryCodes.compactMap { code in
+        // 🚨 09-18 四订⑤：不再是写死的常量，`commonCountryCodes()` 现在是
+        //    系统区域推断(槽1)+最近选过(槽2)两槽算出来的——每次开这一屏都
+        //    重新算一遍，不缓存。
+        let commonCodes = ProfileCodes.commonCountryCodes()
+        let commonSet = Set(commonCodes)
+        common = commonCodes.compactMap { code in
             all.first { $0.code == code }
         }
         let rest = all.filter { !commonSet.contains($0.code) }
         var byLetter: [String: [Item]] = [:]
         for item in rest {
-            // 🚨 分组键用**原始英文名**首字母（`item.en`），不是 `label`——
-            //    非中文界面下 `label` 本来就是英文名没问题，但中文界面下
-            //    `label` 是中文，拿中文字首字取分组毫无意义（"中"、"日"这种字
-            //    排不出 A-Z）。用 `item.en` 就不受界面语言影响，分组结果恒定。
-            let letter = String(item.en.first ?? Character("#")).uppercased()
-            byLetter[letter, default: []].append(item)
+            // 🚨 分组键直接读 `ProfileCodes` 算好的 `idx`（中文拼音索引/英文
+            //    首字母，随界面语言自动切换），这里不再自己推导。
+            byLetter[item.idx, default: []].append(item)
         }
         lettered = byLetter.keys.sorted().map { ($0, byLetter[$0] ?? []) }
 
@@ -81,10 +91,13 @@ final class CountryListViewController: PushedViewController,
         table.translatesAutoresizingMaskIntoConstraints = false
         table.backgroundColor = .clear
         table.separatorColor = UIColor.white.withAlphaComponent(0.08)
-        table.rowHeight = Self.rowHeight
+        table.rowHeight = ProfileCodes.listRowHeight
         table.dataSource = self
         table.delegate = self
-        table.register(UITableViewCell.self, forCellReuseIdentifier: "row")
+        // 🚨 09-18 四订⑥：要「主名 + 行尾次要码」（`.value1` 自带的布局），
+        //    `register(UITableViewCell.self, ...)` 走 class-based 复用只能
+        //    生成 `.default` 样式的 cell——拿不到右侧 detailTextLabel，
+        //    这里改回手动 dequeue/构造，才能选 `.value1`。
         view.addSubview(search)
         view.addSubview(table)
         let g = view.safeAreaLayoutGuide
@@ -155,11 +168,24 @@ final class CountryListViewController: PushedViewController,
     }
 
     func tableView(_ tv: UITableView, cellForRowAt ip: IndexPath) -> UITableViewCell {
-        let cell = tv.dequeueReusableCell(withIdentifier: "row", for: ip)
+        let cell = tv.dequeueReusableCell(withIdentifier: "row")
+            ?? UITableViewCell(style: .value1, reuseIdentifier: "row")
         let item = items(in: ip.section)[ip.row]
-        cell.textLabel?.text = item.label
+        // 🚨 国旗只对**国家**有意义（`flagEmoji` 传两位 ISO 码），省州没有旗帜，
+        //    这一屏全是国家级条目，直接用 `item.code`。
+        let flag = ProfileCodes.flagEmoji(item.code)
+        cell.textLabel?.text = flag.isEmpty ? item.label : "\(flag)  \(item.label)"
         cell.textLabel?.font = .systemFont(ofSize: 16)
         cell.textLabel?.textColor = Skin.text
+        // 🚨🚨 09-18 四订⑥真机 UITest 实测踩到：`textLabel.text` 前面拼了旗子，
+        //    accessibility label 默认跟着 `text` 走，于是 `app.staticTexts["中国
+        //    大陆"]` 这种精确匹配全部失效——不是测试写错，是显示文本本身变了。
+        //    VoiceOver 读"国旗+国名"对用户没有额外信息量，单独钉一个不带旗子的
+        //    accessibilityLabel 两头都对：读起来干净，自动化定位也还认识那个名字。
+        cell.textLabel?.accessibilityLabel = item.label
+        cell.detailTextLabel?.text = item.code
+        cell.detailTextLabel?.font = .systemFont(ofSize: 11)
+        cell.detailTextLabel?.textColor = Skin.dim
         cell.backgroundColor = .clear
         cell.accessoryType = item.code == initialCountry ? .checkmark : .none
         return cell
@@ -171,6 +197,9 @@ final class CountryListViewController: PushedViewController,
     func tableView(_ tv: UITableView, didSelectRowAt ip: IndexPath) {
         tv.deselectRow(at: ip, animated: true)
         let code = items(in: ip.section)[ip.row].code
+        // 🚨 09-18 四订⑤：选中就记进槽2（最近选过），不等真存到服务端才记——
+        //    这一屏关掉再打开就该看见它排到常用区最前面。
+        ProfileCodes.noteCountrySelected(code)
         let opts = ProfileCodes.regions(of: code)
         if opts.isEmpty {
             onDone?(code, "")

@@ -49,8 +49,25 @@ final class ProfileDropdownSpec: XCTestCase {
         // 🚨 判据是"这是钻取列表页不是 actionSheet"——有搜索框（骨架版没有）。
         XCTAssertTrue(app.textFields["country.search"].waitForExistence(timeout: 5),
                       "🚨 国家列表页没有搜索框——是不是还在走旧的 actionSheet")
+
+        // 🚨🚨 09-18 四订③：0 把判据从「12+ 行」钉死成「≥17 行」（iPhone 15/16
+        //    类）。**数可见格数，不数公式算出来的理论值**——`isHittable` 只对
+        //    真正落在屏幕可见区域内、能被点到的 cell 为真，跟眼睛看到的一致。
+        let visibleRows = app.cells.allElementsBoundByIndex.filter { $0.isHittable }.count
+        XCTAssertGreaterThanOrEqual(visibleRows, 17,
+            "🚨 一屏可见行数只有 \(visibleRows)，没达到 0 钉死的 ≥17 行判据")
+
+        // 🚨🚨 09-18 四订⑤：常用区不再是写死的 6 国，改成系统区域推断+最近
+        //    选过两槽——这台模拟器的系统区域解出来是香港不是大陆，「中国大陆」
+        //    不再保证不滚动就能看见（这是对的：它现在跟着设备区域走，不是
+        //    测试环境凑巧对不上）。**用搜索框找**，跟下面「南极洲」那条
+        //    测试同一个套路，不假设常用区里有什么。
+        let search = app.textFields["country.search"]
+        search.tap()
+        search.typeText("中国大陆")
+        Thread.sleep(forTimeInterval: 0.5)
         let cn = app.staticTexts["中国大陆"].firstMatch
-        XCTAssertTrue(cn.waitForExistence(timeout: 5), "🚨 国家列表里没有「中国大陆」")
+        XCTAssertTrue(cn.waitForExistence(timeout: 5), "🚨 搜索「中国大陆」之后列表里没有它")
         cn.tap()
         Thread.sleep(forTimeInterval: 1.0)
         shot("02_钻进省份列表")
@@ -113,9 +130,13 @@ final class ProfileDropdownSpec: XCTestCase {
     /// 职业选"其他"要能弹文本输入。
     ///
     /// 🚨 09-18 三订：职业从 actionSheet 换成跟国家/省州同款的紧凑
-    ///    `UITableView` 列表页（Kevin「27 条都嫌长」，见 `JobListViewController`
-    ///    类注释）——候选现在是表格行（`staticTexts`），不再是 `UIAlertAction`
-    ///    按钮（`buttons`），定位方式跟着换，不是测试凑巧改对了。
+    ///    `UITableView` 列表页（Kevin「27 条都嫌长」）。
+    /// 🚨 09-18 四订①：Grok 审出「27 条全屏 push 列表」才是结构根因，
+    ///    再换一版——半高 sheet + 双列 chip（见 `JobListViewController`
+    ///    类注释），不再是 push 到新页面。候选还是 `staticTexts`（chip
+    ///    里是 `UILabel`，跟表格行一样能被 XCUITest 认出来），但断言要
+    ///    多加一条：sheet 弹出时「我的账户」导航栏**必须还在**——这是区分
+    ///    「半高 sheet 盖在上面」和「整页 push 走掉」的硬证据，不是猜的。
     func testJobOtherStillPromptsFreeText() throws {
         let app = launchToAccount()
 
@@ -127,10 +148,21 @@ final class ProfileDropdownSpec: XCTestCase {
 
         XCTAssertFalse(app.alerts.firstMatch.textFields.firstMatch.exists,
                        "🚨 职业行点了之后直接是文本输入框——没有选择列表")
-        shot("06_职业列表行高")
+        // 🚨 半高 sheet 的硬证据：账户页导航栏还在（没有整页 push 走）。
+        XCTAssertTrue(app.navigationBars["我的账户"].exists,
+                      "🚨 职业选择器弹出后「我的账户」导航栏不见了——像是整页 push"
+                      + "走了，不是半高 sheet 盖上去")
+        shot("06_职业半高sheet双列chip")
         // 抽查首项，确认整张 27 项表真的渲染出来了，不是只挂了个空壳。
         XCTAssertTrue(app.staticTexts["学生"].firstMatch.waitForExistence(timeout: 5),
                       "🚨 职业列表第一项「学生」没出现")
+        // 🚨🚨 09-18 四订①真机实测发现：27 项两列在 58% 半高 sheet 里装不满
+        //    （最后一两行在折叠线以下），"其他"是第 27 项、排最后，不滑不可见
+        //    ——**这是真实布局约束，不是测试环境的意外**。sheet 挂了
+        //    `.large()` 第二档，`prefersScrollingExpandsWhenScrolledToEdge`
+        //    默认开着，往上一划会把 sheet 拉到全屏，露出全部 27 项。
+        app.swipeUp()
+        Thread.sleep(forTimeInterval: 0.5)
         let other = app.staticTexts["其他"].firstMatch
         XCTAssertTrue(other.waitForExistence(timeout: 5), "🚨 职业列表里没有「其他」")
         other.tap()

@@ -5,6 +5,10 @@ import UIKit
 ///
 /// 🚨 09-18 三订：行高压紧跟 `CountryListViewController` 同一个值、同一个
 ///    理由——中国 34 个省州一样会撞到"翻起来费劲"这条，不只是国家那一页的事。
+/// 🚨 09-18 四订③：判据从 12+ 行改成 ≥17 行。
+/// 🚨🚨 0 09-18 点名：行高原来在这里和 `CountryListViewController` 各写一份
+///    字面量 48——同一条规矩两个出口，改一处不改另一处就悄悄不一致且不报错。
+///    现在两边都读 `ProfileCodes.listRowHeight`，只有一处。
 final class RegionListViewController: PushedViewController,
         UITableViewDataSource, UITableViewDelegate {
 
@@ -27,10 +31,11 @@ final class RegionListViewController: PushedViewController,
         table.translatesAutoresizingMaskIntoConstraints = false
         table.backgroundColor = .clear
         table.separatorColor = UIColor.white.withAlphaComponent(0.08)
-        table.rowHeight = 48
+        table.rowHeight = ProfileCodes.listRowHeight
         table.dataSource = self
         table.delegate = self
-        table.register(UITableViewCell.self, forCellReuseIdentifier: "row")
+        // 🚨 09-18 四订⑥：不用 class-based register——那样拿不到 `.value1`
+        //    的右侧 detailTextLabel，见 `CountryListViewController` 同一条注释。
         view.addSubview(table)
         let g = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
@@ -46,11 +51,17 @@ final class RegionListViewController: PushedViewController,
     }
 
     func tableView(_ tv: UITableView, cellForRowAt ip: IndexPath) -> UITableViewCell {
-        let cell = tv.dequeueReusableCell(withIdentifier: "row", for: ip)
+        let cell = tv.dequeueReusableCell(withIdentifier: "row")
+            ?? UITableViewCell(style: .value1, reuseIdentifier: "row")
         let item = items[ip.row]
+        // 🚨 省州没有国旗（`flagEmoji` 只认两位国家码，`CN-GD` 这种会原样
+        //    返回空串），这里只要行尾码，不要旗子——跟 Grok 给的样例一致。
         cell.textLabel?.text = item.label
         cell.textLabel?.font = .systemFont(ofSize: 16)
         cell.textLabel?.textColor = Skin.text
+        cell.detailTextLabel?.text = item.code
+        cell.detailTextLabel?.font = .systemFont(ofSize: 11)
+        cell.detailTextLabel?.textColor = Skin.dim
         cell.backgroundColor = .clear
         cell.accessoryType = item.code == initialRegion ? .checkmark : .none
         return cell

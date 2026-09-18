@@ -441,12 +441,14 @@ final class AccountViewController: PushedViewController {
 
     /// 🚨 09-18 三订：跟「地区」同一次改版——原来是 actionSheet，Kevin 反馈
     ///    「27 条都嫌长」，换成跟国家/省州同一套紧凑列表页。
+    /// 🚨 09-18 四订①：从 push 改成半高 sheet（`present`），见
+    ///    `JobListViewController` 类注释。`onDone` 在 sheet 自己关掉之后
+    ///    才触发，这里不用再 `popToViewController`。
     private func pickJob() {
         let vc = JobListViewController()
         vc.initialJob = Auth.profile("job")
         vc.onDone = { [weak self] code in
             guard let self = self else { return }
-            self.navigationController?.popToViewController(self, animated: true)
             if code == ProfileCodes.occOther {
                 self.pickJobOtherText()
             } else {
@@ -457,7 +459,7 @@ final class AccountViewController: PushedViewController {
                 self.save(["job": code, "other_text": ""])
             }
         }
-        navigationController?.pushViewController(vc, animated: true)
+        present(vc, animated: true)
     }
 
     /// 职业选了"其他"：主字段存固定的 `occ_other`，用户自己写的文本存进独立的

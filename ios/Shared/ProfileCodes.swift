@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 /// 国家 / 一级行政区的**真实数据**，职业沿用规格 §4.3 已钉死的 27 项终稿。
@@ -23,11 +24,24 @@ import Foundation
 ///    上一版写的**已知穷举清单**，不是猜的通用国标↔ISO映射表——那种映射表
 ///    0 明确说了不许凭记忆手写。`legacyRegionMigration` 只覆盖这 7 个，
 ///    已经点过旧版本这几个占位省份的人，资料页不会因为查不到码而显示空白。
+///
+/// 🚨🚨 09-18 四订（Grok 审出的真 bug + 0 拍板）：中文界面的 A-Z 索引/排序
+///    **不许按英文首字母**——"中国"按英文字母会掉进 Z（Zhongguo）或 C
+///    （China）自相打架。也**不许自己拿 `CFStringTransform` 现场转拼音**——
+///    那是「同一条规矩三端各一份」，安卓/PC 各转各的迟早漂。正解：1.1 在
+///    `profile_codes.json` 里直接发了 `py`（拼音排序键）/`idx`（索引字母，
+///    多音字已消歧——重庆是 `chongqingshi` 不是 `zhongqing`）两个字段，
+///    三端吃同一份表，排序/分桶只读这两个字段，不自己算。`en` 首字母分组
+///    **只在英文界面**保留（英文界面显示的就是英文名，按英文字母分组才对
+///    应得上眼睛看到的东西）。
 enum ProfileCodes {
 
     // ------------------------------------------------------------ 装载
 
-    private struct Entry { let code: String; let zh: String; let zht: String; let en: String }
+    private struct Entry {
+        let code: String; let zh: String; let zht: String; let en: String
+        let py: String; let idx: String; let alt: [String]
+    }
 
     private static let lock = NSLock()
     private static var loaded = false
@@ -57,7 +71,10 @@ enum ProfileCodes {
                 guard let code = row["code"] as? String else { return nil }
                 return Entry(code: code, zh: (row["zh"] as? String) ?? "",
                              zht: (row["zht"] as? String) ?? "",
-                             en: (row["en"] as? String) ?? "")
+                             en: (row["en"] as? String) ?? "",
+                             py: (row["py"] as? String) ?? "",
+                             idx: (row["idx"] as? String) ?? "",
+                             alt: (row["alt"] as? [String]) ?? [])
             }
         }
         countryList = parse("countries")
@@ -65,6 +82,14 @@ enum ProfileCodes {
         for e in countryList { countryByCode[e.code] = e }
         for e in regionList { regionByCode[e.code] = e }
     }
+
+    /// 国家/省州两屏共用的行高——09-18 四订③改判据成"一屏 ≥17 行"之后，
+    /// 0 点出这个数原来散在 `CountryListViewController`/`RegionListViewController`
+    /// 两个文件里各写一份字面量，是「同一规矩多处各一份必漂」的形态：改一处
+    /// 不改另一处，两屏就悄悄不一致，且编译器不会报错。现在只有这一处。
+    /// （职业页 09-18 四订①已经改成 chip 网格，不再用这个——那边是
+    /// `JobListViewController.chipHeight`，形状不同，不该硬凑同一个常量。）
+    static let listRowHeight: CGFloat = 38
 
     // ------------------------------------------------------------ 职业（不变）
 
@@ -107,24 +132,79 @@ enum ProfileCodes {
 
     // ------------------------------------------------------------ 国家 / 省州
 
-    /// 全部国家，按显示名排序——给列表页直接用。
-    /// 🚨 `searchText` 带了 zh/zht/en 三份（空格拼接），**只用来做包含匹配**——
-    ///    列表页只显示当前界面语言那一份，但搜索框要三个都能匹配（0 原话
-    ///    「打 de 出德国」，界面显示的是中文"德国"，光匹配显示出来的那份，
-    ///    打拼音以外的任何东西都搜不到）。`en` 单独再给一份**原始未拼接**的，
-    ///    是给 A-Z 分组用的——`searchText` 里的英文名可能带空格（"United
-    ///    States"），按空格切出最后一个词取首字母会切错（切出"States"的S，
-    ///    不是"United"的U），分组必须用这份没被拼接过的原始英文名。
-    static var allCountries: [(code: String, label: String, searchText: String, en: String)] {
+    /// 中文/繁体界面用拼音分桶排序，英文界面用英文名——两套桶，别一套打天下
+    /// （09-18 四订，见类注释）。
+    private static var usePinyinIndex: Bool { Lang.effective == Lang.zh || Lang.effective == Lang.hant }
+
+    /// 全部国家，已按当前界面语言排好序——给列表页直接用。
+    /// 🚨 `searchText` 带了 zh/zht/en/alt 全部（空格拼接），**只用来做包含
+    ///    匹配**——列表页只显示当前界面语言那一份，但搜索框要全都能匹配
+    ///    （0 原话「打 de 出德国」）。`idx` 是**预先算好的分组键**：中文/繁体
+    ///    界面用 1.1 发的拼音索引字母，英文界面用英文名首字母——**不在这里
+    ///    自己现场转拼音**，直接读表。
+    static var allCountries: [(code: String, label: String, searchText: String, idx: String)] {
         ensureLoaded()
-        return countryList.map {
-            ($0.code, label($0), [$0.zh, $0.zht, $0.en].joined(separator: " "), $0.en)
-        }.sorted { $0.1.localizedCompare($1.1) == .orderedAscending }
+        let pinyin = usePinyinIndex
+        let sorted = countryList.sorted { a, b in
+            pinyin ? a.py < b.py : a.en.localizedCompare(b.en) == .orderedAscending
+        }
+        return sorted.map {
+            (code: $0.code, label: label($0),
+             searchText: ([$0.zh, $0.zht, $0.en] + $0.alt).joined(separator: " "),
+             idx: pinyin ? ($0.idx.isEmpty ? "#" : $0.idx)
+                         : String($0.en.first ?? Character("#")).uppercased())
+        }
     }
 
-    /// 6 个「常用」国家/地区，固定顺序（0 原话「他 99% 的时候点的就是第一组」）——
-    /// 置顶展示，跟下面按字母排的全量表分开一节。
-    static let commonCountryCodes = ["CN", "HK", "TW", "US", "JP", "GB"]
+    /// 国旗 emoji——**纯算法**（ISO 3166-1 alpha-2 每个字母映射到一个
+    /// Regional Indicator Symbol，Unicode 标准机制，两个凑一对系统自动
+    /// 渲染成对应国旗），不是查一张手搭的"国家→emoji"表（09-18 四订⑥）。
+    /// 传两位字母以外的东西（比如省州的 `CN-GD`）原样返回空串——国旗只对
+    /// 国家有意义，省州没有对应旗帜，不该凑一个出来。
+    static func flagEmoji(_ iso2: String) -> String {
+        let up = iso2.uppercased()
+        guard up.count == 2, up.allSatisfy({ $0.isASCII && $0.isLetter }) else { return "" }
+        var s = ""
+        for ch in up.unicodeScalars {
+            guard let scalar = Unicode.Scalar(0x1F1E6 + (ch.value - 65)) else { return "" }
+            s.unicodeScalars.append(scalar)
+        }
+        return s
+    }
+
+    /// 「常用」国家/地区——09-18 四订⑤砍掉了写死的固定 6 国（Grok 点出跟
+    /// 他实际所在地脱节；0 拍板只做两槽，**不接服务端 TopN**，不用拉 1.1）：
+    /// 槽1：系统区域推断他大概率在哪（`Locale.current.region`，系统本来就有
+    ///      的信息，不申请定位权限）；
+    /// 槽2：这台设备上最近选过的国家（≤3，最近的排最前）。
+    /// 两槽去重合并，槽1在前；`noteCountrySelected` 由调用方在用户选中
+    /// 国家时调用，写进槽2。
+    static func commonCountryCodes() -> [String] {
+        var out: [String] = []
+        if let region = Locale.current.region?.identifier, !region.isEmpty,
+           countryByCode[region] != nil {
+            out.append(region)
+        }
+        for code in recentCountryCodes() where !out.contains(code) {
+            out.append(code)
+        }
+        return out
+    }
+
+    private static let recentCountryKey = "profile_recent_countries"
+
+    private static func recentCountryCodes() -> [String] {
+        (UserDefaults.standard.array(forKey: recentCountryKey) as? [String]) ?? []
+    }
+
+    /// 记一次「他选了这个国家」——最近的排最前，最多留 3 个（槽2的上限）。
+    static func noteCountrySelected(_ code: String) {
+        var list = recentCountryCodes()
+        list.removeAll { $0 == code }
+        list.insert(code, at: 0)
+        if list.count > 3 { list = Array(list.prefix(3)) }
+        UserDefaults.standard.set(list, forKey: recentCountryKey)
+    }
 
     /// 某个国家下面有哪些一级行政区，按显示名排序——直接按代码前缀过滤，
     /// 不额外建"省属于哪个国家"的映射表（0 点过这条：ISO 3166-2 代码自己
@@ -132,9 +212,10 @@ enum ProfileCodes {
     static func regions(of countryCode: String) -> [(code: String, label: String)] {
         ensureLoaded()
         let prefix = countryCode + "-"
+        let pinyin = usePinyinIndex
         return regionList.filter { $0.code.hasPrefix(prefix) }
+            .sorted { pinyin ? $0.py < $1.py : $0.en.localizedCompare($1.en) == .orderedAscending }
             .map { ($0.code, label($0)) }
-            .sorted { $0.1.localizedCompare($1.1) == .orderedAscending }
     }
 
     static func countryLabel(_ code: String) -> String {
@@ -229,6 +310,41 @@ enum ProfileCodes {
         if !occupations.contains(where: { $0.code == occOther }) {
             bad.append("occOther 常量跟 occupations 表对不上")
         }
+
+        // ⑦ 拼音字段真的装进来了，且重庆没被消歧错（09-18 四订，Grok bug）
+        if let cq = regionByCode["CN-CQ"], cq.py != "chongqingshi" {
+            bad.append("CN-CQ 拼音键不是 chongqingshi（多音字消歧可能没生效）：\(cq.py)")
+        }
+        if let cn = countryByCode["CN"], cn.idx.isEmpty {
+            bad.append("CN 的 idx 索引字母是空的——拼音分桶会失真")
+        }
+
+        // ⑧ 国旗是算出来的（09-18 四订⑥）：CN → 🇨🇳，按 codepoint 比对，
+        //    不按显示比对（终端/日志渲染 emoji 不可靠，见历史教训）。
+        let cnFlag = flagEmoji("CN").unicodeScalars.map { $0.value }
+        if cnFlag != [0x1F1E8, 0x1F1F3] {
+            bad.append("CN 国旗 emoji 算错了：\(cnFlag)")
+        }
+        // 反向对照：省州码（三段式，非两位字母）不该凑出一面旗
+        if !flagEmoji("CN-GD").isEmpty {
+            bad.append("省州码不该凑出国旗（省州没有对应旗帜）")
+        }
+
+        // ⑨ 常用国家槽2（09-18 四订⑤）：去重 + 封顶3 + 最近的排最前。
+        //    动了 UserDefaults 真实的键，测完必须复原，不能污染他手机上
+        //    真实积累的"最近选过"记录。
+        let savedRecent = recentCountryCodes()
+        UserDefaults.standard.removeObject(forKey: recentCountryKey)
+        noteCountrySelected("JP")
+        noteCountrySelected("FR")
+        noteCountrySelected("JP")   // 重复选同一个——不该出现两次，且要跳到最前
+        noteCountrySelected("DE")
+        noteCountrySelected("IT")   // 第 4 个——槽2该封顶在 3 个，最早的 FR 被挤掉
+        let recent = recentCountryCodes()
+        if recent.count != 3 { bad.append("槽2没封顶在3个：\(recent)") }
+        if recent.first != "IT" { bad.append("槽2最近选的没排在最前：\(recent)") }
+        if Set(recent).count != recent.count { bad.append("槽2里同一个国家出现了不止一次") }
+        UserDefaults.standard.set(savedRecent, forKey: recentCountryKey)
 
         return bad.isEmpty ? nil : bad.joined(separator: "; ")
     }
