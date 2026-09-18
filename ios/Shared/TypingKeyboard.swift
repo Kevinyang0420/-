@@ -187,20 +187,22 @@ final class TypingKeyboardView: UIView {
     ///    ② 删 case 会牵动一堆 `switch`，改动面大、回滚也难。
     ///    **单一配置点就是下面 `next` 那三行** —— 别在别处再加 if 挡一遍。
     enum IMMode {
-        case pinyin, wubi, hand
+        case pinyin, wubi, cangjie, hand
         var label: String {
             switch self {
             case .pinyin: return L.kb_pinyin_s
             case .wubi: return L.kb_wubi_s
+            case .cangjie: return L.kb_cangjie_s
             case .hand: return L.kb_hand_s
             }
         }
         var next: IMMode {
             switch self {
             case .pinyin: return .wubi
+            case .wubi: return .cangjie
             // 🚨 引擎落地前**跳过手写**，直接回拼音（见上面的说明）。
             //    引擎做好了就把这行改回 `return .hand`。
-            case .wubi: return .pinyin
+            case .cangjie: return .pinyin
             case .hand: return .pinyin
             }
         }
@@ -862,7 +864,9 @@ final class TypingKeyboardView: UIView {
     ///    而那种错**看起来像模型很蠢**，其实是我们把结果贴错了地方。
     private func scheduleCloudGuess() {
         cloudTimer?.invalidate(); cloudTimer = nil
-        guard chinese, imMode != .wubi, !pinyin.isEmpty else { return }
+        // 🚨 云端整句猜测是拼音专属——五笔/倉頡速成的缓冲区里放的是形码不是拼音，
+        //    拿形码去问云端拼音接口毫无意义，两个非拼音档位都要排除。
+        guard chinese, imMode != .wubi, imMode != .cangjie, !pinyin.isEmpty else { return }
         let py = pinyin
         guard PinyinSplit.split(py).count >= Self.cloudMinSyllables else { return }
         guard py != cloudAsked else { return }
@@ -898,6 +902,14 @@ final class TypingKeyboardView: UIView {
             var wc = PinyinSplit.wubiCandidates(pinyin)
             if wc.isEmpty { wc = PinyinSplit.wubiPrefix(pinyin, limit: 40) }
             candBar.setCandidates(wc.isEmpty ? [pinyin] : wc)
+            return
+        }
+
+        // 倉頡速成合一：一张表两种打法，`CangjieMatch` 自己按输入长度切换
+        // 速成解读（1-2键）/ 倉頡前缀匹配（3键+），见那个文件的 doc comment。
+        if imMode == .cangjie {
+            let cc = PinyinSplit.cangjieCandidates(pinyin)
+            candBar.setCandidates(cc.isEmpty ? [pinyin] : cc)
             return
         }
 
@@ -952,7 +964,9 @@ final class TypingKeyboardView: UIView {
         //    整串命中 / 前缀联想（mingt→明天）/ 连拼整句 → 整串清（沿用旧约定，避免剩个裸 t）；
         //    首音节的单字候选 → 只吃掉首音节，剩下的拼音留着继续出候选（ceshiyixia 点「测」→ 剩 shiyixia）。
         //    算不出来（或首音节不是缓冲前缀）→ 整串清，**绝不留一半**。
-        if imMode != .wubi, !pinyin.isEmpty {
+        // 🚨 这段"只吃掉首音节"的逻辑是拼音专属（靠 `PinyinSplit.split` 切音节）——
+        //    倉頡速成的输入是形码不是音节，跟五笔一样选一个就该清空整个缓冲。
+        if imMode != .wubi, imMode != .cangjie, !pinyin.isEmpty {
             let parts = PinyinSplit.split(pinyin)
             var whole = PinyinSplit.candidates(pinyin) + PinyinSplit.prefixWords(pinyin, limit: 20)
             if parts.count > 1 { whole.append(PinyinSplit.firstGuess(pinyin)) }

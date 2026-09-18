@@ -24,6 +24,11 @@ enum PinyinSplit {
     ///    而且完全不报错 —— 那种 bug 只会被当成"候选看着怪"。
     private static var dictKeys: [String] = []
     private static var wubiKeys: [String] = []
+    /// 倉頡（速成合一）码表。🚨 09-18：只是 1.1 给的 50 字启动子集
+    /// （`_cangjie_subset_bootstrap_20260918.md`），不是最终数据；全量表另外排期，
+    /// 换表时这里的装载逻辑不用改，只换 `Resources/cangjie.txt` 这一个文件。
+    private static var cangjie: [String: String] = [:]
+    private static var cangjieKeys: [String] = []
     private static var loaded = false
     private static let lock = NSLock()
 
@@ -77,6 +82,13 @@ enum PinyinSplit {
             let k = String(ln[ln.startIndex..<t])
             wubi[k] = String(ln[ln.index(after: t)...])
             wubiKeys.append(k)          // 保住码表原顺序
+        }
+
+        for ln in readLines("cangjie") {
+            guard let t = ln.firstIndex(of: "\t") else { continue }
+            let k = String(ln[ln.startIndex..<t])
+            cangjie[k] = String(ln[ln.index(after: t)...])
+            cangjieKeys.append(k)       // 保住码表原顺序（速成/倉頡排序都靠它）
         }
     }
 
@@ -366,6 +378,12 @@ enum PinyinSplit {
     /// 五笔码的精确候选。
     static func wubiCandidates(_ code: String) -> [String] {
         lookup(wubi, code)
+    }
+
+    /// 倉頡（速成合一）候选——把码表原样交给 `CangjieMatch`，取码/排序逻辑
+    /// 全在那边（纯函数、有自己的 selfTest），这里只管"码表从哪来"。
+    static func cangjieCandidates(_ input: String, limit: Int = 40) -> [String] {
+        CangjieMatch.candidates(input, table: cangjie, order: cangjieKeys, limit: limit)
     }
 
     private static func lookup(_ m: [String: String], _ k: String) -> [String] {

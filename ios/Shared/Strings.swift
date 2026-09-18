@@ -393,6 +393,7 @@ enum L {
     static var kb_pinyin_s: String { s(["zh": "拼", "en": "PY", "hant": "拼", "ja": "拼", "de": "PY", "es": "PY", "ar": "PY", "vi": "PY", "th": "พิน"]) }
     static var kb_wubi_s: String { s(["zh": "五", "en": "WB", "hant": "五", "ja": "五", "de": "WB", "es": "WB", "ar": "WB", "vi": "WB", "th": "อู๋"]) }
     static var kb_hand_s: String { s(["zh": "写", "en": "HW", "hant": "寫", "ja": "書", "de": "HW", "es": "HW", "ar": "HW", "vi": "HW", "th": "เขียน"]) }
+    static var kb_cangjie_s: String { s(["zh": "速", "en": "CJ", "hant": "速"]) }
     static var kb_done: String { s(["zh": "完成", "en": "Done", "hant": "完成", "ja": "完了", "de": "Fertig", "es": "Listo", "ar": "تم", "vi": "Xong", "th": "เสร็จสิ้น"]) }
     static var kb_space: String { s(["zh": "空格", "en": "Space", "hant": "空格", "ja": "スペース", "de": "Leerzeichen", "es": "Espacio", "ar": "مسافة", "vi": "Dấu cách", "th": "เว้นวรรค"]) }
     static var kb_polish: String { s(["zh": "整理", "en": "Clean up", "hant": "整理", "ja": "整理", "de": "Aufräumen", "es": "Pulir", "ar": "تنقيح", "vi": "Sắp xếp", "th": "จัดระเบียบ"]) }
