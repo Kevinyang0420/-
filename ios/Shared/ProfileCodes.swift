@@ -8,12 +8,14 @@ import Foundation
 /// `Resources/profile_codes.json` 是从仓库根 `shared/profile_codes.json`
 /// **原样复制**的资源副本，换表时两处一起换、别只改一处。
 ///
-/// 🚨 中文名覆盖不全——249 个国家目前已全部有 `zh`（1.1 09-18 补齐过一版，
-///    接这个文件时留意这个数字还会变），但 5046 条省州里只有中国的 34 条填了
-///    `zh`，其余退英文；这不是这个文件的 bug，是翻译工作本身还没做完。
-///    这个文件要接住的是"**zh 是空字符串时，就算界面是中文也要退英文**"这条，
-///    不能让空字符串在中文界面下被直接显示成一行空白——这条判据不因为
-///    "现在国家表已经全翻完了"就可以去掉，省州那边还在用它。
+/// 🚨🚨 09-18 二订：国家表简/繁都已 249/249 齐全（1.1 换成 CLDR/Babel 生成，
+///    修掉了第一版用 `RegionInfo.DisplayName` 结果跟着生成器所在机器系统语言走
+///    的 bug）——`CN` 简体"中国大陆"、繁体"中國大陸"，是真的两份译文，不是拿
+///    简体凑数。但**省州只有中国 34 条有 `zh`、完全没有 `zht`**，其余 ~5000 条
+///    连 `zh` 都是空的，且以后也大概率一直是空（CLDR 没有 subdivision 级别的
+///    中文译名）。这个文件要接住的是"**zh/zht 是空字符串时，就算界面是中文/
+///    繁体也要退英文**"这条，不能让空字符串在中文界面下被直接显示成一行空白——
+///    省州那边永远会撞到这条，不因为国家表已经翻完了就可以省掉这层判断。
 ///
 /// 🚨🚨 老数据迁移：build 1431 用的是上一版手搭的骨架占位表，`CN-44`/`CN-31`/
 ///    `CN-11` 是**国标**编码，新表一律 ISO 3166-2（广东是 `CN-GD` 不是 `CN-44`）。
@@ -25,7 +27,7 @@ enum ProfileCodes {
 
     // ------------------------------------------------------------ 装载
 
-    private struct Entry { let code: String; let zh: String; let en: String }
+    private struct Entry { let code: String; let zh: String; let zht: String; let en: String }
 
     private static let lock = NSLock()
     private static var loaded = false
@@ -54,6 +56,7 @@ enum ProfileCodes {
             return arr.compactMap { row in
                 guard let code = row["code"] as? String else { return nil }
                 return Entry(code: code, zh: (row["zh"] as? String) ?? "",
+                             zht: (row["zht"] as? String) ?? "",
                              en: (row["en"] as? String) ?? "")
             }
         }
@@ -105,11 +108,23 @@ enum ProfileCodes {
     // ------------------------------------------------------------ 国家 / 省州
 
     /// 全部国家，按显示名排序——给列表页直接用。
-    static var allCountries: [(code: String, label: String)] {
+    /// 🚨 `searchText` 带了 zh/zht/en 三份（空格拼接），**只用来做包含匹配**——
+    ///    列表页只显示当前界面语言那一份，但搜索框要三个都能匹配（0 原话
+    ///    「打 de 出德国」，界面显示的是中文"德国"，光匹配显示出来的那份，
+    ///    打拼音以外的任何东西都搜不到）。`en` 单独再给一份**原始未拼接**的，
+    ///    是给 A-Z 分组用的——`searchText` 里的英文名可能带空格（"United
+    ///    States"），按空格切出最后一个词取首字母会切错（切出"States"的S，
+    ///    不是"United"的U），分组必须用这份没被拼接过的原始英文名。
+    static var allCountries: [(code: String, label: String, searchText: String, en: String)] {
         ensureLoaded()
-        return countryList.map { ($0.code, label($0)) }
-            .sorted { $0.1.localizedCompare($1.1) == .orderedAscending }
+        return countryList.map {
+            ($0.code, label($0), [$0.zh, $0.zht, $0.en].joined(separator: " "), $0.en)
+        }.sorted { $0.1.localizedCompare($1.1) == .orderedAscending }
     }
+
+    /// 6 个「常用」国家/地区，固定顺序（0 原话「他 99% 的时候点的就是第一组」）——
+    /// 置顶展示，跟下面按字母排的全量表分开一节。
+    static let commonCountryCodes = ["CN", "HK", "TW", "US", "JP", "GB"]
 
     /// 某个国家下面有哪些一级行政区，按显示名排序——直接按代码前缀过滤，
     /// 不额外建"省属于哪个国家"的映射表（0 点过这条：ISO 3166-2 代码自己
@@ -142,17 +157,22 @@ enum ProfileCodes {
     static func occupationLabel(_ code: String) -> String {
         guard !code.isEmpty else { return "" }
         guard let row = occupations.first(where: { $0.code == code }) else { return code }
-        return row.zh.isEmpty || !zhUi ? row.en : row.zh
+        // 🚨 职业表没有 `zht`（终稿只给了中/英，见 `occupations` 数组），
+        //    繁体界面目前也退英文——跟国家/省州同一条规则，不是漏做。
+        return Lang.effective == Lang.zh && !row.zh.isEmpty ? row.zh : row.en
     }
 
-    /// 中文界面显示中文名，别的界面退英文；**zh 是空字符串时不管界面语言，
-    /// 一律退英文**——空字符串不是"这个国家没有中文名"的正确表现形式，
-    /// 显示出来就是一行空白，用户会以为是加载失败。
+    /// 简体界面显示 `zh`、繁体界面显示 `zht`，别的界面退英文；**该用的那份
+    /// 是空字符串时不管界面语言，一律退英文**——空字符串不是"这个国家没有
+    /// 对应语言的名字"的正确表现形式，显示出来就是一行空白，用户会以为是
+    /// 加载失败（省州目前完全没有 `zht`，天天撞这条，不能删）。
     private static func label(_ e: Entry) -> String {
-        e.zh.isEmpty || !zhUi ? e.en : e.zh
+        switch Lang.effective {
+        case Lang.hant: return e.zht.isEmpty ? e.en : e.zht
+        case Lang.zh: return e.zh.isEmpty ? e.en : e.zh
+        default: return e.en
+        }
     }
-
-    private static var zhUi: Bool { Lang.effective == Lang.zh }
 
     /// build 1431 骨架版存过的 7 个占位省州 code → 新表里对应的真 code。
     /// 🚨 只有这 7 个是已知穷举——真查过新表哪个 code 对应哪个实体

@@ -110,7 +110,12 @@ final class ProfileDropdownSpec: XCTestCase {
         }
     }
 
-    /// 职业选"其他"要能弹文本输入——这部分交互不受这次地区改版影响，留着回归。
+    /// 职业选"其他"要能弹文本输入。
+    ///
+    /// 🚨 09-18 三订：职业从 actionSheet 换成跟国家/省州同款的紧凑
+    ///    `UITableView` 列表页（Kevin「27 条都嫌长」，见 `JobListViewController`
+    ///    类注释）——候选现在是表格行（`staticTexts`），不再是 `UIAlertAction`
+    ///    按钮（`buttons`），定位方式跟着换，不是测试凑巧改对了。
     func testJobOtherStillPromptsFreeText() throws {
         let app = launchToAccount()
 
@@ -122,7 +127,11 @@ final class ProfileDropdownSpec: XCTestCase {
 
         XCTAssertFalse(app.alerts.firstMatch.textFields.firstMatch.exists,
                        "🚨 职业行点了之后直接是文本输入框——没有选择列表")
-        let other = app.buttons["其他"].firstMatch
+        shot("06_职业列表行高")
+        // 抽查首项，确认整张 27 项表真的渲染出来了，不是只挂了个空壳。
+        XCTAssertTrue(app.staticTexts["学生"].firstMatch.waitForExistence(timeout: 5),
+                      "🚨 职业列表第一项「学生」没出现")
+        let other = app.staticTexts["其他"].firstMatch
         XCTAssertTrue(other.waitForExistence(timeout: 5), "🚨 职业列表里没有「其他」")
         other.tap()
         Thread.sleep(forTimeInterval: 1.0)

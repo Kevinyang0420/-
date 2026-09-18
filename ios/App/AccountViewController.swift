@@ -439,27 +439,25 @@ final class AccountViewController: PushedViewController {
         navigationController?.pushViewController(vc, animated: true)
     }
 
+    /// 🚨 09-18 三订：跟「地区」同一次改版——原来是 actionSheet，Kevin 反馈
+    ///    「27 条都嫌长」，换成跟国家/省州同一套紧凑列表页。
     private func pickJob() {
-        let a = UIAlertController(title: label(for: "job"), message: nil,
-                                  preferredStyle: .actionSheet)
-        for o in ProfileCodes.occupations {
-            a.addAction(UIAlertAction(title: ProfileCodes.occupationLabel(o.code),
-                                      style: .default) { [weak self] _ in
-                guard let self = self else { return }
-                if o.code == ProfileCodes.occOther {
-                    self.pickJobOtherText()
-                } else {
-                    // 🚨 从"其他"切回正常选项：把 other_text 一起清掉——
-                    //    留着的话下次又选"其他"会看到一段跟这次选择无关的旧文本，
-                    //    而 job 字段本身已经不是 occ_other 了，那段文本已经没有
-                    //    对应的展示位置，留着就是孤悬的脏数据。
-                    self.save(["job": o.code, "other_text": ""])
-                }
-            })
+        let vc = JobListViewController()
+        vc.initialJob = Auth.profile("job")
+        vc.onDone = { [weak self] code in
+            guard let self = self else { return }
+            self.navigationController?.popToViewController(self, animated: true)
+            if code == ProfileCodes.occOther {
+                self.pickJobOtherText()
+            } else {
+                // 🚨 从"其他"切回正常选项：把 other_text 一起清掉——
+                //    留着的话下次又选"其他"会看到一段跟这次选择无关的旧文本，
+                //    而 job 字段本身已经不是 occ_other 了，那段文本已经没有
+                //    对应的展示位置，留着就是孤悬的脏数据。
+                self.save(["job": code, "other_text": ""])
+            }
         }
-        a.addAction(UIAlertAction(title: L.cancel, style: .cancel))
-        a.popoverPresentationController?.sourceView = view
-        present(a, animated: true)
+        navigationController?.pushViewController(vc, animated: true)
     }
 
     /// 职业选了"其他"：主字段存固定的 `occ_other`，用户自己写的文本存进独立的
