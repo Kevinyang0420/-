@@ -4746,6 +4746,50 @@ final class MainViewController: UIViewController {
 
         paintMode()
         recoverPendingSessionIfAny()
+        startLongRecTestIfRequested()
+    }
+
+    /// 09-19 调试专用：④「录音不设 cap」最后一条——真机 1 小时耗电/内存测。
+    /// 我够不着真机触屏/麦克风，没法自己点录音说话一小时，所以借
+    /// `tapMic()` 这同一条真实录音路径（权限检查/setPhase/`Voice.start`
+    /// 一个不跳过），程序化触发+定时停止，中途每 5 分钟记一次电量和内存，
+    /// 只有调试注入的 env 会碰它，真机用户设不了（跟 `TRANSLESS_SEED_CARD`
+    /// 同一条规矩）。**这是真实分段录音**，不是伪造状态——app 声明了
+    /// `UIBackgroundModes: audio`，锁屏/切走也不该断。
+    private func startLongRecTestIfRequested() {
+        guard let s = ProcessInfo.processInfo.environment["TRANSLESS_LONG_REC_TEST_MIN"],
+              let minutes = Double(s), minutes > 0 else { return }
+        let t0 = Date()
+        func memMB() -> Double {
+            var info = mach_task_basic_info()
+            var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / 4)
+            let kerr = withUnsafeMutablePointer(to: &info) {
+                $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                    task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+                }
+            }
+            return kerr == KERN_SUCCESS ? Double(info.resident_size) / 1024 / 1024 : -1
+        }
+        func logSample(_ tag: String) {
+            UIDevice.current.isBatteryMonitoringEnabled = true
+            NSLog("LONGREC-PROBE %@ t=%.1fmin battery=%.0f%% mem=%.1fMB phase=%@ segCount=%d",
+                  tag, Date().timeIntervalSince(t0) / 60,
+                  UIDevice.current.batteryLevel * 100, memMB(),
+                  "\(self.phase)", self.segs?.count ?? -1)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            self?.tapMic()
+            logSample("起录")
+        }
+        let sampleTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { _ in
+            logSample("采样")
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + minutes * 60) { [weak self] in
+            sampleTimer.invalidate()
+            logSample("到点停止前")
+            self?.tapMic()
+            logSample("停止后")
+        }
     }
 
     /// 09-19 补：④"录音不设 cap"判据是**force-kill 重开还能找回已转好的部分**，
