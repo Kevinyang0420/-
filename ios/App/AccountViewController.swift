@@ -305,7 +305,6 @@ final class AccountViewController: PushedViewController {
         case "birthday": return L.profile_birth
         case "country": return L.profile_country
         case "region": return L.profile_region
-        case "city": return L.profile_city
         case "job": return L.profile_job
         default: return id
         }

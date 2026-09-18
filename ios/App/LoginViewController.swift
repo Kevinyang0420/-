@@ -300,7 +300,7 @@ final class LoginViewController: UIViewController {
                     Auth.fetchProfile { result in
                         let needsProfile: Bool
                         switch result {
-                        case .ok(let nickname, _, _, _, _, _, _):
+                        case .ok(let nickname, _, _, _, _):
                             needsProfile = nickname.trimmingCharacters(in: .whitespaces).isEmpty
                         case .unreachable:
                             // 🚨 B4：查不到不能当成"没填过"，那样网络一抖就把
