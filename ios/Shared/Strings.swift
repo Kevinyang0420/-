@@ -432,6 +432,9 @@ enum L {
     static var account_signout: String { s(["zh": "退出登录", "en": "Sign out", "hant": "登出", "ja": "サインアウト", "de": "Abmelden", "es": "Cerrar sesión", "ar": "تسجيل الخروج", "vi": "Đăng xuất", "th": "ออกจากระบบ"]) }
     static var account_signout_ask: String { s(["zh": "确定要退出登录吗？下次要重新收验证码。", "en": "Sign out? You\\'ll need a new code to sign back in.", "hant": "確定要登出嗎？下次要重新收驗證碼。", "ja": "サインアウトしますか？再度サインインには新しいコードが必要です。", "de": "Abmelden? Du brauchst dann einen neuen Code.", "es": "¿Cerrar sesión? Necesitarás un nuevo código para volver a entrar.", "ar": "تسجيل الخروج؟ ستحتاج إلى رمز جديد لتسجيل الدخول مرة أخرى.", "vi": "Đăng xuất? Lần sau bạn sẽ cần mã mới để đăng nhập lại.", "th": "ออกจากระบบใช่ไหม? ครั้งหน้าต้องรับรหัสยืนยันใหม่"]) }
     static var account_title: String { s(["zh": "账户", "en": "Account", "hant": "帳戶", "ja": "アカウント", "de": "Konto", "es": "Cuenta", "ar": "الحساب", "vi": "Tài khoản", "th": "บัญชี"]) }
+    static var eavesdrop_consent_title: String { s(["zh": "开始旁听前", "en": "Before you start", "hant": "開始旁聽前"]) }
+    static var eavesdrop_consent_body: String { s(["zh": "你需要自行取得在场人员同意。", "en": "You're responsible for getting consent from everyone present.", "hant": "你需要自行取得在場人員同意。"]) }
+    static var eavesdrop_consent_confirm: String { s(["zh": "我知道了，继续", "en": "I understand, continue", "hant": "我知道了，繼續"]) }
     static var act_manual: String { s(["zh": "请手动开启", "en": "Turn on manually", "hant": "請手動開啟", "ja": "手動でオンにする", "de": "Manuell einschalten", "es": "Actívalo manualmente", "ar": "فعّله يدويًا", "vi": "Vui lòng bật thủ công", "th": "เปิดด้วยตนเอง"]) }
     static var full_note: String { s(["zh": "在设置里打开就行。开好之后这一行不会变绿 —— iOS 不让 App 查这个状态，以键盘里的提示为准。", "en": "Just switch it on in Settings. This line won't turn green afterwards — iOS doesn't let the app read that state. The keyboard will tell you.", "hant": "在設定裡打開就行。開好之後這一行不會變綠 —— iOS 不讓 App 查這個狀態，以鍵盤裡的提示為準。", "ja": "設定でオンにしてください。オンにしてもこの行は緑になりません — iOSはアプリにその状態を読み取らせないためです。キーボードの表示を確認してください。", "de": "Einfach in den Einstellungen einschalten. Danach wird diese Zeile nicht grün – iOS erlaubt der App nicht, den Status zu lesen. Die Tastatur zeigt es dir.", "es": "Solo actívalo en Ajustes. Esta línea no se pondrá verde después — iOS no permite que la app lea ese estado. El teclado te lo indicará.", "ar": "فقط فعّله في الإعدادات. بعد التفعيل، لن يتحول هذا السطر إلى الأخضر - لا يسمح ‎iOS‎ للتطبيق بقراءة هذه الحالة. ستُخبرك لوحة المفاتيح.", "vi": "Chỉ cần bật trong Cài đặt. Sau khi bật, dòng này sẽ không chuyển xanh — iOS không cho ứng dụng đọc trạng thái này, hãy xem hướng dẫn trong bàn phím.", "th": "เพียงเปิดใน Settings หลังเปิดแล้วบรรทัดนี้จะไม่เปลี่ยนเป็นสีเขียว — iOS ไม่อนุญาตให้แอปตรวจสอบสถานะนี้ ให้ดูคำแนะนำในคีย์บอร์ด"]) }
     static var home_wordbook: String { s(["zh": "单词本", "en": "Wordbook", "hant": "單詞本", "ja": "単語帳", "de": "Wortliste", "es": "Vocabulario", "ar": "دفتر الكلمات", "vi": "Sổ từ", "th": "สมุดคำศัพท์"]) }
@@ -533,6 +536,18 @@ enum L {
     static var kpi_nodata: String { s(["zh": "还没有数据", "en": "No data yet", "hant": "還沒有資料", "ja": "データはまだありません", "de": "Noch keine Daten", "es": "Sin datos aún", "ar": "لا توجد بيانات بعد", "vi": "Chưa có dữ liệu", "th": "ยังไม่มีข้อมูล"]) }
     static var kpi_under_min: String { s(["zh": "不到 1 分钟", "en": "Under 1 min", "hant": "不到 1 分鐘", "ja": "1分未満", "de": "Unter 1 Min.", "es": "Menos de 1 min", "ar": "أقل من دقيقة", "vi": "Dưới 1 phút", "th": "ไม่ถึง 1 นาที"]) }
     static var f2f_more_langs: String { s(["zh": "更多语言…", "en": "More languages…", "hant": "更多語言…", "ja": "その他の言語…", "de": "Weitere Sprachen …", "es": "Más idiomas…", "ar": "المزيد من اللغات…", "vi": "Thêm ngôn ngữ…", "th": "ภาษาเพิ่มเติม…"]) }
+    static var f2f_mode_qa: String { s(["zh": "一问一答", "en": "Q&A", "hant": "一問一答"]) }
+    static var f2f_mode_listen: String { s(["zh": "旁听", "en": "Listen", "hant": "旁聽"]) }
+    static var f2f_listen_hint: String { s(["zh": "点下面开始，会一直录到你按停止", "en": "Tap below to start — it keeps recording until you stop it", "hant": "點下面開始，會一直錄到你按停止"]) }
+    static var f2f_listen_start: String { s(["zh": "开始旁听", "en": "Start", "hant": "開始旁聽"]) }
+    static var f2f_listen_stop: String { s(["zh": "停止", "en": "Stop", "hant": "停止"]) }
+    static var f2f_listen_finishing: String { s(["zh": "正在整理最后一段…", "en": "Wrapping up the last part…", "hant": "正在整理最後一段…"]) }
+    static var f2f_listen_minutes: String { s(["zh": "已记录 %1$d 分钟", "en": "%1$d min recorded", "hant": "已記錄 %1$d 分鐘"]) }
+    static var f2f_listen_done: String { s(["zh": "转写完成，可以留下来", "en": "Transcript ready — you can keep it", "hant": "轉寫完成，可以留下來"]) }
+    static var f2f_listen_empty: String { s(["zh": "这次没有录到内容", "en": "Nothing was recorded this time", "hant": "這次沒有錄到內容"]) }
+    static var f2f_listen_keep: String { s(["zh": "留下来", "en": "Keep it", "hant": "留下來"]) }
+    static var f2f_listen_kept: String { s(["zh": "已留进记事本", "en": "Saved to Notes", "hant": "已留進記事本"]) }
+    static var f2f_listen_recovered: String { s(["zh": "找回了一份未完成的旁听记录，已存进记事本", "en": "Recovered an unfinished listen session — saved to Notes", "hant": "找回了一份未完成的旁聽記錄，已存進記事本"]) }
     static var hist_yesterday: String { s(["zh": "昨天", "en": "Yesterday", "hant": "昨天", "ja": "昨日", "de": "Gestern", "es": "Ayer", "ar": "أمس", "vi": "Hôm qua", "th": "เมื่อวาน"]) }
     static var hist_monthday: String { s(["zh": "%1$d月%2$d日", "en": "%1$d/%2$d", "hant": "%1$d月%2$d日", "ja": "%1$d月%2$d日", "de": "%2$d.%1$d.", "es": "%2$d/%1$d", "ar": "%2$d/%1$d", "vi": "%2$d/%1$d", "th": "%2$d/%1$d"]) }
     static var notes_title: String { s(["zh": "日记本", "en": "Journal", "hant": "日記本", "ja": "日記", "de": "Tagebuch", "es": "Diario", "ar": "مذكّرة", "vi": "Nhật ký", "th": "สมุดไดอารี่"]) }
