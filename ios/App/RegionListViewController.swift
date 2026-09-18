@@ -1,7 +1,7 @@
 import UIKit
 
 /// 「地区」钻取的第二级：选省州（按 `CountryListViewController` 选中的
-/// 国家过滤）。城市这一级这次先不做，见 `ProfileCodes.swift` 类注释。
+/// 国家过滤）。
 ///
 /// 🚨 09-18 三订：行高压紧跟 `CountryListViewController` 同一个值、同一个
 ///    理由——中国 34 个省州一样会撞到"翻起来费劲"这条，不只是国家那一页的事。
@@ -9,6 +9,10 @@ import UIKit
 /// 🚨🚨 0 09-18 点名：行高原来在这里和 `CountryListViewController` 各写一份
 ///    字面量 48——同一条规矩两个出口，改一处不改另一处就悄悄不一致且不报错。
 ///    现在两边都读 `ProfileCodes.listRowHeight`，只有一处。
+/// 🚨🚨 09-18 五订：城市这一级接上了（锁——GeoNames 署名条款——已解）。
+///    `onDone` 签名从 `(region)` 改成 `(region, city)`——跟
+///    `CountryListViewController.onDone` 09-18 二订那次加省份是同一条道理：
+///    钻得更深，往上传的元组也要跟着变长，不是另开一条回调。
 final class RegionListViewController: PushedViewController,
         UITableViewDataSource, UITableViewDelegate {
 
@@ -16,8 +20,12 @@ final class RegionListViewController: PushedViewController,
     var countryCode: String = ""
     /// 打开这一屏时已经存的省州——只用来给当前选中项打勾。
     var initialRegion: String = ""
-    /// 选完了，把省州 code 吐给上一级（`CountryListViewController`）。
-    var onDone: ((_ region: String) -> Void)?
+    /// 打开这一屏时已经存的城市——只有还留在同一个省州时才有意义，
+    /// 传法跟 `CountryListViewController.initialRegion` 同一条道理。
+    var initialCity: String = ""
+    /// 走到头了（选完省州、且这个省州没有可选城市；或选完了城市）——
+    /// 第二个参数是城市 code，没有可选城市时传空串。
+    var onDone: ((_ region: String, _ city: String) -> Void)?
 
     private let table = UITableView(frame: .zero, style: .plain)
     private var items: [(code: String, label: String)] = []
@@ -67,8 +75,23 @@ final class RegionListViewController: PushedViewController,
         return cell
     }
 
+    /// 选了这个省州：有城市就钻进去，没有就直接收工（不弹一个空列表）——
+    /// 跟 `CountryListViewController.didSelectRowAt` 的国家→省州那一跳
+    /// 同一套逻辑，钻取到第几级都不变。
     func tableView(_ tv: UITableView, didSelectRowAt ip: IndexPath) {
         tv.deselectRow(at: ip, animated: true)
-        onDone?(items[ip.row].code)
+        let code = items[ip.row].code
+        let opts = ProfileCodes.cities(of: code)
+        if opts.isEmpty {
+            onDone?(code, "")
+            return
+        }
+        let vc = CityListViewController()
+        vc.regionCode = code
+        vc.initialCity = (code == initialRegion) ? initialCity : ""
+        vc.onDone = { [weak self] city in
+            self?.onDone?(code, city)
+        }
+        navigationController?.pushViewController(vc, animated: true)
     }
 }

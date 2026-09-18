@@ -119,6 +119,10 @@ final class AboutViewController: PushedViewController {
         if Links.terms != nil {
             add(link(L.prefs_pro_terms, #selector(tapTerms)), id: "about.terms.link")
         }
+        // 🚨🚨 09-18：CC BY 4.0 §3(a)(2) 要求的署名入口——城市数据（GeoNames）
+        //    加进来的这一批，法律要求"用户要够得到"，跟服务条款/隐私政策放
+        //    同一节，不是可有可无的附加项。
+        add(link(L.data_sources_title, #selector(tapDataSources)), id: "about.datasources.link")
         add(text(L.about_contact + L.sep_colon + Self.supportMail,
                  15, .regular, Skin.dim),
             id: "about.contact")
@@ -180,5 +184,8 @@ final class AboutViewController: PushedViewController {
     @objc private func tapTerms() {
         guard Links.terms != nil else { return }
         navigationController?.pushViewController(TermsViewController(), animated: true)
+    }
+    @objc private func tapDataSources() {
+        navigationController?.pushViewController(DataAttributionViewController(), animated: true)
     }
 }

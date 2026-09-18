@@ -420,20 +420,25 @@ final class AccountViewController: PushedViewController {
 
     // MARK: - 三个结构化 picker（国家 / 省州 / 职业）
 
-    /// 「地区」的钻取入口：国家 →（有省州才钻）省州 → 收工。
+    /// 「地区」的钻取入口：国家 →（有省州才钻）省州 →（有城市才钻）城市 → 收工。
     ///
     /// 🚨🚨 09-18 二订：原来是国家/省份各一个 `UIAlertController` actionSheet
     ///    并排摆着，0 打回来——他要的是**逐级钻取**（选了国家右滑进省份，
     ///    上一级能返回改），不是两个互相独立的选择器。`CountryListViewController`/
-    ///    `RegionListViewController` 走完各自的选择后**把结果吐回这里**，
-    ///    pop 到自己这一屏、再统一存一次——两级只发一次保存请求。
+    ///    `RegionListViewController`/`CityListViewController` 走完各自的选择后
+    ///    **把结果吐回这里**，pop 到自己这一屏、再统一存一次。
+    /// 🚨 09-18 五订：city 走本地存储（`Auth.setProfile`），不进 `save()` 那次
+    ///    网络请求——**服务端还不认这个字段**，见 `Auth.profileKeys` 那条注释；
+    ///    country/region 照旧走网络同步。
     private func pickAreaDrillDown() {
         let vc = CountryListViewController()
         vc.initialCountry = Auth.profile("country")
         vc.initialRegion = Auth.profile("region")
-        vc.onDone = { [weak self] country, region in
+        vc.initialCity = Auth.profile("city")
+        vc.onDone = { [weak self] country, region, city in
             guard let self = self else { return }
             self.navigationController?.popToViewController(self, animated: true)
+            Auth.setProfile("city", city)
             self.save(["country": country, "region": region])
         }
         navigationController?.pushViewController(vc, animated: true)
@@ -493,13 +498,20 @@ final class AccountViewController: PushedViewController {
         }
     }
 
-    /// "地区"合并行要显示的值：两级都选了就"国家 · 省州"拼起来，
-    /// 只选了国家（这个国家没有可选省州，或用户还没往下选）就只显示国家。
+    /// "地区"合并行要显示的值：选到哪一级就拼到哪一级——
+    /// "国家"/"国家 · 省州"/"国家 · 省州 · 城市"，09-18 五订加了城市那一段。
+    /// 🚨 城市不能脱离省州单独出现——没有省州就不可能钻到城市这一级
+    /// （`RegionListViewController` 才会 push 出城市选择器），这里只是
+    /// 顺着同一条"没有就跳过"的规则往下写一段，不是新逻辑。
     private func areaDisplayValue() -> String {
         let country = ProfileCodes.countryLabel(Auth.profile("country"))
         let region = ProfileCodes.regionLabel(Auth.profile("region"))
+        let city = ProfileCodes.cityLabel(Auth.profile("city"))
         if country.isEmpty { return "" }
-        return region.isEmpty ? country : country + " · " + region
+        var parts = [country]
+        if !region.isEmpty { parts.append(region) }
+        if !city.isEmpty { parts.append(city) }
+        return parts.joined(separator: " · ")
     }
 
     @objc private func askSignOut() {

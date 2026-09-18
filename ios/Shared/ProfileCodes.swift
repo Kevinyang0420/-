@@ -415,6 +415,23 @@ enum ProfileCodes {
         if Set(recent).count != recent.count { bad.append("槽2里同一个国家出现了不止一次") }
         UserDefaults.standard.set(savedRecent, forKey: recentCountryKey)
 
+        // ⑩ 城市（09-18 五订）：深圳在广东下，不该混进别的省；没数据的省
+        //    回空数组（"选完省就收工"这条路径靠这个判断，不能被一个总不为空
+        //    的假象糊弄过去）。
+        if cityList.isEmpty { bad.append("城市表是空的——bundle 里没找到最新的 profile_codes.json？") }
+        let gdCities = cities(of: "CN-GD").map { $0.code }
+        if !gdCities.contains(where: { cityById[$0]?.en == "Shenzhen" }) {
+            bad.append("广东省下没有深圳——城市按 region 精确匹配可能失效了")
+        }
+        // 反向对照：一个真实存在但没有城市数据的省份（用一个编造的省码测）
+        // 该回空，不该凑出结果。
+        if !cities(of: "ZZ-ZZ").isEmpty {
+            bad.append("凭空编的省码不该有城市，可能过滤条件太宽")
+        }
+        if dataLicenseText.isEmpty || !dataLicenseText.contains("GeoNames") {
+            bad.append("GeoNames 署名文本读不出来——CC BY 4.0 要求的署名会显示不出来")
+        }
+
         return bad.isEmpty ? nil : bad.joined(separator: "; ")
     }
 }
