@@ -964,7 +964,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             RecLog.add(sec: 0, bytes: 0, result: "起录闸放弃",
                        detail: "6 秒没等到前台，此刻 " + Self.appStateLine()
                            + "｜场景=" + Self.sceneStateLine()
-                           + "｜arming=" + String(armingNow))
+                           + "｜arming=" + String(armingNow),
+                       arming: armingNow,
+                       fg: UIApplication.shared.applicationState == .active)
         }
     }
 
@@ -989,7 +991,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                       + Self.appStateLine() + "｜arming=" + String(armingBefore))
         RecLog.add(sec: 0, bytes: 0, result: "起录闸通过",
                    detail: how + "，耗时 " + String(ms) + " ms，"
-                       + Self.appStateLine() + "｜arming=" + String(armingBefore))
+                       + Self.appStateLine() + "｜arming=" + String(armingBefore),
+                   arming: armingBefore,
+                   fg: UIApplication.shared.applicationState == .active)
         // 🚨 **回读条数**，别停在"我调了 add"。
         //    「录音诊断」在他手里必须真的有东西，
         //    而这条数字是我这边唯一能远程看到的凭据。
@@ -3637,6 +3641,11 @@ final class PrefsViewController: UIViewController {
             list.addArrangedSubview(group(L.prefs_g_diag))
             list.addArrangedSubview(row(L.rec_log_title, L.prefs_diag_sub,
                                         #selector(showRecLog)))
+            // 🚨 0 09-18 三条硬约束之一：手动按钮之外必须还有失败自动回传
+            //    （见 `RecLog.add` 里的 `isFailureResult`）——这个按钮只是
+            //    给他自己想主动同步时用，不是回传链路的唯一入口。
+            list.addArrangedSubview(row(L.reclog_upload_btn, nil,
+                                        #selector(uploadRecLogTapped)))
         }
 
         // ④ 关于
@@ -3926,6 +3935,17 @@ final class PrefsViewController: UIViewController {
     }
 
     /// 录音诊断：跟安卓一样，能看能复制。
+    @objc private func uploadRecLogTapped() {
+        RecLog.uploadRecent { [weak self] ok in
+            guard let self = self else { return }
+            let a = UIAlertController(
+                title: ok ? L.reclog_upload_ok : L.reclog_upload_fail,
+                message: nil, preferredStyle: .alert)
+            a.addAction(UIAlertAction(title: "OK", style: .cancel))
+            self.present(a, animated: true)
+        }
+    }
+
     @objc private func showRecLog() {
         let text = RecLog.dump()
         let a = UIAlertController(title: L.rec_log_title,

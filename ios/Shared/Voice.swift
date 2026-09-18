@@ -1405,13 +1405,31 @@ final class Voice: NSObject {
         //    （AppDelegate / BgRecProbe / KbVoiceHost）——
         //    残留的真值会让主 App「随手翻译」那次也不关会话。
         //    → 现在是实例属性，且只在真要 cleanup 的路径上置位。
-        guard running, !finished else { return }
+        guard running, !finished else {
+            // 🚨🚨 0 09-18 要求：`起录闸通过`之后的每个 return 点都要留痕，
+            //    否则"某一步静默 return"这类 bug 永远只能靠猜。
+            //    这条早退＝重复喊停（`stop(keepSession:)`被调了第二次），
+            //    onWav 不会再被任何人调用——之前这里连 kb.trail 都没有一行。
+            KbBridge.note("🚨 Voice.stop(keepSession:) 早退——running=" + String(running)
+                          + " finished=" + String(finished) + "，onWav 不会再被调用")
+            return
+        }
         keepSessionOnCleanup = keepSession
         stop()
     }
 
     func stop() {
-        guard running, !finished else { return }
+        guard running, !finished else {
+            // 🚨🚨 同上，这是那条规则的**真正咽喉**——所有走`stop(keepSession:)`
+            //    的调用最终也会落到这儿。重复调用/竞态（比如自动停计时器
+            //    和键盘发来的停止命令前后脚到）会在这里静默吃掉，onWav
+            //    从此没有任何人再调，Kevin那边表现就是"起录闸通过之后
+            //    一条记录都没有"。先留痕，不改行为——改行为要先确认
+            //    「第二次调用该不该也触发一次结果」，这个我还没证据判。
+            KbBridge.note("🚨 Voice.stop() 早退——running=" + String(running)
+                          + " finished=" + String(finished) + "，onWav 不会再被调用")
+            return
+        }
         finished = true
         capTimer?.invalidate(); capTimer = nil
 

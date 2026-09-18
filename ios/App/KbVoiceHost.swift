@@ -3924,6 +3924,12 @@ final class KbVoiceHost {
     ///    前台时旧的永不过期 → 复现「上传发出去了、75 秒毫无动静」。
     private func dropStale(_ tok: Int, _ why: String) {
         KbBridge.note(why + "（代际 " + String(tok) + " ≠ " + String(recToken) + "），丢弃")
+        // 🚨🚨 0 09-18 要求：这条以前只进 kb.trail（开发者才看得到），
+        //    Kevin 的"录音诊断"屏读的是 RecLog——一条录音走到这个分支时，
+        //    他那边看到的就是"起录闸通过之后什么都没有"，因为这里从没写过 RecLog。
+        //    现在两边都记，不改行为（丢弃这份结果本身是不是对的，还没证据判）。
+        RecLog.add(sec: 0, bytes: 0, result: "失败·代际过期",
+                   detail: why + "（代际 " + String(tok) + " ≠ " + String(recToken) + "）")
         endPipelineHold(for: tok)
     }
 
@@ -4529,7 +4535,8 @@ final class KbVoiceHost {
                         KbBridge.note("这一轮麦克风没收到声音（" + diag
                                       + "，判据=零占比≥98%），**不上传**")
                         RecLog.add(sec: secs, bytes: wav.count,
-                                   result: "麦克风没收到声音·未上传", detail: diag)
+                                   result: "麦克风没收到声音·未上传", detail: diag,
+                                   peak: Double(peakNow), zeroPct: zp)
                         self.done(seq: seq, kind: "error", body: L.err_mic_silent)
                         return
                     }
@@ -4542,7 +4549,8 @@ final class KbVoiceHost {
                     //    `RecLog` 才是设置页那一屏。
                     KbBridge.note("起传（" + diag + "）")
                     RecLog.add(sec: secs, bytes: wav.count,
-                               result: "已上传", detail: diag)
+                               result: "已上传", detail: diag,
+                               peak: Double(peakNow), zeroPct: zp)
                     // 🚨 计入本轮总量 —— 「出稿完成/失败」那两行要用它。
                     self.tally.add(round: seq, sec: secs, bytes: wav.count)
                     self.uploadAndDeliver(seq: seq, wav: wav, tone: tone,
