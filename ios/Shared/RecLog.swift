@@ -118,7 +118,8 @@ enum RecLog {
     /// 后者会把"回传失败·…"这条自己写的日志也吃进去，变成死循环。
     private static func isFailureResult(_ r: String) -> Bool {
         let set: Set<String> = ["起录闸放弃", "麦克风没收到声音·未上传",
-                                "起录失败", "出稿失败", "重架被拒"]
+                                "起录失败", "出稿失败", "重架被拒",
+                                "冷启梯子兜底·两档都失败"]
         return set.contains(r) || r.hasPrefix("失败·")
     }
 

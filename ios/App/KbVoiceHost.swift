@@ -251,6 +251,9 @@ final class KbVoiceHost {
     /// 最近一次真正干活的时刻（起录/出稿）。闲置退出靠它判断。
     fileprivate var lastUseAt = Date()
     private var lastBatteryNote = Date.distantPast
+    /// 最近一次因为 `armForBackground()` 被拒而回落到 `tryArmOnColdLaunch()` 的时刻。
+    /// 09-18 加：节流用，见 `armForBackground()` 里的说明。
+    private var lastColdArmFallbackAt: Date?
     /// 本进程有没有在前台成功起过一次引擎（后台重架的前提）。
     private var primed = false
 
@@ -616,18 +619,31 @@ final class KbVoiceHost {
         }()
         let curState = UIApplication.shared.applicationState
         guard curState == .active || pipUp else {
-            // 🚨 **别再写「这是 iOS 的硬限制」** —— 那是我编的，被自己的痕迹推翻：
-            //    04:27:17 `冷启架引擎（走梯子）：成了 ✅` 就是在非前台架成的。
-            //    这条路（`armForBackground`）确实只在前台可靠，但那是**这条路**的性质，
-            //    不是系统的禁令。后台要架就走 `tryArmOnColdLaunch()` 那条梯子。
-            KbBridge.note("架引擎：App 不在前台 → 这条路不试了，后台请走冷启梯子")
-            // 🚨🚨 09-18 0要求：给这个guard记一条真机可查的证据——
-            //    验证"跳一下就回"架构下，录完0.6秒后重架时App是不是已经
-            //    回到后台了（这正是`arming`恒false那条推断的关键证据）。
+            // 🚨🚨🚨 09-18 Kevin 真机报「keyboard is dead」，0 从 RecLog 读到证据：
+            //    `rearm_rejected` 之后一条记录都没有——**这条 guard 原来只记一笔就彻底
+            //    躺平**，voice.arming 永远卡在 false，之后每次按键盘都走不通。
+            //    "跳一下就回"架构下，`armForBackground()` 在录完 0.6 秒后才调用
+            //    （见 4980 行），而 `returnToPreviousApp()` 早在 ~0.25 秒就把 App
+            //    送回后台——这条 guard **结构性地**每次都会拒。之前这条注释已经写了
+            //    "后台要架就走 tryArmOnColdLaunch() 那条梯子"，但从没真的接上过，
+            //    只是记一笔日志然后放弃。现在接上：**guard 被拒不再是死路**。
+            KbBridge.note("架引擎：App 不在前台 → 这条路不试了，改走冷启梯子兜底")
             RecLog.add(sec: 0, bytes: 0, result: "重架被拒",
                        detail: "phase=" + String(describing: curState.rawValue)
                            + " pipUp=" + String(pipUp),
                        failStep: "rearm_rejected")
+            // 🚨 节流：`tryArmOnColdLaunch()` 走的是完整会话梯子，比这条路重得多。
+            //    出稿失败/连续短对话时 `armForBackground()` 会被密集调用，不节流的话
+            //    每次失败都重跑一遍完整梯子，白白多做很多事。3 秒内已经试过就不再试，
+            //    等下一次真实调用（下次录音完成/下次冷启动信号）自然会再给一次机会——
+            //    **这就是"下次用户真正要用键盘时重新尝试"**，不是无限重试到成功为止。
+            let now = Date()
+            if let last = lastColdArmFallbackAt, now.timeIntervalSince(last) < 3 {
+                KbBridge.note("冷启梯子兜底：3 秒内试过了，这次不重复（避免密集失败时反复重跑重梯子）")
+                return
+            }
+            lastColdArmFallbackAt = now
+            tryArmOnColdLaunch()
             return
         }
         // 🚨🚨 09-18 同上：guard通过也要记一条，跟"重架被拒"对照，
@@ -3409,15 +3425,25 @@ final class KbVoiceHost {
         //    引擎自然架不起来。今晚那句「待命档引擎没起来」多半就是这个自造的坑，
         //    而我一直把它读成"iOS 不让后台起录"。
         //    → 冷启一律走完整梯子；万一失败再退回复用那条，并且**把真错误打出来**。
+        // 🚨🚨 09-18：这条路现在也是 `armForBackground()` 被拒时的兜底（见那边的说明），
+        //    不再只是冷启动专用——之前它的成败只进 `kb.trail`（开发者才看得到），
+        //    Kevin 的"录音诊断"屏读的是 RecLog，之前 `重架被拒` 记一笔之后再没有任何
+        //    痕迹，看起来就像彻底死了。现在三条出路都补上 RecLog，不管走到哪条，
+        //    诊断屏都能看见"之后到底发生了什么"，不会再是一片空白。
         voice.armIdle(reuseSession: false) { err in
             if let e = err {
                 KbBridge.note("冷启架引擎（走梯子）：失败 —— " + e + "；改试复用")
                 self.voice.armIdle(reuseSession: true) { e2 in
                     if let e2 = e2 {
                         KbBridge.note("冷启架引擎（复用）：也失败 —— " + e2)
+                        RecLog.add(sec: 0, bytes: 0, result: "冷启梯子兜底·两档都失败",
+                                   detail: "梯子=" + e + "｜复用=" + e2,
+                                   failStep: "coldarm_fallback_fail")
                     } else {
                         KbBridge.markArmed(true); KbBridge.markKeyboardSeen()
                         KbBridge.note("冷启架引擎：靠复用成了 ✅")
+                        RecLog.add(sec: 0, bytes: 0, result: "冷启梯子兜底·复用成功",
+                                   detail: "", failStep: "coldarm_fallback_ok_reuse")
                     }
                 }
                 return
@@ -3425,6 +3451,8 @@ final class KbVoiceHost {
             KbBridge.markArmed(true)
             KbBridge.markKeyboardSeen()   // 🚨 别被闲置闸秒掉
             KbBridge.note("冷启架引擎（走梯子）：成了 ✅")
+            RecLog.add(sec: 0, bytes: 0, result: "冷启梯子兜底·成功",
+                       detail: "", failStep: "coldarm_fallback_ok")
         }
     }
 
