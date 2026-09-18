@@ -163,8 +163,12 @@ final class AccountViewController: PushedViewController {
         out.translatesAutoresizingMaskIntoConstraints = false
         out.heightAnchor.constraint(equalToConstant: 52).isActive = true
         stack.addArrangedSubview(out)
-        stack.setCustomSpacing(40, after: stack.arrangedSubviews[
-            max(0, stack.arrangedSubviews.count - 2)])
+        // 🚨 09-18 Kevin 真机反馈：删除账号和退出登录中间隔太宽（原是
+        //    `setCustomSpacing(40, ...)`，从这页 08-26 诞生起就没有任何
+        //    注释解释这个 40——查了创建这页的那个 commit，只解释了顺序
+        //    （删除在上/退出在下）和"要确认"，没提过这个数字。别再拉开：
+        //    删除账号已经走多步确认流程防误触，间距不用再担一次这个责任。
+        //    落回页面统一的 `stack.spacing = 10`，不新造一个数字。
     }
 
     @objc private func openDelete() {
