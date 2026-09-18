@@ -7,10 +7,13 @@ import UIKit
 /// 已订阅的白名单账号，点「订阅」会真的走进一次购买流程（Kevin 真机实测坐实，
 /// Guideline 2.1 App Completeness，必拒）。见闸门 `voice_ime/verify_pro_no_paywall.py`。
 ///
-/// 🚨 到期日展示（`pro_until`）**待 2.1 拍板**，见
-/// `_规格_会员到期日展示契约_待2.1定案_20260916.md`（选项 A/B/C 都还没定）。
-/// 这一版先用最保守的 A1：只显示状态词，不显示具体到期日——不预判 2.1 的选择，
-/// 以后真要加，只需要在这一屏加一行，不用再动路由。
+/// 🚨🚨 09-18 四订②：到期日展示接上了——2.1 09-16 其实已经定案（PC 那份
+///    `UpgradeWindow.ShowPro()` 就是照这个定案实现的，iOS 只是一直没跟上）：
+///    `pro_until>0` 显示 `prefs_pro_active` + "  ·  " + 日期（`yyyy-MM-dd`，
+///    本地时区）；`pro_until==0` 是合法状态（白名单/审核/终身会员），不是数据
+///    缺失，显示专门的 `prefs_pro_active_no_expiry`，不留空、不显示"1970"。
+///    日期格式跟 PC 的 `DateTimeOffset...ToString("yyyy-MM-dd")` 字面一致，
+///    别自己另挑一种格式——同一条信息三端长得不一样比不显示更容易让人起疑。
 final class MembershipViewController: PushedViewController {
 
     private let titleLabel = UILabel()
@@ -42,7 +45,7 @@ final class MembershipViewController: PushedViewController {
         titleLabel.textAlignment = .center
         titleLabel.numberOfLines = 0
 
-        statusLabel.text = L.prefs_pro_active
+        statusLabel.text = Self.statusText(until: ProStatus.cachedUntilValue)
         statusLabel.font = .systemFont(ofSize: 17, weight: .semibold)
         statusLabel.textColor = Theme.text
         statusLabel.textAlignment = .center
@@ -57,6 +60,39 @@ final class MembershipViewController: PushedViewController {
         linksRow.spacing = 24
         linksRow.addArrangedSubview(linkButton(L.prefs_pro_terms, action: #selector(openTerms)))
         linksRow.addArrangedSubview(linkButton(L.prefs_pro_privacy, action: #selector(openPrivacyLink)))
+    }
+
+    /// `pro_until==0`（白名单/审核/终身会员，合法状态）显示专门文案；
+    /// `>0` 显示"已是会员 · yyyy-MM-dd"（本地时区），跟 PC `UpgradeWindow.ShowPro()`
+    /// 字面一致——同一条信息三端格式不一样比不显示更容易让人起疑。
+    /// 🚨 吃参数不直接读 `ProStatus.cachedUntilValue`——纯函数才能脱离 UIKit/
+    ///    UserDefaults 单独验，跟这摊活其余 selfTest 同一个套路。
+    static func statusText(until: TimeInterval) -> String {
+        guard until > 0 else { return L.prefs_pro_active_no_expiry }
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        fmt.timeZone = .current
+        let dateStr = fmt.string(from: Date(timeIntervalSince1970: until))
+        return L.prefs_pro_active + "  ·  " + dateStr
+    }
+
+    /// 由 `gate_all_selftests.py` 自动发现并运行。
+    static func selfTest() -> String? {
+        var bad: [String] = []
+        if statusText(until: 0) != L.prefs_pro_active_no_expiry {
+            bad.append("until=0 该显示无到期日文案")
+        }
+        // 2026-01-15 12:00:00 UTC = 1768478400
+        let got = statusText(until: 1768478400)
+        if !got.contains(L.prefs_pro_active) {
+            bad.append("有到期日时该包含「已是会员」那句：\(got)")
+        }
+        if !got.contains("2026-01-15") && !got.contains("2026-01-14") {
+            // 🚨 跨时区允许 ±1 天（本地时区渲染），但年月必须对——
+            //    真出错的形态是整个格式错乱或读到 1970，不是这一天的边界。
+            bad.append("日期部分看着不对：\(got)")
+        }
+        return bad.isEmpty ? nil : bad.joined(separator: "; ")
     }
 
     private func linkButton(_ t: String, action: Selector) -> UIButton {

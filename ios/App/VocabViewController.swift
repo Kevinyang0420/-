@@ -25,6 +25,19 @@ final class VocabViewController: PushedViewController {
     /// 「我不要的」折叠条默认收起。**不持久化**，退出即复位（跟安卓一致）。
     private var showRejected = false
 
+    /// 🚨🚨 09-18：单词本从「说话记录」挪过来了（Kevin 原话——说话记录该纯粹放
+    ///    会议纪要和历史说话内容，单词本是查词用的，该跟常用词放一起）。
+    ///    这是信息架构调整——**只是入口挪位置，不是重新实现一遍**：
+    ///    `WordBookViewController` 早就有一份更完整的列表态（进度点/复习入口/
+    ///    App Group 缺失警示，见它的 `showList()`），这里第一版我重新画了一遍
+    ///    「词/词组/句子」分组卡片，跟它是**同一规矩两处实现**——2.1 已经把
+    ///    `HistoryListViewController` 里那份删了并在 `i18n_map.py` 留了注释
+    ///    （`wb_kind_word/phrase/sentence` 判定零调用点清掉），我这份是唯一
+    ///    还没跟上的。改法：这里只做**入口**，点了就 push 到
+    ///    `WordBookViewController()`（默认 `.list` 模式），复用它已有的一切。
+    private let wbEntry = UIControl()
+    private let wbEntryLabel = UILabel()
+
     private let scroll = UIScrollView()
     private let body = UIStackView()
 
@@ -37,6 +50,25 @@ final class VocabViewController: PushedViewController {
         //    万一有哪条路径绕过了 `add`（比如以后加导入/同步），这一屏也能补上。
         WordBook.pushToVocab()
 
+        // 单词本入口——跟「地区」那种可点行同一种样式（玻璃底 + 右箭头），
+        // 不是分段 tab：点了是**导航去另一屏**，不是原地换内容，
+        // 做成 tab 反而暗示了一个不存在的"停留态"。
+        wbEntry.backgroundColor = Theme.key
+        wbEntry.layer.cornerRadius = 14
+        wbEntry.translatesAutoresizingMaskIntoConstraints = false
+        wbEntry.accessibilityIdentifier = "vocab.wordbook.entry"
+        wbEntry.addTarget(self, action: #selector(openWordbook), for: .touchUpInside)
+        wbEntryLabel.text = L.hist_tab_wordbook
+        wbEntryLabel.font = .systemFont(ofSize: 16, weight: .medium)
+        wbEntryLabel.textColor = Theme.text
+        wbEntryLabel.translatesAutoresizingMaskIntoConstraints = false
+        wbEntry.addSubview(wbEntryLabel)
+        let wbChevron = UIImageView(image: UIImage(systemName: "chevron.right"))
+        wbChevron.tintColor = Theme.dim
+        wbChevron.translatesAutoresizingMaskIntoConstraints = false
+        wbEntry.addSubview(wbChevron)
+        view.addSubview(wbEntry)
+
         body.axis = .vertical
         body.alignment = .fill
         body.translatesAutoresizingMaskIntoConstraints = false
@@ -45,7 +77,16 @@ final class VocabViewController: PushedViewController {
         view.addSubview(scroll)
         let g = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
-            scroll.topAnchor.constraint(equalTo: g.topAnchor),
+            wbEntry.topAnchor.constraint(equalTo: g.topAnchor, constant: 12),
+            wbEntry.leadingAnchor.constraint(equalTo: g.leadingAnchor, constant: 21),
+            wbEntry.trailingAnchor.constraint(equalTo: g.trailingAnchor, constant: -21),
+            wbEntry.heightAnchor.constraint(equalToConstant: 48),
+            wbEntryLabel.leadingAnchor.constraint(equalTo: wbEntry.leadingAnchor, constant: 16),
+            wbEntryLabel.centerYAnchor.constraint(equalTo: wbEntry.centerYAnchor),
+            wbChevron.trailingAnchor.constraint(equalTo: wbEntry.trailingAnchor, constant: -16),
+            wbChevron.centerYAnchor.constraint(equalTo: wbEntry.centerYAnchor),
+
+            scroll.topAnchor.constraint(equalTo: wbEntry.bottomAnchor, constant: 8),
             scroll.bottomAnchor.constraint(equalTo: g.bottomAnchor),
             scroll.leadingAnchor.constraint(equalTo: g.leadingAnchor),
             scroll.trailingAnchor.constraint(equalTo: g.trailingAnchor),
@@ -64,6 +105,10 @@ final class VocabViewController: PushedViewController {
         UI.resizeBg(self)
     }
 
+    @objc private func openWordbook() {
+        navigationController?.pushViewController(WordBookViewController(), animated: true)
+    }
+
     // MARK: - 整屏重搭
     //
     // 🚨 每次变更都整屏重搭（跟安卓 `showList()` 一样）。这一屏很轻，
@@ -74,7 +119,6 @@ final class VocabViewController: PushedViewController {
             body.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-
         let all = KbBridge.loadVocab()
         var cand: [VocabCore.Term] = []
         var on: [VocabCore.Term] = []

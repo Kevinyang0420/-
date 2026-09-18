@@ -181,6 +181,7 @@ enum L {
     static var sep_colon: String { s(["zh": "：", "en": ": ", "hant": "：", "ja": "：", "de": ": ", "es": ": ", "ar": ": ", "vi": ": ", "th": ": "]) }
     static var sep_dot: String { s(["zh": "　·　", "en": " · ", "hant": "　·　", "ja": "　・　", "de": " · ", "es": " · ", "ar": " · ", "vi": "  · ", "th": " · "]) }
     static var about_publisher_title: String { s(["zh": "发行主体", "en": "Published by", "hant": "發行主體", "ja": "発行元", "de": "Herausgegeben von", "es": "Publicado por", "ar": "نُشر بواسطة", "vi": "Nhà phát hành", "th": "เผยแพร่โดย"]) }
+    static var about_data_title: String { s(["zh": "数据来源", "en": "Data Sources", "hant": "數據來源"]) }
     static var again_translate: String { s(["zh": "再次翻译", "en": "Translate again", "hant": "再次翻譯", "ja": "再翻訳", "de": "Erneut übersetzen", "es": "Traducir de nuevo", "ar": "ترجم مرة أخرى", "vi": "Dịch lại", "th": "แปลอีกครั้ง"]) }
     static var again_doing: String { s(["zh": "再译一次…", "en": "Translating again…", "hant": "再譯一次…", "ja": "再翻訳中…", "de": "Wird erneut übersetzt …", "es": "Traduciendo de nuevo…", "ar": "جارٍ الترجمة مرة أخرى…", "vi": "Đang dịch lại…", "th": "กำลังแปลอีกครั้ง…"]) }
     static var again_no_source: String { s(["zh": "还没有可以重译的原话", "en": "Nothing to translate yet", "hant": "還沒有可以重譯的原話", "ja": "再翻訳できる元の文章がありません", "de": "Noch nichts zum erneuten Übersetzen vorhanden", "es": "Aún no hay nada que retraducir", "ar": "لا يوجد نص لإعادة ترجمته بعد", "vi": "Chưa có gì để dịch lại", "th": "ยังไม่มีข้อความให้แปล"]) }
@@ -243,6 +244,7 @@ enum L {
     static var f2f_speak: String { s(["zh": "按一下说话", "en": "Tap to speak", "hant": "按一下說話", "ja": "タップして話す", "de": "Tippen zum Sprechen", "es": "Toca para hablar", "ar": "اضغط للتحدث", "vi": "Nhấn để nói", "th": "แตะเพื่อพูด"]) }
     static var f2f_zh: String { s(["zh": "中文", "en": "Chinese", "hant": "中文", "ja": "中国語", "de": "Chinesisch", "es": "Chino", "ar": "الصينية", "vi": "Tiếng Trung", "th": "ภาษาจีน"]) }
     static var hist_clear_ask: String { s(["zh": "清空之后就找不回来了，确定吗？", "en": "This cannot be undone. Clear everything?", "hant": "清空之後就找不回來了，確定嗎？", "ja": "消去すると元に戻せません。すべて消去しますか？", "de": "Das lässt sich nicht rückgängig machen. Alles löschen?", "es": "Esto no se puede deshacer. ¿Borrar todo?", "ar": "لا يمكن التراجع عن هذا. مسح كل شيء؟", "vi": "Xóa rồi sẽ không lấy lại được, chắc chắn chứ?", "th": "ลบแล้วจะกู้คืนไม่ได้ ยืนยันหรือไม่"]) }
+    static var notes_clear_ask: String { s(["zh": "清空记事本？里面的笔记都会没。", "en": "Clear all notes? Everything in here will be gone.", "hant": "清空記事本？裡面的筆記都會沒。"]) }
     static var hist_copy: String { s(["zh": "复制译文", "en": "Copy translation", "hant": "複製譯文", "ja": "翻訳をコピー", "de": "Übersetzung kopieren", "es": "Copiar traducción", "ar": "نسخ الترجمة", "vi": "Sao chép bản dịch", "th": "คัดลอกคำแปล"]) }
     static var hist_resend: String { s(["zh": "重新翻译", "en": "Translate again", "hant": "重新翻譯", "ja": "再翻訳", "de": "Erneut übersetzen", "es": "Traducir de nuevo", "ar": "إعادة الترجمة", "vi": "Dịch lại", "th": "แปลอีกครั้ง"]) }
     static var hist_d_orig: String { s(["zh": "你说的", "en": "What you said", "hant": "你說的", "ja": "あなたが話した内容", "de": "Was du gesagt hast", "es": "Lo que dijiste", "ar": "ما قلته", "vi": "Bạn đã nói", "th": "สิ่งที่คุณพูด"]) }
@@ -645,9 +647,8 @@ enum L {
     static var wb_add: String { s(["zh": "+ 单词本", "en": "+ Word book", "hant": "+ 單詞本", "ja": "+ 単語帳", "de": "+ Wortschatz", "es": "+ Libro de palabras", "ar": "+ دفتر الكلمات", "vi": "+ Sổ từ", "th": "+ สมุดคำศัพท์"]) }
     static var wb_added_tag: String { s(["zh": "✓ 已加入", "en": "✓ Added", "hant": "✓ 已加入", "ja": "✓ 追加済み", "de": "✓ Hinzugefügt", "es": "✓ Añadido", "ar": "✓ تمت الإضافة", "vi": "✓ Đã thêm", "th": "✓ เพิ่มแล้ว"]) }
     static var wb_kind_word: String { s(["zh": "词", "en": "Word", "hant": "詞", "ja": "単語", "de": "Wort", "es": "Palabra", "ar": "كلمة", "vi": "Từ", "th": "คำ"]) }
-    static var wb_kind_phrase: String { s(["zh": "词组", "en": "Phrases", "hant": "詞組", "ja": "フレーズ", "de": "Wendungen", "es": "Frases", "ar": "عبارات", "vi": "Cụm từ", "th": "วลี"]) }
-    static var wb_kind_sentence: String { s(["zh": "句子", "en": "Sentences", "hant": "句子", "ja": "文", "de": "Sätze", "es": "Oraciones", "ar": "جمل", "vi": "Câu", "th": "ประโยค"]) }
-    static var wb_clear_ask: String { s(["zh": "清空单词本？收藏的词和复习进度都会没。", "en": "Clear the word book? Saved items and their review progress will be gone.", "hant": "清空單詞本？收藏的詞和複習進度都會沒。", "ja": "単語帳を空にしますか？保存した項目と復習の進捗が失われます。", "de": "Wortliste leeren? Gespeicherte Einträge und ihr Lernfortschritt gehen verloren.", "es": "¿Vaciar el libro de palabras? Se perderán los elementos guardados y su progreso de repaso.", "ar": "مسح دفتر الكلمات؟ ستُفقد العناصر المحفوظة وتقدّم مراجعتها.", "vi": "Xóa sổ từ? Từ đã lưu và tiến độ ôn tập sẽ mất hết.", "th": "ล้างสมุดคำศัพท์? คำที่บันทึกไว้และความคืบหน้าการทบทวนจะหายไป"]) }
+    static var wb_kind_phrase: String { s(["zh": "词组", "en": "Phrase", "hant": "詞組", "ja": "フレーズ", "de": "Wendungen", "es": "Frases", "ar": "عبارات", "vi": "Cụm từ", "th": "วลี"]) }
+    static var wb_kind_sentence: String { s(["zh": "句子", "en": "Sentence", "hant": "句子", "ja": "文", "de": "Sätze", "es": "Oraciones", "ar": "جمل", "vi": "Câu", "th": "ประโยค"]) }
 
     /// 首页 slogan，**按界面语言查表**（Kevin 2026-09-06 口径）。
     ///

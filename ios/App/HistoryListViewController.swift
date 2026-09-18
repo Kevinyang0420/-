@@ -20,8 +20,14 @@ final class HistoryListViewController: UIViewController {
     //    做法上让它**结构上不可能动**，比改完再去量坐标可靠得多。
     //    （量出来一致只说明这一次没动；不碰它才是每次都不动。）
     private let tabRecords = UIButton(type: .system)
-    private let tabWordbook = UIButton(type: .system)
-    /// 分段：记录 ｜ 单词本 ｜ 记事本。
+    /// 分段：记录 ｜ 记事本。
+    ///
+    /// 🚨🚨 09-18：**单词本挪去了「常用词」**（`VocabViewController`）——
+    ///    Kevin 原话「说话记录应该纯粹放会议纪要和历史说话内容；单词本是用来
+    ///    查词的，该跟常用词放一起」，这是信息架构调整。原来这里是三段
+    ///    （记录｜单词本｜记事本），`.wordbook` 那个 case、`tabWordbook` 按钮、
+    ///    `refreshWordbook`/`kindTitle`/`sectionHeader`/`wbCard` 整块都搬到
+    ///    `VocabViewController` 去了，不是删掉——那边的类注释接着写这段历史。
     ///
     /// 🚨🚨 **记事本的入口从设置挪到这一屏**（Kevin 09-07 亲口：
     ///    「我在安卓上找到了，我是在 **iOS 上找不到**」）。
@@ -29,13 +35,8 @@ final class HistoryListViewController: UIViewController {
     ///    **但单词本 09-04 被挪进了设置**，记事本跟着挪，就偏离了他说的位置。
     ///    他说的是「**说话记录**这里…再加个记事本」，不是"单词本在哪它就在哪"。
     ///    → **跟着那句话走，不跟着另一个功能走。**
-    ///
-    /// 🚨 用枚举不用两个布尔 —— 三态用两个布尔表示，迟早出现
-    ///    "两个都为真"的第四种状态，而那种状态没人画得出来。
-    enum Seg { case records, wordbook, notes }
+    enum Seg { case records, notes }
     private var seg: Seg = .records
-    /// 老代码里还有几处读它，保留成计算属性，**不再有第二个真值来源**。
-    private var showWordbook: Bool { seg == .wordbook }
     private let tabNotes = UIButton(type: .system)
     /// 🚨 **上云入口放在这一屏**（Kevin 09-07 亲口：「上云那个入口，
     ///    放在「说话记录」这里。**如果他不点，就一直留在那儿给他** ——
@@ -92,7 +93,6 @@ final class HistoryListViewController: UIViewController {
         // 分段条：样式**照抄随手翻译那对「翻译｜转写」**（圆角 17、等宽、
         // 选中 accent 填充白字、未选 key 底 dim 字）—— 同一种控件不许长得两样。
         for (btn, t, sel) in [(tabRecords, L.hist_tab_records, #selector(pickRecords)),
-                              (tabWordbook, L.hist_tab_wordbook, #selector(pickWordbook)),
                               // 🚨 文案走 `L.note_book`，**不写死中文** ——
                               //    Kevin 09-07 刚说「不要叫记事本，叫日记本吧」，
                               //    改名在源头（2.1 手上），这里跟着源头走就自动变。
@@ -104,10 +104,8 @@ final class HistoryListViewController: UIViewController {
             btn.addTarget(self, action: sel, for: .touchUpInside)
         }
         tabRecords.accessibilityIdentifier = "hist.tab.records"
-        tabWordbook.accessibilityIdentifier = "hist.tab.wordbook"
         tabNotes.accessibilityIdentifier = "hist.tab.notes"
-        let tabs = UIStackView(arrangedSubviews: [tabRecords, tabWordbook,
-                                                  tabNotes])
+        let tabs = UIStackView(arrangedSubviews: [tabRecords, tabNotes])
         tabs.axis = .horizontal
         tabs.spacing = Theme.gap * 0.7
         tabs.distribution = .fillEqually      // 🚨 等宽，跟方案 F 同口径
@@ -448,13 +446,11 @@ final class HistoryListViewController: UIViewController {
     }
 
     @objc private func pickRecords() { seg = .records; paintTabs(); refresh() }
-    @objc private func pickWordbook() { seg = .wordbook; paintTabs(); refresh() }
     @objc private func pickNotes() { seg = .notes; paintTabs(); refresh() }
 
     private func paintTabs() {
-        // 🚨 三格一起画，**一个出口** —— 各写各的话，加第四格时必漏一处。
+        // 🚨 两格一起画，**一个出口** —— 各写各的话，加第三格时必漏一处。
         for (b, on) in [(tabRecords, seg == .records),
-                        (tabWordbook, seg == .wordbook),
                         (tabNotes, seg == .notes)] {
             b.backgroundColor = on ? Theme.accent : Theme.key
             b.setTitleColor(on ? .white : Theme.dim, for: .normal)
@@ -465,7 +461,6 @@ final class HistoryListViewController: UIViewController {
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         switch seg {
         case .records: refreshRecords()
-        case .wordbook: refreshWordbook()
         case .notes: refreshNotes()
         }
     }
@@ -477,22 +472,6 @@ final class HistoryListViewController: UIViewController {
         // 🚨 只有这一屏传 `showAdd: true` —— 随手翻译那屏共用同一个 `card`，
         //    Kevin 看过并点了头，不动它。
         for it in items { stack.addArrangedSubview(card(it, showAdd: true)) }
-    }
-
-    /// 单词本分页：**按 词 / 词组 / 句子 自动分段**。
-    ///
-    /// 🚨 归类**在这里算**（`WordKind.group`），不写死进存储 —— 以后改判据不用迁数据。
-    /// 🚨 **空的那一段整段不出现**：`group` 只回非空的段，
-    ///    所以标题跟着内容走，而不是先摆三个标题再往里填。
-    ///    （2.1 的坏样本打的就是"先摆三个标题"那种写法。）
-    private func refreshWordbook() {
-        let items = WordBook.list()
-        emptyLabel.isHidden = !items.isEmpty
-        emptyLabel.text = L.wb_empty
-        for (kind, group) in WordKind.group(items, en: { $0.en }) {
-            stack.addArrangedSubview(sectionHeader(kindTitle(kind), count: group.count))
-            for it in group { stack.addArrangedSubview(wbCard(it)) }
-        }
     }
 
     /// 记事本那一格。
@@ -547,79 +526,6 @@ final class HistoryListViewController: UIViewController {
     @objc private func openNotesScreen() {
         navigationController?.pushViewController(NotesViewController(),
                                                  animated: true)
-    }
-
-    /// 段标题的文案 —— 放界面这一层，`WordKind` 只管判据。
-    private func kindTitle(_ k: WordKind.Kind) -> String {
-        switch k {
-        case .word: return L.wb_kind_word
-        case .phrase: return L.wb_kind_phrase
-        case .sentence: return L.wb_kind_sentence
-        }
-    }
-
-    private func sectionHeader(_ text: String, count: Int) -> UIView {
-        let l = UILabel()
-        l.text = text + "  " + String(count)
-        l.font = .systemFont(ofSize: 13, weight: .semibold)
-        l.textColor = Theme.dim
-        l.accessibilityIdentifier = "wb.section"
-        l.translatesAutoresizingMaskIntoConstraints = false
-        return l
-    }
-
-    /// 单词本一条 —— 版式**跟记录卡同一套**（玻璃卡、原话灰、译文上色），
-    /// 免得两屏各画一种卡片。
-    private func wbCard(_ it: WordBookCore.Item) -> UIView {
-        let box = UIView()
-        box.backgroundColor = Theme.panel
-        box.layer.cornerRadius = 18
-        box.layer.borderWidth = 0.6
-        box.layer.borderColor = UIColor.white.withAlphaComponent(0.16).cgColor
-        box.translatesAutoresizingMaskIntoConstraints = false
-
-        let zh = UILabel()
-        zh.text = it.zh
-        zh.font = .systemFont(ofSize: 15)
-        zh.textColor = Theme.dim
-        zh.numberOfLines = 1
-        zh.lineBreakMode = .byTruncatingTail
-        zh.translatesAutoresizingMaskIntoConstraints = false
-        box.addSubview(zh)
-
-        // 🚨🚨 **这些条目原来一个手势都没挂** —— 他点一条什么都不会发生，
-        //    而卡片只在 `WordBookViewController` 的详情页里。
-        //    Kevin 2026-09-06 连问三次「单词卡片在哪儿呢」，
-        //    **有一半原因是从他看的这一屏根本到不了那儿。**
-        box.isUserInteractionEnabled = true
-        box.accessibilityIdentifier = "hist.wb.row"
-        let tap = WbRowTap(target: WbRowTap.box, action: #selector(WbRowTap.noop))
-        tap.id = it.id
-        tap.onPick = { [weak self] id in
-            self?.navigationController?.pushViewController(
-                WordBookViewController(open: id), animated: true)
-        }
-        box.addGestureRecognizer(tap)
-
-        let en = UILabel()
-        en.text = it.en
-        en.font = .systemFont(ofSize: 20, weight: .semibold)
-        en.textColor = Theme.text
-        en.numberOfLines = 2
-        en.lineBreakMode = .byTruncatingTail
-        en.translatesAutoresizingMaskIntoConstraints = false
-        box.addSubview(en)
-
-        NSLayoutConstraint.activate([
-            zh.topAnchor.constraint(equalTo: box.topAnchor, constant: 14),
-            zh.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 16),
-            zh.trailingAnchor.constraint(equalTo: box.trailingAnchor, constant: -16),
-            en.topAnchor.constraint(equalTo: zh.bottomAnchor, constant: 6),
-            en.leadingAnchor.constraint(equalTo: box.leadingAnchor, constant: 16),
-            en.trailingAnchor.constraint(equalTo: box.trailingAnchor, constant: -16),
-            en.bottomAnchor.constraint(equalTo: box.bottomAnchor, constant: -14),
-        ])
-        return box
     }
 
     // MARK: - 卡片

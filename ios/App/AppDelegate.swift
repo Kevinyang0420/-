@@ -2,6 +2,7 @@ import ActivityKit
 import UIKit
 import ObjectiveC
 import AVFoundation
+import Speech  // 🚨 TEMP：0 要的三件事之①，查完随探针一起删
 
 // Transless 容器 App —— **四个界面全部对齐安卓**：开屏 / 首页 / 引导 / 设置。
 //
@@ -1194,6 +1195,19 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                     .handleArmURL(returnAfter: false)
             }
         }
+        let _allLocales = Speech.SFSpeechRecognizer.supportedLocales()
+            .map { $0.identifier }.sorted()
+        let _hasHK = _allLocales.contains("zh-HK")
+        let _hasCN = _allLocales.contains("zh-CN")
+        let _hkOnDevice = Speech.SFSpeechRecognizer(locale: Locale(identifier: "zh-HK"))?
+            .supportsOnDeviceRecognition ?? false
+        let _cnOnDevice = Speech.SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))?
+            .supportsOnDeviceRecognition ?? false
+        NSLog("TEMP-SFSPEECH: zhHKinList=%@ zhCNinList=%@ zhHKonDevice=%@ zhCNonDevice=%@ allZh=%@",
+              _hasHK ? "YES" : "NO", _hasCN ? "YES" : "NO",
+              _hkOnDevice ? "YES" : "NO", _cnOnDevice ? "YES" : "NO",
+              _allLocales.filter { $0.hasPrefix("zh") }.joined(separator: ","))
+        NSLog("TEMP-MEMBERSHIP-SELFTEST: %@", MembershipViewController.selfTest() ?? "PASS")
         // 🚨🚨 **必须挂在启动上，不能挂在 `applyDebugEnv`**（2026-09-05 栽过）。
         //    `applyDebugEnv` 是随手翻译那屏 `viewDidAppear` 里调的 ——
         //    语言用例根本不进那一屏，于是重置**从没执行**：

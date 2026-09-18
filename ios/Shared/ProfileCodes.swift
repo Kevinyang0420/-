@@ -43,12 +43,28 @@ enum ProfileCodes {
         let py: String; let idx: String; let alt: [String]
     }
 
+    /// 城市——09-18 五订，锁（GeoNames 署名条款）解了之后加的第三级。
+    /// 跟国家/省州的 `Entry` 形状不完全一样：身份键是 `id`（GeoNames 数字
+    /// id，不是 ISO 码），没有 `zht`/`alt`（1.1 的数据源没给，繁体界面
+    /// 退英文——跟省州没有 zht 时同一条规则，不是漏做），多一个 `pop`
+    /// （人口，目前排序不用它，留着给以后可能的"按人口排"用）。
+    private struct CityEntry {
+        let id: String; let region: String; let zh: String; let en: String
+        let py: String; let idx: String; let pop: Int
+    }
+
     private static let lock = NSLock()
     private static var loaded = false
     private static var countryList: [Entry] = []
     private static var regionList: [Entry] = []
+    private static var cityList: [CityEntry] = []
     private static var countryByCode: [String: Entry] = [:]
     private static var regionByCode: [String: Entry] = [:]
+    private static var cityById: [String: CityEntry] = [:]
+    /// GeoNames 署名文本——**唯一出处是 JSON 里的 `_license` 字段**，
+    /// 不在这里再抄一遍（1.1 的生成器自己校验过四要件，抄第二份的话
+    /// 数据换版时这里会漂）。城市数据没装上时是空串，调用方要处理空串。
+    private static var licenseText = ""
 
     /// 🚨 键盘扩展和主 App 是两个 bundle，各自找自己的资源——跟
     /// `PinyinSplit.bundle` 同一个理由，用类型锚点找到"我在哪个 bundle 里"。
@@ -81,6 +97,21 @@ enum ProfileCodes {
         regionList = parse("regions")
         for e in countryList { countryByCode[e.code] = e }
         for e in regionList { regionByCode[e.code] = e }
+
+        if let arr = obj["cities"] as? [[String: Any]] {
+            cityList = arr.compactMap { row in
+                guard let id = row["id"] as? String,
+                      let region = row["region"] as? String else { return nil }
+                return CityEntry(id: id, region: region,
+                                 zh: (row["zh"] as? String) ?? "",
+                                 en: (row["en"] as? String) ?? "",
+                                 py: (row["py"] as? String) ?? "",
+                                 idx: (row["idx"] as? String) ?? "",
+                                 pop: (row["pop"] as? Int) ?? 0)
+            }
+            for e in cityList { cityById[e.id] = e }
+        }
+        licenseText = (obj["_license"] as? String) ?? ""
     }
 
     /// 国家/省州两屏共用的行高——09-18 四订③改判据成"一屏 ≥17 行"之后，
@@ -218,6 +249,21 @@ enum ProfileCodes {
             .map { ($0.code, label($0)) }
     }
 
+    /// 09-18 五订：第三级——某个省州下面有哪些城市。**精确匹配 `region`
+    /// 字段**（不是前缀匹配）——城市直接携带父级省州的 ISO 3166-2 码，
+    /// 跟 `regions(of:)` 用前缀匹配国家码是同一条"级联关系代码自己携带"
+    /// 的道理，只是城市这一层是精确等于不是前缀（一个省只有一个值，
+    /// 不像"CN-"要匹配"CN-GD"/"CN-SH"一整批）。没有城市数据的省州
+    /// 回空数组——调用方据此判断"选完省就收工"还是"再钻一层"。
+    static func cities(of regionCode: String) -> [(code: String, label: String)] {
+        ensureLoaded()
+        guard !regionCode.isEmpty else { return [] }
+        let pinyin = usePinyinIndex
+        return cityList.filter { $0.region == regionCode }
+            .sorted { pinyin ? $0.py < $1.py : $0.en.localizedCompare($1.en) == .orderedAscending }
+            .map { ($0.id, cityLabelFor($0)) }
+    }
+
     static func countryLabel(_ code: String) -> String {
         ensureLoaded()
         guard !code.isEmpty else { return "" }
@@ -233,6 +279,29 @@ enum ProfileCodes {
         let migrated = legacyRegionMigration[code] ?? code
         guard !migrated.isEmpty, let e = regionByCode[migrated] else { return "" }
         return label(e)
+    }
+
+    /// GeoNames 署名文本，给"数据来源"入口显示用——见类头注释，唯一出处
+    /// 是 JSON 的 `_license` 字段，这里只负责读出来，不重抄一遍内容。
+    static var dataLicenseText: String {
+        ensureLoaded()
+        return licenseText
+    }
+
+    static func cityLabel(_ code: String) -> String {
+        ensureLoaded()
+        guard !code.isEmpty, let e = cityById[code] else { return "" }
+        return cityLabelFor(e)
+    }
+
+    /// 城市没有 `zht` 字段（数据源没给，跟省州一样）——繁体界面直接退英文，
+    /// 不是漏做，是跟省州同一条已有规则（见 `label(_:)` 对省州的处理）。
+    private static func cityLabelFor(_ e: CityEntry) -> String {
+        switch Lang.effective {
+        case Lang.hant: return e.en
+        case Lang.zh: return e.zh.isEmpty ? e.en : e.zh
+        default: return e.en
+        }
     }
 
     static func occupationLabel(_ code: String) -> String {
