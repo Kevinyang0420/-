@@ -481,15 +481,6 @@ final class KbVoiceHost {
     func reUnmuteNowForeground() {
         guard voice.arming else {
             KbBridge.note("补解静音：引擎没架着，跳过")
-            // 🚨🚨 09-18 0要求：这一行只进`kb.trail`（不跨进程、Kevin看不到），
-            //    而`guard voice.arming`这个前置条件本身是不是这次bug的真因，
-            //    模拟器上无头(SSH驱动、没接屏幕)复现不出"已在前台"这个真实状态，
-            //    结构性卡住——`RecLog`是Kevin手机"录音诊断"页真能看到的那份，
-            //    也进一条，下次他真撞上时，这行本身就是证据，不用再靠猜。
-            RecLog.add(sec: 0, bytes: 0, result: "补解静音·跳过",
-                       detail: "引擎没架着(arming=false)，此刻appState="
-                           + String(UIApplication.shared.applicationState.rawValue)
-                           + "（0=active 1=inactive 2=background）")
             return
         }
         Voice.setMicMuted(false, why: "到前台了，补一次（后台那次可能没生效）")

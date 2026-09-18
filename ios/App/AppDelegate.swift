@@ -952,11 +952,19 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                 KbBridge.note("放弃起录：把本次打开的待机关回去｜读回="
                               + String(KbVoiceHost.shared.standby))
             }
+            // 🚨🚨 09-18 0要求：`arming`的值(true/false)要跟"走的是哪条分支"
+            //    并排记进**同一行**——不新增RecLog行数（20条上限，见RecLog.swift:24），
+            //    只是把这条本来就有的"起录闸放弃"记录得更完整。
+            //    这条本身是09-18新发现的**第三条分支**（Kevin真机日志里从没见过），
+            //    记下来才看得出真机上有没有也撞到过它。
+            let armingNow = KbVoiceHost.shared.voiceIsArming
             KbBridge.note("起录闸：6 秒没等到前台（此刻 " + Self.appStateLine()
-                          + "｜场景=" + Self.sceneStateLine() + "），放弃")
+                          + "｜场景=" + Self.sceneStateLine()
+                          + "｜arming=" + String(armingNow) + "），放弃")
             RecLog.add(sec: 0, bytes: 0, result: "起录闸放弃",
                        detail: "6 秒没等到前台，此刻 " + Self.appStateLine()
-                           + "｜场景=" + Self.sceneStateLine())
+                           + "｜场景=" + Self.sceneStateLine()
+                           + "｜arming=" + String(armingNow))
         }
     }
 
@@ -971,12 +979,17 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         //    `didBecomeActive` 才跑的。后台那一路在 `preRollOnRecUrl()` 里
         //    解过一次静音，但**那一下在后台不生效**，而之后没有任何人再解。
         //    Kevin 的 RecLog：后台到达 4/4 全坏、前台到达 3/3 全好，无一例外。
+        // 🚨🚨 09-18 0要求：`arming`在补解静音**之前**是什么值，跟"走的是哪条分支"
+        //    (`how`)并排记进同一行——不新增RecLog行数，只是把已有的"起录闸通过"
+        //    记录得更完整。两条分支（本来就在前台／等到didBecomeActive）都要记，
+        //    不能只记失败那半，不然没有对照，判不出`arming`是不是真因。
+        let armingBefore = KbVoiceHost.shared.voiceIsArming
         KbVoiceHost.shared.reUnmuteNowForeground()
         KbBridge.note("起录闸：" + how + "，耗时 " + String(ms) + " ms｜此刻 "
-                      + Self.appStateLine())
+                      + Self.appStateLine() + "｜arming=" + String(armingBefore))
         RecLog.add(sec: 0, bytes: 0, result: "起录闸通过",
                    detail: how + "，耗时 " + String(ms) + " ms，"
-                       + Self.appStateLine())
+                       + Self.appStateLine() + "｜arming=" + String(armingBefore))
         // 🚨 **回读条数**，别停在"我调了 add"。
         //    「录音诊断」在他手里必须真的有东西，
         //    而这条数字是我这边唯一能远程看到的凭据。
