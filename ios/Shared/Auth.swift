@@ -362,13 +362,22 @@ enum Auth {
     ///
     /// 🚨 顺序就是界面上的显示顺序，跟安卓 `Onboard.PROFILE_KEYS`
     ///    必须一模一样 —— `gate_pure_logic.py` 的 Profile 单元会比。
+    // 🚨🚨 09-18 `_规格_用户资料结构化下拉_20260918.md`：新增 `city`/`other_text`，
+    //    字段名跟 1.1 后端`user_store.py`那份 `PROFILE_FIELDS` 逐字对齐，不是我起的名。
+    //    `city` 是正常可编辑字段（暂时还是自由文本，等§三的picker落地再换控件，
+    //    跟 country/region/job 现在的过渡态一样）。`other_text` **不在这里跟着
+    //    profileKeys 自动画成一行**（跟 "account" 同一个理由：不是每个
+    //    profileKeys 条目都该有自己的列表行）——它是 job 选"其他"时的配套字段，
+    //    AccountViewController 的渲染循环显式跳过它，见那边的注释。
     static let profileKeys: [(id: String, key: String)] = [
         ("nick", "auth_nickname"),
         ("account", "auth_account"),
         ("birthday", "auth_birthday"),
         ("country", "auth_country"),
         ("region", "auth_region"),
+        ("city", "auth_city"),
         ("job", "auth_job"),
+        ("other_text", "auth_other_text"),
     ]
 
     /// 读一个资料项。没填就是空串。
@@ -395,7 +404,7 @@ enum Auth {
     /// GET /api/profile 的结果。
     enum ProfileFetchResult {
         case ok(nickname: String, birthday: String, country: String,
-                region: String, job: String)
+                region: String, city: String, job: String, otherText: String)
         /// 🚨 B4：网络失败/非 200，**绝不能当成"资料是空的"**——
         ///    调用方原样保留本地缓存，不弹完善引导、不清空。
         ///    契约坏样本⑤就是钉这条：断网时不许弹完善引导、不许清本地。
@@ -409,7 +418,7 @@ enum Auth {
     private static func serverFieldName(_ id: String) -> String? {
         switch id {
         case "nick": return "nickname"
-        case "birthday", "country", "region", "job": return id
+        case "birthday", "country", "region", "city", "job", "other_text": return id
         default: return nil
         }
     }
@@ -432,7 +441,9 @@ enum Auth {
         setBirthday((p["birthday"] as? String) ?? "")
         setProfile("country", (p["country"] as? String) ?? "")
         setProfile("region", (p["region"] as? String) ?? "")
+        setProfile("city", (p["city"] as? String) ?? "")
         setProfile("job", (p["job"] as? String) ?? "")
+        setProfile("other_text", (p["other_text"] as? String) ?? "")
         // 🚨 09-17 `_规格_昵称显示口径_20260917.md`：首页第三态要不要显示
         //    "我的账户"就看这个标记，服务端已经在带（默认 false）。
         UserDefaults.standard.set((p["nickname_is_custom"] as? Bool) ?? false,
@@ -470,7 +481,9 @@ enum Auth {
                              birthday: (p["birthday"] as? String) ?? "",
                              country: (p["country"] as? String) ?? "",
                              region: (p["region"] as? String) ?? "",
-                             job: (p["job"] as? String) ?? ""))
+                             city: (p["city"] as? String) ?? "",
+                             job: (p["job"] as? String) ?? "",
+                             otherText: (p["other_text"] as? String) ?? ""))
             }
         }.resume()
     }

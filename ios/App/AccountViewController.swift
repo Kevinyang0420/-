@@ -130,7 +130,10 @@ final class AccountViewController: PushedViewController {
         //    在分组站错了地方。邮箱本质是账户身份的一部分（"一个会员绑定一个
         //    邮箱"），跟到期日一样属于"关于你账户状态的信息"，挪进 `memberRow()`
         //    那张卡片里显示，"点这里填写"占位符**直接不再存在**（这条不用再问）。
-        for kv in Auth.profileKeys where kv.id != "account" {
+        // 🚨 09-18 §三：`other_text` 是 job 选"其他"时的配套字段，不该自己
+        //    单独出现在这串列表里（现在 job 还是自由文本，还没到"其他"这个
+        //    概念落地的时候）——`account` 排除的理由同源，见上面那条注释。
+        for kv in Auth.profileKeys where kv.id != "account" && kv.id != "other_text" {
             stack.addArrangedSubview(row(label(for: kv.id),
                                          Auth.profile(kv.id), kv.id))
         }
@@ -302,6 +305,7 @@ final class AccountViewController: PushedViewController {
         case "birthday": return L.profile_birth
         case "country": return L.profile_country
         case "region": return L.profile_region
+        case "city": return L.profile_city
         case "job": return L.profile_job
         default: return id
         }
