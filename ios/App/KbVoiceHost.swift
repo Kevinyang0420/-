@@ -479,10 +479,16 @@ final class KbVoiceHost {
     /// 🚨 判据不看这里的读回值，看**之后有没有出现非静音的帧**
     ///    （`开头诊断：开录到第一帧有声 N ms`）。
     func reUnmuteNowForeground() {
-        guard voice.arming else {
-            KbBridge.note("补解静音：引擎没架着，跳过")
-            return
-        }
+        // 🚨🚨 09-18 Kevin真机RecLog(n=6,3:3)坐实：`已在前台起录`3/3全挂（峰值0.000，
+        //    字节数正常＝录的全是0），`从后台唤起`3/3全好——唯一差异是这个guard：
+        //    "已在前台"那条走`fire()`时`voice.arming`大概率已经是false(待命档
+        //    这一轮可能已经被交出去/还没架)，guard直接跳过解静音，键盘留下的
+        //    静音状态没人解，整轮录的是纯零。
+        //    🚨 去掉这个guard的前置条件已经查清([已实测·0读的`Voice.swift:1077-
+        //    1087`)：`Voice.setMicMuted`只调`AVAudioApplication.shared.
+        //    setInputMuted()`，进程级/系统级开关，不碰引擎/voice对象/session，
+        //    自带do/catch兜底失败只记一行日志不会崩——是个幂等无害动作，
+        //    不需要`arming`当前置条件保护。**无条件解静音**。
         Voice.setMicMuted(false, why: "到前台了，补一次（后台那次可能没生效）")
         KbBridge.note("补解静音：已到前台，补了一次 —— "
                       + "真没真收到声音看后面那条「开头诊断」")
