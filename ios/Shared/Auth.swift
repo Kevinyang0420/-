@@ -404,7 +404,7 @@ enum Auth {
     /// GET /api/profile 的结果。
     enum ProfileFetchResult {
         case ok(nickname: String, birthday: String, country: String,
-                region: String, job: String)
+                region: String, job: String, otherText: String)
         /// 🚨 B4：网络失败/非 200，**绝不能当成"资料是空的"**——
         ///    调用方原样保留本地缓存，不弹完善引导、不清空。
         ///    契约坏样本⑤就是钉这条：断网时不许弹完善引导、不许清本地。
@@ -412,17 +412,18 @@ enum Auth {
     }
 
     /// 服务端字段名 —— 只有 "nick"（界面/`profileKeys` 用的 id）
-    /// 对应服务端的 "nickname" 不一样，其余四个本来就同名。
+    /// 对应服务端的 "nickname" 不一样，其余字段本来就同名。
     /// "account" 不在服务端字段里（契约§〇：那是登录凭据派生的只读显示值），
     /// 传进来直接丢弃，不发请求。
-    /// 🚨🚨 09-18 "other_text" 同理**故意不映射**——2.3 查过安卓那边`/api/profile`
-    /// 后端还没真的支持这个字段：如果我把它接上 GET/POST，服务端响应里缺这个键，
-    /// `applyServerProfile` 会把本地存的自由文本用空串覆盖掉，静默清空且没有任何
-    /// 报错。跟安卓保持一致：先纯本地存，等 1.1 的后端真接了再开这条映射。
+    /// 🚨🚨 09-18 "other_text" 撤销绕路，接回服务端同步——0 本人读的源码：
+    /// `backend/user_store.py:95` `PROFILE_FIELDS` 已经含 `other_text`，
+    /// `test_profile.py:146-149` 验过存 "开滑板店的" 读回来一字不差、不再被
+    /// 当未知字段丢弃。当初不映射是因为后端不认这个字段、同步回来会静默清空
+    /// 本地值——那个前提已经没了，不撤的后果是用户填的「其他」职业换设备就丢。
     private static func serverFieldName(_ id: String) -> String? {
         switch id {
         case "nick": return "nickname"
-        case "birthday", "country", "region", "job": return id
+        case "birthday", "country", "region", "job", "other_text": return id
         default: return nil
         }
     }
@@ -446,8 +447,8 @@ enum Auth {
         setProfile("country", (p["country"] as? String) ?? "")
         setProfile("region", (p["region"] as? String) ?? "")
         setProfile("job", (p["job"] as? String) ?? "")
-        // 🚨 "other_text" **不从这里写**——它是本地专属字段（见 `serverFieldName`
-        //    那条注释），服务端响应里本来就不会有这个键，不许拿"没有"当"清空"。
+        // 🚨🚨 09-18 撤销绕路，接回同步——见 `serverFieldName` 那条注释。
+        setProfile("other_text", (p["other_text"] as? String) ?? "")
         // 🚨 09-17 `_规格_昵称显示口径_20260917.md`：首页第三态要不要显示
         //    "我的账户"就看这个标记，服务端已经在带（默认 false）。
         UserDefaults.standard.set((p["nickname_is_custom"] as? Bool) ?? false,
@@ -485,7 +486,8 @@ enum Auth {
                              birthday: (p["birthday"] as? String) ?? "",
                              country: (p["country"] as? String) ?? "",
                              region: (p["region"] as? String) ?? "",
-                             job: (p["job"] as? String) ?? ""))
+                             job: (p["job"] as? String) ?? "",
+                             otherText: (p["other_text"] as? String) ?? ""))
             }
         }.resume()
     }
