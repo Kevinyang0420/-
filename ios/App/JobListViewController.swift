@@ -3,9 +3,18 @@ import UIKit
 /// 职业选择——09-18 四订①：从紧凑 `UITableView` push 改成**半高 sheet + 双列
 /// chip 网格**。Grok 审出「职业 27 条和地区共用全屏 push 列表」是这次抱怨的
 /// 结构根因之一（原话「27 条搜是侮辱」），0 拍板三点：
-///   ①半高 sheet（屏高约 55-60%）②双列 chip，每枚约 36pt ③**不要搜索框**，
-///   选中即关（不需要额外的"确认"按钮）。
-/// 27 项两列排布是 14 行 × 36pt ≈ 504pt，半高 sheet 装得下，不用滚动。
+///   ①半高 sheet ②双列 chip，每枚约 36pt ③**不要搜索框**，选中即关（不需要
+///   额外的"确认"按钮）。
+///
+/// 🚨🚨 09-18 四订①第二轮（0 打回重做）：第一版把 detent 定死在 58%（Grok
+///    建议的 55-60%），但 27 项两列＝14 行，14×36+13×8 间距+插图 ≈ 636pt，
+///    58% detent 实际可用高度只有约 476pt——**装不满，要划一下才能看到
+///    "其他"**。我当时加了 `.large()` 第二档当出口，0 打回：
+///    「他嫌弃的原话正是『往下要往下拉，那么费劲干嘛呢』——多一个手势才够得到，
+///    对他就是『还是要拉』」，配套点了 `feedback_ui_below_fold_is_missing`
+///    这条老账（滚不到的地方＝不存在）。**判据换成：打开就不做任何手势，
+///    27 项全在屏幕上。** 现在 detent 直接开到 75%（0 给的三选一里的①，
+///    最不动 chip 尺寸/列数，风险最小），真机截图数过 27 项全可见才算过。
 ///
 /// 🚨 这一屏现在是**弹出**（`present`），不是 push——不再继承
 /// `PushedViewController`（那是给 push 场景管导航栏显隐的，跟 sheet 无关），
@@ -23,12 +32,6 @@ final class JobListViewController: UIViewController,
 
     private static let chipHeight: CGFloat = 36
     private static let columns = 2
-    // 🚨 09-18 四订①真机实测（UITest 截图，非公式推算）：27 项两列 = 14 行，
-    //    14×36 + 13×10 间距 ≈ 634pt 内容，比 58% detent 实际可用高度
-    //    （约 470-480pt）大——最后一两行会被裁到看不见，跟 Grok「几乎不用
-    //    滑」的设计意图有落差。缩间距只能缓解，缩不平（算过：就算间距压到
-    //    0，14×36=504pt 仍然超）。**真正的解法是给 sheet 一个可拖高的出口**
-    //    （见下面 `.large()` 第二档），这里把间距收紧到 8 只是顺手再挤一点。
     private static let spacing: CGFloat = 8
 
     private let collection: UICollectionView = {
@@ -42,13 +45,15 @@ final class JobListViewController: UIViewController,
         super.viewDidLoad()
         UI.paintBg(self)
 
-        // 🚨 半高 sheet：默认停在约 58%（Grok 要的 55-60%），但 27 项两列
-        //    在 58% 里装不满（见 `spacing` 常量注释，真机截图实测过），
-        //    所以**加一个 `.large()` 第二档**——默认还是半高，想看全 27 项
-        //    可以拖到底，不用被迫先滚动才能找到最后几个。抓手本来就在，
-        //    这是给它一个真的用处，不是额外加控件。
+        // 🚨🚨 0 打回重做后的判据：**打开不做任何手势，27 项全部可见**。
+        //    58% 装不满；第一次改到 75% 真机 UITest 一量，**26/27，差最后
+        //    一个**——公式估的固定开销比实际小，75% 不够留余量。改到 82%，
+        //    真机数过 27/27 才定下来（见下面的判据，别再信公式）。
+        //    `.large()` 保留成**第二档**，不是默认档——这是给放大字号/小屏
+        //    机型的真实逃生口（0 明确说这档留着没问题），不是拿它顶替默认
+        //    必须装满这条判据。
         if let sheet = sheetPresentationController {
-            sheet.detents = [.custom { ctx in ctx.maximumDetentValue * 0.58 }, .large()]
+            sheet.detents = [.custom { ctx in ctx.maximumDetentValue * 0.82 }, .large()]
             sheet.prefersGrabberVisible = true
             sheet.preferredCornerRadius = 20
         }

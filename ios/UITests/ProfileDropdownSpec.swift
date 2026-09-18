@@ -156,15 +156,19 @@ final class ProfileDropdownSpec: XCTestCase {
         // 抽查首项，确认整张 27 项表真的渲染出来了，不是只挂了个空壳。
         XCTAssertTrue(app.staticTexts["学生"].firstMatch.waitForExistence(timeout: 5),
                       "🚨 职业列表第一项「学生」没出现")
-        // 🚨🚨 09-18 四订①真机实测发现：27 项两列在 58% 半高 sheet 里装不满
-        //    （最后一两行在折叠线以下），"其他"是第 27 项、排最后，不滑不可见
-        //    ——**这是真实布局约束，不是测试环境的意外**。sheet 挂了
-        //    `.large()` 第二档，`prefersScrollingExpandsWhenScrolledToEdge`
-        //    默认开着，往上一划会把 sheet 拉到全屏，露出全部 27 项。
-        app.swipeUp()
-        Thread.sleep(forTimeInterval: 0.5)
+
+        // 🚨🚨 09-18 四订①第二轮（0 打回第一版）：判据是**打开不做任何手势，
+        //    27 项全部可见**——0 原话「他嫌弃的正是『往下拉』这个动作，多一个
+        //    手势才够得到，对他就是『还是要拉』」。**不许 `swipeUp()` 再够
+        //    最后一项**——sheet detent 得直接开到能装满 27 项。数可见 chip
+        //    数量而不是只抽查一个，不然装不满也可能凑巧漏测最后一项。
+        let visibleChips = app.cells.allElementsBoundByIndex.filter { $0.isHittable }.count
+        XCTAssertEqual(visibleChips, 27,
+            "🚨 打开职业 sheet 不做任何手势，可见 chip 只有 \(visibleChips)/27——"
+            + "sheet 没装满，等于没解决 Kevin『还要往下拉』的抱怨")
+
         let other = app.staticTexts["其他"].firstMatch
-        XCTAssertTrue(other.waitForExistence(timeout: 5), "🚨 职业列表里没有「其他」")
+        XCTAssertTrue(other.exists, "🚨 「其他」（第 27 项）不在可见范围内")
         other.tap()
         Thread.sleep(forTimeInterval: 1.0)
 
