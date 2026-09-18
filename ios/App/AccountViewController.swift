@@ -135,7 +135,7 @@ final class AccountViewController: PushedViewController {
         //    概念落地的时候）——`account` 排除的理由同源，见上面那条注释。
         for kv in Auth.profileKeys where kv.id != "account" && kv.id != "other_text" {
             stack.addArrangedSubview(row(label(for: kv.id),
-                                         Auth.profile(kv.id), kv.id))
+                                         displayValue(for: kv.id), kv.id))
         }
 
         // 🚨🚨 **删除账号入口**（0 台账 #72，**卡 iOS 提交**）。
@@ -373,6 +373,12 @@ final class AccountViewController: PushedViewController {
             navigationController?.pushViewController(vc, animated: true)
             return
         }
+        // 🚨🚨 09-18 `_规格_用户资料结构化下拉_20260918.md`§三：国家/省州/职业
+        //    存的必须是可枚举的码，不是自由文本——"不然数据没法分析"是 Kevin 原话，
+        //    这三个字段从"点了弹文本框"改成"点了弹选择列表"，别再走下面这条自由文本路径。
+        if id == "country" { pickCountry(); return }
+        if id == "region" { pickRegion(); return }
+        if id == "job" { pickJob(); return }
         let a = UIAlertController(title: label(for: id), message: nil,
                                   preferredStyle: .alert)
         a.addTextField { $0.text = Auth.profile(id) }
@@ -386,19 +392,137 @@ final class AccountViewController: PushedViewController {
             //    来这一页改资料这个动作本身已经说明了动机。只在改的是
             //    "nick"这个字段时传这个标记，别的字段（生日/国家/职业）不相关。
             let flag: Bool? = (id == "nick") ? true : nil
-            Auth.saveProfile([id: v], nicknameIsCustom: flag) { ok in
-                guard let self = self else { return }
-                self.refresh()
-                if !ok {
-                    let f = UIAlertController(title: nil, message: L.profile_save_failed,
-                                              preferredStyle: .alert)
-                    f.addAction(UIAlertAction(title: "OK", style: .default))
-                    self.present(f, animated: true)
-                }
-            }
+            self?.save([id: v], nicknameIsCustom: flag)
         })
         a.addAction(UIAlertAction(title: L.cancel, style: .cancel))
         present(a, animated: true)
+    }
+
+    /// `tapRow` free-text 分支和三个新 picker 共用的保存收尾——统一走服务端确认
+    /// 那条契约（B2），别让 picker 分支各自抄一遍失败弹窗逻辑。
+    private func save(_ fields: [String: String], nicknameIsCustom flag: Bool? = nil) {
+        Auth.saveProfile(fields, nicknameIsCustom: flag) { [weak self] ok in
+            guard let self = self else { return }
+            self.refresh()
+            if !ok {
+                let f = UIAlertController(title: nil, message: L.profile_save_failed,
+                                          preferredStyle: .alert)
+                f.addAction(UIAlertAction(title: "OK", style: .default))
+                self.present(f, animated: true)
+            }
+        }
+    }
+
+    // MARK: - 三个结构化 picker（国家 / 省州 / 职业）
+
+    private func pickCountry() {
+        let a = UIAlertController(title: label(for: "country"), message: nil,
+                                  preferredStyle: .actionSheet)
+        for c in ProfileCodes.countries {
+            a.addAction(UIAlertAction(title: ProfileCodes.countryLabel(c.code),
+                                      style: .default) { [weak self] _ in
+                // 🚨 换了国家，旧的省州码大概率不再属于这个国家（前缀对不上）——
+                //    留着会出现"国家=美国，省份=广东省"这种拼不上的组合，
+                //    一起清掉逼用户重选，别指望他自己想起来去点省份那一行。
+                let oldRegion = Auth.profile("region")
+                var fields = ["country": c.code]
+                if !oldRegion.isEmpty, !oldRegion.hasPrefix(c.code + "-") {
+                    fields["region"] = ""
+                }
+                self?.save(fields)
+            })
+        }
+        a.addAction(UIAlertAction(title: L.cancel, style: .cancel))
+        a.popoverPresentationController?.sourceView = view
+        present(a, animated: true)
+    }
+
+    private func pickRegion() {
+        let countryCode = Auth.profile("country")
+        // 🚨 没选国家就点省份：省份的可选项由国家决定（代码前缀过滤），
+        //    没有国家就没有过滤依据，不能弹一份不分国家的全量列表糊弄过去。
+        guard !countryCode.isEmpty else {
+            let a = UIAlertController(title: nil, message: L.profile_region_none,
+                                      preferredStyle: .alert)
+            a.addAction(UIAlertAction(title: "OK", style: .default))
+            present(a, animated: true)
+            return
+        }
+        let opts = ProfileCodes.regions(of: countryCode)
+        guard !opts.isEmpty else {
+            let a = UIAlertController(title: nil, message: L.profile_region_none,
+                                      preferredStyle: .alert)
+            a.addAction(UIAlertAction(title: "OK", style: .default))
+            present(a, animated: true)
+            return
+        }
+        let a = UIAlertController(title: label(for: "region"), message: nil,
+                                  preferredStyle: .actionSheet)
+        for r in opts {
+            a.addAction(UIAlertAction(title: ProfileCodes.regionLabel(r.code),
+                                      style: .default) { [weak self] _ in
+                self?.save(["region": r.code])
+            })
+        }
+        a.addAction(UIAlertAction(title: L.cancel, style: .cancel))
+        a.popoverPresentationController?.sourceView = view
+        present(a, animated: true)
+    }
+
+    private func pickJob() {
+        let a = UIAlertController(title: label(for: "job"), message: nil,
+                                  preferredStyle: .actionSheet)
+        for o in ProfileCodes.occupations {
+            a.addAction(UIAlertAction(title: ProfileCodes.occupationLabel(o.code),
+                                      style: .default) { [weak self] _ in
+                guard let self = self else { return }
+                if o.code == ProfileCodes.occOther {
+                    self.pickJobOtherText()
+                } else {
+                    // 🚨 从"其他"切回正常选项：把 other_text 一起清掉——
+                    //    留着的话下次又选"其他"会看到一段跟这次选择无关的旧文本，
+                    //    而 job 字段本身已经不是 occ_other 了，那段文本已经没有
+                    //    对应的展示位置，留着就是孤悬的脏数据。
+                    self.save(["job": o.code, "other_text": ""])
+                }
+            })
+        }
+        a.addAction(UIAlertAction(title: L.cancel, style: .cancel))
+        a.popoverPresentationController?.sourceView = view
+        present(a, animated: true)
+    }
+
+    /// 职业选了"其他"：主字段存固定的 `occ_other`，用户自己写的文本存进独立的
+    /// `other_text` 字段——绝不能让自由文本混进主枚举字段（spec §三）。
+    private func pickJobOtherText() {
+        let a = UIAlertController(title: label(for: "job"), message: nil,
+                                  preferredStyle: .alert)
+        a.addTextField { $0.text = Auth.profile("other_text") }
+        a.addAction(UIAlertAction(title: L.save, style: .default) { [weak self] _ in
+            let v = a.textFields?.first?.text ?? ""
+            self?.save(["job": ProfileCodes.occOther, "other_text": v])
+        })
+        a.addAction(UIAlertAction(title: L.cancel, style: .cancel))
+        present(a, animated: true)
+    }
+
+    /// 行上显示的值——国家/省州/职业存的是 code，界面要翻译成人看得懂的名字；
+    /// 其余字段（昵称/生日）本来就是给人看的文本，原样显示。
+    private func displayValue(for id: String) -> String {
+        switch id {
+        case "country": return ProfileCodes.countryLabel(Auth.profile("country"))
+        case "region": return ProfileCodes.regionLabel(Auth.profile("region"))
+        case "job":
+            let code = Auth.profile("job")
+            // 🚨 选了"其他"时优先显示他自己写的那段文本——那才是他真正想让自己
+            //    看到的内容，显示成"其他"两个字对他没有信息量。
+            if code == ProfileCodes.occOther {
+                let t = Auth.profile("other_text")
+                return t.isEmpty ? ProfileCodes.occupationLabel(code) : t
+            }
+            return ProfileCodes.occupationLabel(code)
+        default: return Auth.profile(id)
+        }
     }
 
     @objc private func askSignOut() {
