@@ -124,7 +124,13 @@ final class AccountViewController: PushedViewController {
         proRow.accessibilityIdentifier = "account.row.pro"
         stack.addArrangedSubview(proRow)
 
-        for kv in Auth.profileKeys {
+        // 🚨🚨 09-18 `_规格_用户资料结构化下拉_20260918.md` §七：邮箱不再跟
+        //    昵称/生日/国家这些**可编辑**字段摆在同一串列表里——那样摆哪怕视觉
+        //    再淡，用户扫一眼还是会以为这里都是能改的东西。矛盾的根不在颜色，
+        //    在分组站错了地方。邮箱本质是账户身份的一部分（"一个会员绑定一个
+        //    邮箱"），跟到期日一样属于"关于你账户状态的信息"，挪进 `memberRow()`
+        //    那张卡片里显示，"点这里填写"占位符**直接不再存在**（这条不用再问）。
+        for kv in Auth.profileKeys where kv.id != "account" {
             stack.addArrangedSubview(row(label(for: kv.id),
                                          Auth.profile(kv.id), kv.id))
         }
@@ -222,7 +228,19 @@ final class AccountViewController: PushedViewController {
         }
         s.textColor = Skin.sub
         s.font = .systemFont(ofSize: 11.5)
-        let col = UIStackView(arrangedSubviews: [t, s])
+        var rows: [UIView] = [t, s]
+        // 🚨 09-18 §七：邮箱只在有值时加这一行——只读展示，不可编辑、没有
+        //    占位符。整张卡片本来就是一个跳去会员页的点击目标，邮箱混在
+        //    里面被带着点过去无所谓（它压根不是能操作的东西）。
+        let email = Auth.profile("account")
+        if !email.isEmpty {
+            let e = UILabel()
+            e.text = email
+            e.textColor = Skin.dim
+            e.font = .systemFont(ofSize: 11.5)
+            rows.append(e)
+        }
+        let col = UIStackView(arrangedSubviews: rows)
         col.axis = .vertical
         col.spacing = 3
         col.isUserInteractionEnabled = false
@@ -291,15 +309,11 @@ final class AccountViewController: PushedViewController {
 
     private func row(_ title: String, _ value: String, _ id: String) -> UIView {
         let box = UIControl()
-        // 🚨🚨 09-17 0派活③：邮箱行原来跟其余可编辑字段用**同一套视觉**——
-        //    同样的底色、同样"空了写「点这里填写」"的邀请式占位，点进去
-        //    却只弹一句"改不了"。Kevin原话「为什么这里还要让我填写邮箱呢」，
-        //    根子不是"看得到邮箱"（这条信息有用，删号前正该确认清楚登的是
-        //    哪个账号），是"看着像能填、其实填不了"这个视觉误导。
-        //    改法：只读态的行**只读值的颜色和底色跟着变淡**，不再暗示可编辑；
-        //    不整行拿掉——账户页找不到自己登的是哪个邮箱，是另一种更糟的迷惑。
-        let readOnly = (id == "account")
-        box.backgroundColor = UIColor.white.withAlphaComponent(readOnly ? 0.03 : 0.06)
+        // 🚨 09-18 §七：邮箱已经从这个函数的调用方里过滤掉了（挪进
+        //    `memberRow()`），这里从此只画**可编辑**字段，不用再按 id
+        //    分只读/可编辑两套视觉——那套分支是 09-17 邮箱还混在这个列表里
+        //    时留下的，邮箱搬走之后它已经没有调用者能传 "account" 进来了。
+        box.backgroundColor = UIColor.white.withAlphaComponent(0.06)
         box.layer.cornerRadius = 14
         box.accessibilityIdentifier = "profile_" + id
 
@@ -310,15 +324,9 @@ final class AccountViewController: PushedViewController {
 
         let v = UILabel()
         let empty = value.isEmpty
-        if readOnly {
-            // 只读态没有"点这里填写"这句——那句本身就是在邀请编辑。
-            v.text = value
-            v.textColor = Skin.dim
-        } else {
-            // 🚨 空的时候写「点这里填写」而不是留空 —— 留空看不出是"能填"还是"坏了"。
-            v.text = empty ? L.account_edit : value
-            v.textColor = empty ? Skin.dim : Skin.text
-        }
+        // 🚨 空的时候写「点这里填写」而不是留空 —— 留空看不出是"能填"还是"坏了"。
+        v.text = empty ? L.account_edit : value
+        v.textColor = empty ? Skin.dim : Skin.text
         v.font = .systemFont(ofSize: 16)
 
         let col = UIStackView(arrangedSubviews: [l, v])
@@ -352,15 +360,6 @@ final class AccountViewController: PushedViewController {
 
     @objc private func tapRow(_ sender: UIControl) {
         guard let id = fieldOf[sender] else { return }
-        // 🚨 邮箱不给改：它是**登录凭据**，不是资料。改了就跟登录态对不上了。
-        if id == "account" {
-            let a = UIAlertController(title: L.account_title,
-                                      message: Auth.account,
-                                      preferredStyle: .alert)
-            a.addAction(UIAlertAction(title: "OK", style: .default))
-            present(a, animated: true)
-            return
-        }
         // 🚨 生日跳到注册那一页的三个下拉，**不在这里再写一套日期选择**。
         if id == "birthday" {
             let vc = ProfileViewController()
