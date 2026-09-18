@@ -614,14 +614,28 @@ final class KbVoiceHost {
             if #available(iOS 15.0, *) { return PipVCKeepAlive.shared.pipActive }
             return false
         }()
-        guard UIApplication.shared.applicationState == .active || pipUp else {
+        let curState = UIApplication.shared.applicationState
+        guard curState == .active || pipUp else {
             // 🚨 **别再写「这是 iOS 的硬限制」** —— 那是我编的，被自己的痕迹推翻：
             //    04:27:17 `冷启架引擎（走梯子）：成了 ✅` 就是在非前台架成的。
             //    这条路（`armForBackground`）确实只在前台可靠，但那是**这条路**的性质，
             //    不是系统的禁令。后台要架就走 `tryArmOnColdLaunch()` 那条梯子。
             KbBridge.note("架引擎：App 不在前台 → 这条路不试了，后台请走冷启梯子")
+            // 🚨🚨 09-18 0要求：给这个guard记一条真机可查的证据——
+            //    验证"跳一下就回"架构下，录完0.6秒后重架时App是不是已经
+            //    回到后台了（这正是`arming`恒false那条推断的关键证据）。
+            RecLog.add(sec: 0, bytes: 0, result: "重架被拒",
+                       detail: "phase=" + String(describing: curState.rawValue)
+                           + " pipUp=" + String(pipUp),
+                       failStep: "rearm_rejected")
             return
         }
+        // 🚨🚨 09-18 同上：guard通过也要记一条，跟"重架被拒"对照，
+        //    才看得出真机上这两条路各占多少比例。
+        RecLog.add(sec: 0, bytes: 0, result: "重架通过",
+                   detail: "phase=" + String(describing: curState.rawValue)
+                       + " pipUp=" + String(pipUp),
+                   failStep: "rearm_ok")
         // 2026-09-02 回归修复（Kevin 短信里按：键盘显示在录、波浪线不动、麦克风 0 字节）：
         //    R1a 录完 3 秒 `setActive(false)` 放掉会话后，这里 `reuseSession: holdIsPlayRec` 去【复用】
         //    一个已经不在的会话 → 失败 → 原来直接 return，**没有任何回退** → `arm：没架上` →
