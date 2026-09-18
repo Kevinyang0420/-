@@ -131,12 +131,19 @@ final class AccountViewController: PushedViewController {
         //    邮箱"），跟到期日一样属于"关于你账户状态的信息"，挪进 `memberRow()`
         //    那张卡片里显示，"点这里填写"占位符**直接不再存在**（这条不用再问）。
         // 🚨 09-18 §三：`other_text` 是 job 选"其他"时的配套字段，不该自己
-        //    单独出现在这串列表里（现在 job 还是自由文本，还没到"其他"这个
-        //    概念落地的时候）——`account` 排除的理由同源，见上面那条注释。
-        for kv in Auth.profileKeys where kv.id != "account" && kv.id != "other_text" {
+        //    单独出现在这串列表里——`account` 排除的理由同源，见上面那条注释。
+        // 🚨🚨 09-18 二订：`country`/`region` 也从这条自动生成的循环里摘出去——
+        //    0 原话「不需要既有国家地区又有省份……『地区』一个入口」，两个字段
+        //    合并成一行手写的"地区"（见下面），别再各画一行。
+        for kv in Auth.profileKeys
+            where kv.id != "account" && kv.id != "other_text"
+                && kv.id != "country" && kv.id != "region" {
             stack.addArrangedSubview(row(label(for: kv.id),
                                          displayValue(for: kv.id), kv.id))
         }
+        // 🚨 `row()` 自己会把 id 拼成 `profile_area` 当 accessibilityIdentifier，
+        //    不用在这里再手动设一遍（见 `row()` 内部那一行）。
+        stack.addArrangedSubview(row(L.profile_area, areaDisplayValue(), "area"))
 
         // 🚨🚨 **删除账号入口**（0 台账 #72，**卡 iOS 提交**）。
         //    App Store 明确要求 App 内可达 —— 网页那条（已上线）不算。
@@ -303,8 +310,6 @@ final class AccountViewController: PushedViewController {
         case "nick": return L.profile_nick
         case "account": return L.profile_email
         case "birthday": return L.profile_birth
-        case "country": return L.profile_country
-        case "region": return L.profile_region
         case "job": return L.profile_job
         default: return id
         }
@@ -375,9 +380,9 @@ final class AccountViewController: PushedViewController {
         }
         // 🚨🚨 09-18 `_规格_用户资料结构化下拉_20260918.md`§三：国家/省州/职业
         //    存的必须是可枚举的码，不是自由文本——"不然数据没法分析"是 Kevin 原话，
-        //    这三个字段从"点了弹文本框"改成"点了弹选择列表"，别再走下面这条自由文本路径。
-        if id == "country" { pickCountry(); return }
-        if id == "region" { pickRegion(); return }
+        //    这几个字段从"点了弹文本框"改成"点了弹选择列表/钻取导航"，
+        //    别再走下面这条自由文本路径。
+        if id == "area" { pickAreaDrillDown(); return }
         if id == "job" { pickJob(); return }
         let a = UIAlertController(title: label(for: id), message: nil,
                                   preferredStyle: .alert)
@@ -415,58 +420,23 @@ final class AccountViewController: PushedViewController {
 
     // MARK: - 三个结构化 picker（国家 / 省州 / 职业）
 
-    private func pickCountry() {
-        let a = UIAlertController(title: label(for: "country"), message: nil,
-                                  preferredStyle: .actionSheet)
-        for c in ProfileCodes.countries {
-            a.addAction(UIAlertAction(title: ProfileCodes.countryLabel(c.code),
-                                      style: .default) { [weak self] _ in
-                // 🚨 换了国家，旧的省州码大概率不再属于这个国家（前缀对不上）——
-                //    留着会出现"国家=美国，省份=广东省"这种拼不上的组合，
-                //    一起清掉逼用户重选，别指望他自己想起来去点省份那一行。
-                let oldRegion = Auth.profile("region")
-                var fields = ["country": c.code]
-                if !oldRegion.isEmpty, !oldRegion.hasPrefix(c.code + "-") {
-                    fields["region"] = ""
-                }
-                self?.save(fields)
-            })
+    /// 「地区」的钻取入口：国家 →（有省州才钻）省州 → 收工。
+    ///
+    /// 🚨🚨 09-18 二订：原来是国家/省份各一个 `UIAlertController` actionSheet
+    ///    并排摆着，0 打回来——他要的是**逐级钻取**（选了国家右滑进省份，
+    ///    上一级能返回改），不是两个互相独立的选择器。`CountryListViewController`/
+    ///    `RegionListViewController` 走完各自的选择后**把结果吐回这里**，
+    ///    pop 到自己这一屏、再统一存一次——两级只发一次保存请求。
+    private func pickAreaDrillDown() {
+        let vc = CountryListViewController()
+        vc.initialCountry = Auth.profile("country")
+        vc.initialRegion = Auth.profile("region")
+        vc.onDone = { [weak self] country, region in
+            guard let self = self else { return }
+            self.navigationController?.popToViewController(self, animated: true)
+            self.save(["country": country, "region": region])
         }
-        a.addAction(UIAlertAction(title: L.cancel, style: .cancel))
-        a.popoverPresentationController?.sourceView = view
-        present(a, animated: true)
-    }
-
-    private func pickRegion() {
-        let countryCode = Auth.profile("country")
-        // 🚨 没选国家就点省份：省份的可选项由国家决定（代码前缀过滤），
-        //    没有国家就没有过滤依据，不能弹一份不分国家的全量列表糊弄过去。
-        guard !countryCode.isEmpty else {
-            let a = UIAlertController(title: nil, message: L.profile_region_none,
-                                      preferredStyle: .alert)
-            a.addAction(UIAlertAction(title: "OK", style: .default))
-            present(a, animated: true)
-            return
-        }
-        let opts = ProfileCodes.regions(of: countryCode)
-        guard !opts.isEmpty else {
-            let a = UIAlertController(title: nil, message: L.profile_region_none,
-                                      preferredStyle: .alert)
-            a.addAction(UIAlertAction(title: "OK", style: .default))
-            present(a, animated: true)
-            return
-        }
-        let a = UIAlertController(title: label(for: "region"), message: nil,
-                                  preferredStyle: .actionSheet)
-        for r in opts {
-            a.addAction(UIAlertAction(title: ProfileCodes.regionLabel(r.code),
-                                      style: .default) { [weak self] _ in
-                self?.save(["region": r.code])
-            })
-        }
-        a.addAction(UIAlertAction(title: L.cancel, style: .cancel))
-        a.popoverPresentationController?.sourceView = view
-        present(a, animated: true)
+        navigationController?.pushViewController(vc, animated: true)
     }
 
     private func pickJob() {
@@ -510,8 +480,6 @@ final class AccountViewController: PushedViewController {
     /// 其余字段（昵称/生日）本来就是给人看的文本，原样显示。
     private func displayValue(for id: String) -> String {
         switch id {
-        case "country": return ProfileCodes.countryLabel(Auth.profile("country"))
-        case "region": return ProfileCodes.regionLabel(Auth.profile("region"))
         case "job":
             let code = Auth.profile("job")
             // 🚨 选了"其他"时优先显示他自己写的那段文本——那才是他真正想让自己
@@ -523,6 +491,15 @@ final class AccountViewController: PushedViewController {
             return ProfileCodes.occupationLabel(code)
         default: return Auth.profile(id)
         }
+    }
+
+    /// "地区"合并行要显示的值：两级都选了就"国家 · 省州"拼起来，
+    /// 只选了国家（这个国家没有可选省州，或用户还没往下选）就只显示国家。
+    private func areaDisplayValue() -> String {
+        let country = ProfileCodes.countryLabel(Auth.profile("country"))
+        let region = ProfileCodes.regionLabel(Auth.profile("region"))
+        if country.isEmpty { return "" }
+        return region.isEmpty ? country : country + " · " + region
     }
 
     @objc private func askSignOut() {
