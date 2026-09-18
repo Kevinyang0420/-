@@ -966,7 +966,8 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                            + "｜场景=" + Self.sceneStateLine()
                            + "｜arming=" + String(armingNow),
                        arming: armingNow,
-                       fg: UIApplication.shared.applicationState == .active)
+                       fg: UIApplication.shared.applicationState == .active,
+                       scenePhase: Self.scenePhaseToken())
         }
     }
 
@@ -1126,6 +1127,20 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         }.joined(separator: ",")
         return "count=" + String(scenes.count) + "｜" + states
+    }
+
+    /// `sceneStateLine()` 的短 token 版——给 RecLog 回传用（那边字段要短，
+    /// 不能塞中文长句）。只取**第一个** scene（这工程目前只有一个）。
+    /// 09-18 0要求验证 09-16 那条"三状态源没对齐"技术债的诊断专用。
+    private static func scenePhaseToken() -> String {
+        guard let s = UIApplication.shared.connectedScenes.first else { return "none" }
+        switch s.activationState {
+        case .foregroundActive: return "fgactive"
+        case .foregroundInactive: return "fginactive"
+        case .background: return "bg"
+        case .unattached: return "unattached"
+        @unknown default: return "unknown"
+        }
     }
 
     func application(_ app: UIApplication,

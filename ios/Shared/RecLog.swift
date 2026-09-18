@@ -35,8 +35,14 @@ enum RecLog {
         var peak: Double? = nil      // 这一轮的电平峰值（0~1）
         var zeroPct: Int? = nil      // 零采样点占比（0~100）
         var arming: Bool? = nil      // 触发这条记录那一刻 voice.arming 的值
-        var fg: Bool? = nil          // 触发那一刻是不是前台
+        var fg: Bool? = nil          // 触发那一刻是不是前台（App 级 applicationState）
         var failStep: String? = nil  // 给后端的短枚举，不传就在回传时从 r 推
+        // 🚨🚨 09-18 0要求：App 级状态(`fg`)和 Scene 级状态**必须分开记**——
+        //    `AppDelegate.swift:1102` 09-16 就留了技术债注释：`startWhenTrulyActive()`
+        //    等的是 App 级 `didBecomeActiveNotification`，起录 URL 走的是 Scene 级
+        //    `scene(_:openURLContexts:)`，三个状态源没对齐可能就是"6秒必然超时"的
+        //    真根因。这个字段是那条债第一次真正被记进能自动回传的地方。
+        var scenePhase: String? = nil
     }
 
     // MARK: - Keychain
@@ -87,12 +93,12 @@ enum RecLog {
     static func add(sec: Double, bytes: Int, result: String, detail: String,
                     peak: Double? = nil, zeroPct: Int? = nil,
                     arming: Bool? = nil, fg: Bool? = nil,
-                    failStep: String? = nil) {
+                    failStep: String? = nil, scenePhase: String? = nil) {
         var a = items()
         a.append(Item(t: Date().timeIntervalSince1970, sec: sec,
                       bytes: bytes, r: result, d: detail,
                       peak: peak, zeroPct: zeroPct, arming: arming, fg: fg,
-                      failStep: failStep))
+                      failStep: failStep, scenePhase: scenePhase))
         if a.count > maxItems { a = Array(a.suffix(maxItems)) }
         if let d = try? JSONEncoder().encode(a),
            let s = String(data: d, encoding: .utf8) {
@@ -154,7 +160,13 @@ enum RecLog {
         guard !recent.isEmpty else { return done(true) }
         let rows: [[String: Any]] = recent.map { it in
             var o: [String: Any] = ["ts": it.t, "sec": it.sec, "bytes": it.bytes]
-            o["fail_step"] = it.failStep ?? mapResultToFailStep(it.r)
+            var step = it.failStep ?? mapResultToFailStep(it.r)
+            // 🚨🚨 09-18 0急需：Scene级状态没有独立的服务端白名单字段
+            //    （新增字段会被后端静默丢弃，见1.1的约束），等不起再跟1.1
+            //    协调加字段那一轮——直接拼进`fail_step`这个已经通的字段里。
+            //    不优雅，但今晚就能让0在`/api/diag`里看到，不用等。
+            if let sp = it.scenePhase { step += "_scene_" + sp }
+            o["fail_step"] = step
             if let p = it.peak { o["peak"] = p }
             if let z = it.zeroPct { o["zero_pct"] = z }
             if let f = it.fg { o["fg_bg"] = f ? "foreground" : "background" }
