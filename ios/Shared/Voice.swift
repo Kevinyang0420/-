@@ -23,17 +23,13 @@ final class Voice: NSObject {
     /// **先到 5 分钟，不是一步到 900** —— 分段收尾器是新代码，
     /// 先在这个量级上跑通，再谈 15 分钟；否则一次要同时验
     /// 「切得对不对」和「15 分钟会不会爆内存」。
-    /// 安卓那边是 `MAX_SECONDS = 900`，**这是两端目前最大的一处不对齐**。
-    /// 🚨🚨 **抬到 900，对齐安卓（2026-08-31）。**
-    ///    Kevin 2026-08-24 就要求「语音输入支持录 15 分钟」，安卓 `MAX_SECONDS = 900`
-    ///    早就做了，iOS 一直卡在 60；他 08-31 撞到：「怎么才一分钟不到就停了」，
-    ///    并且点名「**我都说了要对齐安卓**」。
-    ///
-    ///    上一版写 300 的理由是「分段收尾器是新代码，先到 5 分钟」——
-    ///    那是**我给自己留的余量，不是他要的口径**，而两端不一致他会当成
-    ///    「iOS 版不好用」。安卓拿同一个后端跑 900 秒已经在用，
-    ///    分段是 60 秒一段（离网关天花板 3 倍余量），长度本身不增加单次风险。
-    static let MAX_DURATION_SEGMENTED: TimeInterval = 900
+    /// 🚨🚨 09-19 撤销：`MAX_DURATION_SEGMENTED`（900 秒）已删——Kevin「不需要加
+    ///    cap 了呗……我自己觉得不要加限制」，分段模式不再有任何数字上限，见
+    ///    `start()` 里 `capTimer` 那段注释和 `KbVoiceHost.swift` 待命档那条判断。
+    ///    这个常量曾经存在的理由（从 60 抬到 900、对齐安卓 15 分钟）已经过时——
+    ///    900 不是"够用的新上限"，是"上一版上限"，留着只会被人当成活的口径再抄一遍
+    ///    （0 09-19 就抓到 `KbVoiceHost.swift`/`KeyboardViewController.swift` 两处
+    ///    还在拿它当真上限用）。
 
     /// 每段多少秒。**跟安卓 `Segments.SEG_SECONDS` 同一个数、同一张实测表。**
     static let SEG_SECONDS = 60
@@ -197,8 +193,8 @@ final class Voice: NSObject {
 
     /// **长录音分段**：每满 `SEG_SECONDS` 交出一段 WAV，边录边传。
     ///
-    /// 🚨 **接了它，上限才会从 60 抬到 `MAX_DURATION_SEGMENTED`** ——
-    ///    没人收段就抬上限 ＝ 攒一个必然 504 的大包。
+    /// 🚨 **接了它，分段模式才生效、才不受任何时长上限约束** ——
+    ///    没人收段就不设上限 ＝ 攒一个必然 504 的大包。
     /// 🚨 它跟 `onUtterance`（连续模式按静音切句）**不是一回事**：
     ///    这个按**字节数**切，跟他说没说完全无关，纯粹为了绕开体积和内存。
     var onSegment: ((Data) -> Void)?
@@ -716,13 +712,17 @@ final class Voice: NSObject {
         //    🚨 我为这个症状先后打了两个补丁（保活别碰会话），
         //       **都不是根因** —— 因为我没先量就先修。
         //    待命档的"录多久"由 `beginKeep/endKeep` 那一对管，不归它管。
-        if !arming {
+        // 🚨🚨 09-18 五订：Kevin 拍板「不需要加 cap 了呗……我自己觉得不要加限制」
+        //    ——成本算完（1 小时 audio_in ≈ ¥0.068）不构成限制，真正的风险是
+        //    "录很久中途被系统杀/没电/崩了全丢"，不是钱。**接了分段就不设上限**
+        //    ——不是把 `MAX_DURATION_SEGMENTED` 改成一个更大的数（那种数字将来
+        //    没人知道为什么是它），是**根本不排这个闹钟**，`stop()` 只由用户
+        //    主动按停触发。`onSegment == nil` 的两条路（单句 60 秒 / 连续模式
+        //    整场上限）没变——那两条本来就不是这次要解决的问题。
+        if !arming, onSegment == nil {
             capTimer = Timer.scheduledTimer(
-                // 🚨 上限**跟着能力走**：接了分段才敢用长的那个。
                 withTimeInterval: onUtterance != nil
-                    ? Voice.MAX_CONTINUOUS
-                    : (onSegment != nil ? Voice.MAX_DURATION_SEGMENTED
-                                        : Voice.MAX_DURATION),
+                    ? Voice.MAX_CONTINUOUS : Voice.MAX_DURATION,
                 repeats: false) { [weak self] _ in self?.stop() }
         }
         // 每秒推一次计时给界面

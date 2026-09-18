@@ -1145,6 +1145,22 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ app: UIApplication,
                      didFinishLaunchingWithOptions o: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // 🚨 09-19 调试专用：④"录音不设 cap"的判据是「force-kill 重开还能找回
+        //    已转好的部分」——我没法真的在他手机上点录音+说话+强杀（够不着
+        //    麦克风），所以造一个**跟真崩溃后状态完全一样**的现场（落盘 JSONL +
+        //    UserDefaults 里的"进行中"标记），然后在**任何恢复代码跑之前**就
+        //    `exit(0)`——效果上跟系统在这个时间点杀掉进程没有区别，因为
+        //    `recoverPendingSessionIfAny()` 只认磁盘上的状态，不知道也不关心
+        //    这次中断是系统杀的还是我自己杀的。跟 `TRANSLESS_SEED_CARD` 同一
+        //    条规矩：只有调试注入的 env 会碰它，真机用户设不了。
+        if ProcessInfo.processInfo.environment["TRANSLESS_SEED_PENDING_SESSION_AND_EXIT"] == "1" {
+            let sid = "forcekill_test_" + String(Int(Date().timeIntervalSince1970))
+            EavesdropTranscript.append(sessionId: sid, index: 0, text: "第一段已经转好了")
+            EavesdropTranscript.append(sessionId: sid, index: 1, text: "第二段也转好了")
+            UserDefaults.standard.set(sid, forKey: MainViewController.kPendingSessionKey)
+            UserDefaults.standard.synchronize()
+            exit(0)
+        }
         // 🚨🚨 **这一段 09-06 挂错过一次，就挂在 `fire()` 里** ——
         //    而 `fire()` 只在某条启动路径上跑，于是观察者**大部分启动都没注册上**，
         //    表现成「键盘发了通知没人接」。上面那条注释写的就是同一件事：
@@ -2579,8 +2595,12 @@ final class HomeViewController: UIViewController {
             //    (`isProCached` 清零/设成未来/设成过去三条断言)，**同一晚在同一个文件**
             //    引入了 `clearCache()`，而这份自测本身从建起来那天起零调用点，
             //    没接的话这次改动根本没被验过。跟上面几份同一个病根。
+            //    🚨 09-19 追加第五、六份：`Segments.selfTest()`/
+            //    `EavesdropTranscript.selfTest()`——④"录音不设 cap"这次改动
+            //    加的 `onSegmentDone` 回调链，跟上面几份一样从写完那天起零调用点。
             r.text = HomeStatsCore.selfTest() ?? KpiWords.selfTest()
-                ?? Auth.selftestAccountSwitch() ?? ProStatus.selftest().first ?? "OK"
+                ?? Auth.selftestAccountSwitch() ?? ProStatus.selftest().first
+                ?? Segments.selfTest() ?? EavesdropTranscript.selfTest() ?? "OK"
             r.accessibilityLabel = r.text
             r.font = .systemFont(ofSize: 9)
             r.textColor = .clear
@@ -4197,6 +4217,17 @@ final class MainViewController: UIViewController {
     private lazy var voice = Voice()
     private var phase: Phase = .idle
     private var elapsedTimer: Timer?
+    /// 09-18 五订：接分段通道（Kevin 拍板录音不设 cap）之后这一屏才有的状态。
+    /// 🚨 连续模式（`onUtterance`）不碰这条——那是另一套切句逻辑，两者不同时用。
+    private var segs: Segments?
+    /// 这一轮录音的会话号——**只给"转完就落盘"用**，跟历史记录的 id 是两回事。
+    /// 崩了重开之后靠它去 `EavesdropTranscript.readAll` 找回已经转好的部分。
+    private var recSessionId: String = ""
+    /// 09-19 补：`recSessionId` 只在内存里，进程被强杀之后这个变量本身也没了——
+    /// 光有 `EavesdropTranscript` 落盘还不够，**得有个比进程活得久的地方记着
+    /// "上一轮录到一半的是哪个 sessionId"**，下次启动才知道找哪份文件。
+    /// UserDefaults 够用（只是个字符串，不需要 App Group）。
+    fileprivate static let kPendingSessionKey = "transless.pendingRecSession"
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -4714,6 +4745,25 @@ final class MainViewController: UIViewController {
         explain(speakButton, L.ex_speak_ios)
 
         paintMode()
+        recoverPendingSessionIfAny()
+    }
+
+    /// 09-19 补：④"录音不设 cap"判据是**force-kill 重开还能找回已转好的部分**，
+    /// 不是"落盘了就算数"——`EavesdropTranscript` 落盘再扎实，没人在下次启动时
+    /// 去读它，对 Kevin 来说数据就是没了（他看得到的只有屏幕，不是沙盒文件）。
+    /// 走跟 `finishSegmented` 一样的 `heardLabel`/`polish` 展示路径，不另起一套 UI。
+    private func recoverPendingSessionIfAny() {
+        let key = Self.kPendingSessionKey
+        guard let sid = UserDefaults.standard.string(forKey: key), !sid.isEmpty else { return }
+        let parts = EavesdropTranscript.readAll(sessionId: sid)
+        UserDefaults.standard.removeObject(forKey: key)
+        EavesdropTranscript.delete(sessionId: sid)
+        guard !parts.isEmpty else { return }
+        let zh = Segments.join(parts.map { $0.text })
+        guard !zh.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        setOneOff(L.st_recovered_after_crash)
+        heardLabel.text = zh
+        polish(zh, ep: epoch)
     }
 
     // MARK: - 模式
@@ -5597,7 +5647,11 @@ final class MainViewController: UIViewController {
         seq = 0
         setPhase(.listening, hint: continuous
                  ? L.try_cont_on
-                 : "听着呢，想到哪说到哪（最长 60 秒）\n说完再按一下红色按钮")
+                 // 🚨🚨 09-18 五订：原来写死中文且带「最长 60 秒」——那条上限
+                 //    已经撤了（Kevin 拍板不设 cap），这句话继续留着就是撒谎。
+                 //    挪进 i18n（`L.st_listening_start_ios`），别的语言界面下
+                 //    原来这句话也一直是中文，同一个坑修两遍。
+                 : L.st_listening_start_ios)
         elapsedTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] tm in
             // 🚨 复审 中-4 的后一半：**self 没了就把自己停掉**。
             //    `[weak self]` 只是不持有，**定时器本身仍被 runloop 持有** ——
@@ -5620,6 +5674,30 @@ final class MainViewController: UIViewController {
         KbVoiceHost.shared.yieldMic()
 
         voiceUsed = true
+
+        // 🚨🚨 09-18 五订：Kevin 拍板「录音不设 cap」——接分段通道才能不撞
+        //    `Voice.MAX_DURATION`（60 秒）。连续模式（`onUtterance`）不接，
+        //    那是另一套切句逻辑，跟分段不同时用，且他没抱怨过那边的上限。
+        //    `sessionId` 起录这一刻生成——`EavesdropTranscript` 靠它给这一轮
+        //    的落盘文件命名，崩了重开能按这个号找回已转好的部分。
+        if !continuous {
+            recSessionId = UUID().uuidString
+            let sid = recSessionId
+            UserDefaults.standard.set(sid, forKey: Self.kPendingSessionKey)
+            let sg = KbVoiceHost.createSegments(onSegmentDone: { idx, text in
+                // 🚨 失败段（text == nil）不落盘——`EavesdropTranscript.append`
+                //    本来就会把空文本挡在外面，这里提前 return 只是省一次调用，
+                //    行为跟"传空文本"完全一样，不是新增了一条判断路径。
+                guard let text = text else { return }
+                EavesdropTranscript.append(sessionId: sid, index: idx, text: text)
+            })
+            segs = sg
+            voice.onSegment = { [weak sg] w in sg?.submit(wav: w) }
+        } else {
+            segs = nil
+            voice.onSegment = nil
+        }
+
         // 🚨 **波形要真的跟着他的声音跳**，不能只是个动画 ——
         //    动画在麦克风哑掉时照样在动，那正是"看起来在工作"的假信号。
         //    数据源跟键盘、跟面对面那屏完全一样：`Voice.onLevel`。
@@ -5667,6 +5745,21 @@ final class MainViewController: UIViewController {
                         if wav.count > 44 { self.sendUtterance(wav, ep: recEpoch) }
                         return
                     }
+                    // 🚨🚨 09-18 五订：`wav` 是空 `Data` 且这一轮接了分段通道，
+                    //    是 `Voice.stop()` 的约定信号「结果去分段器取」（见
+                    //    `Voice.swift:1483` 那条注释），**不是**"没说话"。
+                    //    `segs.count == 0` 才是真的没说到任何一段——那种情况
+                    //    落回原来"太短/没说话"那条路（走 `.failure` 分支，
+                    //    这里不用另处理）。
+                    if let sg = self.segs, sg.count > 0 {
+                        self.finishSegmented(sg, ep: recEpoch)
+                        return
+                    }
+                    // 🚨 零段（没说话/太短）：这一轮没生成任何落盘文件，
+                    //    但起录时已经写过的"进行中"标记要清掉，不然下次启动
+                    //    会拿一个根本不存在的 sessionId 去找找不到的文件。
+                    UserDefaults.standard.removeObject(forKey: Self.kPendingSessionKey)
+                    self.segs = nil
                     self.setPhase(.thinking, hint: L.st_recognizing)
                     // 🚨 高-2 的后一半：**单句链也要代次闸**。
                     //    🚨 用**起录时**捕获的那一代，**不再重新取值**（高-1）。
@@ -5751,6 +5844,40 @@ final class MainViewController: UIViewController {
         //    `stopListening()` → `.thinking` → `voice.stop()` 被 guard 挡回
         //    → `onWav` 永远不来 → **卡死在处理中，而取消入口挂在禁用的按钮上**。
         if phase != .idle { setPhase(.idle, hint: "") }
+    }
+
+    /// 09-18 五订：分段通道收工——`sg.count > 0` 时 `Voice.onWav` 交回一个空
+    /// `Data`，真正的文字要自己去分段器里等。跟 `KbVoiceHost.finishSegments`
+    /// 走的是同一条"`awaitAll` 阻塞、别在主线程调"的规矩，这里单独写一份是
+    /// 因为收尾之后要做的事不一样（这屏是 `heardLabel`/`polish`，键盘那边是
+    /// 出稿到候选栏），**等的逻辑（`awaitAll`/落盘清理）跟键盘那条一样**，
+    /// 复制过来是因为 `Segments`/`EavesdropTranscript` 已经是"唯一实现"了，
+    /// 这里只是调用，不是重新发明。
+    private func finishSegmented(_ sg: Segments, ep: Int) {
+        self.setPhase(.thinking, hint: L.st_recognizing)
+        let sid = recSessionId
+        // 每段最多 90 秒等待，总墙钟按段数给，最少 120 秒——跟
+        // `KbVoiceHost.finishSegments` 同一张表，不另编一套数字。
+        let wait = max(120.0, Double(sg.count) * 60.0)
+        DispatchQueue.global().async { [weak self] in
+            let zh = sg.awaitAll(waitSec: wait)
+            DispatchQueue.main.async {
+                guard let self = self, ep == self.epoch else { return }
+                self.segs = nil
+                // 🚨 结果已经在 `zh` 里了，落盘的那份 JSONL 完成了它的使命
+                //    （防的是"还没等到这一刻就崩了"），正常走到这里就该清掉，
+                //    不然占着地方且下次崩溃恢复会读到上一轮的旧内容。
+                if !sid.isEmpty { EavesdropTranscript.delete(sessionId: sid) }
+                UserDefaults.standard.removeObject(forKey: Self.kPendingSessionKey)
+                if zh.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    self.showFailure("分段全部没转出来", human: FailureText.Local.emptyAsr,
+                                     step: "录音")
+                    return
+                }
+                self.heardLabel.text = zh
+                self.polish(zh, ep: ep)
+            }
+        }
     }
 
     private func sendUtterance(_ wav: Data, ep: Int) {

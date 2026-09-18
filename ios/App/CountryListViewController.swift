@@ -11,9 +11,10 @@ import UIKit
 ///    搞这么大、这么长」——249 项要能快速找到，三件事一起做：
 ///    ①**行高压紧**（`rowHeight`），目标一屏 ≥17 行（09-18 四订③改的判据，
 ///    不再是这里最初写的 12 行），不是默认 44pt 的 7 行；
-///    ②**常用置顶**（`ProfileCodes.commonCountryCodes`）+ 分隔线，下面才是
-///    按字母排的全量表；③**右侧 A-Z 索引条**（`sectionIndexTitles`，iOS 原生
-///    机制，不是自己发明的手势）。
+///    ②**常用置顶**（09-19 改：直接取 `ProfileCodes.allCountries` 前几项，
+///    即 1.1 摆在 JSON 最前面的 CN/HK/MO/TW，不再走 locale 推断）+ 分隔线，
+///    下面才是按字母排的全量表；③**右侧 A-Z 索引条**（`sectionIndexTitles`，
+///    iOS 原生机制，不是自己发明的手势）。
 ///
 /// 🚨🚨 09-18 四订：③的分组键改了。三订那版按**英文名首字母**分组——Grok
 ///    审出这是真 bug：中文界面显示的是中文名，拿英文字母分组，"中国"按
@@ -61,14 +62,15 @@ final class CountryListViewController: PushedViewController,
         UI.paintBg(self)
         title = L.profile_country
         all = ProfileCodes.allCountries
-        // 🚨 09-18 四订⑤：不再是写死的常量，`commonCountryCodes()` 现在是
-        //    系统区域推断(槽1)+最近选过(槽2)两槽算出来的——每次开这一屏都
-        //    重新算一遍，不缓存。
-        let commonCodes = ProfileCodes.commonCountryCodes()
-        let commonSet = Set(commonCodes)
-        common = commonCodes.compactMap { code in
-            all.first { $0.code == code }
-        }
+        // 🚨🚨 09-19 撤销：「常用置顶」不再用 `commonCountryCodes()`
+        //    （locale 推断+最近选过）算——2.1 拍板 CN 必须第 1 项、HK/MO/TW
+        //    必须在前 4 项，这是硬性保证，不能靠 locale 猜测（猜不准、顺序
+        //    也不稳定）。1.1 已经把这四个摆进 JSON 数组最前面，两套"谁来决定
+        //    顶部显示什么"的机制不能同时生效——这次要的是 JSON 顺序说了算，
+        //    直接取 `all`（JSON 原序）的前几个当置顶区即可。
+        let pinnedCount = min(4, all.count)
+        common = Array(all.prefix(pinnedCount))
+        let commonSet = Set(common.map { $0.code })
         let rest = all.filter { !commonSet.contains($0.code) }
         var byLetter: [String: [Item]] = [:]
         for item in rest {
@@ -200,8 +202,9 @@ final class CountryListViewController: PushedViewController,
     func tableView(_ tv: UITableView, didSelectRowAt ip: IndexPath) {
         tv.deselectRow(at: ip, animated: true)
         let code = items(in: ip.section)[ip.row].code
-        // 🚨 09-18 四订⑤：选中就记进槽2（最近选过），不等真存到服务端才记——
-        //    这一屏关掉再打开就该看见它排到常用区最前面。
+        // 🚨🚨 09-19：常用置顶区（`common`）已经改成直接吃 JSON 前几项，
+        //    不再由这个"最近选过"槽决定显示什么——但槽本身还留着记录，
+        //    没删是因为它不是这一屏独有的机制，别的地方（或以后）可能还用得上。
         ProfileCodes.noteCountrySelected(code)
         let opts = ProfileCodes.regions(of: code)
         if opts.isEmpty {

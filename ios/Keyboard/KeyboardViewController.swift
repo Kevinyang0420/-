@@ -3061,27 +3061,16 @@ final class KeyboardViewController: UIInputViewController {
                                       + "，波形隐藏=" + String(self.waveView.isHidden))
                     }
                 }
-                // 录音末尾倒计时 —— 照抄安卓 `startTailCountdown`：
-                // 平时什么都不显示，只在最后 20 秒把剩余秒数写进圆圈，
-                // 免得他在毫不知情的情况下被自动停（安卓 2026-08-22 的原因）。
-                //
-                // 🚨 **两端的上限不一样，这条要报给 2.1**：
-                //    安卓键盘 `MAX_SECONDS = 900`，iOS 单句 `Voice.MAX_DURATION = 60`。
-                //    差 15 倍。倒计时的**规则**照抄了（最后 20 秒），
-                //    但上限本身对不齐 —— 那是产品口径，不归我改。
-                // 🚨🚨 **倒计时必须按分段上限（900）算，不是单句的 60**（2026-09-02 09:0x）。
-                //    键盘那条路每次 begin() 都接分段，宿主上限就是 900；而这里照 60 倒数，
-                //    第 60 秒红圈停在「0」—— Kevin 看到就按停了：「最长只能录 60 秒」。
-                //    主 App 其实还在录（探针录满 200 秒）。**上限是他定的 15 分钟，这就是口径。**
-                let left = Int(Voice.MAX_DURATION_SEGMENTED
-                               - Date().timeIntervalSince(self.listenSince))
-                if left <= 20 {
-                    self.micButton.setTitle("\(max(0, left))", for: .normal)
-                    self.waveView.isHidden = true
-                } else {
-                    self.micButton.setTitle("", for: .normal)
-                    self.waveView.isHidden = false
-                }
+                // 🚨🚨 09-19 撤销倒计时：Kevin 拍板「不要加限制」之后，
+                //    分段录音（键盘这条路每次 begin() 都接分段）不再有任何
+                //    数字上限，「还剩 N 秒」这件事本身没有意义了——上面那段
+                //    历史（900 秒/60 秒两端对不齐）连着上限一起作废。
+                //    改成 Kevin 要的③：**正计时显示已录多久**，圆钮里常驻。
+                let elapsed = Int(Date().timeIntervalSince(self.listenSince))
+                self.micButton.setTitle(
+                    String(format: "%d:%02d", max(0, elapsed) / 60, max(0, elapsed) % 60),
+                    for: .normal)
+                self.waveView.isHidden = true
             case .thinking:
                 // 🚨 照抄安卓 `startBusyTick`：一个静止的「…」跟死了没区别。
                 //    会动 = 活着，停住 = 真挂了。不占任何版面。

@@ -176,10 +176,12 @@ enum ProfileCodes {
     static var allCountries: [(code: String, label: String, searchText: String, idx: String)] {
         ensureLoaded()
         let pinyin = usePinyinIndex
-        let sorted = countryList.sorted { a, b in
-            pinyin ? a.py < b.py : a.en.localizedCompare(b.en) == .orderedAscending
-        }
-        return sorted.map {
+        // 🚨🚨 09-19 撤销：这里原来按拼音/英文名重排，会把 1.1 在 JSON 里
+        //    排好的顺序（CN/HK/MO/TW 置顶 + 其余人口/业务序）打散回字母序。
+        //    2.1 拍板"JSON 顺序说了算"——不再排序，直接吃数组原序
+        //    （`ensureLoaded()` 用 `JSONSerialization` 解出的数组本来就是
+        //    文件里写的顺序，`compactMap` 不改变顺序）。
+        return countryList.map {
             (code: $0.code, label: label($0),
              searchText: ([$0.zh, $0.zht, $0.en] + $0.alt).joined(separator: " "),
              idx: pinyin ? ($0.idx.isEmpty ? "#" : $0.idx)
@@ -258,9 +260,11 @@ enum ProfileCodes {
     static func cities(of regionCode: String) -> [(code: String, label: String)] {
         ensureLoaded()
         guard !regionCode.isEmpty else { return [] }
-        let pinyin = usePinyinIndex
+        // 🚨🚨 09-19 撤销：这里原来按拼音/英文名重排，会把 1.1 按人口倒序排好的
+        // 顺序打散——判据是真机打开广东省城市列表首屏第一个必须是深圳（人口
+        // 最多），拼音序会把它排到"S"堆里，够不着首屏。不再排序，直接吃
+        // `cityList`（JSON 原序）里属于这个省的那些行，`filter` 不改变相对顺序。
         return cityList.filter { $0.region == regionCode }
-            .sorted { pinyin ? $0.py < $1.py : $0.en.localizedCompare($1.en) == .orderedAscending }
             .map { ($0.id, cityLabelFor($0)) }
     }
 

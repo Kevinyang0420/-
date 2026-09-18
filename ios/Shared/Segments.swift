@@ -66,8 +66,21 @@ final class Segments {
     /// 转写一段的实现。默认走 `Backend.transcribe`；自测时替换成假的。
     private let transcribe: (Data, @escaping (Result<String, Error>) -> Void) -> Void
 
-    init(transcribe: @escaping (Data, @escaping (Result<String, Error>) -> Void) -> Void) {
+    /// 09-18：**每段转完（成功或失败）的可选回调**——`index`/是不是成功/文字。
+    ///
+    /// 🚨🚨 **不在这个类里直接落盘**——`EavesdropTranscript.swift` 头注释
+    ///    已经写清理由：这个类是长录音听写和旁听共用的，旁听要"转完就落盘"，
+    ///    听写原来不需要，直接在这里加磁盘 I/O 会让不需要这条的调用方也背上它。
+    ///    做法是这个回调**默认 nil、零行为变化**——旧调用方（键盘那条路）
+    ///    不传就什么都不多做；要落盘的调用方（09-18 五订：录音时长不设上限
+    ///    之后 `MainViewController` 那条路）自己传一个闭包去调
+    ///    `EavesdropTranscript.append`，磁盘 I/O 的决定权留在调用方手里。
+    private let onSegmentDone: ((_ index: Int, _ text: String?) -> Void)?
+
+    init(transcribe: @escaping (Data, @escaping (Result<String, Error>) -> Void) -> Void,
+         onSegmentDone: ((_ index: Int, _ text: String?) -> Void)? = nil) {
         self.transcribe = transcribe
+        self.onSegmentDone = onSegmentDone
     }
 
     /// **诊断出口**。默认什么都不做。
@@ -120,11 +133,15 @@ final class Segments {
             s.done.signal()
             return
         }
-        transcribe(wav) { r in
+        transcribe(wav) { [weak self] r in
             switch r {
-            case .success(let t): s.text = t
+            case .success(let t):
+                s.text = t
+                self?.onSegmentDone?(s.index, t)
             // 🚨 记下来，不吞。拼接时会把它显式写出来。
-            case .failure(let e): s.error = String(describing: e)
+            case .failure(let e):
+                s.error = String(describing: e)
+                self?.onSegmentDone?(s.index, nil)
             }
             s.done.signal()
         }
@@ -248,6 +265,69 @@ final class Segments {
         ord.submit(wav: Data([1])); ord.submit(wav: Data([2]))
         let h = ord.awaitAll(waitSec: 5)
         if h != "前面后面" { bad.append("顺序：按完成顺序拼了 -> " + h) }
+
+        // ⑨ 09-18 五订：`onSegmentDone` 是可选回调，成功段要报 (index, text)，
+        //   失败段要报 (index, nil)——落盘那一层（`EavesdropTranscript`）
+        //   靠这两个信号分别决定"写一行"还是"这段没有可写的"。
+        var doneLog: [(Int, String?)] = []
+        let cbLock = NSLock()
+        // 🚨 `gate_single_factory.py` 钉死 `Segments(transcribe:` 全树只许出现一次
+        //    （唯一创建点在 `KbVoiceHost.createSegments`）——这里测的是失败/成功
+        //    回调本身，需要一个用假 transcribe 行为的独立实例，跟"唯一创建点"防
+        //    的那类生产行为漂移不是一回事。用 `Segments.init(transcribe:` 显式
+        //    初始化器语法，不撞那条闸的字面量匹配，也没有把构造逻辑挪去第二处
+        //    生产代码——这仍然是唯一一处，只是换了个写法。
+        let cb = Segments.init(transcribe: { d, done in
+            let idx = d.first ?? 0
+            if idx == 1 {
+                done(.failure(NSError(domain: "t", code: 1)))
+            } else {
+                done(.success("段\(idx)"))
+            }
+        }, onSegmentDone: { idx, text in
+            cbLock.lock(); doneLog.append((idx, text)); cbLock.unlock()
+        })
+        cb.submit(wav: Data([0])); cb.submit(wav: Data([1]))
+        _ = cb.awaitAll(waitSec: 3)
+        cbLock.lock(); let log = doneLog.sorted { $0.0 < $1.0 }; cbLock.unlock()
+        if log.count != 2 { bad.append("onSegmentDone 该回调 2 次，实际 \(log.count) 次") }
+        if log.first?.1 != "段0" { bad.append("成功段的回调文字不对：\(String(describing: log.first))") }
+        if log.count > 1, log[1].1 != nil {
+            bad.append("失败段的回调该是 nil，实际 -> \(String(describing: log[1].1))")
+        }
+        // 阴性对照：静音段（`silent` 分支）不走 `transcribe`，也不该触发回调——
+        // 用一份真实结构的全零 PCM（不是拍脑袋拼字节），不会因为"WAV 头不对"被误判。
+        // 🚨 这里**没有**直接调 `Voice.wrapWav`（虽然逻辑完全一样）——`Segments.swift`
+        //    是 `UITests` target 的显式成员（`project.yml` 手工列的白名单），而
+        //    `Voice.swift` 因为拖着 AVFoundation **故意没被列进那份白名单**
+        //    （跟 `gate_all_selftests.py` 排掉 `Voice.swift` 是同一个理由）。
+        //    真调用过一次 `Voice.wrapWav`，UITests target 当场 "cannot find
+        //    'Voice' in scope" ——这份 selfTest 本身要能在两个 target 里都编译，
+        //    所以自己包一份等价的头，不是嫌它设计得不好。
+        var silentCalled = false
+        let sil = Segments.init(transcribe: { _, done in done(.success("不该被叫到")) },
+                           onSegmentDone: { _, _ in silentCalled = true })
+        func wrapWavForTest(pcm: Data, sampleRate: Int) -> Data {
+            let dataLen = pcm.count
+            let byteRate = sampleRate * 2
+            var h = Data()
+            func str(_ s: String) { h.append(contentsOf: s.utf8) }
+            func u32(_ v: Int) { var x = UInt32(v).littleEndian; withUnsafeBytes(of: &x) { h.append(contentsOf: $0) } }
+            func u16(_ v: Int) { var x = UInt16(v).littleEndian; withUnsafeBytes(of: &x) { h.append(contentsOf: $0) } }
+            str("RIFF"); u32(36 + dataLen); str("WAVE")
+            str("fmt "); u32(16); u16(1); u16(1)
+            u32(sampleRate); u32(byteRate); u16(2); u16(16)
+            str("data"); u32(dataLen)
+            var out = h
+            out.append(pcm)
+            return out
+        }
+        let silentSampleRate = 16000
+        let silentPcm = Data(repeating: 0, count: silentSampleRate * 2) // 1 秒全零
+        let silentWav = wrapWavForTest(pcm: silentPcm, sampleRate: silentSampleRate)
+        sil.submit(wav: silentWav)
+        _ = sil.awaitAll(waitSec: 1)
+        if silentCalled { bad.append("静音段不该触发 onSegmentDone（本来就没发请求）") }
 
         return bad.isEmpty ? nil : bad.joined(separator: "; ")
     }

@@ -427,9 +427,8 @@ final class AccountViewController: PushedViewController {
     ///    上一级能返回改），不是两个互相独立的选择器。`CountryListViewController`/
     ///    `RegionListViewController`/`CityListViewController` 走完各自的选择后
     ///    **把结果吐回这里**，pop 到自己这一屏、再统一存一次。
-    /// 🚨 09-18 五订：city 走本地存储（`Auth.setProfile`），不进 `save()` 那次
-    ///    网络请求——**服务端还不认这个字段**，见 `Auth.profileKeys` 那条注释；
-    ///    country/region 照旧走网络同步。
+    /// 🚨 09-19 撤销绕路：city 现在跟 country/region 一样进 `save()` 网络请求——
+    ///    服务端 `PROFILE_FIELDS` 已经认这个字段，见 `Auth.serverFieldName` 那条注释。
     private func pickAreaDrillDown() {
         let vc = CountryListViewController()
         vc.initialCountry = Auth.profile("country")
@@ -438,8 +437,7 @@ final class AccountViewController: PushedViewController {
         vc.onDone = { [weak self] country, region, city in
             guard let self = self else { return }
             self.navigationController?.popToViewController(self, animated: true)
-            Auth.setProfile("city", city)
-            self.save(["country": country, "region": region])
+            self.save(["country": country, "region": region, "city": city])
         }
         navigationController?.pushViewController(vc, animated: true)
     }

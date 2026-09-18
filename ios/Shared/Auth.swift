@@ -380,18 +380,13 @@ enum Auth {
     //    **不在这里跟着 profileKeys 自动画成一行**（跟 "account" 同一个理由：
     //    不是每个 profileKeys 条目都该有自己的列表行）——它是 job 选"其他"时的
     //    配套字段，AccountViewController 的渲染循环显式跳过它，见那边的注释。
-    // 🚨🚨 09-18 五订：许可证条款定了（CC BY 4.0，0 核实过），city 加回来——
-    //    但**只加本地存储，不接服务端**：`backend/user_store.py:95` 的
-    //    `PROFILE_FIELDS` 还没有 "city"。如果现在就把 "city" 也加进
-    //    `serverFieldName()`，会撞上 `other_text` 撞过的**同一个**坑——
-    //    服务端不认这个字段，GET 回来的 `profile` 里永远没有 "city" 键，
-    //    `applyServerProfile` 会把它当"服务端说没有"直接清空本地值，
-    //    用户前脚选完城市，后脚一次资料刷新就静默丢了。
-    //    → **city 不进 `serverFieldName()`**，选中之后调用方直接
-    //    `setProfile("city", …)` 写本地，不走 `saveProfile` 的网络往返，
-    //    这样 `applyServerProfile` 从不触碰这个键，也就不会被它清空。
-    //    代价：city 目前**不跨设备同步**——1.1 哪天把它加进
-    //    `PROFILE_FIELDS`，这里再把它接进 `serverFieldName()` 就行。
+    // 🚨🚨 09-19 撤销绕路，接回服务端同步——0 本人指出、2.2 本人 grep 复核：
+    //    `backend/user_store.py:98` `PROFILE_FIELDS` 已经含 "city"
+    //    （`("nickname", "birthday", "country", "region", "city", "job",
+    //    "other_text")`）。当初只本地存的理由是后端不认这个字段，
+    //    同步回来会被 `applyServerProfile` 当"服务端说没有"静默清空——
+    //    那个前提已经没了，不撤的后果就是 Kevin 要的①选完城市换设备就丢，
+    //    跟当初 `other_text` 那条一样的坑，同一个修法。
     static let profileKeys: [(id: String, key: String)] = [
         ("nick", "auth_nickname"),
         ("account", "auth_account"),
@@ -446,7 +441,7 @@ enum Auth {
     private static func serverFieldName(_ id: String) -> String? {
         switch id {
         case "nick": return "nickname"
-        case "birthday", "country", "region", "job", "other_text": return id
+        case "birthday", "country", "region", "city", "job", "other_text": return id
         default: return nil
         }
     }
@@ -469,6 +464,7 @@ enum Auth {
         setBirthday((p["birthday"] as? String) ?? "")
         setProfile("country", (p["country"] as? String) ?? "")
         setProfile("region", (p["region"] as? String) ?? "")
+        setProfile("city", (p["city"] as? String) ?? "")
         setProfile("job", (p["job"] as? String) ?? "")
         // 🚨🚨 09-18 撤销绕路，接回同步——见 `serverFieldName` 那条注释。
         setProfile("other_text", (p["other_text"] as? String) ?? "")

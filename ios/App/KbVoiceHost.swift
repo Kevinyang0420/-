@@ -911,23 +911,19 @@ final class KbVoiceHost {
                                      st == .charging || st == .full ? "是" : "否",
                                      voice.arming ? "开" : "关"))
             }
-            // 🚨🚨🚨 **待命档的录音必须有时长上限。**
-            //    我为了修 `capTimer`（它会把待命引擎整个停掉）把上限关了，
-            //    但**只该关"待命"那一段，不该连"正在录"也不管** ——
-            //    结果一段忘了停的录音会**永远占着麦克风**
-            //    （2026-08-30 实测跑了 122 秒还在跑，进程杀掉才停）。
-            //    真实场景就会撞上：他按了录音、切走去干别的、再没按停止。
-            //    🚨 到点**正常收工**（走出稿），不是丢弃 —— 说了的话不能白说。
-            // 🚨🚨 **上限要跟着「有没有分段」走**（2026-08-31）。
-            //    上一版这里写死 `Voice.MAX_DURATION`（60）——
-            //    于是 `Voice` 那边刚把上限抬到 300、段也切出来了，
-            //    **宿主这条闸门照样在第 60 秒把他掐掉**。
-            //    实测现场：`15:28:05 切了第 1 段 ✅` → `15:28:06 到了 60 秒上限，自动收工`。
-            //    「同一个上限两处实现」——今天第四次栽在这个形状上。
-            let cap = (segs != nil) ? Voice.MAX_DURATION_SEGMENTED : Voice.MAX_DURATION
-            if voice.arming, busySeq != -1, let t = recStartedAt,
-               Date().timeIntervalSince(t) > cap {
-                KbBridge.note("待命档：这一段到了 " + String(Int(cap))
+            // 🚨🚨🚨 09-19：0 亲自 grep+真机复现，抓到这里是「同一个上限两处
+            //    实现」的第三处（`Voice.swift` 的 `capTimer` 已经不排了，但这条
+            //    判断照样在第 900 秒把分段录音掐掉——他自己的实测：切了第 1 段
+            //    之后，到点照样 `finish()`）。Kevin 拍板「不要加限制」，
+            //    有分段（`segs != nil`）就**不设任何时长上限**，别再抄一份数字。
+            //    忘了按停止的风险不再靠这条兜——`EavesdropTranscript` 已经把
+            //    每一段转完就落盘，真忘了也只是多耗点电，不会丢内容
+            //    （这笔账 Kevin 自己算过，见 `Voice.swift` 那条 09-18 五订注释）。
+            //    没有分段的那支（待命档单句代录，`segs == nil`）维持原样：
+            //    这不是这次"会议纪要不设上限"要解决的场景。
+            if segs == nil, voice.arming, busySeq != -1, let t = recStartedAt,
+               Date().timeIntervalSince(t) > Voice.MAX_DURATION {
+                KbBridge.note("待命档：单句到了 " + String(Int(Voice.MAX_DURATION))
                               + " 秒上限，自动收工（他多半忘了按停止）")
                 finish()
             }
@@ -3939,8 +3935,8 @@ final class KbVoiceHost {
         KbBridge.clearLevels()
         voice.onLevel = { KbBridge.pushLevel($0) }
         // 🚨🚨 **接上分段：录满一段就立刻传，录音不中断。**
-        //    接了它 `Voice` 才会把上限从 60 秒抬到 `MAX_DURATION_SEGMENTED`
-        //    —— 没人收段就抬上限 ＝ 攒一个必然 504 的大包。
+        //    接了它，分段模式才生效、这条路才不受任何时长上限约束
+        //    —— 没人收段就不设上限 ＝ 攒一个必然 504 的大包。
         let sg = makeSegments(seq: seq)
         segs = sg
         voice.onSegment = { [weak sg] w in
@@ -4121,19 +4117,7 @@ final class KbVoiceHost {
     ///    **同一个坏结果换了个原因，而且更难发现**：代码里明明有 `tally.sec`。
     ///    收成一处之后，下一个往里加东西的人不会再漏。
     private func makeSegments(seq: Int) -> Segments {
-        // 🚨 唯一创建点，顺手把诊断出口接上（Segments 自己不许依赖 KbBridge，
-        //    它还编进不含 KbBridge 的测试目标）。接在这里是因为
-        //    gate_single_factory.py 钉死了这里只有一个创建点。
-        Segments.note = { KbBridge.note($0) }
-        // 🚨🚨 09-16 `Remind.onParsed` 的赋值**搬去了 `MainViewController.
-        //    viewDidLoad()`**（0 插队指出：这里原来拿到就直接
-        //    `RemindScheduler.schedule`，**没问就建**，违反规格「是问不是
-        //    自动建」）。挪走的理由：要不要问、问完弹什么 UI，是那一屏的
-        //    决定，不该让这个不碰 UIKit 的 host 类替它做主——跟
-        //    `Segments.note` 那半"纯逻辑不许自己调通知接口"是同一条道理，
-        //    只是这次改成**由 UI 层自己接线**，不是继续放在这个唯一创建点里。
-        //    键盘扩展仍然**不接**这个 —— 它是另一个进程，排了主 App 也管不着。
-        return Segments(transcribe: { [weak self] wav, done in
+        KbVoiceHost.createSegments(onSent: { [weak self] wav in
             // 🚨 **每段都计入本轮总量。** 分段是"边录边传"，
             //    不在这里加的话，「出稿完成」那行只会有最后一段的量 ——
             //    录 120 秒显示 60 秒。
@@ -4142,13 +4126,36 @@ final class KbVoiceHost {
             let dur = Double(max(0, wav.count - AudioStats.headerBytes))
                 / (Voice.SAMPLE_RATE * 2)
             self?.tally.add(round: seq, sec: dur, bytes: wav.count)
+        })
+    }
+
+    /// 🚨🚨 **唯一创建点**（`gate_single_factory.py` 钉死 `Segments(transcribe:`
+    ///    全树只许出现一次，且必须在这个文件里）——09-18 五订之前只有
+    ///    `KbVoiceHost` 自己用分段通道，那时候这是个实例方法；录音时长不设
+    ///    上限之后 `MainViewController` 也要用**同一套**分段逻辑（同一条
+    ///    "转写怎么发、怎么算" 的规矩，不能两边各写一份闭包——2026-09-06
+    ///    那次「tally 只接了一半」栽的就是这个坑），所以改成 `static`，
+    ///    两个调用方都从这一个点拿实例，字面上的构造调用只有这一处没变。
+    /// - Parameters:
+    ///   - onSent: 每段真发出去之后回调一次（静音段不算，`Segments.submit`
+    ///     内部已经拦掉了）——调用方自己决定要不要拿它去算 KPI/tally，
+    ///     不是这个工厂的责任。
+    ///   - onSegmentDone: 透传给 `Segments.init` 的落盘回调，见 `Segments.swift`
+    ///     和 `EavesdropTranscript.swift` 的注释——默认 nil，不影响旧调用方。
+    static func createSegments(onSent: ((Data) -> Void)? = nil,
+                               onSegmentDone: ((Int, String?) -> Void)? = nil) -> Segments {
+        // 🚨 顺手把诊断出口接上（Segments 自己不许依赖 KbBridge，
+        //    它还编进不含 KbBridge 的测试目标）。
+        Segments.note = { KbBridge.note($0) }
+        return Segments(transcribe: { wav, done in
+            onSent?(wav)
             Backend.transcribe(wav: wav) { r in
                 switch r {
                 case .success(let t): done(.success(t))
                 case .failure(let f): done(.failure(f))
                 }
             }
-        })
+        }, onSegmentDone: onSegmentDone)
     }
 
     /// **这一轮实际送出去的音频总量** —— 两条上传路径都往里加。

@@ -2,73 +2,59 @@
  "_license": "City and region data (c) GeoNames (https://www.geonames.org), licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Modified: filtered to a subset of cities and augmented with pinyin and index fields.",
  "countries": [
   {
-   "code": "AD",
-   "zh": "安道尔",
-   "zht": "安道爾",
-   "en": "Andorra",
-   "py": "andaoer",
-   "idx": "A",
+   "code": "CN",
+   "zh": "中国大陆",
+   "zht": "中國大陸",
+   "en": "China",
+   "py": "zhongguodalu",
+   "idx": "Z",
    "alt": [
-    "AD",
-    "AND",
-    "andorra",
-    "andaoer"
+    "CN",
+    "CHN",
+    "china",
+    "zhongguodalu"
    ]
   },
   {
-   "code": "AE",
-   "zh": "阿拉伯联合酋长国",
-   "zht": "阿拉伯聯合大公國",
-   "en": "United Arab Emirates",
-   "py": "alabolianheqiuzhangguo",
-   "idx": "A",
+   "code": "HK",
+   "zh": "中国香港",
+   "zht": "中國香港",
+   "en": "Hong Kong",
+   "py": "zhongguoxianggang",
+   "idx": "Z",
    "alt": [
-    "AE",
-    "ARE",
-    "united arab emirates",
-    "alabolianheqiuzhangguo"
+    "HK",
+    "HKG",
+    "hong kong",
+    "zhongguoxianggang"
    ]
   },
   {
-   "code": "AF",
-   "zh": "阿富汗",
-   "zht": "阿富汗",
-   "en": "Afghanistan",
-   "py": "afuhan",
-   "idx": "A",
+   "code": "MO",
+   "zh": "中国澳门",
+   "zht": "中國澳門",
+   "en": "Macao",
+   "py": "zhongguoaomen",
+   "idx": "Z",
    "alt": [
-    "AF",
-    "AFG",
-    "afghanistan",
-    "afuhan"
+    "MO",
+    "MAC",
+    "macao",
+    "zhongguoaomen"
    ]
   },
   {
-   "code": "AG",
-   "zh": "安提瓜和巴布达",
-   "zht": "安地卡及巴布達",
-   "en": "Antigua and Barbuda",
-   "py": "antiguahebabuda",
-   "idx": "A",
+   "code": "TW",
+   "zh": "中国台湾",
+   "zht": "中國台灣",
+   "en": "Taiwan",
+   "py": "zhongguotaiwan",
+   "idx": "Z",
    "alt": [
-    "AG",
-    "ATG",
-    "antigua and barbuda",
-    "antiguahebabuda"
-   ]
-  },
-  {
-   "code": "AI",
-   "zh": "安圭拉",
-   "zht": "安奎拉",
-   "en": "Anguilla",
-   "py": "anguila",
-   "idx": "A",
-   "alt": [
-    "AI",
-    "AIA",
-    "anguilla",
-    "anguila"
+    "TW",
+    "TWN",
+    "taiwan",
+    "zhongguotaiwan"
    ]
   },
   {
@@ -86,45 +72,31 @@
    ]
   },
   {
-   "code": "AM",
-   "zh": "亚美尼亚",
-   "zht": "亞美尼亞",
-   "en": "Armenia",
-   "py": "yameiniya",
-   "idx": "Y",
-   "alt": [
-    "AM",
-    "ARM",
-    "armenia",
-    "yameiniya"
-   ]
-  },
-  {
-   "code": "AO",
-   "zh": "安哥拉",
-   "zht": "安哥拉",
-   "en": "Angola",
-   "py": "angela",
+   "code": "DZ",
+   "zh": "阿尔及利亚",
+   "zht": "阿爾及利亞",
+   "en": "Algeria",
+   "py": "aerjiliya",
    "idx": "A",
    "alt": [
-    "AO",
-    "AGO",
-    "angola",
-    "angela"
+    "DZ",
+    "DZA",
+    "algeria",
+    "aerjiliya"
    ]
   },
   {
-   "code": "AQ",
-   "zh": "南极洲",
-   "zht": "南極洲",
-   "en": "Antarctica",
-   "py": "nanjizhou",
-   "idx": "N",
+   "code": "AF",
+   "zh": "阿富汗",
+   "zht": "阿富汗",
+   "en": "Afghanistan",
+   "py": "afuhan",
+   "idx": "A",
    "alt": [
-    "AQ",
-    "ATA",
-    "antarctica",
-    "nanjizhou"
+    "AF",
+    "AFG",
+    "afghanistan",
+    "afuhan"
    ]
   },
   {
@@ -142,31 +114,157 @@
    ]
   },
   {
-   "code": "AS",
-   "zh": "美属萨摩亚",
-   "zht": "美屬薩摩亞",
-   "en": "American Samoa",
-   "py": "meishusamoya",
-   "idx": "M",
+   "code": "IE",
+   "zh": "爱尔兰",
+   "zht": "愛爾蘭",
+   "en": "Ireland",
+   "py": "aierlan",
+   "idx": "A",
    "alt": [
-    "AS",
-    "ASM",
-    "american samoa",
-    "meishusamoya"
+    "IE",
+    "IRL",
+    "ireland",
+    "aierlan"
    ]
   },
   {
-   "code": "AT",
-   "zh": "奥地利",
-   "zht": "奧地利",
-   "en": "Austria",
-   "py": "aodili",
+   "code": "EG",
+   "zh": "埃及",
+   "zht": "埃及",
+   "en": "Egypt",
+   "py": "aiji",
    "idx": "A",
    "alt": [
-    "AT",
-    "AUT",
-    "austria",
-    "aodili"
+    "EG",
+    "EGY",
+    "egypt",
+    "aiji"
+   ]
+  },
+  {
+   "code": "ET",
+   "zh": "埃塞俄比亚",
+   "zht": "衣索比亞",
+   "en": "Ethiopia",
+   "py": "aisaiebiya",
+   "idx": "A",
+   "alt": [
+    "ET",
+    "ETH",
+    "ethiopia",
+    "aisaiebiya"
+   ]
+  },
+  {
+   "code": "EE",
+   "zh": "爱沙尼亚",
+   "zht": "愛沙尼亞",
+   "en": "Estonia",
+   "py": "aishaniya",
+   "idx": "A",
+   "alt": [
+    "EE",
+    "EST",
+    "estonia",
+    "aishaniya"
+   ]
+  },
+  {
+   "code": "AE",
+   "zh": "阿拉伯联合酋长国",
+   "zht": "阿拉伯聯合大公國",
+   "en": "United Arab Emirates",
+   "py": "alabolianheqiuzhangguo",
+   "idx": "A",
+   "alt": [
+    "AE",
+    "ARE",
+    "united arab emirates",
+    "alabolianheqiuzhangguo"
+   ]
+  },
+  {
+   "code": "AW",
+   "zh": "阿鲁巴",
+   "zht": "荷屬阿魯巴",
+   "en": "Aruba",
+   "py": "aluba",
+   "idx": "A",
+   "alt": [
+    "AW",
+    "ABW",
+    "aruba",
+    "aluba"
+   ]
+  },
+  {
+   "code": "OM",
+   "zh": "阿曼",
+   "zht": "阿曼",
+   "en": "Oman",
+   "py": "aman",
+   "idx": "A",
+   "alt": [
+    "OM",
+    "OMN",
+    "oman",
+    "aman"
+   ]
+  },
+  {
+   "code": "AD",
+   "zh": "安道尔",
+   "zht": "安道爾",
+   "en": "Andorra",
+   "py": "andaoer",
+   "idx": "A",
+   "alt": [
+    "AD",
+    "AND",
+    "andorra",
+    "andaoer"
+   ]
+  },
+  {
+   "code": "AO",
+   "zh": "安哥拉",
+   "zht": "安哥拉",
+   "en": "Angola",
+   "py": "angela",
+   "idx": "A",
+   "alt": [
+    "AO",
+    "AGO",
+    "angola",
+    "angela"
+   ]
+  },
+  {
+   "code": "AI",
+   "zh": "安圭拉",
+   "zht": "安奎拉",
+   "en": "Anguilla",
+   "py": "anguila",
+   "idx": "A",
+   "alt": [
+    "AI",
+    "AIA",
+    "anguilla",
+    "anguila"
+   ]
+  },
+  {
+   "code": "AG",
+   "zh": "安提瓜和巴布达",
+   "zht": "安地卡及巴布達",
+   "en": "Antigua and Barbuda",
+   "py": "antiguahebabuda",
+   "idx": "A",
+   "alt": [
+    "AG",
+    "ATG",
+    "antigua and barbuda",
+    "antiguahebabuda"
    ]
   },
   {
@@ -184,17 +282,17 @@
    ]
   },
   {
-   "code": "AW",
-   "zh": "阿鲁巴",
-   "zht": "荷屬阿魯巴",
-   "en": "Aruba",
-   "py": "aluba",
+   "code": "AT",
+   "zh": "奥地利",
+   "zht": "奧地利",
+   "en": "Austria",
+   "py": "aodili",
    "idx": "A",
    "alt": [
-    "AW",
-    "ABW",
-    "aruba",
-    "aluba"
+    "AT",
+    "AUT",
+    "austria",
+    "aodili"
    ]
   },
   {
@@ -226,20 +324,6 @@
    ]
   },
   {
-   "code": "BA",
-   "zh": "波斯尼亚和黑塞哥维那",
-   "zht": "波士尼亞與赫塞哥維納",
-   "en": "Bosnia and Herzegovina",
-   "py": "bosiniyaheheisaigeweina",
-   "idx": "B",
-   "alt": [
-    "BA",
-    "BIH",
-    "bosnia and herzegovina",
-    "bosiniyaheheisaigeweina"
-   ]
-  },
-  {
    "code": "BB",
    "zh": "巴巴多斯",
    "zht": "巴貝多",
@@ -254,185 +338,17 @@
    ]
   },
   {
-   "code": "BD",
-   "zh": "孟加拉国",
-   "zht": "孟加拉",
-   "en": "Bangladesh",
-   "py": "mengjialaguo",
-   "idx": "M",
-   "alt": [
-    "BD",
-    "BGD",
-    "bangladesh",
-    "mengjialaguo"
-   ]
-  },
-  {
-   "code": "BE",
-   "zh": "比利时",
-   "zht": "比利時",
-   "en": "Belgium",
-   "py": "bilishi",
+   "code": "PG",
+   "zh": "巴布亚新几内亚",
+   "zht": "巴布亞紐幾內亞",
+   "en": "Papua New Guinea",
+   "py": "babuyaxinjineiya",
    "idx": "B",
    "alt": [
-    "BE",
-    "BEL",
-    "belgium",
-    "bilishi"
-   ]
-  },
-  {
-   "code": "BF",
-   "zh": "布基纳法索",
-   "zht": "布吉納法索",
-   "en": "Burkina Faso",
-   "py": "bujinafasuo",
-   "idx": "B",
-   "alt": [
-    "BF",
-    "BFA",
-    "burkina faso",
-    "bujinafasuo"
-   ]
-  },
-  {
-   "code": "BG",
-   "zh": "保加利亚",
-   "zht": "保加利亞",
-   "en": "Bulgaria",
-   "py": "baojialiya",
-   "idx": "B",
-   "alt": [
-    "BG",
-    "BGR",
-    "bulgaria",
-    "baojialiya"
-   ]
-  },
-  {
-   "code": "BH",
-   "zh": "巴林",
-   "zht": "巴林",
-   "en": "Bahrain",
-   "py": "balin",
-   "idx": "B",
-   "alt": [
-    "BH",
-    "BHR",
-    "bahrain",
-    "balin"
-   ]
-  },
-  {
-   "code": "BI",
-   "zh": "布隆迪",
-   "zht": "蒲隆地",
-   "en": "Burundi",
-   "py": "bulongdi",
-   "idx": "B",
-   "alt": [
-    "BI",
-    "BDI",
-    "burundi",
-    "bulongdi"
-   ]
-  },
-  {
-   "code": "BJ",
-   "zh": "贝宁",
-   "zht": "貝南",
-   "en": "Benin",
-   "py": "beining",
-   "idx": "B",
-   "alt": [
-    "BJ",
-    "BEN",
-    "benin",
-    "beining"
-   ]
-  },
-  {
-   "code": "BL",
-   "zh": "圣巴泰勒米",
-   "zht": "聖巴瑟米",
-   "en": "Saint Barthélemy",
-   "py": "shengbataileimi",
-   "idx": "S",
-   "alt": [
-    "BL",
-    "BLM",
-    "saint barthélemy",
-    "shengbataileimi"
-   ]
-  },
-  {
-   "code": "BM",
-   "zh": "百慕大",
-   "zht": "百慕達",
-   "en": "Bermuda",
-   "py": "baimuda",
-   "idx": "B",
-   "alt": [
-    "BM",
-    "BMU",
-    "bermuda",
-    "baimuda"
-   ]
-  },
-  {
-   "code": "BN",
-   "zh": "文莱",
-   "zht": "汶萊",
-   "en": "Brunei Darussalam",
-   "py": "wenlai",
-   "idx": "W",
-   "alt": [
-    "BN",
-    "BRN",
-    "brunei darussalam",
-    "wenlai"
-   ]
-  },
-  {
-   "code": "BO",
-   "zh": "玻利维亚",
-   "zht": "玻利維亞",
-   "en": "Bolivia",
-   "py": "boliweiya",
-   "idx": "B",
-   "alt": [
-    "BO",
-    "BOL",
-    "bolivia",
-    "boliweiya"
-   ]
-  },
-  {
-   "code": "BQ",
-   "zh": "荷属加勒比区",
-   "zht": "荷蘭加勒比區",
-   "en": "Bonaire, Sint Eustatius and Saba",
-   "py": "heshujialeibiqu",
-   "idx": "H",
-   "alt": [
-    "BQ",
-    "BES",
-    "bonaire, sint eustatius and saba",
-    "heshujialeibiqu"
-   ]
-  },
-  {
-   "code": "BR",
-   "zh": "巴西",
-   "zht": "巴西",
-   "en": "Brazil",
-   "py": "baxi",
-   "idx": "B",
-   "alt": [
-    "BR",
-    "BRA",
-    "brazil",
-    "baxi"
+    "PG",
+    "PNG",
+    "papua new guinea",
+    "babuyaxinjineiya"
    ]
   },
   {
@@ -450,31 +366,213 @@
    ]
   },
   {
-   "code": "BT",
-   "zh": "不丹",
-   "zht": "不丹",
-   "en": "Bhutan",
-   "py": "budan",
+   "code": "BY",
+   "zh": "白俄罗斯",
+   "zht": "白俄羅斯",
+   "en": "Belarus",
+   "py": "baieluosi",
    "idx": "B",
    "alt": [
-    "BT",
-    "BTN",
-    "bhutan",
-    "budan"
+    "BY",
+    "BLR",
+    "belarus",
+    "baieluosi"
    ]
   },
   {
-   "code": "BV",
-   "zh": "布韦岛",
-   "zht": "布威島",
-   "en": "Bouvet Island",
-   "py": "buweidao",
+   "code": "BM",
+   "zh": "百慕大",
+   "zht": "百慕達",
+   "en": "Bermuda",
+   "py": "baimuda",
    "idx": "B",
    "alt": [
-    "BV",
-    "BVT",
-    "bouvet island",
-    "buweidao"
+    "BM",
+    "BMU",
+    "bermuda",
+    "baimuda"
+   ]
+  },
+  {
+   "code": "PK",
+   "zh": "巴基斯坦",
+   "zht": "巴基斯坦",
+   "en": "Pakistan",
+   "py": "bajisitan",
+   "idx": "B",
+   "alt": [
+    "PK",
+    "PAK",
+    "pakistan",
+    "bajisitan"
+   ]
+  },
+  {
+   "code": "PY",
+   "zh": "巴拉圭",
+   "zht": "巴拉圭",
+   "en": "Paraguay",
+   "py": "balagui",
+   "idx": "B",
+   "alt": [
+    "PY",
+    "PRY",
+    "paraguay",
+    "balagui"
+   ]
+  },
+  {
+   "code": "PS",
+   "zh": "巴勒斯坦领土",
+   "zht": "巴勒斯坦自治區",
+   "en": "Palestine, State of",
+   "py": "balesitanlingtu",
+   "idx": "B",
+   "alt": [
+    "PS",
+    "PSE",
+    "palestine, state of",
+    "balesitanlingtu"
+   ]
+  },
+  {
+   "code": "BH",
+   "zh": "巴林",
+   "zht": "巴林",
+   "en": "Bahrain",
+   "py": "balin",
+   "idx": "B",
+   "alt": [
+    "BH",
+    "BHR",
+    "bahrain",
+    "balin"
+   ]
+  },
+  {
+   "code": "PA",
+   "zh": "巴拿马",
+   "zht": "巴拿馬",
+   "en": "Panama",
+   "py": "banama",
+   "idx": "B",
+   "alt": [
+    "PA",
+    "PAN",
+    "panama",
+    "banama"
+   ]
+  },
+  {
+   "code": "BG",
+   "zh": "保加利亚",
+   "zht": "保加利亞",
+   "en": "Bulgaria",
+   "py": "baojialiya",
+   "idx": "B",
+   "alt": [
+    "BG",
+    "BGR",
+    "bulgaria",
+    "baojialiya"
+   ]
+  },
+  {
+   "code": "BR",
+   "zh": "巴西",
+   "zht": "巴西",
+   "en": "Brazil",
+   "py": "baxi",
+   "idx": "B",
+   "alt": [
+    "BR",
+    "BRA",
+    "brazil",
+    "baxi"
+   ]
+  },
+  {
+   "code": "MP",
+   "zh": "北马里亚纳群岛",
+   "zht": "北馬利安納群島",
+   "en": "Northern Mariana Islands",
+   "py": "beimaliyanaqundao",
+   "idx": "B",
+   "alt": [
+    "MP",
+    "MNP",
+    "northern mariana islands",
+    "beimaliyanaqundao"
+   ]
+  },
+  {
+   "code": "MK",
+   "zh": "北马其顿",
+   "zht": "北馬其頓",
+   "en": "North Macedonia",
+   "py": "beimaqidun",
+   "idx": "B",
+   "alt": [
+    "MK",
+    "MKD",
+    "north macedonia",
+    "beimaqidun"
+   ]
+  },
+  {
+   "code": "BJ",
+   "zh": "贝宁",
+   "zht": "貝南",
+   "en": "Benin",
+   "py": "beining",
+   "idx": "B",
+   "alt": [
+    "BJ",
+    "BEN",
+    "benin",
+    "beining"
+   ]
+  },
+  {
+   "code": "BE",
+   "zh": "比利时",
+   "zht": "比利時",
+   "en": "Belgium",
+   "py": "bilishi",
+   "idx": "B",
+   "alt": [
+    "BE",
+    "BEL",
+    "belgium",
+    "bilishi"
+   ]
+  },
+  {
+   "code": "PE",
+   "zh": "秘鲁",
+   "zht": "秘魯",
+   "en": "Peru",
+   "py": "bilu",
+   "idx": "B",
+   "alt": [
+    "PE",
+    "PER",
+    "peru",
+    "bilu"
+   ]
+  },
+  {
+   "code": "IS",
+   "zh": "冰岛",
+   "zht": "冰島",
+   "en": "Iceland",
+   "py": "bingdao",
+   "idx": "B",
+   "alt": [
+    "IS",
+    "ISL",
+    "iceland",
+    "bingdao"
    ]
   },
   {
@@ -492,17 +590,45 @@
    ]
   },
   {
-   "code": "BY",
-   "zh": "白俄罗斯",
-   "zht": "白俄羅斯",
-   "en": "Belarus",
-   "py": "baieluosi",
+   "code": "PR",
+   "zh": "波多黎各",
+   "zht": "波多黎各",
+   "en": "Puerto Rico",
+   "py": "boduolige",
    "idx": "B",
    "alt": [
-    "BY",
-    "BLR",
-    "belarus",
-    "baieluosi"
+    "PR",
+    "PRI",
+    "puerto rico",
+    "boduolige"
+   ]
+  },
+  {
+   "code": "PL",
+   "zh": "波兰",
+   "zht": "波蘭",
+   "en": "Poland",
+   "py": "bolan",
+   "idx": "B",
+   "alt": [
+    "PL",
+    "POL",
+    "poland",
+    "bolan"
+   ]
+  },
+  {
+   "code": "BO",
+   "zh": "玻利维亚",
+   "zht": "玻利維亞",
+   "en": "Bolivia",
+   "py": "boliweiya",
+   "idx": "B",
+   "alt": [
+    "BO",
+    "BOL",
+    "bolivia",
+    "boliweiya"
    ]
   },
   {
@@ -520,297 +646,101 @@
    ]
   },
   {
-   "code": "CA",
-   "zh": "加拿大",
-   "zht": "加拿大",
-   "en": "Canada",
-   "py": "jianada",
-   "idx": "J",
+   "code": "BA",
+   "zh": "波斯尼亚和黑塞哥维那",
+   "zht": "波士尼亞與赫塞哥維納",
+   "en": "Bosnia and Herzegovina",
+   "py": "bosiniyaheheisaigeweina",
+   "idx": "B",
    "alt": [
-    "CA",
-    "CAN",
-    "canada",
-    "jianada"
+    "BA",
+    "BIH",
+    "bosnia and herzegovina",
+    "bosiniyaheheisaigeweina"
    ]
   },
   {
-   "code": "CC",
-   "zh": "科科斯（基林）群岛",
-   "zht": "科克斯（基靈）群島",
-   "en": "Cocos (Keeling) Islands",
-   "py": "kekesi（jilin）qundao",
-   "idx": "K",
+   "code": "BT",
+   "zh": "不丹",
+   "zht": "不丹",
+   "en": "Bhutan",
+   "py": "budan",
+   "idx": "B",
    "alt": [
-    "CC",
-    "CCK",
-    "cocos (keeling) islands",
-    "kekesi（jilin）qundao"
+    "BT",
+    "BTN",
+    "bhutan",
+    "budan"
    ]
   },
   {
-   "code": "CD",
-   "zh": "刚果（金）",
-   "zht": "剛果（金夏沙）",
-   "en": "Congo, The Democratic Republic of the",
-   "py": "gangguo（jin）",
-   "idx": "G",
+   "code": "BF",
+   "zh": "布基纳法索",
+   "zht": "布吉納法索",
+   "en": "Burkina Faso",
+   "py": "bujinafasuo",
+   "idx": "B",
    "alt": [
-    "CD",
-    "COD",
-    "congo, the democratic republic of the",
-    "gangguo（jin）"
+    "BF",
+    "BFA",
+    "burkina faso",
+    "bujinafasuo"
    ]
   },
   {
-   "code": "CF",
-   "zh": "中非共和国",
-   "zht": "中非共和國",
-   "en": "Central African Republic",
-   "py": "zhongfeigongheguo",
-   "idx": "Z",
+   "code": "BI",
+   "zh": "布隆迪",
+   "zht": "蒲隆地",
+   "en": "Burundi",
+   "py": "bulongdi",
+   "idx": "B",
    "alt": [
-    "CF",
-    "CAF",
-    "central african republic",
-    "zhongfeigongheguo"
+    "BI",
+    "BDI",
+    "burundi",
+    "bulongdi"
    ]
   },
   {
-   "code": "CG",
-   "zh": "刚果（布）",
-   "zht": "剛果（布拉薩）",
-   "en": "Congo",
-   "py": "gangguo（bu）",
-   "idx": "G",
+   "code": "BV",
+   "zh": "布韦岛",
+   "zht": "布威島",
+   "en": "Bouvet Island",
+   "py": "buweidao",
+   "idx": "B",
    "alt": [
-    "CG",
-    "COG",
-    "congo",
-    "gangguo（bu）"
+    "BV",
+    "BVT",
+    "bouvet island",
+    "buweidao"
    ]
   },
   {
-   "code": "CH",
-   "zh": "瑞士",
-   "zht": "瑞士",
-   "en": "Switzerland",
-   "py": "ruishi",
-   "idx": "R",
+   "code": "KP",
+   "zh": "朝鲜",
+   "zht": "北韓",
+   "en": "North Korea",
+   "py": "chaoxian",
+   "idx": "C",
    "alt": [
-    "CH",
-    "CHE",
-    "switzerland",
-    "ruishi"
+    "KP",
+    "PRK",
+    "north korea",
+    "chaoxian"
    ]
   },
   {
-   "code": "CI",
-   "zh": "科特迪瓦",
-   "zht": "象牙海岸",
-   "en": "Côte d'Ivoire",
-   "py": "ketediwa",
-   "idx": "K",
+   "code": "GQ",
+   "zh": "赤道几内亚",
+   "zht": "赤道幾內亞",
+   "en": "Equatorial Guinea",
+   "py": "chidaojineiya",
+   "idx": "C",
    "alt": [
-    "CI",
-    "CIV",
-    "côte d'ivoire",
-    "ketediwa"
-   ]
-  },
-  {
-   "code": "CK",
-   "zh": "库克群岛",
-   "zht": "庫克群島",
-   "en": "Cook Islands",
-   "py": "kukequndao",
-   "idx": "K",
-   "alt": [
-    "CK",
-    "COK",
-    "cook islands",
-    "kukequndao"
-   ]
-  },
-  {
-   "code": "CL",
-   "zh": "智利",
-   "zht": "智利",
-   "en": "Chile",
-   "py": "zhili",
-   "idx": "Z",
-   "alt": [
-    "CL",
-    "CHL",
-    "chile",
-    "zhili"
-   ]
-  },
-  {
-   "code": "CM",
-   "zh": "喀麦隆",
-   "zht": "喀麥隆",
-   "en": "Cameroon",
-   "py": "kamailong",
-   "idx": "K",
-   "alt": [
-    "CM",
-    "CMR",
-    "cameroon",
-    "kamailong"
-   ]
-  },
-  {
-   "code": "CN",
-   "zh": "中国大陆",
-   "zht": "中國大陸",
-   "en": "China",
-   "py": "zhongguodalu",
-   "idx": "Z",
-   "alt": [
-    "CN",
-    "CHN",
-    "china",
-    "zhongguodalu"
-   ]
-  },
-  {
-   "code": "CO",
-   "zh": "哥伦比亚",
-   "zht": "哥倫比亞",
-   "en": "Colombia",
-   "py": "gelunbiya",
-   "idx": "G",
-   "alt": [
-    "CO",
-    "COL",
-    "colombia",
-    "gelunbiya"
-   ]
-  },
-  {
-   "code": "CR",
-   "zh": "哥斯达黎加",
-   "zht": "哥斯大黎加",
-   "en": "Costa Rica",
-   "py": "gesidalijia",
-   "idx": "G",
-   "alt": [
-    "CR",
-    "CRI",
-    "costa rica",
-    "gesidalijia"
-   ]
-  },
-  {
-   "code": "CU",
-   "zh": "古巴",
-   "zht": "古巴",
-   "en": "Cuba",
-   "py": "guba",
-   "idx": "G",
-   "alt": [
-    "CU",
-    "CUB",
-    "cuba",
-    "guba"
-   ]
-  },
-  {
-   "code": "CV",
-   "zh": "佛得角",
-   "zht": "維德角",
-   "en": "Cabo Verde",
-   "py": "fudejiao",
-   "idx": "F",
-   "alt": [
-    "CV",
-    "CPV",
-    "cabo verde",
-    "fudejiao"
-   ]
-  },
-  {
-   "code": "CW",
-   "zh": "库拉索",
-   "zht": "庫拉索",
-   "en": "Curaçao",
-   "py": "kulasuo",
-   "idx": "K",
-   "alt": [
-    "CW",
-    "CUW",
-    "curaçao",
-    "kulasuo"
-   ]
-  },
-  {
-   "code": "CX",
-   "zh": "圣诞岛",
-   "zht": "聖誕島",
-   "en": "Christmas Island",
-   "py": "shengdandao",
-   "idx": "S",
-   "alt": [
-    "CX",
-    "CXR",
-    "christmas island",
-    "shengdandao"
-   ]
-  },
-  {
-   "code": "CY",
-   "zh": "塞浦路斯",
-   "zht": "賽普勒斯",
-   "en": "Cyprus",
-   "py": "saipulusi",
-   "idx": "S",
-   "alt": [
-    "CY",
-    "CYP",
-    "cyprus",
-    "saipulusi"
-   ]
-  },
-  {
-   "code": "CZ",
-   "zh": "捷克",
-   "zht": "捷克",
-   "en": "Czechia",
-   "py": "jieke",
-   "idx": "J",
-   "alt": [
-    "CZ",
-    "CZE",
-    "czechia",
-    "jieke"
-   ]
-  },
-  {
-   "code": "DE",
-   "zh": "德国",
-   "zht": "德國",
-   "en": "Germany",
-   "py": "deguo",
-   "idx": "D",
-   "alt": [
-    "DE",
-    "DEU",
-    "germany",
-    "deguo"
-   ]
-  },
-  {
-   "code": "DJ",
-   "zh": "吉布提",
-   "zht": "吉布地",
-   "en": "Djibouti",
-   "py": "jibuti",
-   "idx": "J",
-   "alt": [
-    "DJ",
-    "DJI",
-    "djibouti",
-    "jibuti"
+    "GQ",
+    "GNQ",
+    "equatorial guinea",
+    "chidaojineiya"
    ]
   },
   {
@@ -828,17 +758,45 @@
    ]
   },
   {
-   "code": "DM",
-   "zh": "多米尼克",
-   "zht": "多米尼克",
-   "en": "Dominica",
-   "py": "duominike",
+   "code": "DE",
+   "zh": "德国",
+   "zht": "德國",
+   "en": "Germany",
+   "py": "deguo",
    "idx": "D",
    "alt": [
-    "DM",
-    "DMA",
-    "dominica",
-    "duominike"
+    "DE",
+    "DEU",
+    "germany",
+    "deguo"
+   ]
+  },
+  {
+   "code": "TL",
+   "zh": "东帝汶",
+   "zht": "東帝汶",
+   "en": "Timor-Leste",
+   "py": "dongdiwen",
+   "idx": "D",
+   "alt": [
+    "TL",
+    "TLS",
+    "timor-leste",
+    "dongdiwen"
+   ]
+  },
+  {
+   "code": "TG",
+   "zh": "多哥",
+   "zht": "多哥",
+   "en": "Togo",
+   "py": "duoge",
+   "idx": "D",
+   "alt": [
+    "TG",
+    "TGO",
+    "togo",
+    "duoge"
    ]
   },
   {
@@ -856,17 +814,17 @@
    ]
   },
   {
-   "code": "DZ",
-   "zh": "阿尔及利亚",
-   "zht": "阿爾及利亞",
-   "en": "Algeria",
-   "py": "aerjiliya",
-   "idx": "A",
+   "code": "DM",
+   "zh": "多米尼克",
+   "zht": "多米尼克",
+   "en": "Dominica",
+   "py": "duominike",
+   "idx": "D",
    "alt": [
-    "DZ",
-    "DZA",
-    "algeria",
-    "aerjiliya"
+    "DM",
+    "DMA",
+    "dominica",
+    "duominike"
    ]
   },
   {
@@ -884,48 +842,6 @@
    ]
   },
   {
-   "code": "EE",
-   "zh": "爱沙尼亚",
-   "zht": "愛沙尼亞",
-   "en": "Estonia",
-   "py": "aishaniya",
-   "idx": "A",
-   "alt": [
-    "EE",
-    "EST",
-    "estonia",
-    "aishaniya"
-   ]
-  },
-  {
-   "code": "EG",
-   "zh": "埃及",
-   "zht": "埃及",
-   "en": "Egypt",
-   "py": "aiji",
-   "idx": "A",
-   "alt": [
-    "EG",
-    "EGY",
-    "egypt",
-    "aiji"
-   ]
-  },
-  {
-   "code": "EH",
-   "zh": "西撒哈拉",
-   "zht": "西撒哈拉",
-   "en": "Western Sahara",
-   "py": "xisahala",
-   "idx": "X",
-   "alt": [
-    "EH",
-    "ESH",
-    "western sahara",
-    "xisahala"
-   ]
-  },
-  {
    "code": "ER",
    "zh": "厄立特里亚",
    "zht": "厄利垂亞",
@@ -940,101 +856,17 @@
    ]
   },
   {
-   "code": "ES",
-   "zh": "西班牙",
-   "zht": "西班牙",
-   "en": "Spain",
-   "py": "xibanya",
-   "idx": "X",
+   "code": "RU",
+   "zh": "俄罗斯",
+   "zht": "俄羅斯",
+   "en": "Russian Federation",
+   "py": "eluosi",
+   "idx": "E",
    "alt": [
-    "ES",
-    "ESP",
-    "spain",
-    "xibanya"
-   ]
-  },
-  {
-   "code": "ET",
-   "zh": "埃塞俄比亚",
-   "zht": "衣索比亞",
-   "en": "Ethiopia",
-   "py": "aisaiebiya",
-   "idx": "A",
-   "alt": [
-    "ET",
-    "ETH",
-    "ethiopia",
-    "aisaiebiya"
-   ]
-  },
-  {
-   "code": "FI",
-   "zh": "芬兰",
-   "zht": "芬蘭",
-   "en": "Finland",
-   "py": "fenlan",
-   "idx": "F",
-   "alt": [
-    "FI",
-    "FIN",
-    "finland",
-    "fenlan"
-   ]
-  },
-  {
-   "code": "FJ",
-   "zh": "斐济",
-   "zht": "斐濟",
-   "en": "Fiji",
-   "py": "feiji",
-   "idx": "F",
-   "alt": [
-    "FJ",
-    "FJI",
-    "fiji",
-    "feiji"
-   ]
-  },
-  {
-   "code": "FK",
-   "zh": "福克兰群岛",
-   "zht": "福克蘭群島",
-   "en": "Falkland Islands (Malvinas)",
-   "py": "fukelanqundao",
-   "idx": "F",
-   "alt": [
-    "FK",
-    "FLK",
-    "falkland islands (malvinas)",
-    "fukelanqundao"
-   ]
-  },
-  {
-   "code": "FM",
-   "zh": "密克罗尼西亚",
-   "zht": "密克羅尼西亞",
-   "en": "Micronesia, Federated States of",
-   "py": "mikeluonixiya",
-   "idx": "M",
-   "alt": [
-    "FM",
-    "FSM",
-    "micronesia, federated states of",
-    "mikeluonixiya"
-   ]
-  },
-  {
-   "code": "FO",
-   "zh": "法罗群岛",
-   "zht": "法羅群島",
-   "en": "Faroe Islands",
-   "py": "faluoqundao",
-   "idx": "F",
-   "alt": [
-    "FO",
-    "FRO",
-    "faroe islands",
-    "faluoqundao"
+    "RU",
+    "RUS",
+    "russian federation",
+    "eluosi"
    ]
   },
   {
@@ -1052,31 +884,213 @@
    ]
   },
   {
-   "code": "GA",
-   "zh": "加蓬",
-   "zht": "加彭",
-   "en": "Gabon",
-   "py": "jiapeng",
-   "idx": "J",
+   "code": "FO",
+   "zh": "法罗群岛",
+   "zht": "法羅群島",
+   "en": "Faroe Islands",
+   "py": "faluoqundao",
+   "idx": "F",
    "alt": [
-    "GA",
-    "GAB",
-    "gabon",
-    "jiapeng"
+    "FO",
+    "FRO",
+    "faroe islands",
+    "faluoqundao"
    ]
   },
   {
-   "code": "GB",
-   "zh": "英国",
-   "zht": "英國",
-   "en": "United Kingdom",
-   "py": "yingguo",
-   "idx": "Y",
+   "code": "VA",
+   "zh": "梵蒂冈",
+   "zht": "梵蒂岡",
+   "en": "Holy See (Vatican City State)",
+   "py": "fandigang",
+   "idx": "F",
    "alt": [
-    "GB",
-    "GBR",
-    "united kingdom",
-    "yingguo"
+    "VA",
+    "VAT",
+    "holy see (vatican city state)",
+    "fandigang"
+   ]
+  },
+  {
+   "code": "PF",
+   "zh": "法属波利尼西亚",
+   "zht": "法屬玻里尼西亞",
+   "en": "French Polynesia",
+   "py": "fashubolinixiya",
+   "idx": "F",
+   "alt": [
+    "PF",
+    "PYF",
+    "french polynesia",
+    "fashubolinixiya"
+   ]
+  },
+  {
+   "code": "GF",
+   "zh": "法属圭亚那",
+   "zht": "法屬圭亞那",
+   "en": "French Guiana",
+   "py": "fashuguiyana",
+   "idx": "F",
+   "alt": [
+    "GF",
+    "GUF",
+    "french guiana",
+    "fashuguiyana"
+   ]
+  },
+  {
+   "code": "TF",
+   "zh": "法属南部领地",
+   "zht": "法屬南部屬地",
+   "en": "French Southern Territories",
+   "py": "fashunanbulingdi",
+   "idx": "F",
+   "alt": [
+    "TF",
+    "ATF",
+    "french southern territories",
+    "fashunanbulingdi"
+   ]
+  },
+  {
+   "code": "MF",
+   "zh": "法属圣马丁",
+   "zht": "法屬聖馬丁",
+   "en": "Saint Martin (French part)",
+   "py": "fashushengmading",
+   "idx": "F",
+   "alt": [
+    "MF",
+    "MAF",
+    "saint martin (french part)",
+    "fashushengmading"
+   ]
+  },
+  {
+   "code": "FJ",
+   "zh": "斐济",
+   "zht": "斐濟",
+   "en": "Fiji",
+   "py": "feiji",
+   "idx": "F",
+   "alt": [
+    "FJ",
+    "FJI",
+    "fiji",
+    "feiji"
+   ]
+  },
+  {
+   "code": "PH",
+   "zh": "菲律宾",
+   "zht": "菲律賓",
+   "en": "Philippines",
+   "py": "feilvbin",
+   "idx": "F",
+   "alt": [
+    "PH",
+    "PHL",
+    "philippines",
+    "feilvbin"
+   ]
+  },
+  {
+   "code": "FI",
+   "zh": "芬兰",
+   "zht": "芬蘭",
+   "en": "Finland",
+   "py": "fenlan",
+   "idx": "F",
+   "alt": [
+    "FI",
+    "FIN",
+    "finland",
+    "fenlan"
+   ]
+  },
+  {
+   "code": "CV",
+   "zh": "佛得角",
+   "zht": "維德角",
+   "en": "Cabo Verde",
+   "py": "fudejiao",
+   "idx": "F",
+   "alt": [
+    "CV",
+    "CPV",
+    "cabo verde",
+    "fudejiao"
+   ]
+  },
+  {
+   "code": "FK",
+   "zh": "福克兰群岛",
+   "zht": "福克蘭群島",
+   "en": "Falkland Islands (Malvinas)",
+   "py": "fukelanqundao",
+   "idx": "F",
+   "alt": [
+    "FK",
+    "FLK",
+    "falkland islands (malvinas)",
+    "fukelanqundao"
+   ]
+  },
+  {
+   "code": "GM",
+   "zh": "冈比亚",
+   "zht": "甘比亞",
+   "en": "Gambia",
+   "py": "gangbiya",
+   "idx": "G",
+   "alt": [
+    "GM",
+    "GMB",
+    "gambia",
+    "gangbiya"
+   ]
+  },
+  {
+   "code": "CG",
+   "zh": "刚果（布）",
+   "zht": "剛果（布拉薩）",
+   "en": "Congo",
+   "py": "gangguo（bu）",
+   "idx": "G",
+   "alt": [
+    "CG",
+    "COG",
+    "congo",
+    "gangguo（bu）"
+   ]
+  },
+  {
+   "code": "CD",
+   "zh": "刚果（金）",
+   "zht": "剛果（金夏沙）",
+   "en": "Congo, The Democratic Republic of the",
+   "py": "gangguo（jin）",
+   "idx": "G",
+   "alt": [
+    "CD",
+    "COD",
+    "congo, the democratic republic of the",
+    "gangguo（jin）"
+   ]
+  },
+  {
+   "code": "GL",
+   "zh": "格陵兰",
+   "zht": "格陵蘭",
+   "en": "Greenland",
+   "py": "gelinglan",
+   "idx": "G",
+   "alt": [
+    "GL",
+    "GRL",
+    "greenland",
+    "gelinglan"
    ]
   },
   {
@@ -1108,17 +1122,17 @@
    ]
   },
   {
-   "code": "GF",
-   "zh": "法属圭亚那",
-   "zht": "法屬圭亞那",
-   "en": "French Guiana",
-   "py": "fashuguiyana",
-   "idx": "F",
+   "code": "CO",
+   "zh": "哥伦比亚",
+   "zht": "哥倫比亞",
+   "en": "Colombia",
+   "py": "gelunbiya",
+   "idx": "G",
    "alt": [
-    "GF",
-    "GUF",
-    "french guiana",
-    "fashuguiyana"
+    "CO",
+    "COL",
+    "colombia",
+    "gelunbiya"
    ]
   },
   {
@@ -1136,73 +1150,17 @@
    ]
   },
   {
-   "code": "GH",
-   "zh": "加纳",
-   "zht": "迦納",
-   "en": "Ghana",
-   "py": "jiana",
-   "idx": "J",
-   "alt": [
-    "GH",
-    "GHA",
-    "ghana",
-    "jiana"
-   ]
-  },
-  {
-   "code": "GI",
-   "zh": "直布罗陀",
-   "zht": "直布羅陀",
-   "en": "Gibraltar",
-   "py": "zhibuluotuo",
-   "idx": "Z",
-   "alt": [
-    "GI",
-    "GIB",
-    "gibraltar",
-    "zhibuluotuo"
-   ]
-  },
-  {
-   "code": "GL",
-   "zh": "格陵兰",
-   "zht": "格陵蘭",
-   "en": "Greenland",
-   "py": "gelinglan",
+   "code": "CR",
+   "zh": "哥斯达黎加",
+   "zht": "哥斯大黎加",
+   "en": "Costa Rica",
+   "py": "gesidalijia",
    "idx": "G",
    "alt": [
-    "GL",
-    "GRL",
-    "greenland",
-    "gelinglan"
-   ]
-  },
-  {
-   "code": "GM",
-   "zh": "冈比亚",
-   "zht": "甘比亞",
-   "en": "Gambia",
-   "py": "gangbiya",
-   "idx": "G",
-   "alt": [
-    "GM",
-    "GMB",
-    "gambia",
-    "gangbiya"
-   ]
-  },
-  {
-   "code": "GN",
-   "zh": "几内亚",
-   "zht": "幾內亞",
-   "en": "Guinea",
-   "py": "jineiya",
-   "idx": "J",
-   "alt": [
-    "GN",
-    "GIN",
-    "guinea",
-    "jineiya"
+    "CR",
+    "CRI",
+    "costa rica",
+    "gesidalijia"
    ]
   },
   {
@@ -1220,62 +1178,6 @@
    ]
   },
   {
-   "code": "GQ",
-   "zh": "赤道几内亚",
-   "zht": "赤道幾內亞",
-   "en": "Equatorial Guinea",
-   "py": "chidaojineiya",
-   "idx": "C",
-   "alt": [
-    "GQ",
-    "GNQ",
-    "equatorial guinea",
-    "chidaojineiya"
-   ]
-  },
-  {
-   "code": "GR",
-   "zh": "希腊",
-   "zht": "希臘",
-   "en": "Greece",
-   "py": "xila",
-   "idx": "X",
-   "alt": [
-    "GR",
-    "GRC",
-    "greece",
-    "xila"
-   ]
-  },
-  {
-   "code": "GS",
-   "zh": "南乔治亚和南桑威奇群岛",
-   "zht": "南喬治亞與南三明治群島",
-   "en": "South Georgia and the South Sandwich Islands",
-   "py": "nanqiaozhiyahenansangweiqiqundao",
-   "idx": "N",
-   "alt": [
-    "GS",
-    "SGS",
-    "south georgia and the south sandwich islands",
-    "nanqiaozhiyahenansangweiqiqundao"
-   ]
-  },
-  {
-   "code": "GT",
-   "zh": "危地马拉",
-   "zht": "瓜地馬拉",
-   "en": "Guatemala",
-   "py": "weidimala",
-   "idx": "W",
-   "alt": [
-    "GT",
-    "GTM",
-    "guatemala",
-    "weidimala"
-   ]
-  },
-  {
    "code": "GU",
    "zh": "关岛",
    "zht": "關島",
@@ -1290,17 +1192,17 @@
    ]
   },
   {
-   "code": "GW",
-   "zh": "几内亚比绍",
-   "zht": "幾內亞比索",
-   "en": "Guinea-Bissau",
-   "py": "jineiyabishao",
-   "idx": "J",
+   "code": "CU",
+   "zh": "古巴",
+   "zht": "古巴",
+   "en": "Cuba",
+   "py": "guba",
+   "idx": "G",
    "alt": [
-    "GW",
-    "GNB",
-    "guinea-bissau",
-    "jineiyabishao"
+    "CU",
+    "CUB",
+    "cuba",
+    "guba"
    ]
   },
   {
@@ -1318,62 +1220,6 @@
    ]
   },
   {
-   "code": "HK",
-   "zh": "中国香港",
-   "zht": "中國香港",
-   "en": "Hong Kong",
-   "py": "zhongguoxianggang",
-   "idx": "Z",
-   "alt": [
-    "HK",
-    "HKG",
-    "hong kong",
-    "zhongguoxianggang"
-   ]
-  },
-  {
-   "code": "HM",
-   "zh": "赫德岛和麦克唐纳群岛",
-   "zht": "赫德島及麥唐納群島",
-   "en": "Heard Island and McDonald Islands",
-   "py": "hededaohemaiketangnaqundao",
-   "idx": "H",
-   "alt": [
-    "HM",
-    "HMD",
-    "heard island and mcdonald islands",
-    "hededaohemaiketangnaqundao"
-   ]
-  },
-  {
-   "code": "HN",
-   "zh": "洪都拉斯",
-   "zht": "宏都拉斯",
-   "en": "Honduras",
-   "py": "hongdoulasi",
-   "idx": "H",
-   "alt": [
-    "HN",
-    "HND",
-    "honduras",
-    "hongdoulasi"
-   ]
-  },
-  {
-   "code": "HR",
-   "zh": "克罗地亚",
-   "zht": "克羅埃西亞",
-   "en": "Croatia",
-   "py": "keluodiya",
-   "idx": "K",
-   "alt": [
-    "HR",
-    "HRV",
-    "croatia",
-    "keluodiya"
-   ]
-  },
-  {
    "code": "HT",
    "zh": "海地",
    "zht": "海地",
@@ -1385,314 +1231,6 @@
     "HTI",
     "haiti",
     "haidi"
-   ]
-  },
-  {
-   "code": "HU",
-   "zh": "匈牙利",
-   "zht": "匈牙利",
-   "en": "Hungary",
-   "py": "xiongyali",
-   "idx": "X",
-   "alt": [
-    "HU",
-    "HUN",
-    "hungary",
-    "xiongyali"
-   ]
-  },
-  {
-   "code": "ID",
-   "zh": "印度尼西亚",
-   "zht": "印尼",
-   "en": "Indonesia",
-   "py": "yindunixiya",
-   "idx": "Y",
-   "alt": [
-    "ID",
-    "IDN",
-    "indonesia",
-    "yindunixiya"
-   ]
-  },
-  {
-   "code": "IE",
-   "zh": "爱尔兰",
-   "zht": "愛爾蘭",
-   "en": "Ireland",
-   "py": "aierlan",
-   "idx": "A",
-   "alt": [
-    "IE",
-    "IRL",
-    "ireland",
-    "aierlan"
-   ]
-  },
-  {
-   "code": "IL",
-   "zh": "以色列",
-   "zht": "以色列",
-   "en": "Israel",
-   "py": "yiselie",
-   "idx": "Y",
-   "alt": [
-    "IL",
-    "ISR",
-    "israel",
-    "yiselie"
-   ]
-  },
-  {
-   "code": "IM",
-   "zh": "马恩岛",
-   "zht": "曼島",
-   "en": "Isle of Man",
-   "py": "maendao",
-   "idx": "M",
-   "alt": [
-    "IM",
-    "IMN",
-    "isle of man",
-    "maendao"
-   ]
-  },
-  {
-   "code": "IN",
-   "zh": "印度",
-   "zht": "印度",
-   "en": "India",
-   "py": "yindu",
-   "idx": "Y",
-   "alt": [
-    "IN",
-    "IND",
-    "india",
-    "yindu"
-   ]
-  },
-  {
-   "code": "IO",
-   "zh": "英属印度洋领地",
-   "zht": "英屬印度洋領地",
-   "en": "British Indian Ocean Territory",
-   "py": "yingshuyinduyanglingdi",
-   "idx": "Y",
-   "alt": [
-    "IO",
-    "IOT",
-    "british indian ocean territory",
-    "yingshuyinduyanglingdi"
-   ]
-  },
-  {
-   "code": "IQ",
-   "zh": "伊拉克",
-   "zht": "伊拉克",
-   "en": "Iraq",
-   "py": "yilake",
-   "idx": "Y",
-   "alt": [
-    "IQ",
-    "IRQ",
-    "iraq",
-    "yilake"
-   ]
-  },
-  {
-   "code": "IR",
-   "zh": "伊朗",
-   "zht": "伊朗",
-   "en": "Iran",
-   "py": "yilang",
-   "idx": "Y",
-   "alt": [
-    "IR",
-    "IRN",
-    "iran",
-    "yilang"
-   ]
-  },
-  {
-   "code": "IS",
-   "zh": "冰岛",
-   "zht": "冰島",
-   "en": "Iceland",
-   "py": "bingdao",
-   "idx": "B",
-   "alt": [
-    "IS",
-    "ISL",
-    "iceland",
-    "bingdao"
-   ]
-  },
-  {
-   "code": "IT",
-   "zh": "意大利",
-   "zht": "義大利",
-   "en": "Italy",
-   "py": "yidali",
-   "idx": "Y",
-   "alt": [
-    "IT",
-    "ITA",
-    "italy",
-    "yidali"
-   ]
-  },
-  {
-   "code": "JE",
-   "zh": "泽西岛",
-   "zht": "澤西島",
-   "en": "Jersey",
-   "py": "zexidao",
-   "idx": "Z",
-   "alt": [
-    "JE",
-    "JEY",
-    "jersey",
-    "zexidao"
-   ]
-  },
-  {
-   "code": "JM",
-   "zh": "牙买加",
-   "zht": "牙買加",
-   "en": "Jamaica",
-   "py": "yamaijia",
-   "idx": "Y",
-   "alt": [
-    "JM",
-    "JAM",
-    "jamaica",
-    "yamaijia"
-   ]
-  },
-  {
-   "code": "JO",
-   "zh": "约旦",
-   "zht": "約旦",
-   "en": "Jordan",
-   "py": "yuedan",
-   "idx": "Y",
-   "alt": [
-    "JO",
-    "JOR",
-    "jordan",
-    "yuedan"
-   ]
-  },
-  {
-   "code": "JP",
-   "zh": "日本",
-   "zht": "日本",
-   "en": "Japan",
-   "py": "riben",
-   "idx": "R",
-   "alt": [
-    "JP",
-    "JPN",
-    "japan",
-    "riben"
-   ]
-  },
-  {
-   "code": "KE",
-   "zh": "肯尼亚",
-   "zht": "肯亞",
-   "en": "Kenya",
-   "py": "kenniya",
-   "idx": "K",
-   "alt": [
-    "KE",
-    "KEN",
-    "kenya",
-    "kenniya"
-   ]
-  },
-  {
-   "code": "KG",
-   "zh": "吉尔吉斯斯坦",
-   "zht": "吉爾吉斯",
-   "en": "Kyrgyzstan",
-   "py": "jierjisisitan",
-   "idx": "J",
-   "alt": [
-    "KG",
-    "KGZ",
-    "kyrgyzstan",
-    "jierjisisitan"
-   ]
-  },
-  {
-   "code": "KH",
-   "zh": "柬埔寨",
-   "zht": "柬埔寨",
-   "en": "Cambodia",
-   "py": "jianpuzhai",
-   "idx": "J",
-   "alt": [
-    "KH",
-    "KHM",
-    "cambodia",
-    "jianpuzhai"
-   ]
-  },
-  {
-   "code": "KI",
-   "zh": "基里巴斯",
-   "zht": "吉里巴斯",
-   "en": "Kiribati",
-   "py": "jilibasi",
-   "idx": "J",
-   "alt": [
-    "KI",
-    "KIR",
-    "kiribati",
-    "jilibasi"
-   ]
-  },
-  {
-   "code": "KM",
-   "zh": "科摩罗",
-   "zht": "葛摩",
-   "en": "Comoros",
-   "py": "kemoluo",
-   "idx": "K",
-   "alt": [
-    "KM",
-    "COM",
-    "comoros",
-    "kemoluo"
-   ]
-  },
-  {
-   "code": "KN",
-   "zh": "圣基茨和尼维斯",
-   "zht": "聖克里斯多福及尼維斯",
-   "en": "Saint Kitts and Nevis",
-   "py": "shengjiciheniweisi",
-   "idx": "S",
-   "alt": [
-    "KN",
-    "KNA",
-    "saint kitts and nevis",
-    "shengjiciheniweisi"
-   ]
-  },
-  {
-   "code": "KP",
-   "zh": "朝鲜",
-   "zht": "北韓",
-   "en": "North Korea",
-   "py": "chaoxian",
-   "idx": "C",
-   "alt": [
-    "KP",
-    "PRK",
-    "north korea",
-    "chaoxian"
    ]
   },
   {
@@ -1710,34 +1248,6 @@
    ]
   },
   {
-   "code": "KW",
-   "zh": "科威特",
-   "zht": "科威特",
-   "en": "Kuwait",
-   "py": "keweite",
-   "idx": "K",
-   "alt": [
-    "KW",
-    "KWT",
-    "kuwait",
-    "keweite"
-   ]
-  },
-  {
-   "code": "KY",
-   "zh": "开曼群岛",
-   "zht": "開曼群島",
-   "en": "Cayman Islands",
-   "py": "kaimanqundao",
-   "idx": "K",
-   "alt": [
-    "KY",
-    "CYM",
-    "cayman islands",
-    "kaimanqundao"
-   ]
-  },
-  {
    "code": "KZ",
    "zh": "哈萨克斯坦",
    "zht": "哈薩克",
@@ -1752,199 +1262,17 @@
    ]
   },
   {
-   "code": "LA",
-   "zh": "老挝",
-   "zht": "寮國",
-   "en": "Laos",
-   "py": "laowo",
-   "idx": "L",
+   "code": "HM",
+   "zh": "赫德岛和麦克唐纳群岛",
+   "zht": "赫德島及麥唐納群島",
+   "en": "Heard Island and McDonald Islands",
+   "py": "hededaohemaiketangnaqundao",
+   "idx": "H",
    "alt": [
-    "LA",
-    "LAO",
-    "laos",
-    "laowo"
-   ]
-  },
-  {
-   "code": "LB",
-   "zh": "黎巴嫩",
-   "zht": "黎巴嫩",
-   "en": "Lebanon",
-   "py": "libanen",
-   "idx": "L",
-   "alt": [
-    "LB",
-    "LBN",
-    "lebanon",
-    "libanen"
-   ]
-  },
-  {
-   "code": "LC",
-   "zh": "圣卢西亚",
-   "zht": "聖露西亞",
-   "en": "Saint Lucia",
-   "py": "shengluxiya",
-   "idx": "S",
-   "alt": [
-    "LC",
-    "LCA",
-    "saint lucia",
-    "shengluxiya"
-   ]
-  },
-  {
-   "code": "LI",
-   "zh": "列支敦士登",
-   "zht": "列支敦斯登",
-   "en": "Liechtenstein",
-   "py": "liezhidunshideng",
-   "idx": "L",
-   "alt": [
-    "LI",
-    "LIE",
-    "liechtenstein",
-    "liezhidunshideng"
-   ]
-  },
-  {
-   "code": "LK",
-   "zh": "斯里兰卡",
-   "zht": "斯里蘭卡",
-   "en": "Sri Lanka",
-   "py": "sililanka",
-   "idx": "S",
-   "alt": [
-    "LK",
-    "LKA",
-    "sri lanka",
-    "sililanka"
-   ]
-  },
-  {
-   "code": "LR",
-   "zh": "利比里亚",
-   "zht": "賴比瑞亞",
-   "en": "Liberia",
-   "py": "libiliya",
-   "idx": "L",
-   "alt": [
-    "LR",
-    "LBR",
-    "liberia",
-    "libiliya"
-   ]
-  },
-  {
-   "code": "LS",
-   "zh": "莱索托",
-   "zht": "賴索托",
-   "en": "Lesotho",
-   "py": "laisuotuo",
-   "idx": "L",
-   "alt": [
-    "LS",
-    "LSO",
-    "lesotho",
-    "laisuotuo"
-   ]
-  },
-  {
-   "code": "LT",
-   "zh": "立陶宛",
-   "zht": "立陶宛",
-   "en": "Lithuania",
-   "py": "litaowan",
-   "idx": "L",
-   "alt": [
-    "LT",
-    "LTU",
-    "lithuania",
-    "litaowan"
-   ]
-  },
-  {
-   "code": "LU",
-   "zh": "卢森堡",
-   "zht": "盧森堡",
-   "en": "Luxembourg",
-   "py": "lusenbao",
-   "idx": "L",
-   "alt": [
-    "LU",
-    "LUX",
-    "luxembourg",
-    "lusenbao"
-   ]
-  },
-  {
-   "code": "LV",
-   "zh": "拉脱维亚",
-   "zht": "拉脫維亞",
-   "en": "Latvia",
-   "py": "latuoweiya",
-   "idx": "L",
-   "alt": [
-    "LV",
-    "LVA",
-    "latvia",
-    "latuoweiya"
-   ]
-  },
-  {
-   "code": "LY",
-   "zh": "利比亚",
-   "zht": "利比亞",
-   "en": "Libya",
-   "py": "libiya",
-   "idx": "L",
-   "alt": [
-    "LY",
-    "LBY",
-    "libya",
-    "libiya"
-   ]
-  },
-  {
-   "code": "MA",
-   "zh": "摩洛哥",
-   "zht": "摩洛哥",
-   "en": "Morocco",
-   "py": "moluoge",
-   "idx": "M",
-   "alt": [
-    "MA",
-    "MAR",
-    "morocco",
-    "moluoge"
-   ]
-  },
-  {
-   "code": "MC",
-   "zh": "摩纳哥",
-   "zht": "摩納哥",
-   "en": "Monaco",
-   "py": "monage",
-   "idx": "M",
-   "alt": [
-    "MC",
-    "MCO",
-    "monaco",
-    "monage"
-   ]
-  },
-  {
-   "code": "MD",
-   "zh": "摩尔多瓦",
-   "zht": "摩爾多瓦",
-   "en": "Moldova",
-   "py": "moerduowa",
-   "idx": "M",
-   "alt": [
-    "MD",
-    "MDA",
-    "moldova",
-    "moerduowa"
+    "HM",
+    "HMD",
+    "heard island and mcdonald islands",
+    "hededaohemaiketangnaqundao"
    ]
   },
   {
@@ -1962,356 +1290,6 @@
    ]
   },
   {
-   "code": "MF",
-   "zh": "法属圣马丁",
-   "zht": "法屬聖馬丁",
-   "en": "Saint Martin (French part)",
-   "py": "fashushengmading",
-   "idx": "F",
-   "alt": [
-    "MF",
-    "MAF",
-    "saint martin (french part)",
-    "fashushengmading"
-   ]
-  },
-  {
-   "code": "MG",
-   "zh": "马达加斯加",
-   "zht": "馬達加斯加",
-   "en": "Madagascar",
-   "py": "madajiasijia",
-   "idx": "M",
-   "alt": [
-    "MG",
-    "MDG",
-    "madagascar",
-    "madajiasijia"
-   ]
-  },
-  {
-   "code": "MH",
-   "zh": "马绍尔群岛",
-   "zht": "馬紹爾群島",
-   "en": "Marshall Islands",
-   "py": "mashaoerqundao",
-   "idx": "M",
-   "alt": [
-    "MH",
-    "MHL",
-    "marshall islands",
-    "mashaoerqundao"
-   ]
-  },
-  {
-   "code": "MK",
-   "zh": "北马其顿",
-   "zht": "北馬其頓",
-   "en": "North Macedonia",
-   "py": "beimaqidun",
-   "idx": "B",
-   "alt": [
-    "MK",
-    "MKD",
-    "north macedonia",
-    "beimaqidun"
-   ]
-  },
-  {
-   "code": "ML",
-   "zh": "马里",
-   "zht": "馬利",
-   "en": "Mali",
-   "py": "mali",
-   "idx": "M",
-   "alt": [
-    "ML",
-    "MLI",
-    "mali",
-    "mali"
-   ]
-  },
-  {
-   "code": "MM",
-   "zh": "缅甸",
-   "zht": "緬甸",
-   "en": "Myanmar",
-   "py": "miandian",
-   "idx": "M",
-   "alt": [
-    "MM",
-    "MMR",
-    "myanmar",
-    "miandian"
-   ]
-  },
-  {
-   "code": "MN",
-   "zh": "蒙古",
-   "zht": "蒙古",
-   "en": "Mongolia",
-   "py": "menggu",
-   "idx": "M",
-   "alt": [
-    "MN",
-    "MNG",
-    "mongolia",
-    "menggu"
-   ]
-  },
-  {
-   "code": "MO",
-   "zh": "中国澳门",
-   "zht": "中國澳門",
-   "en": "Macao",
-   "py": "zhongguoaomen",
-   "idx": "Z",
-   "alt": [
-    "MO",
-    "MAC",
-    "macao",
-    "zhongguoaomen"
-   ]
-  },
-  {
-   "code": "MP",
-   "zh": "北马里亚纳群岛",
-   "zht": "北馬利安納群島",
-   "en": "Northern Mariana Islands",
-   "py": "beimaliyanaqundao",
-   "idx": "B",
-   "alt": [
-    "MP",
-    "MNP",
-    "northern mariana islands",
-    "beimaliyanaqundao"
-   ]
-  },
-  {
-   "code": "MQ",
-   "zh": "马提尼克",
-   "zht": "馬丁尼克",
-   "en": "Martinique",
-   "py": "matinike",
-   "idx": "M",
-   "alt": [
-    "MQ",
-    "MTQ",
-    "martinique",
-    "matinike"
-   ]
-  },
-  {
-   "code": "MR",
-   "zh": "毛里塔尼亚",
-   "zht": "茅利塔尼亞",
-   "en": "Mauritania",
-   "py": "maolitaniya",
-   "idx": "M",
-   "alt": [
-    "MR",
-    "MRT",
-    "mauritania",
-    "maolitaniya"
-   ]
-  },
-  {
-   "code": "MS",
-   "zh": "蒙特塞拉特",
-   "zht": "蒙哲臘",
-   "en": "Montserrat",
-   "py": "mengtesailate",
-   "idx": "M",
-   "alt": [
-    "MS",
-    "MSR",
-    "montserrat",
-    "mengtesailate"
-   ]
-  },
-  {
-   "code": "MT",
-   "zh": "马耳他",
-   "zht": "馬爾他",
-   "en": "Malta",
-   "py": "maerta",
-   "idx": "M",
-   "alt": [
-    "MT",
-    "MLT",
-    "malta",
-    "maerta"
-   ]
-  },
-  {
-   "code": "MU",
-   "zh": "毛里求斯",
-   "zht": "模里西斯",
-   "en": "Mauritius",
-   "py": "maoliqiusi",
-   "idx": "M",
-   "alt": [
-    "MU",
-    "MUS",
-    "mauritius",
-    "maoliqiusi"
-   ]
-  },
-  {
-   "code": "MV",
-   "zh": "马尔代夫",
-   "zht": "馬爾地夫",
-   "en": "Maldives",
-   "py": "maerdaifu",
-   "idx": "M",
-   "alt": [
-    "MV",
-    "MDV",
-    "maldives",
-    "maerdaifu"
-   ]
-  },
-  {
-   "code": "MW",
-   "zh": "马拉维",
-   "zht": "馬拉威",
-   "en": "Malawi",
-   "py": "malawei",
-   "idx": "M",
-   "alt": [
-    "MW",
-    "MWI",
-    "malawi",
-    "malawei"
-   ]
-  },
-  {
-   "code": "MX",
-   "zh": "墨西哥",
-   "zht": "墨西哥",
-   "en": "Mexico",
-   "py": "moxige",
-   "idx": "M",
-   "alt": [
-    "MX",
-    "MEX",
-    "mexico",
-    "moxige"
-   ]
-  },
-  {
-   "code": "MY",
-   "zh": "马来西亚",
-   "zht": "馬來西亞",
-   "en": "Malaysia",
-   "py": "malaixiya",
-   "idx": "M",
-   "alt": [
-    "MY",
-    "MYS",
-    "malaysia",
-    "malaixiya"
-   ]
-  },
-  {
-   "code": "MZ",
-   "zh": "莫桑比克",
-   "zht": "莫三比克",
-   "en": "Mozambique",
-   "py": "mosangbike",
-   "idx": "M",
-   "alt": [
-    "MZ",
-    "MOZ",
-    "mozambique",
-    "mosangbike"
-   ]
-  },
-  {
-   "code": "NA",
-   "zh": "纳米比亚",
-   "zht": "納米比亞",
-   "en": "Namibia",
-   "py": "namibiya",
-   "idx": "N",
-   "alt": [
-    "NA",
-    "NAM",
-    "namibia",
-    "namibiya"
-   ]
-  },
-  {
-   "code": "NC",
-   "zh": "新喀里多尼亚",
-   "zht": "新喀里多尼亞",
-   "en": "New Caledonia",
-   "py": "xinkaliduoniya",
-   "idx": "X",
-   "alt": [
-    "NC",
-    "NCL",
-    "new caledonia",
-    "xinkaliduoniya"
-   ]
-  },
-  {
-   "code": "NE",
-   "zh": "尼日尔",
-   "zht": "尼日",
-   "en": "Niger",
-   "py": "nirier",
-   "idx": "N",
-   "alt": [
-    "NE",
-    "NER",
-    "niger",
-    "nirier"
-   ]
-  },
-  {
-   "code": "NF",
-   "zh": "诺福克岛",
-   "zht": "諾福克島",
-   "en": "Norfolk Island",
-   "py": "nuofukedao",
-   "idx": "N",
-   "alt": [
-    "NF",
-    "NFK",
-    "norfolk island",
-    "nuofukedao"
-   ]
-  },
-  {
-   "code": "NG",
-   "zh": "尼日利亚",
-   "zht": "奈及利亞",
-   "en": "Nigeria",
-   "py": "niriliya",
-   "idx": "N",
-   "alt": [
-    "NG",
-    "NGA",
-    "nigeria",
-    "niriliya"
-   ]
-  },
-  {
-   "code": "NI",
-   "zh": "尼加拉瓜",
-   "zht": "尼加拉瓜",
-   "en": "Nicaragua",
-   "py": "nijialagua",
-   "idx": "N",
-   "alt": [
-    "NI",
-    "NIC",
-    "nicaragua",
-    "nijialagua"
-   ]
-  },
-  {
    "code": "NL",
    "zh": "荷兰",
    "zht": "荷蘭",
@@ -2326,283 +1304,227 @@
    ]
   },
   {
-   "code": "NO",
-   "zh": "挪威",
-   "zht": "挪威",
-   "en": "Norway",
-   "py": "nuowei",
-   "idx": "N",
+   "code": "BQ",
+   "zh": "荷属加勒比区",
+   "zht": "荷蘭加勒比區",
+   "en": "Bonaire, Sint Eustatius and Saba",
+   "py": "heshujialeibiqu",
+   "idx": "H",
    "alt": [
-    "NO",
-    "NOR",
-    "norway",
-    "nuowei"
+    "BQ",
+    "BES",
+    "bonaire, sint eustatius and saba",
+    "heshujialeibiqu"
    ]
   },
   {
-   "code": "NP",
-   "zh": "尼泊尔",
-   "zht": "尼泊爾",
-   "en": "Nepal",
-   "py": "nipoer",
-   "idx": "N",
+   "code": "SX",
+   "zh": "荷属圣马丁",
+   "zht": "荷屬聖馬丁",
+   "en": "Sint Maarten (Dutch part)",
+   "py": "heshushengmading",
+   "idx": "H",
    "alt": [
-    "NP",
-    "NPL",
-    "nepal",
-    "nipoer"
+    "SX",
+    "SXM",
+    "sint maarten (dutch part)",
+    "heshushengmading"
    ]
   },
   {
-   "code": "NR",
-   "zh": "瑙鲁",
-   "zht": "諾魯",
-   "en": "Nauru",
-   "py": "naolu",
-   "idx": "N",
+   "code": "HN",
+   "zh": "洪都拉斯",
+   "zht": "宏都拉斯",
+   "en": "Honduras",
+   "py": "hongdoulasi",
+   "idx": "H",
    "alt": [
-    "NR",
-    "NRU",
-    "nauru",
-    "naolu"
+    "HN",
+    "HND",
+    "honduras",
+    "hongdoulasi"
    ]
   },
   {
-   "code": "NU",
-   "zh": "纽埃",
-   "zht": "紐埃島",
-   "en": "Niue",
-   "py": "niuai",
-   "idx": "N",
+   "code": "GH",
+   "zh": "加纳",
+   "zht": "迦納",
+   "en": "Ghana",
+   "py": "jiana",
+   "idx": "J",
    "alt": [
-    "NU",
-    "NIU",
-    "niue",
-    "niuai"
+    "GH",
+    "GHA",
+    "ghana",
+    "jiana"
    ]
   },
   {
-   "code": "NZ",
-   "zh": "新西兰",
-   "zht": "紐西蘭",
-   "en": "New Zealand",
-   "py": "xinxilan",
-   "idx": "X",
+   "code": "CA",
+   "zh": "加拿大",
+   "zht": "加拿大",
+   "en": "Canada",
+   "py": "jianada",
+   "idx": "J",
    "alt": [
-    "NZ",
-    "NZL",
-    "new zealand",
-    "xinxilan"
+    "CA",
+    "CAN",
+    "canada",
+    "jianada"
    ]
   },
   {
-   "code": "OM",
-   "zh": "阿曼",
-   "zht": "阿曼",
-   "en": "Oman",
-   "py": "aman",
-   "idx": "A",
+   "code": "KH",
+   "zh": "柬埔寨",
+   "zht": "柬埔寨",
+   "en": "Cambodia",
+   "py": "jianpuzhai",
+   "idx": "J",
    "alt": [
-    "OM",
-    "OMN",
-    "oman",
-    "aman"
+    "KH",
+    "KHM",
+    "cambodia",
+    "jianpuzhai"
    ]
   },
   {
-   "code": "PA",
-   "zh": "巴拿马",
-   "zht": "巴拿馬",
-   "en": "Panama",
-   "py": "banama",
-   "idx": "B",
+   "code": "GA",
+   "zh": "加蓬",
+   "zht": "加彭",
+   "en": "Gabon",
+   "py": "jiapeng",
+   "idx": "J",
    "alt": [
-    "PA",
-    "PAN",
-    "panama",
-    "banama"
+    "GA",
+    "GAB",
+    "gabon",
+    "jiapeng"
    ]
   },
   {
-   "code": "PE",
-   "zh": "秘鲁",
-   "zht": "秘魯",
-   "en": "Peru",
-   "py": "bilu",
-   "idx": "B",
+   "code": "DJ",
+   "zh": "吉布提",
+   "zht": "吉布地",
+   "en": "Djibouti",
+   "py": "jibuti",
+   "idx": "J",
    "alt": [
-    "PE",
-    "PER",
-    "peru",
-    "bilu"
+    "DJ",
+    "DJI",
+    "djibouti",
+    "jibuti"
    ]
   },
   {
-   "code": "PF",
-   "zh": "法属波利尼西亚",
-   "zht": "法屬玻里尼西亞",
-   "en": "French Polynesia",
-   "py": "fashubolinixiya",
-   "idx": "F",
+   "code": "CZ",
+   "zh": "捷克",
+   "zht": "捷克",
+   "en": "Czechia",
+   "py": "jieke",
+   "idx": "J",
    "alt": [
-    "PF",
-    "PYF",
-    "french polynesia",
-    "fashubolinixiya"
+    "CZ",
+    "CZE",
+    "czechia",
+    "jieke"
    ]
   },
   {
-   "code": "PG",
-   "zh": "巴布亚新几内亚",
-   "zht": "巴布亞紐幾內亞",
-   "en": "Papua New Guinea",
-   "py": "babuyaxinjineiya",
-   "idx": "B",
+   "code": "KG",
+   "zh": "吉尔吉斯斯坦",
+   "zht": "吉爾吉斯",
+   "en": "Kyrgyzstan",
+   "py": "jierjisisitan",
+   "idx": "J",
    "alt": [
-    "PG",
-    "PNG",
-    "papua new guinea",
-    "babuyaxinjineiya"
+    "KG",
+    "KGZ",
+    "kyrgyzstan",
+    "jierjisisitan"
    ]
   },
   {
-   "code": "PH",
-   "zh": "菲律宾",
-   "zht": "菲律賓",
-   "en": "Philippines",
-   "py": "feilvbin",
-   "idx": "F",
+   "code": "KI",
+   "zh": "基里巴斯",
+   "zht": "吉里巴斯",
+   "en": "Kiribati",
+   "py": "jilibasi",
+   "idx": "J",
    "alt": [
-    "PH",
-    "PHL",
-    "philippines",
-    "feilvbin"
+    "KI",
+    "KIR",
+    "kiribati",
+    "jilibasi"
    ]
   },
   {
-   "code": "PK",
-   "zh": "巴基斯坦",
-   "zht": "巴基斯坦",
-   "en": "Pakistan",
-   "py": "bajisitan",
-   "idx": "B",
+   "code": "ZW",
+   "zh": "津巴布韦",
+   "zht": "辛巴威",
+   "en": "Zimbabwe",
+   "py": "jinbabuwei",
+   "idx": "J",
    "alt": [
-    "PK",
-    "PAK",
-    "pakistan",
-    "bajisitan"
+    "ZW",
+    "ZWE",
+    "zimbabwe",
+    "jinbabuwei"
    ]
   },
   {
-   "code": "PL",
-   "zh": "波兰",
-   "zht": "波蘭",
-   "en": "Poland",
-   "py": "bolan",
-   "idx": "B",
+   "code": "GN",
+   "zh": "几内亚",
+   "zht": "幾內亞",
+   "en": "Guinea",
+   "py": "jineiya",
+   "idx": "J",
    "alt": [
-    "PL",
-    "POL",
-    "poland",
-    "bolan"
+    "GN",
+    "GIN",
+    "guinea",
+    "jineiya"
    ]
   },
   {
-   "code": "PM",
-   "zh": "圣皮埃尔和密克隆群岛",
-   "zht": "聖皮埃與密克隆群島",
-   "en": "Saint Pierre and Miquelon",
-   "py": "shengpiaierhemikelongqundao",
-   "idx": "S",
+   "code": "GW",
+   "zh": "几内亚比绍",
+   "zht": "幾內亞比索",
+   "en": "Guinea-Bissau",
+   "py": "jineiyabishao",
+   "idx": "J",
    "alt": [
-    "PM",
-    "SPM",
-    "saint pierre and miquelon",
-    "shengpiaierhemikelongqundao"
+    "GW",
+    "GNB",
+    "guinea-bissau",
+    "jineiyabishao"
    ]
   },
   {
-   "code": "PN",
-   "zh": "皮特凯恩群岛",
-   "zht": "皮特肯群島",
-   "en": "Pitcairn",
-   "py": "pitekaienqundao",
-   "idx": "P",
+   "code": "KY",
+   "zh": "开曼群岛",
+   "zht": "開曼群島",
+   "en": "Cayman Islands",
+   "py": "kaimanqundao",
+   "idx": "K",
    "alt": [
-    "PN",
-    "PCN",
-    "pitcairn",
-    "pitekaienqundao"
+    "KY",
+    "CYM",
+    "cayman islands",
+    "kaimanqundao"
    ]
   },
   {
-   "code": "PR",
-   "zh": "波多黎各",
-   "zht": "波多黎各",
-   "en": "Puerto Rico",
-   "py": "boduolige",
-   "idx": "B",
+   "code": "CM",
+   "zh": "喀麦隆",
+   "zht": "喀麥隆",
+   "en": "Cameroon",
+   "py": "kamailong",
+   "idx": "K",
    "alt": [
-    "PR",
-    "PRI",
-    "puerto rico",
-    "boduolige"
-   ]
-  },
-  {
-   "code": "PS",
-   "zh": "巴勒斯坦领土",
-   "zht": "巴勒斯坦自治區",
-   "en": "Palestine, State of",
-   "py": "balesitanlingtu",
-   "idx": "B",
-   "alt": [
-    "PS",
-    "PSE",
-    "palestine, state of",
-    "balesitanlingtu"
-   ]
-  },
-  {
-   "code": "PT",
-   "zh": "葡萄牙",
-   "zht": "葡萄牙",
-   "en": "Portugal",
-   "py": "putaoya",
-   "idx": "P",
-   "alt": [
-    "PT",
-    "PRT",
-    "portugal",
-    "putaoya"
-   ]
-  },
-  {
-   "code": "PW",
-   "zh": "帕劳",
-   "zht": "帛琉",
-   "en": "Palau",
-   "py": "palao",
-   "idx": "P",
-   "alt": [
-    "PW",
-    "PLW",
-    "palau",
-    "palao"
-   ]
-  },
-  {
-   "code": "PY",
-   "zh": "巴拉圭",
-   "zht": "巴拉圭",
-   "en": "Paraguay",
-   "py": "balagui",
-   "idx": "B",
-   "alt": [
-    "PY",
-    "PRY",
-    "paraguay",
-    "balagui"
+    "CM",
+    "CMR",
+    "cameroon",
+    "kamailong"
    ]
   },
   {
@@ -2617,6 +1539,230 @@
     "QAT",
     "qatar",
     "kataer"
+   ]
+  },
+  {
+   "code": "CC",
+   "zh": "科科斯（基林）群岛",
+   "zht": "科克斯（基靈）群島",
+   "en": "Cocos (Keeling) Islands",
+   "py": "kekesi（jilin）qundao",
+   "idx": "K",
+   "alt": [
+    "CC",
+    "CCK",
+    "cocos (keeling) islands",
+    "kekesi（jilin）qundao"
+   ]
+  },
+  {
+   "code": "HR",
+   "zh": "克罗地亚",
+   "zht": "克羅埃西亞",
+   "en": "Croatia",
+   "py": "keluodiya",
+   "idx": "K",
+   "alt": [
+    "HR",
+    "HRV",
+    "croatia",
+    "keluodiya"
+   ]
+  },
+  {
+   "code": "KM",
+   "zh": "科摩罗",
+   "zht": "葛摩",
+   "en": "Comoros",
+   "py": "kemoluo",
+   "idx": "K",
+   "alt": [
+    "KM",
+    "COM",
+    "comoros",
+    "kemoluo"
+   ]
+  },
+  {
+   "code": "KE",
+   "zh": "肯尼亚",
+   "zht": "肯亞",
+   "en": "Kenya",
+   "py": "kenniya",
+   "idx": "K",
+   "alt": [
+    "KE",
+    "KEN",
+    "kenya",
+    "kenniya"
+   ]
+  },
+  {
+   "code": "CI",
+   "zh": "科特迪瓦",
+   "zht": "象牙海岸",
+   "en": "Côte d'Ivoire",
+   "py": "ketediwa",
+   "idx": "K",
+   "alt": [
+    "CI",
+    "CIV",
+    "côte d'ivoire",
+    "ketediwa"
+   ]
+  },
+  {
+   "code": "KW",
+   "zh": "科威特",
+   "zht": "科威特",
+   "en": "Kuwait",
+   "py": "keweite",
+   "idx": "K",
+   "alt": [
+    "KW",
+    "KWT",
+    "kuwait",
+    "keweite"
+   ]
+  },
+  {
+   "code": "CK",
+   "zh": "库克群岛",
+   "zht": "庫克群島",
+   "en": "Cook Islands",
+   "py": "kukequndao",
+   "idx": "K",
+   "alt": [
+    "CK",
+    "COK",
+    "cook islands",
+    "kukequndao"
+   ]
+  },
+  {
+   "code": "CW",
+   "zh": "库拉索",
+   "zht": "庫拉索",
+   "en": "Curaçao",
+   "py": "kulasuo",
+   "idx": "K",
+   "alt": [
+    "CW",
+    "CUW",
+    "curaçao",
+    "kulasuo"
+   ]
+  },
+  {
+   "code": "LS",
+   "zh": "莱索托",
+   "zht": "賴索托",
+   "en": "Lesotho",
+   "py": "laisuotuo",
+   "idx": "L",
+   "alt": [
+    "LS",
+    "LSO",
+    "lesotho",
+    "laisuotuo"
+   ]
+  },
+  {
+   "code": "LA",
+   "zh": "老挝",
+   "zht": "寮國",
+   "en": "Laos",
+   "py": "laowo",
+   "idx": "L",
+   "alt": [
+    "LA",
+    "LAO",
+    "laos",
+    "laowo"
+   ]
+  },
+  {
+   "code": "LV",
+   "zh": "拉脱维亚",
+   "zht": "拉脫維亞",
+   "en": "Latvia",
+   "py": "latuoweiya",
+   "idx": "L",
+   "alt": [
+    "LV",
+    "LVA",
+    "latvia",
+    "latuoweiya"
+   ]
+  },
+  {
+   "code": "LB",
+   "zh": "黎巴嫩",
+   "zht": "黎巴嫩",
+   "en": "Lebanon",
+   "py": "libanen",
+   "idx": "L",
+   "alt": [
+    "LB",
+    "LBN",
+    "lebanon",
+    "libanen"
+   ]
+  },
+  {
+   "code": "LR",
+   "zh": "利比里亚",
+   "zht": "賴比瑞亞",
+   "en": "Liberia",
+   "py": "libiliya",
+   "idx": "L",
+   "alt": [
+    "LR",
+    "LBR",
+    "liberia",
+    "libiliya"
+   ]
+  },
+  {
+   "code": "LY",
+   "zh": "利比亚",
+   "zht": "利比亞",
+   "en": "Libya",
+   "py": "libiya",
+   "idx": "L",
+   "alt": [
+    "LY",
+    "LBY",
+    "libya",
+    "libiya"
+   ]
+  },
+  {
+   "code": "LI",
+   "zh": "列支敦士登",
+   "zht": "列支敦斯登",
+   "en": "Liechtenstein",
+   "py": "liezhidunshideng",
+   "idx": "L",
+   "alt": [
+    "LI",
+    "LIE",
+    "liechtenstein",
+    "liezhidunshideng"
+   ]
+  },
+  {
+   "code": "LT",
+   "zh": "立陶宛",
+   "zht": "立陶宛",
+   "en": "Lithuania",
+   "py": "litaowan",
+   "idx": "L",
+   "alt": [
+    "LT",
+    "LTU",
+    "lithuania",
+    "litaowan"
    ]
   },
   {
@@ -2648,31 +1794,17 @@
    ]
   },
   {
-   "code": "RS",
-   "zh": "塞尔维亚",
-   "zht": "塞爾維亞",
-   "en": "Serbia",
-   "py": "saierweiya",
-   "idx": "S",
+   "code": "LU",
+   "zh": "卢森堡",
+   "zht": "盧森堡",
+   "en": "Luxembourg",
+   "py": "lusenbao",
+   "idx": "L",
    "alt": [
-    "RS",
-    "SRB",
-    "serbia",
-    "saierweiya"
-   ]
-  },
-  {
-   "code": "RU",
-   "zh": "俄罗斯",
-   "zht": "俄羅斯",
-   "en": "Russian Federation",
-   "py": "eluosi",
-   "idx": "E",
-   "alt": [
-    "RU",
-    "RUS",
-    "russian federation",
-    "eluosi"
+    "LU",
+    "LUX",
+    "luxembourg",
+    "lusenbao"
    ]
   },
   {
@@ -2690,59 +1822,605 @@
    ]
   },
   {
-   "code": "SA",
-   "zh": "沙特阿拉伯",
-   "zht": "沙烏地阿拉伯",
-   "en": "Saudi Arabia",
-   "py": "shatealabo",
-   "idx": "S",
+   "code": "MG",
+   "zh": "马达加斯加",
+   "zht": "馬達加斯加",
+   "en": "Madagascar",
+   "py": "madajiasijia",
+   "idx": "M",
    "alt": [
-    "SA",
-    "SAU",
-    "saudi arabia",
-    "shatealabo"
+    "MG",
+    "MDG",
+    "madagascar",
+    "madajiasijia"
    ]
   },
   {
-   "code": "SB",
-   "zh": "所罗门群岛",
-   "zht": "索羅門群島",
-   "en": "Solomon Islands",
-   "py": "suoluomenqundao",
-   "idx": "S",
+   "code": "IM",
+   "zh": "马恩岛",
+   "zht": "曼島",
+   "en": "Isle of Man",
+   "py": "maendao",
+   "idx": "M",
    "alt": [
-    "SB",
-    "SLB",
-    "solomon islands",
-    "suoluomenqundao"
+    "IM",
+    "IMN",
+    "isle of man",
+    "maendao"
    ]
   },
   {
-   "code": "SC",
-   "zh": "塞舌尔",
-   "zht": "塞席爾",
-   "en": "Seychelles",
-   "py": "saisheer",
-   "idx": "S",
+   "code": "MV",
+   "zh": "马尔代夫",
+   "zht": "馬爾地夫",
+   "en": "Maldives",
+   "py": "maerdaifu",
+   "idx": "M",
    "alt": [
-    "SC",
-    "SYC",
-    "seychelles",
-    "saisheer"
+    "MV",
+    "MDV",
+    "maldives",
+    "maerdaifu"
    ]
   },
   {
-   "code": "SD",
-   "zh": "苏丹",
-   "zht": "蘇丹",
-   "en": "Sudan",
-   "py": "sudan",
-   "idx": "S",
+   "code": "MT",
+   "zh": "马耳他",
+   "zht": "馬爾他",
+   "en": "Malta",
+   "py": "maerta",
+   "idx": "M",
    "alt": [
-    "SD",
-    "SDN",
-    "sudan",
-    "sudan"
+    "MT",
+    "MLT",
+    "malta",
+    "maerta"
+   ]
+  },
+  {
+   "code": "MY",
+   "zh": "马来西亚",
+   "zht": "馬來西亞",
+   "en": "Malaysia",
+   "py": "malaixiya",
+   "idx": "M",
+   "alt": [
+    "MY",
+    "MYS",
+    "malaysia",
+    "malaixiya"
+   ]
+  },
+  {
+   "code": "MW",
+   "zh": "马拉维",
+   "zht": "馬拉威",
+   "en": "Malawi",
+   "py": "malawei",
+   "idx": "M",
+   "alt": [
+    "MW",
+    "MWI",
+    "malawi",
+    "malawei"
+   ]
+  },
+  {
+   "code": "ML",
+   "zh": "马里",
+   "zht": "馬利",
+   "en": "Mali",
+   "py": "mali",
+   "idx": "M",
+   "alt": [
+    "ML",
+    "MLI",
+    "mali",
+    "mali"
+   ]
+  },
+  {
+   "code": "MU",
+   "zh": "毛里求斯",
+   "zht": "模里西斯",
+   "en": "Mauritius",
+   "py": "maoliqiusi",
+   "idx": "M",
+   "alt": [
+    "MU",
+    "MUS",
+    "mauritius",
+    "maoliqiusi"
+   ]
+  },
+  {
+   "code": "MR",
+   "zh": "毛里塔尼亚",
+   "zht": "茅利塔尼亞",
+   "en": "Mauritania",
+   "py": "maolitaniya",
+   "idx": "M",
+   "alt": [
+    "MR",
+    "MRT",
+    "mauritania",
+    "maolitaniya"
+   ]
+  },
+  {
+   "code": "MH",
+   "zh": "马绍尔群岛",
+   "zht": "馬紹爾群島",
+   "en": "Marshall Islands",
+   "py": "mashaoerqundao",
+   "idx": "M",
+   "alt": [
+    "MH",
+    "MHL",
+    "marshall islands",
+    "mashaoerqundao"
+   ]
+  },
+  {
+   "code": "MQ",
+   "zh": "马提尼克",
+   "zht": "馬丁尼克",
+   "en": "Martinique",
+   "py": "matinike",
+   "idx": "M",
+   "alt": [
+    "MQ",
+    "MTQ",
+    "martinique",
+    "matinike"
+   ]
+  },
+  {
+   "code": "YT",
+   "zh": "马约特",
+   "zht": "馬約特島",
+   "en": "Mayotte",
+   "py": "mayuete",
+   "idx": "M",
+   "alt": [
+    "YT",
+    "MYT",
+    "mayotte",
+    "mayuete"
+   ]
+  },
+  {
+   "code": "US",
+   "zh": "美国",
+   "zht": "美國",
+   "en": "United States",
+   "py": "meiguo",
+   "idx": "M",
+   "alt": [
+    "US",
+    "USA",
+    "united states",
+    "meiguo"
+   ]
+  },
+  {
+   "code": "UM",
+   "zh": "美国本土外小岛屿",
+   "zht": "美國本土外小島嶼",
+   "en": "United States Minor Outlying Islands",
+   "py": "meiguobentuwaixiaodaoyu",
+   "idx": "M",
+   "alt": [
+    "UM",
+    "UMI",
+    "united states minor outlying islands",
+    "meiguobentuwaixiaodaoyu"
+   ]
+  },
+  {
+   "code": "AS",
+   "zh": "美属萨摩亚",
+   "zht": "美屬薩摩亞",
+   "en": "American Samoa",
+   "py": "meishusamoya",
+   "idx": "M",
+   "alt": [
+    "AS",
+    "ASM",
+    "american samoa",
+    "meishusamoya"
+   ]
+  },
+  {
+   "code": "VI",
+   "zh": "美属维尔京群岛",
+   "zht": "美屬維京群島",
+   "en": "Virgin Islands, U.S.",
+   "py": "meishuweierjingqundao",
+   "idx": "M",
+   "alt": [
+    "VI",
+    "VIR",
+    "virgin islands, u.s.",
+    "meishuweierjingqundao"
+   ]
+  },
+  {
+   "code": "MN",
+   "zh": "蒙古",
+   "zht": "蒙古",
+   "en": "Mongolia",
+   "py": "menggu",
+   "idx": "M",
+   "alt": [
+    "MN",
+    "MNG",
+    "mongolia",
+    "menggu"
+   ]
+  },
+  {
+   "code": "BD",
+   "zh": "孟加拉国",
+   "zht": "孟加拉",
+   "en": "Bangladesh",
+   "py": "mengjialaguo",
+   "idx": "M",
+   "alt": [
+    "BD",
+    "BGD",
+    "bangladesh",
+    "mengjialaguo"
+   ]
+  },
+  {
+   "code": "MS",
+   "zh": "蒙特塞拉特",
+   "zht": "蒙哲臘",
+   "en": "Montserrat",
+   "py": "mengtesailate",
+   "idx": "M",
+   "alt": [
+    "MS",
+    "MSR",
+    "montserrat",
+    "mengtesailate"
+   ]
+  },
+  {
+   "code": "MM",
+   "zh": "缅甸",
+   "zht": "緬甸",
+   "en": "Myanmar",
+   "py": "miandian",
+   "idx": "M",
+   "alt": [
+    "MM",
+    "MMR",
+    "myanmar",
+    "miandian"
+   ]
+  },
+  {
+   "code": "FM",
+   "zh": "密克罗尼西亚",
+   "zht": "密克羅尼西亞",
+   "en": "Micronesia, Federated States of",
+   "py": "mikeluonixiya",
+   "idx": "M",
+   "alt": [
+    "FM",
+    "FSM",
+    "micronesia, federated states of",
+    "mikeluonixiya"
+   ]
+  },
+  {
+   "code": "MD",
+   "zh": "摩尔多瓦",
+   "zht": "摩爾多瓦",
+   "en": "Moldova",
+   "py": "moerduowa",
+   "idx": "M",
+   "alt": [
+    "MD",
+    "MDA",
+    "moldova",
+    "moerduowa"
+   ]
+  },
+  {
+   "code": "MA",
+   "zh": "摩洛哥",
+   "zht": "摩洛哥",
+   "en": "Morocco",
+   "py": "moluoge",
+   "idx": "M",
+   "alt": [
+    "MA",
+    "MAR",
+    "morocco",
+    "moluoge"
+   ]
+  },
+  {
+   "code": "MC",
+   "zh": "摩纳哥",
+   "zht": "摩納哥",
+   "en": "Monaco",
+   "py": "monage",
+   "idx": "M",
+   "alt": [
+    "MC",
+    "MCO",
+    "monaco",
+    "monage"
+   ]
+  },
+  {
+   "code": "MZ",
+   "zh": "莫桑比克",
+   "zht": "莫三比克",
+   "en": "Mozambique",
+   "py": "mosangbike",
+   "idx": "M",
+   "alt": [
+    "MZ",
+    "MOZ",
+    "mozambique",
+    "mosangbike"
+   ]
+  },
+  {
+   "code": "MX",
+   "zh": "墨西哥",
+   "zht": "墨西哥",
+   "en": "Mexico",
+   "py": "moxige",
+   "idx": "M",
+   "alt": [
+    "MX",
+    "MEX",
+    "mexico",
+    "moxige"
+   ]
+  },
+  {
+   "code": "NA",
+   "zh": "纳米比亚",
+   "zht": "納米比亞",
+   "en": "Namibia",
+   "py": "namibiya",
+   "idx": "N",
+   "alt": [
+    "NA",
+    "NAM",
+    "namibia",
+    "namibiya"
+   ]
+  },
+  {
+   "code": "ZA",
+   "zh": "南非",
+   "zht": "南非",
+   "en": "South Africa",
+   "py": "nanfei",
+   "idx": "N",
+   "alt": [
+    "ZA",
+    "ZAF",
+    "south africa",
+    "nanfei"
+   ]
+  },
+  {
+   "code": "AQ",
+   "zh": "南极洲",
+   "zht": "南極洲",
+   "en": "Antarctica",
+   "py": "nanjizhou",
+   "idx": "N",
+   "alt": [
+    "AQ",
+    "ATA",
+    "antarctica",
+    "nanjizhou"
+   ]
+  },
+  {
+   "code": "GS",
+   "zh": "南乔治亚和南桑威奇群岛",
+   "zht": "南喬治亞與南三明治群島",
+   "en": "South Georgia and the South Sandwich Islands",
+   "py": "nanqiaozhiyahenansangweiqiqundao",
+   "idx": "N",
+   "alt": [
+    "GS",
+    "SGS",
+    "south georgia and the south sandwich islands",
+    "nanqiaozhiyahenansangweiqiqundao"
+   ]
+  },
+  {
+   "code": "SS",
+   "zh": "南苏丹",
+   "zht": "南蘇丹",
+   "en": "South Sudan",
+   "py": "nansudan",
+   "idx": "N",
+   "alt": [
+    "SS",
+    "SSD",
+    "south sudan",
+    "nansudan"
+   ]
+  },
+  {
+   "code": "NR",
+   "zh": "瑙鲁",
+   "zht": "諾魯",
+   "en": "Nauru",
+   "py": "naolu",
+   "idx": "N",
+   "alt": [
+    "NR",
+    "NRU",
+    "nauru",
+    "naolu"
+   ]
+  },
+  {
+   "code": "NI",
+   "zh": "尼加拉瓜",
+   "zht": "尼加拉瓜",
+   "en": "Nicaragua",
+   "py": "nijialagua",
+   "idx": "N",
+   "alt": [
+    "NI",
+    "NIC",
+    "nicaragua",
+    "nijialagua"
+   ]
+  },
+  {
+   "code": "NP",
+   "zh": "尼泊尔",
+   "zht": "尼泊爾",
+   "en": "Nepal",
+   "py": "nipoer",
+   "idx": "N",
+   "alt": [
+    "NP",
+    "NPL",
+    "nepal",
+    "nipoer"
+   ]
+  },
+  {
+   "code": "NE",
+   "zh": "尼日尔",
+   "zht": "尼日",
+   "en": "Niger",
+   "py": "nirier",
+   "idx": "N",
+   "alt": [
+    "NE",
+    "NER",
+    "niger",
+    "nirier"
+   ]
+  },
+  {
+   "code": "NG",
+   "zh": "尼日利亚",
+   "zht": "奈及利亞",
+   "en": "Nigeria",
+   "py": "niriliya",
+   "idx": "N",
+   "alt": [
+    "NG",
+    "NGA",
+    "nigeria",
+    "niriliya"
+   ]
+  },
+  {
+   "code": "NU",
+   "zh": "纽埃",
+   "zht": "紐埃島",
+   "en": "Niue",
+   "py": "niuai",
+   "idx": "N",
+   "alt": [
+    "NU",
+    "NIU",
+    "niue",
+    "niuai"
+   ]
+  },
+  {
+   "code": "NF",
+   "zh": "诺福克岛",
+   "zht": "諾福克島",
+   "en": "Norfolk Island",
+   "py": "nuofukedao",
+   "idx": "N",
+   "alt": [
+    "NF",
+    "NFK",
+    "norfolk island",
+    "nuofukedao"
+   ]
+  },
+  {
+   "code": "NO",
+   "zh": "挪威",
+   "zht": "挪威",
+   "en": "Norway",
+   "py": "nuowei",
+   "idx": "N",
+   "alt": [
+    "NO",
+    "NOR",
+    "norway",
+    "nuowei"
+   ]
+  },
+  {
+   "code": "PW",
+   "zh": "帕劳",
+   "zht": "帛琉",
+   "en": "Palau",
+   "py": "palao",
+   "idx": "P",
+   "alt": [
+    "PW",
+    "PLW",
+    "palau",
+    "palao"
+   ]
+  },
+  {
+   "code": "PN",
+   "zh": "皮特凯恩群岛",
+   "zht": "皮特肯群島",
+   "en": "Pitcairn",
+   "py": "pitekaienqundao",
+   "idx": "P",
+   "alt": [
+    "PN",
+    "PCN",
+    "pitcairn",
+    "pitekaienqundao"
+   ]
+  },
+  {
+   "code": "PT",
+   "zh": "葡萄牙",
+   "zht": "葡萄牙",
+   "en": "Portugal",
+   "py": "putaoya",
+   "idx": "P",
+   "alt": [
+    "PT",
+    "PRT",
+    "portugal",
+    "putaoya"
+   ]
+  },
+  {
+   "code": "JP",
+   "zh": "日本",
+   "zht": "日本",
+   "en": "Japan",
+   "py": "riben",
+   "idx": "R",
+   "alt": [
+    "JP",
+    "JPN",
+    "japan",
+    "riben"
    ]
   },
   {
@@ -2760,17 +2438,171 @@
    ]
   },
   {
-   "code": "SG",
-   "zh": "新加坡",
-   "zht": "新加坡",
-   "en": "Singapore",
-   "py": "xinjiapo",
-   "idx": "X",
+   "code": "CH",
+   "zh": "瑞士",
+   "zht": "瑞士",
+   "en": "Switzerland",
+   "py": "ruishi",
+   "idx": "R",
    "alt": [
-    "SG",
-    "SGP",
-    "singapore",
-    "xinjiapo"
+    "CH",
+    "CHE",
+    "switzerland",
+    "ruishi"
+   ]
+  },
+  {
+   "code": "SV",
+   "zh": "萨尔瓦多",
+   "zht": "薩爾瓦多",
+   "en": "El Salvador",
+   "py": "saerwaduo",
+   "idx": "S",
+   "alt": [
+    "SV",
+    "SLV",
+    "el salvador",
+    "saerwaduo"
+   ]
+  },
+  {
+   "code": "RS",
+   "zh": "塞尔维亚",
+   "zht": "塞爾維亞",
+   "en": "Serbia",
+   "py": "saierweiya",
+   "idx": "S",
+   "alt": [
+    "RS",
+    "SRB",
+    "serbia",
+    "saierweiya"
+   ]
+  },
+  {
+   "code": "SL",
+   "zh": "塞拉利昂",
+   "zht": "獅子山",
+   "en": "Sierra Leone",
+   "py": "sailaliang",
+   "idx": "S",
+   "alt": [
+    "SL",
+    "SLE",
+    "sierra leone",
+    "sailaliang"
+   ]
+  },
+  {
+   "code": "SN",
+   "zh": "塞内加尔",
+   "zht": "塞內加爾",
+   "en": "Senegal",
+   "py": "saineijiaer",
+   "idx": "S",
+   "alt": [
+    "SN",
+    "SEN",
+    "senegal",
+    "saineijiaer"
+   ]
+  },
+  {
+   "code": "CY",
+   "zh": "塞浦路斯",
+   "zht": "賽普勒斯",
+   "en": "Cyprus",
+   "py": "saipulusi",
+   "idx": "S",
+   "alt": [
+    "CY",
+    "CYP",
+    "cyprus",
+    "saipulusi"
+   ]
+  },
+  {
+   "code": "SC",
+   "zh": "塞舌尔",
+   "zht": "塞席爾",
+   "en": "Seychelles",
+   "py": "saisheer",
+   "idx": "S",
+   "alt": [
+    "SC",
+    "SYC",
+    "seychelles",
+    "saisheer"
+   ]
+  },
+  {
+   "code": "WS",
+   "zh": "萨摩亚",
+   "zht": "薩摩亞",
+   "en": "Samoa",
+   "py": "samoya",
+   "idx": "S",
+   "alt": [
+    "WS",
+    "WSM",
+    "samoa",
+    "samoya"
+   ]
+  },
+  {
+   "code": "SA",
+   "zh": "沙特阿拉伯",
+   "zht": "沙烏地阿拉伯",
+   "en": "Saudi Arabia",
+   "py": "shatealabo",
+   "idx": "S",
+   "alt": [
+    "SA",
+    "SAU",
+    "saudi arabia",
+    "shatealabo"
+   ]
+  },
+  {
+   "code": "BL",
+   "zh": "圣巴泰勒米",
+   "zht": "聖巴瑟米",
+   "en": "Saint Barthélemy",
+   "py": "shengbataileimi",
+   "idx": "S",
+   "alt": [
+    "BL",
+    "BLM",
+    "saint barthélemy",
+    "shengbataileimi"
+   ]
+  },
+  {
+   "code": "CX",
+   "zh": "圣诞岛",
+   "zht": "聖誕島",
+   "en": "Christmas Island",
+   "py": "shengdandao",
+   "idx": "S",
+   "alt": [
+    "CX",
+    "CXR",
+    "christmas island",
+    "shengdandao"
+   ]
+  },
+  {
+   "code": "ST",
+   "zh": "圣多美和普林西比",
+   "zht": "聖多美普林西比",
+   "en": "Sao Tome and Principe",
+   "py": "shengduomeihepulinxibi",
+   "idx": "S",
+   "alt": [
+    "ST",
+    "STP",
+    "sao tome and principe",
+    "shengduomeihepulinxibi"
    ]
   },
   {
@@ -2785,6 +2617,104 @@
     "SHN",
     "saint helena, ascension and tristan da cunha",
     "shengheleina"
+   ]
+  },
+  {
+   "code": "KN",
+   "zh": "圣基茨和尼维斯",
+   "zht": "聖克里斯多福及尼維斯",
+   "en": "Saint Kitts and Nevis",
+   "py": "shengjiciheniweisi",
+   "idx": "S",
+   "alt": [
+    "KN",
+    "KNA",
+    "saint kitts and nevis",
+    "shengjiciheniweisi"
+   ]
+  },
+  {
+   "code": "LC",
+   "zh": "圣卢西亚",
+   "zht": "聖露西亞",
+   "en": "Saint Lucia",
+   "py": "shengluxiya",
+   "idx": "S",
+   "alt": [
+    "LC",
+    "LCA",
+    "saint lucia",
+    "shengluxiya"
+   ]
+  },
+  {
+   "code": "SM",
+   "zh": "圣马力诺",
+   "zht": "聖馬利諾",
+   "en": "San Marino",
+   "py": "shengmalinuo",
+   "idx": "S",
+   "alt": [
+    "SM",
+    "SMR",
+    "san marino",
+    "shengmalinuo"
+   ]
+  },
+  {
+   "code": "PM",
+   "zh": "圣皮埃尔和密克隆群岛",
+   "zht": "聖皮埃與密克隆群島",
+   "en": "Saint Pierre and Miquelon",
+   "py": "shengpiaierhemikelongqundao",
+   "idx": "S",
+   "alt": [
+    "PM",
+    "SPM",
+    "saint pierre and miquelon",
+    "shengpiaierhemikelongqundao"
+   ]
+  },
+  {
+   "code": "VC",
+   "zh": "圣文森特和格林纳丁斯",
+   "zht": "聖文森及格瑞那丁",
+   "en": "Saint Vincent and the Grenadines",
+   "py": "shengwensentehegelinnadingsi",
+   "idx": "S",
+   "alt": [
+    "VC",
+    "VCT",
+    "saint vincent and the grenadines",
+    "shengwensentehegelinnadingsi"
+   ]
+  },
+  {
+   "code": "LK",
+   "zh": "斯里兰卡",
+   "zht": "斯里蘭卡",
+   "en": "Sri Lanka",
+   "py": "sililanka",
+   "idx": "S",
+   "alt": [
+    "LK",
+    "LKA",
+    "sri lanka",
+    "sililanka"
+   ]
+  },
+  {
+   "code": "SK",
+   "zh": "斯洛伐克",
+   "zht": "斯洛伐克",
+   "en": "Slovakia",
+   "py": "siluofake",
+   "idx": "S",
+   "alt": [
+    "SK",
+    "SVK",
+    "slovakia",
+    "siluofake"
    ]
   },
   {
@@ -2816,73 +2746,31 @@
    ]
   },
   {
-   "code": "SK",
-   "zh": "斯洛伐克",
-   "zht": "斯洛伐克",
-   "en": "Slovakia",
-   "py": "siluofake",
+   "code": "SZ",
+   "zh": "斯威士兰",
+   "zht": "史瓦帝尼",
+   "en": "Eswatini",
+   "py": "siweishilan",
    "idx": "S",
    "alt": [
-    "SK",
-    "SVK",
-    "slovakia",
-    "siluofake"
+    "SZ",
+    "SWZ",
+    "eswatini",
+    "siweishilan"
    ]
   },
   {
-   "code": "SL",
-   "zh": "塞拉利昂",
-   "zht": "獅子山",
-   "en": "Sierra Leone",
-   "py": "sailaliang",
+   "code": "SD",
+   "zh": "苏丹",
+   "zht": "蘇丹",
+   "en": "Sudan",
+   "py": "sudan",
    "idx": "S",
    "alt": [
-    "SL",
-    "SLE",
-    "sierra leone",
-    "sailaliang"
-   ]
-  },
-  {
-   "code": "SM",
-   "zh": "圣马力诺",
-   "zht": "聖馬利諾",
-   "en": "San Marino",
-   "py": "shengmalinuo",
-   "idx": "S",
-   "alt": [
-    "SM",
-    "SMR",
-    "san marino",
-    "shengmalinuo"
-   ]
-  },
-  {
-   "code": "SN",
-   "zh": "塞内加尔",
-   "zht": "塞內加爾",
-   "en": "Senegal",
-   "py": "saineijiaer",
-   "idx": "S",
-   "alt": [
-    "SN",
-    "SEN",
-    "senegal",
-    "saineijiaer"
-   ]
-  },
-  {
-   "code": "SO",
-   "zh": "索马里",
-   "zht": "索馬利亞",
-   "en": "Somalia",
-   "py": "suomali",
-   "idx": "S",
-   "alt": [
-    "SO",
-    "SOM",
-    "somalia",
-    "suomali"
+    "SD",
+    "SDN",
+    "sudan",
+    "sudan"
    ]
   },
   {
@@ -2900,143 +2788,31 @@
    ]
   },
   {
-   "code": "SS",
-   "zh": "南苏丹",
-   "zht": "南蘇丹",
-   "en": "South Sudan",
-   "py": "nansudan",
-   "idx": "N",
-   "alt": [
-    "SS",
-    "SSD",
-    "south sudan",
-    "nansudan"
-   ]
-  },
-  {
-   "code": "ST",
-   "zh": "圣多美和普林西比",
-   "zht": "聖多美普林西比",
-   "en": "Sao Tome and Principe",
-   "py": "shengduomeihepulinxibi",
+   "code": "SB",
+   "zh": "所罗门群岛",
+   "zht": "索羅門群島",
+   "en": "Solomon Islands",
+   "py": "suoluomenqundao",
    "idx": "S",
    "alt": [
-    "ST",
-    "STP",
-    "sao tome and principe",
-    "shengduomeihepulinxibi"
+    "SB",
+    "SLB",
+    "solomon islands",
+    "suoluomenqundao"
    ]
   },
   {
-   "code": "SV",
-   "zh": "萨尔瓦多",
-   "zht": "薩爾瓦多",
-   "en": "El Salvador",
-   "py": "saerwaduo",
+   "code": "SO",
+   "zh": "索马里",
+   "zht": "索馬利亞",
+   "en": "Somalia",
+   "py": "suomali",
    "idx": "S",
    "alt": [
-    "SV",
-    "SLV",
-    "el salvador",
-    "saerwaduo"
-   ]
-  },
-  {
-   "code": "SX",
-   "zh": "荷属圣马丁",
-   "zht": "荷屬聖馬丁",
-   "en": "Sint Maarten (Dutch part)",
-   "py": "heshushengmading",
-   "idx": "H",
-   "alt": [
-    "SX",
-    "SXM",
-    "sint maarten (dutch part)",
-    "heshushengmading"
-   ]
-  },
-  {
-   "code": "SY",
-   "zh": "叙利亚",
-   "zht": "敘利亞",
-   "en": "Syria",
-   "py": "xuliya",
-   "idx": "X",
-   "alt": [
-    "SY",
-    "SYR",
-    "syria",
-    "xuliya"
-   ]
-  },
-  {
-   "code": "SZ",
-   "zh": "斯威士兰",
-   "zht": "史瓦帝尼",
-   "en": "Eswatini",
-   "py": "siweishilan",
-   "idx": "S",
-   "alt": [
-    "SZ",
-    "SWZ",
-    "eswatini",
-    "siweishilan"
-   ]
-  },
-  {
-   "code": "TC",
-   "zh": "特克斯和凯科斯群岛",
-   "zht": "土克斯及開科斯群島",
-   "en": "Turks and Caicos Islands",
-   "py": "tekesihekaikesiqundao",
-   "idx": "T",
-   "alt": [
-    "TC",
-    "TCA",
-    "turks and caicos islands",
-    "tekesihekaikesiqundao"
-   ]
-  },
-  {
-   "code": "TD",
-   "zh": "乍得",
-   "zht": "查德",
-   "en": "Chad",
-   "py": "zhade",
-   "idx": "Z",
-   "alt": [
-    "TD",
-    "TCD",
-    "chad",
-    "zhade"
-   ]
-  },
-  {
-   "code": "TF",
-   "zh": "法属南部领地",
-   "zht": "法屬南部屬地",
-   "en": "French Southern Territories",
-   "py": "fashunanbulingdi",
-   "idx": "F",
-   "alt": [
-    "TF",
-    "ATF",
-    "french southern territories",
-    "fashunanbulingdi"
-   ]
-  },
-  {
-   "code": "TG",
-   "zh": "多哥",
-   "zht": "多哥",
-   "en": "Togo",
-   "py": "duoge",
-   "idx": "D",
-   "alt": [
-    "TG",
-    "TGO",
-    "togo",
-    "duoge"
+    "SO",
+    "SOM",
+    "somalia",
+    "suomali"
    ]
   },
   {
@@ -3068,31 +2844,73 @@
    ]
   },
   {
-   "code": "TK",
-   "zh": "托克劳",
-   "zht": "托克勞群島",
-   "en": "Tokelau",
-   "py": "tuokelao",
+   "code": "TO",
+   "zh": "汤加",
+   "zht": "東加",
+   "en": "Tonga",
+   "py": "tangjia",
    "idx": "T",
    "alt": [
-    "TK",
-    "TKL",
-    "tokelau",
-    "tuokelao"
+    "TO",
+    "TON",
+    "tonga",
+    "tangjia"
    ]
   },
   {
-   "code": "TL",
-   "zh": "东帝汶",
-   "zht": "東帝汶",
-   "en": "Timor-Leste",
-   "py": "dongdiwen",
-   "idx": "D",
+   "code": "TZ",
+   "zh": "坦桑尼亚",
+   "zht": "坦尚尼亞",
+   "en": "Tanzania",
+   "py": "tansangniya",
+   "idx": "T",
    "alt": [
-    "TL",
-    "TLS",
-    "timor-leste",
-    "dongdiwen"
+    "TZ",
+    "TZA",
+    "tanzania",
+    "tansangniya"
+   ]
+  },
+  {
+   "code": "TC",
+   "zh": "特克斯和凯科斯群岛",
+   "zht": "土克斯及開科斯群島",
+   "en": "Turks and Caicos Islands",
+   "py": "tekesihekaikesiqundao",
+   "idx": "T",
+   "alt": [
+    "TC",
+    "TCA",
+    "turks and caicos islands",
+    "tekesihekaikesiqundao"
+   ]
+  },
+  {
+   "code": "TT",
+   "zh": "特立尼达和多巴哥",
+   "zht": "千里達及托巴哥",
+   "en": "Trinidad and Tobago",
+   "py": "telinidaheduobage",
+   "idx": "T",
+   "alt": [
+    "TT",
+    "TTO",
+    "trinidad and tobago",
+    "telinidaheduobage"
+   ]
+  },
+  {
+   "code": "TR",
+   "zh": "土耳其",
+   "zht": "土耳其",
+   "en": "Türkiye",
+   "py": "tuerqi",
+   "idx": "T",
+   "alt": [
+    "TR",
+    "TUR",
+    "türkiye",
+    "tuerqi"
    ]
   },
   {
@@ -3124,45 +2942,17 @@
    ]
   },
   {
-   "code": "TO",
-   "zh": "汤加",
-   "zht": "東加",
-   "en": "Tonga",
-   "py": "tangjia",
+   "code": "TK",
+   "zh": "托克劳",
+   "zht": "托克勞群島",
+   "en": "Tokelau",
+   "py": "tuokelao",
    "idx": "T",
    "alt": [
-    "TO",
-    "TON",
-    "tonga",
-    "tangjia"
-   ]
-  },
-  {
-   "code": "TR",
-   "zh": "土耳其",
-   "zht": "土耳其",
-   "en": "Türkiye",
-   "py": "tuerqi",
-   "idx": "T",
-   "alt": [
-    "TR",
-    "TUR",
-    "türkiye",
-    "tuerqi"
-   ]
-  },
-  {
-   "code": "TT",
-   "zh": "特立尼达和多巴哥",
-   "zht": "千里達及托巴哥",
-   "en": "Trinidad and Tobago",
-   "py": "telinidaheduobage",
-   "idx": "T",
-   "alt": [
-    "TT",
-    "TTO",
-    "trinidad and tobago",
-    "telinidaheduobage"
+    "TK",
+    "TKL",
+    "tokelau",
+    "tuokelao"
    ]
   },
   {
@@ -3180,45 +2970,73 @@
    ]
   },
   {
-   "code": "TW",
-   "zh": "中国台湾",
-   "zht": "中國台灣",
-   "en": "Taiwan",
-   "py": "zhongguotaiwan",
-   "idx": "Z",
-   "alt": [
-    "TW",
-    "TWN",
-    "taiwan",
-    "zhongguotaiwan"
-   ]
-  },
-  {
-   "code": "TZ",
-   "zh": "坦桑尼亚",
-   "zht": "坦尚尼亞",
-   "en": "Tanzania",
-   "py": "tansangniya",
-   "idx": "T",
-   "alt": [
-    "TZ",
-    "TZA",
-    "tanzania",
-    "tansangniya"
-   ]
-  },
-  {
-   "code": "UA",
-   "zh": "乌克兰",
-   "zht": "烏克蘭",
-   "en": "Ukraine",
-   "py": "wukelan",
+   "code": "WF",
+   "zh": "瓦利斯和富图纳",
+   "zht": "瓦利斯群島和富圖那群島",
+   "en": "Wallis and Futuna",
+   "py": "walisihefutuna",
    "idx": "W",
    "alt": [
-    "UA",
-    "UKR",
-    "ukraine",
-    "wukelan"
+    "WF",
+    "WLF",
+    "wallis and futuna",
+    "walisihefutuna"
+   ]
+  },
+  {
+   "code": "VU",
+   "zh": "瓦努阿图",
+   "zht": "萬那杜",
+   "en": "Vanuatu",
+   "py": "wanuatu",
+   "idx": "W",
+   "alt": [
+    "VU",
+    "VUT",
+    "vanuatu",
+    "wanuatu"
+   ]
+  },
+  {
+   "code": "GT",
+   "zh": "危地马拉",
+   "zht": "瓜地馬拉",
+   "en": "Guatemala",
+   "py": "weidimala",
+   "idx": "W",
+   "alt": [
+    "GT",
+    "GTM",
+    "guatemala",
+    "weidimala"
+   ]
+  },
+  {
+   "code": "VE",
+   "zh": "委内瑞拉",
+   "zht": "委內瑞拉",
+   "en": "Venezuela",
+   "py": "weineiruila",
+   "idx": "W",
+   "alt": [
+    "VE",
+    "VEN",
+    "venezuela",
+    "weineiruila"
+   ]
+  },
+  {
+   "code": "BN",
+   "zh": "文莱",
+   "zht": "汶萊",
+   "en": "Brunei Darussalam",
+   "py": "wenlai",
+   "idx": "W",
+   "alt": [
+    "BN",
+    "BRN",
+    "brunei darussalam",
+    "wenlai"
    ]
   },
   {
@@ -3236,31 +3054,17 @@
    ]
   },
   {
-   "code": "UM",
-   "zh": "美国本土外小岛屿",
-   "zht": "美國本土外小島嶼",
-   "en": "United States Minor Outlying Islands",
-   "py": "meiguobentuwaixiaodaoyu",
-   "idx": "M",
+   "code": "UA",
+   "zh": "乌克兰",
+   "zht": "烏克蘭",
+   "en": "Ukraine",
+   "py": "wukelan",
+   "idx": "W",
    "alt": [
-    "UM",
-    "UMI",
-    "united states minor outlying islands",
-    "meiguobentuwaixiaodaoyu"
-   ]
-  },
-  {
-   "code": "US",
-   "zh": "美国",
-   "zht": "美國",
-   "en": "United States",
-   "py": "meiguo",
-   "idx": "M",
-   "alt": [
-    "US",
-    "USA",
-    "united states",
-    "meiguo"
+    "UA",
+    "UKR",
+    "ukraine",
+    "wukelan"
    ]
   },
   {
@@ -3292,129 +3096,143 @@
    ]
   },
   {
-   "code": "VA",
-   "zh": "梵蒂冈",
-   "zht": "梵蒂岡",
-   "en": "Holy See (Vatican City State)",
-   "py": "fandigang",
-   "idx": "F",
+   "code": "ES",
+   "zh": "西班牙",
+   "zht": "西班牙",
+   "en": "Spain",
+   "py": "xibanya",
+   "idx": "X",
    "alt": [
-    "VA",
-    "VAT",
-    "holy see (vatican city state)",
-    "fandigang"
+    "ES",
+    "ESP",
+    "spain",
+    "xibanya"
    ]
   },
   {
-   "code": "VC",
-   "zh": "圣文森特和格林纳丁斯",
-   "zht": "聖文森及格瑞那丁",
-   "en": "Saint Vincent and the Grenadines",
-   "py": "shengwensentehegelinnadingsi",
-   "idx": "S",
+   "code": "GR",
+   "zh": "希腊",
+   "zht": "希臘",
+   "en": "Greece",
+   "py": "xila",
+   "idx": "X",
    "alt": [
-    "VC",
-    "VCT",
-    "saint vincent and the grenadines",
-    "shengwensentehegelinnadingsi"
+    "GR",
+    "GRC",
+    "greece",
+    "xila"
    ]
   },
   {
-   "code": "VE",
-   "zh": "委内瑞拉",
-   "zht": "委內瑞拉",
-   "en": "Venezuela",
-   "py": "weineiruila",
-   "idx": "W",
+   "code": "SG",
+   "zh": "新加坡",
+   "zht": "新加坡",
+   "en": "Singapore",
+   "py": "xinjiapo",
+   "idx": "X",
    "alt": [
-    "VE",
-    "VEN",
-    "venezuela",
-    "weineiruila"
+    "SG",
+    "SGP",
+    "singapore",
+    "xinjiapo"
    ]
   },
   {
-   "code": "VG",
-   "zh": "英属维尔京群岛",
-   "zht": "英屬維京群島",
-   "en": "Virgin Islands, British",
-   "py": "yingshuweierjingqundao",
+   "code": "NC",
+   "zh": "新喀里多尼亚",
+   "zht": "新喀里多尼亞",
+   "en": "New Caledonia",
+   "py": "xinkaliduoniya",
+   "idx": "X",
+   "alt": [
+    "NC",
+    "NCL",
+    "new caledonia",
+    "xinkaliduoniya"
+   ]
+  },
+  {
+   "code": "NZ",
+   "zh": "新西兰",
+   "zht": "紐西蘭",
+   "en": "New Zealand",
+   "py": "xinxilan",
+   "idx": "X",
+   "alt": [
+    "NZ",
+    "NZL",
+    "new zealand",
+    "xinxilan"
+   ]
+  },
+  {
+   "code": "HU",
+   "zh": "匈牙利",
+   "zht": "匈牙利",
+   "en": "Hungary",
+   "py": "xiongyali",
+   "idx": "X",
+   "alt": [
+    "HU",
+    "HUN",
+    "hungary",
+    "xiongyali"
+   ]
+  },
+  {
+   "code": "EH",
+   "zh": "西撒哈拉",
+   "zht": "西撒哈拉",
+   "en": "Western Sahara",
+   "py": "xisahala",
+   "idx": "X",
+   "alt": [
+    "EH",
+    "ESH",
+    "western sahara",
+    "xisahala"
+   ]
+  },
+  {
+   "code": "SY",
+   "zh": "叙利亚",
+   "zht": "敘利亞",
+   "en": "Syria",
+   "py": "xuliya",
+   "idx": "X",
+   "alt": [
+    "SY",
+    "SYR",
+    "syria",
+    "xuliya"
+   ]
+  },
+  {
+   "code": "JM",
+   "zh": "牙买加",
+   "zht": "牙買加",
+   "en": "Jamaica",
+   "py": "yamaijia",
    "idx": "Y",
    "alt": [
-    "VG",
-    "VGB",
-    "virgin islands, british",
-    "yingshuweierjingqundao"
+    "JM",
+    "JAM",
+    "jamaica",
+    "yamaijia"
    ]
   },
   {
-   "code": "VI",
-   "zh": "美属维尔京群岛",
-   "zht": "美屬維京群島",
-   "en": "Virgin Islands, U.S.",
-   "py": "meishuweierjingqundao",
-   "idx": "M",
-   "alt": [
-    "VI",
-    "VIR",
-    "virgin islands, u.s.",
-    "meishuweierjingqundao"
-   ]
-  },
-  {
-   "code": "VN",
-   "zh": "越南",
-   "zht": "越南",
-   "en": "Vietnam",
-   "py": "yuenan",
+   "code": "AM",
+   "zh": "亚美尼亚",
+   "zht": "亞美尼亞",
+   "en": "Armenia",
+   "py": "yameiniya",
    "idx": "Y",
    "alt": [
-    "VN",
-    "VNM",
-    "vietnam",
-    "yuenan"
-   ]
-  },
-  {
-   "code": "VU",
-   "zh": "瓦努阿图",
-   "zht": "萬那杜",
-   "en": "Vanuatu",
-   "py": "wanuatu",
-   "idx": "W",
-   "alt": [
-    "VU",
-    "VUT",
-    "vanuatu",
-    "wanuatu"
-   ]
-  },
-  {
-   "code": "WF",
-   "zh": "瓦利斯和富图纳",
-   "zht": "瓦利斯群島和富圖那群島",
-   "en": "Wallis and Futuna",
-   "py": "walisihefutuna",
-   "idx": "W",
-   "alt": [
-    "WF",
-    "WLF",
-    "wallis and futuna",
-    "walisihefutuna"
-   ]
-  },
-  {
-   "code": "WS",
-   "zh": "萨摩亚",
-   "zht": "薩摩亞",
-   "en": "Samoa",
-   "py": "samoya",
-   "idx": "S",
-   "alt": [
-    "WS",
-    "WSM",
-    "samoa",
-    "samoya"
+    "AM",
+    "ARM",
+    "armenia",
+    "yameiniya"
    ]
   },
   {
@@ -3432,31 +3250,157 @@
    ]
   },
   {
-   "code": "YT",
-   "zh": "马约特",
-   "zht": "馬約特島",
-   "en": "Mayotte",
-   "py": "mayuete",
-   "idx": "M",
+   "code": "IT",
+   "zh": "意大利",
+   "zht": "義大利",
+   "en": "Italy",
+   "py": "yidali",
+   "idx": "Y",
    "alt": [
-    "YT",
-    "MYT",
-    "mayotte",
-    "mayuete"
+    "IT",
+    "ITA",
+    "italy",
+    "yidali"
    ]
   },
   {
-   "code": "ZA",
-   "zh": "南非",
-   "zht": "南非",
-   "en": "South Africa",
-   "py": "nanfei",
-   "idx": "N",
+   "code": "IQ",
+   "zh": "伊拉克",
+   "zht": "伊拉克",
+   "en": "Iraq",
+   "py": "yilake",
+   "idx": "Y",
    "alt": [
-    "ZA",
-    "ZAF",
-    "south africa",
-    "nanfei"
+    "IQ",
+    "IRQ",
+    "iraq",
+    "yilake"
+   ]
+  },
+  {
+   "code": "IR",
+   "zh": "伊朗",
+   "zht": "伊朗",
+   "en": "Iran",
+   "py": "yilang",
+   "idx": "Y",
+   "alt": [
+    "IR",
+    "IRN",
+    "iran",
+    "yilang"
+   ]
+  },
+  {
+   "code": "IN",
+   "zh": "印度",
+   "zht": "印度",
+   "en": "India",
+   "py": "yindu",
+   "idx": "Y",
+   "alt": [
+    "IN",
+    "IND",
+    "india",
+    "yindu"
+   ]
+  },
+  {
+   "code": "ID",
+   "zh": "印度尼西亚",
+   "zht": "印尼",
+   "en": "Indonesia",
+   "py": "yindunixiya",
+   "idx": "Y",
+   "alt": [
+    "ID",
+    "IDN",
+    "indonesia",
+    "yindunixiya"
+   ]
+  },
+  {
+   "code": "GB",
+   "zh": "英国",
+   "zht": "英國",
+   "en": "United Kingdom",
+   "py": "yingguo",
+   "idx": "Y",
+   "alt": [
+    "GB",
+    "GBR",
+    "united kingdom",
+    "yingguo"
+   ]
+  },
+  {
+   "code": "VG",
+   "zh": "英属维尔京群岛",
+   "zht": "英屬維京群島",
+   "en": "Virgin Islands, British",
+   "py": "yingshuweierjingqundao",
+   "idx": "Y",
+   "alt": [
+    "VG",
+    "VGB",
+    "virgin islands, british",
+    "yingshuweierjingqundao"
+   ]
+  },
+  {
+   "code": "IO",
+   "zh": "英属印度洋领地",
+   "zht": "英屬印度洋領地",
+   "en": "British Indian Ocean Territory",
+   "py": "yingshuyinduyanglingdi",
+   "idx": "Y",
+   "alt": [
+    "IO",
+    "IOT",
+    "british indian ocean territory",
+    "yingshuyinduyanglingdi"
+   ]
+  },
+  {
+   "code": "IL",
+   "zh": "以色列",
+   "zht": "以色列",
+   "en": "Israel",
+   "py": "yiselie",
+   "idx": "Y",
+   "alt": [
+    "IL",
+    "ISR",
+    "israel",
+    "yiselie"
+   ]
+  },
+  {
+   "code": "JO",
+   "zh": "约旦",
+   "zht": "約旦",
+   "en": "Jordan",
+   "py": "yuedan",
+   "idx": "Y",
+   "alt": [
+    "JO",
+    "JOR",
+    "jordan",
+    "yuedan"
+   ]
+  },
+  {
+   "code": "VN",
+   "zh": "越南",
+   "zht": "越南",
+   "en": "Vietnam",
+   "py": "yuenan",
+   "idx": "Y",
+   "alt": [
+    "VN",
+    "VNM",
+    "vietnam",
+    "yuenan"
    ]
   },
   {
@@ -3474,17 +3418,73 @@
    ]
   },
   {
-   "code": "ZW",
-   "zh": "津巴布韦",
-   "zht": "辛巴威",
-   "en": "Zimbabwe",
-   "py": "jinbabuwei",
-   "idx": "J",
+   "code": "JE",
+   "zh": "泽西岛",
+   "zht": "澤西島",
+   "en": "Jersey",
+   "py": "zexidao",
+   "idx": "Z",
    "alt": [
-    "ZW",
-    "ZWE",
-    "zimbabwe",
-    "jinbabuwei"
+    "JE",
+    "JEY",
+    "jersey",
+    "zexidao"
+   ]
+  },
+  {
+   "code": "TD",
+   "zh": "乍得",
+   "zht": "查德",
+   "en": "Chad",
+   "py": "zhade",
+   "idx": "Z",
+   "alt": [
+    "TD",
+    "TCD",
+    "chad",
+    "zhade"
+   ]
+  },
+  {
+   "code": "GI",
+   "zh": "直布罗陀",
+   "zht": "直布羅陀",
+   "en": "Gibraltar",
+   "py": "zhibuluotuo",
+   "idx": "Z",
+   "alt": [
+    "GI",
+    "GIB",
+    "gibraltar",
+    "zhibuluotuo"
+   ]
+  },
+  {
+   "code": "CL",
+   "zh": "智利",
+   "zht": "智利",
+   "en": "Chile",
+   "py": "zhili",
+   "idx": "Z",
+   "alt": [
+    "CL",
+    "CHL",
+    "chile",
+    "zhili"
+   ]
+  },
+  {
+   "code": "CF",
+   "zh": "中非共和国",
+   "zht": "中非共和國",
+   "en": "Central African Republic",
+   "py": "zhongfeigongheguo",
+   "idx": "Z",
+   "alt": [
+    "CF",
+    "CAF",
+    "central african republic",
+    "zhongfeigongheguo"
    ]
   }
  ],
