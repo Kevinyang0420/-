@@ -5663,6 +5663,16 @@ final class MainViewController: UIViewController {
             return
         }
 
+        // 🚨🚨 09-19：Kevin 亲口「那个纪要功能现在都还没有上」——0 澄清「纪要不
+        //    新开发」说的是不另起一套新功能，**不是入口也不用接**。他要的会议
+        //    纪要就是这一屏（"随便说点啥"）放宽时长之后的用法，`EavesdropConsent`
+        //    文案早就写好但零调用点（真接的是"录别人说的话"这件事，不是这一屏
+        //    本身）。第一次起录时弹一次，确认过 `EavesdropConsent.confirmed`
+        //    之后不再拦——不要另起一个单独的"旁听"入口页。
+        if !EavesdropConsent.confirmed {
+            EavesdropConsent.ensure(on: self) { [weak self] in self?.tapMic() }
+            return
+        }
         heardLabel.text = ""
         // 🚨 高-2：**起录前先停播放**。全工程原来没有任何一处这么做，
         //    于是"正在播 TTS 时开录"会把我们自己的声音录进去。
