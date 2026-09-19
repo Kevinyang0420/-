@@ -94,6 +94,11 @@ final class FaceToFaceViewController: UIViewController {
     private let listenPanel = UIView()
     private let listenStatusLabel = UILabel()
     private let listenStartBtn = UIButton(type: .system)
+    /// 🚨🚨 09-19 Kevin 真机反馈：「为什么这里又没有录音的波纹了呢？能不能每次
+    ///    做的时候统一一点」——一问一答那颗麦克风有波形反馈，旁听这颗一开始没有，
+    ///    同一个 App 两个样子。**照搬不自创**：直接用 QA 板块那同一个 `WaveView`
+    ///    类（跟顶部注释里那条铁律"照抄不改样式"一样的道理），不是另画一个。
+    private let listenWaveView = WaveView(frame: .zero)
     /// 🚨 **独立的录音状态**，不跟 QA 模式共用 `voice`/`phase`——两个板块
     ///    是并列而不是互斥重叠的功能，QA 模式的代次/相位管理是给它自己的
     ///    UI 反馈设计的，混用会导致两边互相踩状态。
@@ -889,6 +894,13 @@ final class FaceToFaceViewController: UIViewController {
         listenStartBtn.addTarget(self, action: #selector(tapListenStartStop), for: .touchUpInside)
         listenPanel.addSubview(listenStartBtn)
 
+        // 🚨 波形贴在「开始/停止」按钮正上方——只在 `listenActive` 时用
+        // `setActive(true)` 打开，静默时不占视觉存在，跟 QA 板块 `waveView`
+        // 只在 `.listening` 出现是同一条规矩。
+        listenWaveView.translatesAutoresizingMaskIntoConstraints = false
+        listenWaveView.isUserInteractionEnabled = false
+        listenPanel.addSubview(listenWaveView)
+
         NSLayoutConstraint.activate([
             listenPanel.topAnchor.constraint(equalTo: modeRow.bottomAnchor, constant: 12),
             listenPanel.bottomAnchor.constraint(
@@ -898,13 +910,19 @@ final class FaceToFaceViewController: UIViewController {
 
             listenStatusLabel.centerXAnchor.constraint(equalTo: listenPanel.centerXAnchor),
             listenStatusLabel.centerYAnchor.constraint(
-                equalTo: listenPanel.centerYAnchor, constant: -30),
+                equalTo: listenPanel.centerYAnchor, constant: -60),
             listenStatusLabel.leadingAnchor.constraint(equalTo: listenPanel.leadingAnchor),
             listenStatusLabel.trailingAnchor.constraint(equalTo: listenPanel.trailingAnchor),
 
+            listenWaveView.centerXAnchor.constraint(equalTo: listenPanel.centerXAnchor),
+            listenWaveView.topAnchor.constraint(
+                equalTo: listenStatusLabel.bottomAnchor, constant: 20),
+            listenWaveView.widthAnchor.constraint(equalToConstant: 140),
+            listenWaveView.heightAnchor.constraint(equalToConstant: 36),
+
             listenStartBtn.centerXAnchor.constraint(equalTo: listenPanel.centerXAnchor),
             listenStartBtn.topAnchor.constraint(
-                equalTo: listenStatusLabel.bottomAnchor, constant: 24),
+                equalTo: listenWaveView.bottomAnchor, constant: 24),
         ])
     }
 
@@ -943,11 +961,17 @@ final class FaceToFaceViewController: UIViewController {
         })
         listenSegs = sg
         listenVoice.onSegment = { [weak sg] w in sg?.submit(wav: w) }
+        // 🚨 波形要真的跟着音量动，跟 QA 板块 `waveView` 同一个数据源接法
+        // （`Voice.onLevel`），不是摆一个不联动的装饰。
+        listenVoice.onLevel = { [weak self] v in
+            DispatchQueue.main.async { self?.listenWaveView.push(v) }
+        }
 
         listenActive = true
         listenStartedAt = Date()
         listenStartBtn.setTitle(L.f2f_listen_stop, for: .normal)
         listenStatusLabel.text = L.f2f_listening
+        listenWaveView.setActive(true)
         listenElapsedTimer?.invalidate()
         listenElapsedTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) {
             [weak self] _ in self?.updateListenMinutes()
@@ -962,10 +986,49 @@ final class FaceToFaceViewController: UIViewController {
                 case .failure(let f):
                     self.listenStatusLabel.text = f.userText
                     self.resetListenUI()
-                case .success:
-                    // 分段模式下 `onWav` 交回空 Data，真实内容要去 `listenSegs` 取
-                    // （跟 `MainViewController.finishSegmented` 同一条约定）。
-                    self.finishListenSession()
+                case .success(let wav):
+                    // 🚨🚨 09-19 真机撞到的真 bug（Kevin：「没有录到内容」）：
+                    //    这里原来无脑丢掉 `wav` 直接走 `finishListenSession()`，
+                    //    只对"已经切过至少一整段（≥60 秒）"这种情况成立——那时
+                    //    `Voice.stop()` 交回的确实是约定的空 `Data` 哨兵，真内容
+                    //    在 `listenSegs` 里等着 `awaitAll`。**但没满 60 秒就按停止**
+                    //    时，`Voice.tailPlan` 走的是 `.wholeWav`/`.tooShort` 老路
+                    //    （`ios/Shared/Voice.swift:765-773`）——`didSegment` 还是
+                    //    false，`onSegment` 一次都没触发过，`listenSegs.count`
+                    //    永远是 0，而这次真正录到的整段音频就装在 `wav` 里，
+                    //    被这里原样丢掉了。**Kevin 说了不到一分钟的话，这条路
+                    //    100% 会走到"没有录到内容"**——这不是随机复现，是必现。
+                    //    跟 `MainViewController.onWav` 的 `sg.count > 0` 分叉
+                    //    是同一条道理，只是这里之前没接那半。
+                    if let sg = self.listenSegs, sg.count > 0 {
+                        self.finishListenSession()
+                        return
+                    }
+                    guard wav.count > 44 else {
+                        self.resetListenUI()
+                        self.listenStatusLabel.text = L.f2f_listen_empty
+                        return
+                    }
+                    self.listenStatusLabel.text = L.f2f_listen_finishing
+                    Backend.transcribe(wav: wav) { [weak self] r in
+                        DispatchQueue.main.async {
+                            guard let self = self else { return }
+                            self.resetListenUI()
+                            switch r {
+                            case .failure(let f):
+                                self.listenStatusLabel.text = f.userText
+                            case .success(let text):
+                                let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                                if t.isEmpty {
+                                    self.listenStatusLabel.text = L.f2f_listen_empty
+                                } else {
+                                    History.add(mode: Backend.Mode.raw.rawValue, tone: "",
+                                               zh: t, out: t)
+                                    self.listenStatusLabel.text = L.f2f_listen_done
+                                }
+                            }
+                        }
+                    }
                 }
             }
         })
@@ -978,8 +1041,16 @@ final class FaceToFaceViewController: UIViewController {
     }
 
     private func stopListenSession() {
+        // 🚨🚨 09-19 真机验证时抓到的第二个 bug：这个计时器原来只在
+        //    `finishListenSession()`（已切过分段那条路）里停，**短录音兜底
+        //    那条新路径没停它**——结果它每 10 秒照常把状态行覆盖成
+        //    「已记录 N 分钟」，把 `Backend.transcribe` 回调刚设好的
+        //    "转写完成"/"没有录到内容"盖掉。按了停止这一刻起，"已记录
+        //    多久"这句话本来就不该再更新了，不管接下来走哪条收尾路径。
+        listenElapsedTimer?.invalidate(); listenElapsedTimer = nil
         listenStatusLabel.text = L.f2f_listen_finishing
         listenStartBtn.isEnabled = false
+        listenWaveView.setActive(false)
         if listenVoice.running { listenVoice.stop() }
     }
 
@@ -998,8 +1069,21 @@ final class FaceToFaceViewController: UIViewController {
                 guard let self = self else { return }
                 EavesdropTranscript.delete(sessionId: sid)
                 self.resetListenUI()
-                self.listenStatusLabel.text = zh.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    ? L.f2f_listen_empty : L.f2f_listen_done
+                let text = zh.trimmingCharacters(in: .whitespacesAndNewlines)
+                if text.isEmpty {
+                    self.listenStatusLabel.text = L.f2f_listen_empty
+                    return
+                }
+                // 🚨🚨 09-19 2.1 纠正：正常完成路径原来只改状态文案，没写历史——
+                //    规格§十二要的是「转写完成（正常路径+崩溃恢复路径处理方式
+                //    相同）→直接写入历史记录，零确认框」，「留下来」是另一个
+                //    动作（存进日记本），不是"写不写历史"这个动作本身。
+                //    走跟安卓 `MODE_RAW` 同一个模式——逐字转录，不过模型、
+                //    不翻译，`zh`/`out` 两个字段填同一份文本（照抄
+                //    `F2fScreen.java:1089`：`History.add(host, MODE_RAW, "",
+                //    listenFinalText, listenFinalText, 0L)`）。
+                History.add(mode: Backend.Mode.raw.rawValue, tone: "", zh: text, out: text)
+                self.listenStatusLabel.text = L.f2f_listen_done
             }
         }
     }
@@ -1009,6 +1093,7 @@ final class FaceToFaceViewController: UIViewController {
         listenSegs = nil
         listenStartBtn.isEnabled = true
         listenStartBtn.setTitle(L.f2f_listen_start, for: .normal)
+        listenWaveView.setActive(false)
         if listenDidYieldMic { KbVoiceHost.shared.reclaimMic(); listenDidYieldMic = false }
     }
 

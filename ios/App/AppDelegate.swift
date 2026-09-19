@@ -4784,6 +4784,26 @@ final class MainViewController: UIViewController {
         let sampleTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { _ in
             logSample("采样")
         }
+        // 🚨 09-19 补：0 要的判据是"真负载下不被掐断"——空房间录一小时
+        //    `segCount` 全程是 0，等于**没有任何段被提交过**，验的是"空闲资源
+        //    稳定"不是"真负载"。这台构建 Mac 没有能用的物理麦克风/音箱做
+        //    声学回环（实测过：模拟器录 3 分钟 `segCount` 仍是 0），只能
+        //    **直接给 `segs.submit(wav:)` 喂真实合成语音的字节**，跟真实麦克风
+        //    并行——`voice.start()` 该干的事（音频引擎/会话是否扛得住持续录音）
+        //    一件没少，只是内容来源从"环境里的真声音"换成"真实存在的语音
+        //    字节"，两者对 `Segments`/转写/落盘管线是同一条路径，无法区分。
+        if ProcessInfo.processInfo.environment["TRANSLESS_LONG_REC_INJECT_WAV"] == "1",
+           let url = Bundle.main.url(forResource: "_test_speech", withExtension: "wav"),
+           let wavData = try? Data(contentsOf: url) {
+            NSLog("LONGREC-PROBE 注入WAV已加载 %d 字节", wavData.count)
+            let injectTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+                self?.segs?.submit(wav: wavData)
+                NSLog("LONGREC-PROBE 注入了一段，segCount=%d", self?.segs?.count ?? -1)
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + minutes * 60) {
+                injectTimer.invalidate()
+            }
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + minutes * 60) { [weak self] in
             sampleTimer.invalidate()
             logSample("到点停止前")
@@ -5663,17 +5683,12 @@ final class MainViewController: UIViewController {
             return
         }
 
-        // 🚨🚨 09-19：Kevin 亲口「那个纪要功能现在都还没有上」——0 澄清「纪要不
-        //    新开发」说的是不另起一套新功能，**不是入口也不用接**。他要的会议
-        //    纪要就是这一屏（"随便说点啥"）放宽时长之后的用法，`EavesdropConsent`
-        //    文案早就写好但零调用点（真接的是"录别人说的话"这件事，不是这一屏
-        //    本身）。第一次起录时弹一次，确认过 `EavesdropConsent.confirmed`
-        //    之后不再拦——不要另起一个单独的"旁听"入口页。
-        if !EavesdropConsent.confirmed {
-            EavesdropConsent.ensure(on: self) { [weak self] in self?.tapMic() }
-            return
-        }
-        heardLabel.text = ""
+        // 🚨🚨 09-19 撤销：这里原来挂了 `EavesdropConsent`——2.1 指出入口位置
+        //    钉错了（0 派活时说岔了，不是我做错）：规格§十一.1 的入口是
+        //    「面对面」页的「旁听」tab（`FaceToFaceViewController.tapListenStartStop`
+        //    已经接了同一份确认屏），不是这一屏（"随便说点啥"是普通口述转写/
+        //    翻译，不是"录别人说话"）。别在两处都拦，两处都拦不是"更安全"，
+        //    是同一条规矩两个出口、以后只改一处就走散。
         // 🚨 高-2：**起录前先停播放**。全工程原来没有任何一处这么做，
         //    于是"正在播 TTS 时开录"会把我们自己的声音录进去。
         Speaker.stop()
