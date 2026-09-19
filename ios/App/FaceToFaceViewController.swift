@@ -80,6 +80,30 @@ final class FaceToFaceViewController: UIViewController {
     private let leftBtn = UIButton(type: .system)
     private let swapBtn = UIButton(type: .system)
     private let rightBtn = UIButton(type: .system)
+    /// 🚨 09-19：原来是 `buildUI()` 里的局部变量，接「旁听」板块切换要把它
+    ///    一起隐藏/显示，所以提成属性——不改它自己的任何约束/样式。
+    private let langBar = UIStackView()
+
+    // MARK: - 「旁听」板块（09-19：0 点名「安卓都有，iOS 没有」，照抄安卓
+    //    `F2fScreen.java` 的交互——顶部两个 chip 跟「一问一答」并列，不是
+    //    独立入口，规格 `_规格_面对面旁听实时字幕_20260918.md`§三）。
+
+    private var modeListen = false
+    private let modeQaChip = UIButton(type: .system)
+    private let modeListenChip = UIButton(type: .system)
+    private let listenPanel = UIView()
+    private let listenStatusLabel = UILabel()
+    private let listenStartBtn = UIButton(type: .system)
+    /// 🚨 **独立的录音状态**，不跟 QA 模式共用 `voice`/`phase`——两个板块
+    ///    是并列而不是互斥重叠的功能，QA 模式的代次/相位管理是给它自己的
+    ///    UI 反馈设计的，混用会导致两边互相踩状态。
+    private lazy var listenVoice = Voice()
+    private var listenSegs: Segments?
+    private var listenSessionId = ""
+    private var listenActive = false
+    private var listenStartedAt: Date?
+    private var listenElapsedTimer: Timer?
+    private var listenDidYieldMic = false
     /// 🚨 键盘那颗真录音钮（同一个类 + 同一个图标 + 同一个色），不是照着画的。
     private let micBtn = CircleButton(type: .system)
     /// 录音时圆钮里的波形 —— **跟键盘那颗完全同一套**（同一个 `WaveView` 类、
@@ -215,7 +239,7 @@ final class FaceToFaceViewController: UIViewController {
                                     pointSize: 15, weight: .semibold)), for: .normal)
         swapBtn.addTarget(self, action: #selector(tapSwap), for: .touchUpInside)
 
-        let langBar = UIStackView(arrangedSubviews: [leftBtn, swapBtn, rightBtn])
+        [leftBtn, swapBtn, rightBtn].forEach { langBar.addArrangedSubview($0) }
         langBar.axis = .horizontal
         langBar.alignment = .center
         langBar.spacing = 12
@@ -272,7 +296,29 @@ final class FaceToFaceViewController: UIViewController {
         emptyStack.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(emptyStack)
 
+        // ── 板块切换：[一问一答] [旁听]，跟顶栏下、文字面上并列（照抄安卓
+        //    `F2fScreen.modeToggleRow()`，不是独立入口）────────────────────
+        styleModeChip(modeQaChip, title: L.f2f_mode_qa)
+        styleModeChip(modeListenChip, title: L.f2f_mode_listen)
+        modeQaChip.addTarget(self, action: #selector(tapModeQa), for: .touchUpInside)
+        modeListenChip.addTarget(self, action: #selector(tapModeListen), for: .touchUpInside)
+        modeQaChip.accessibilityIdentifier = "f2f.mode.qa"
+        modeListenChip.accessibilityIdentifier = "f2f.mode.listen"
+        let modeRow = UIStackView(arrangedSubviews: [modeQaChip, modeListenChip])
+        modeRow.axis = .horizontal
+        modeRow.alignment = .center
+        modeRow.spacing = 10
+        modeRow.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(modeRow)
+        paintModeChips()
+
+        // ── 旁听板块：状态行 + 开始/停止 —— 跟 QA 板块占同一块区域，互斥显示 ──
+        buildListenPanel(in: guide, pad: pad, below: modeRow)
+
         NSLayoutConstraint.activate([
+            modeRow.topAnchor.constraint(equalTo: guide.topAnchor, constant: Self.topBarH),
+            modeRow.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            modeRow.heightAnchor.constraint(equalToConstant: 32),
             // 录音钮贴底居中
             micBtn.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             // 🚨🚨 **给底部那颗凸起圆钮让位**（2026-09-04 端到端截图抓到）。
@@ -298,8 +344,8 @@ final class FaceToFaceViewController: UIViewController {
             swapBtn.widthAnchor.constraint(equalToConstant: Self.langBarH),
             swapBtn.heightAnchor.constraint(equalToConstant: Self.langBarH),
 
-            // 文字面：顶栏底 → 语言条顶
-            textArea.topAnchor.constraint(equalTo: guide.topAnchor, constant: Self.topBarH),
+            // 文字面：板块切换 chip 下 → 语言条顶
+            textArea.topAnchor.constraint(equalTo: modeRow.bottomAnchor, constant: 12),
             textArea.bottomAnchor.constraint(equalTo: langBar.topAnchor, constant: -12),
             textArea.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: pad),
             textArea.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -pad),
@@ -784,6 +830,188 @@ final class FaceToFaceViewController: UIViewController {
         })
     }
 
+    // MARK: - 「旁听」板块（照抄安卓 `F2fScreen` 的 chip 切换 + 独立录音会话）
+
+    private func styleModeChip(_ b: UIButton, title: String) {
+        b.setTitle(title, for: .normal)
+        b.titleLabel?.font = .systemFont(ofSize: 14, weight: .semibold)
+        b.contentEdgeInsets = UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16)
+        b.layer.cornerRadius = 16
+        b.layer.borderWidth = 1
+        b.translatesAutoresizingMaskIntoConstraints = false
+    }
+
+    private func paintModeChips() {
+        modeQaChip.backgroundColor = modeListen ? .clear : Theme.accent
+        modeQaChip.setTitleColor(modeListen ? Theme.dim : .white, for: .normal)
+        modeQaChip.layer.borderColor = (modeListen ? Theme.dim : Theme.accent).cgColor
+        modeListenChip.backgroundColor = modeListen ? Theme.accent : .clear
+        modeListenChip.setTitleColor(modeListen ? .white : Theme.dim, for: .normal)
+        modeListenChip.layer.borderColor = (modeListen ? Theme.accent : Theme.dim).cgColor
+    }
+
+    @objc private func tapModeQa() { setListenMode(false) }
+    @objc private func tapModeListen() { setListenMode(true) }
+
+    /// 切板块。🚨 **从「旁听」切走不停录音**——规格没说切走要断，真断的话
+    ///    切一下去看 QA 板块就把整场旁听废了，跟安卓 `switchMode` 同一条注释。
+    private func setListenMode(_ on: Bool) {
+        guard modeListen != on else { return }
+        modeListen = on
+        paintModeChips()
+        let qaViews: [UIView] = [micBtn, langBar, ctxStack, bigLabel, keepBtn, emptyStack]
+        qaViews.forEach { $0.isHidden = on }
+        listenPanel.isHidden = !on
+    }
+
+    private func buildListenPanel(in guide: UILayoutGuide, pad: CGFloat, below modeRow: UIView) {
+        listenPanel.translatesAutoresizingMaskIntoConstraints = false
+        listenPanel.isHidden = true
+        view.addSubview(listenPanel)
+
+        listenStatusLabel.text = L.f2f_listen_hint
+        listenStatusLabel.font = .systemFont(ofSize: 16)
+        listenStatusLabel.textColor = Theme.dim
+        listenStatusLabel.textAlignment = .center
+        listenStatusLabel.numberOfLines = 0
+        listenStatusLabel.translatesAutoresizingMaskIntoConstraints = false
+        listenStatusLabel.accessibilityIdentifier = "f2f.listen.status"
+        listenPanel.addSubview(listenStatusLabel)
+
+        listenStartBtn.setTitle(L.f2f_listen_start, for: .normal)
+        listenStartBtn.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
+        listenStartBtn.backgroundColor = Theme.accent
+        listenStartBtn.setTitleColor(.white, for: .normal)
+        listenStartBtn.layer.cornerRadius = 24
+        listenStartBtn.contentEdgeInsets = UIEdgeInsets(top: 12, left: 32, bottom: 12, right: 32)
+        listenStartBtn.translatesAutoresizingMaskIntoConstraints = false
+        listenStartBtn.accessibilityIdentifier = "f2f.listen.startstop"
+        listenStartBtn.addTarget(self, action: #selector(tapListenStartStop), for: .touchUpInside)
+        listenPanel.addSubview(listenStartBtn)
+
+        NSLayoutConstraint.activate([
+            listenPanel.topAnchor.constraint(equalTo: modeRow.bottomAnchor, constant: 12),
+            listenPanel.bottomAnchor.constraint(
+                equalTo: guide.bottomAnchor, constant: -MainTabController.bottomClearance),
+            listenPanel.leadingAnchor.constraint(equalTo: guide.leadingAnchor, constant: pad),
+            listenPanel.trailingAnchor.constraint(equalTo: guide.trailingAnchor, constant: -pad),
+
+            listenStatusLabel.centerXAnchor.constraint(equalTo: listenPanel.centerXAnchor),
+            listenStatusLabel.centerYAnchor.constraint(
+                equalTo: listenPanel.centerYAnchor, constant: -30),
+            listenStatusLabel.leadingAnchor.constraint(equalTo: listenPanel.leadingAnchor),
+            listenStatusLabel.trailingAnchor.constraint(equalTo: listenPanel.trailingAnchor),
+
+            listenStartBtn.centerXAnchor.constraint(equalTo: listenPanel.centerXAnchor),
+            listenStartBtn.topAnchor.constraint(
+                equalTo: listenStatusLabel.bottomAnchor, constant: 24),
+        ])
+    }
+
+    @objc private func tapListenStartStop() {
+        if listenActive {
+            stopListenSession()
+        } else {
+            EavesdropConsent.ensure(on: self) { [weak self] in self?.startListenSession() }
+        }
+    }
+
+    /// 🚨 跟 QA 板块 `startListening()` 同一套权限/让麦流程，**但用独立的
+    ///    `listenVoice`/`listenSegs`**——两个板块并列存在，不共用录音状态。
+    private func startListenSession() {
+        let perm = Voice.micPermission()
+        if perm == .undetermined {
+            Voice.requestMic { ok in
+                DispatchQueue.main.async { if ok { self.startListenSession() } }
+            }
+            return
+        }
+        if perm == .denied {
+            navigationController?.pushViewController(SetupViewController(), animated: true)
+            return
+        }
+        Speaker.stop()
+        KbVoiceHost.shared.yieldMic()
+        listenDidYieldMic = true
+
+        listenSessionId = UUID().uuidString
+        let sid = listenSessionId
+        let sg = KbVoiceHost.createSegments(onSegmentDone: { idx, text in
+            // 失败段（text == nil）不落盘——道理跟 `MainViewController` 那份一样。
+            guard let text = text else { return }
+            EavesdropTranscript.append(sessionId: sid, index: idx, text: text)
+        })
+        listenSegs = sg
+        listenVoice.onSegment = { [weak sg] w in sg?.submit(wav: w) }
+
+        listenActive = true
+        listenStartedAt = Date()
+        listenStartBtn.setTitle(L.f2f_listen_stop, for: .normal)
+        listenStatusLabel.text = L.f2f_listening
+        listenElapsedTimer?.invalidate()
+        listenElapsedTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) {
+            [weak self] _ in self?.updateListenMinutes()
+        }
+
+        listenVoice.start(onPartial: { _ in }, onWav: { [weak self] result in
+            DispatchQueue.main.async {
+                KbVoiceHost.shared.reclaimMic()
+                guard let self = self else { return }
+                self.listenDidYieldMic = false
+                switch result {
+                case .failure(let f):
+                    self.listenStatusLabel.text = f.userText
+                    self.resetListenUI()
+                case .success:
+                    // 分段模式下 `onWav` 交回空 Data，真实内容要去 `listenSegs` 取
+                    // （跟 `MainViewController.finishSegmented` 同一条约定）。
+                    self.finishListenSession()
+                }
+            }
+        })
+    }
+
+    private func updateListenMinutes() {
+        guard let started = listenStartedAt else { return }
+        let mins = Int(Date().timeIntervalSince(started)) / 60
+        listenStatusLabel.text = String(format: L.f2f_listen_minutes, mins)
+    }
+
+    private func stopListenSession() {
+        listenStatusLabel.text = L.f2f_listen_finishing
+        listenStartBtn.isEnabled = false
+        if listenVoice.running { listenVoice.stop() }
+    }
+
+    private func finishListenSession() {
+        listenElapsedTimer?.invalidate(); listenElapsedTimer = nil
+        guard let sg = listenSegs, sg.count > 0 else {
+            resetListenUI()
+            listenStatusLabel.text = L.f2f_listen_empty
+            return
+        }
+        let sid = listenSessionId
+        let wait = max(120.0, Double(sg.count) * 60.0)
+        DispatchQueue.global().async { [weak self] in
+            let zh = sg.awaitAll(waitSec: wait)
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                EavesdropTranscript.delete(sessionId: sid)
+                self.resetListenUI()
+                self.listenStatusLabel.text = zh.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    ? L.f2f_listen_empty : L.f2f_listen_done
+            }
+        }
+    }
+
+    private func resetListenUI() {
+        listenActive = false
+        listenSegs = nil
+        listenStartBtn.isEnabled = true
+        listenStartBtn.setTitle(L.f2f_listen_start, for: .normal)
+        if listenDidYieldMic { KbVoiceHost.shared.reclaimMic(); listenDidYieldMic = false }
+    }
+
     /// 这段 wav 说了多久（毫秒）。
     ///
     /// 🚨 **从字节数算，不用计时器**（照抄安卓 `FaceToFaceActivity`）：
@@ -860,6 +1088,12 @@ final class FaceToFaceViewController: UIViewController {
         elapsedTimer?.invalidate(); elapsedTimer = nil
         if didYieldMic { KbVoiceHost.shared.reclaimMic(); didYieldMic = false }
         Speaker.stop()
+        // 🚨 离开这一屏才断「旁听」——规格允许切板块不停（见 `setListenMode`），
+        //    但整屏都要走了，录音不能悬空继续占麦克风。已落盘的段落留给
+        //    `EavesdropTranscript` 的孤儿数据兜底，这里不用等 `awaitAll`。
+        listenElapsedTimer?.invalidate(); listenElapsedTimer = nil
+        if listenActive, listenVoice.running { listenVoice.stop() }
+        if listenDidYieldMic { KbVoiceHost.shared.reclaimMic(); listenDidYieldMic = false }
     }
 
     // MARK: - 小工具
