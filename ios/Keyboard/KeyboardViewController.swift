@@ -3061,16 +3061,18 @@ final class KeyboardViewController: UIInputViewController {
                                       + "，波形隐藏=" + String(self.waveView.isHidden))
                     }
                 }
-                // 🚨🚨 09-19 撤销倒计时：Kevin 拍板「不要加限制」之后，
-                //    分段录音（键盘这条路每次 begin() 都接分段）不再有任何
-                //    数字上限，「还剩 N 秒」这件事本身没有意义了——上面那段
-                //    历史（900 秒/60 秒两端对不齐）连着上限一起作废。
-                //    改成 Kevin 要的③：**正计时显示已录多久**，圆钮里常驻。
-                let elapsed = Int(Date().timeIntervalSince(self.listenSince))
-                self.micButton.setTitle(
-                    String(format: "%d:%02d", max(0, elapsed) / 60, max(0, elapsed) % 60),
-                    for: .normal)
-                self.waveView.isHidden = true
+                // 🚨🚨 09-19 二次撤销：上一版在这里把圆钮改成正计时 MM:SS，
+                //    是 0 给错的指令——Kevin 当场发火：「为什么给我把录音的
+                //    波纹改成了秒数？我什么时候让你改的？」
+                //    原来这段的真实结构是「倒计时只在最后 20 秒的 `if` 分支里
+                //    显示数字，`else` 分支平时一直显示波形」——上限撤了之后，
+                //    正确做法是**删掉那个再也进不去的 `if` 分支**，让波形（原来
+                //    的 `else` 分支）一直生效，不是把整个显示换成计时器。
+                //    「显示已录多久」这条需求不属于键盘圆钮——键盘上本来就没有
+                //    过这个东西，那是 0 串错的，归录音那一屏（MainViewController）
+                //    自己的事，那边已经有独立的 `elapsedTimer`/`listeningText`。
+                self.micButton.setTitle("", for: .normal)
+                self.waveView.isHidden = false
             case .thinking:
                 // 🚨 照抄安卓 `startBusyTick`：一个静止的「…」跟死了没区别。
                 //    会动 = 活着，停住 = 真挂了。不占任何版面。
